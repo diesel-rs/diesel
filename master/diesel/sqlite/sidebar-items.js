@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["SqliteType"],"mod":["expression","query_builder","sql_types"],"struct":["SerializedDatabase","Sqlite","SqliteBindValue","SqliteConnection","SqliteValue"],"trait":["SqliteAggregateFunction"]};

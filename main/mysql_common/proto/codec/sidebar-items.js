@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["ChunkDecoder","ChunkInfo","CompData","CompDecoder"],"fn":["compress","packet_to_chunks"],"mod":["error"],"struct":["Compression","PacketCodec"]};

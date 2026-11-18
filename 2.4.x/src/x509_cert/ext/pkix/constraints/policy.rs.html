@@ -1,0 +1,133 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/x509-cert-0.2.5/src/ext/pkix/constraints/policy.rs`."><title>policy.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../../../../../" data-static-root-path="../../../../../static.files/" data-current-crate="x509_cert" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../../../../static.files/storage-41dd4d93.js"></script><script defer src="../../../../../static.files/src-script-813739b1.js"></script><script defer src="../../../../../src-files.js"></script><script defer src="../../../../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../../../../static.files/noscript-101b5a15.css"></noscript><link rel="icon" href="https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">x509_cert/ext/pkix/constraints/</div>policy.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-2"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span>const_oid::{<a href="../../../../../const_oid/db/gen/rfc5280/constant.ID_CE_POLICY_CONSTRAINTS.html">db::rfc5280::ID_CE_POLICY_CONSTRAINTS</a>, <a href="../../../../../const_oid/trait.AssociatedOid.html">AssociatedOid</a>, <a href="../../../../../const_oid/struct.ObjectIdentifier.html">ObjectIdentifier</a>};
+<a href=#2 id=2 data-nosnippet>2</a><span class="kw">use </span><a href="../../../../../der_derive/derive.Sequence.html">der::Sequence</a>;
+<a href=#3 id=3 data-nosnippet>3</a>
+<a href=#4 id=4 data-nosnippet>4</a><span class="doccomment">/// Policy constraints extension as defined in [RFC 5280 Section 4.2.1.11].
+<a href=#5 id=5 data-nosnippet>5</a>///
+<a href=#6 id=6 data-nosnippet>6</a>/// ```text
+<a href=#7 id=7 data-nosnippet>7</a>/// PolicyConstraints ::= SEQUENCE {
+<a href=#8 id=8 data-nosnippet>8</a>///      requireExplicitPolicy   [0]     SkipCerts OPTIONAL,
+<a href=#9 id=9 data-nosnippet>9</a>///      inhibitPolicyMapping    [1]     SkipCerts OPTIONAL
+<a href=#10 id=10 data-nosnippet>10</a>/// }
+<a href=#11 id=11 data-nosnippet>11</a>/// ```
+<a href=#12 id=12 data-nosnippet>12</a>///
+<a href=#13 id=13 data-nosnippet>13</a>/// [RFC 5280 Section 4.2.1.11]: https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.1.11
+<a href=#14 id=14 data-nosnippet>14</a></span><span class="expansion"><input id=expand-14 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>PolicyConstraints {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
+        PolicyConstraints {
+            require_explicit_policy: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.require_explicit_policy),
+            inhibit_policy_mapping: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.inhibit_policy_mapping),
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[automatically_derived]#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>PolicyConstraints {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::debug_struct_field2_finish(f,
+            <span class="string">"PolicyConstraints require_explicit_policy inhibit_policy_mapping"</span>,
+            <span class="kw-2">&amp;</span><span class="self">self</span>.require_explicit_policy, &amp;&amp;<span class="self">self</span>.inhibit_policy_mapping)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[automatically_derived]#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::cmp::Eq <span class="kw">for </span>PolicyConstraints {
+    <span class="attr">#[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    </span><span class="kw">fn </span>assert_fields_are_eq(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;u32&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;u32&gt;&gt;;
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.Eq.html">Eq</a></span>, <span class=expanded><span class="attr">#[automatically_derived]#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::marker::StructuralPartialEq <span class="kw">for </span>PolicyConstraints { }
+<span class="attr">#[automatically_derived]#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::cmp::PartialEq <span class="kw">for </span>PolicyConstraints {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; bool {
+        <span class="self">self</span>.require_explicit_policy == other.require_explicit_policy &amp;&amp;
+            <span class="self">self</span>.inhibit_policy_mapping == other.inhibit_policy_mapping
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.PartialEq.html">PartialEq</a></span>, <span class=expanded><span class="kw">impl</span>&lt;<span class="lifetime">'__der_lifetime</span>&gt; ::der::DecodeValue&lt;<span class="lifetime">'__der_lifetime</span>&gt; <span class="kw">for
+    </span>PolicyConstraints {
+    <span class="kw">fn </span>decode_value&lt;R: ::der::Reader&lt;<span class="lifetime">'__der_lifetime</span>&gt;&gt;(reader: <span class="kw-2">&amp;mut </span>R,
+        header: ::der::Header) -&gt; ::der::Result&lt;<span class="self">Self</span>&gt; {
+        <span class="kw">use </span>::der::{Decode <span class="kw">as _</span>, DecodeValue <span class="kw">as _</span>, Reader <span class="kw">as _</span>};
+        reader.read_nested(header.length,
+            |reader|
+                {
+                    <span class="kw">let </span>require_explicit_policy =
+                        ::der::asn1::ContextSpecific::&lt;&gt;::decode_implicit(reader,
+                                    ::der::TagNumber::N0)<span class="question-mark">?</span>.map(|cs| cs.value);
+                    <span class="kw">let </span>inhibit_policy_mapping =
+                        ::der::asn1::ContextSpecific::&lt;&gt;::decode_implicit(reader,
+                                    ::der::TagNumber::N1)<span class="question-mark">?</span>.map(|cs| cs.value);
+                    <span class="prelude-val">Ok</span>(<span class="self">Self </span>{ require_explicit_policy, inhibit_policy_mapping })
+                })
+    }
+}
+<span class="kw">impl</span>&lt;<span class="lifetime">'__der_lifetime</span>&gt; ::der::EncodeValue <span class="kw">for </span>PolicyConstraints {
+    <span class="kw">fn </span>value_len(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ::der::Result&lt;::der::Length&gt; {
+        <span class="kw">use </span>::der::Encode <span class="kw">as _</span>;
+        [<span class="self">self</span>.require_explicit_policy.as_ref().map(|field|
+                                        {
+                                            ::der::asn1::ContextSpecificRef {
+                                                tag_number: ::der::TagNumber::N0,
+                                                tag_mode: ::der::TagMode::Implicit,
+                                                value: field,
+                                            }
+                                        }).encoded_len()<span class="question-mark">?</span>,
+                        <span class="self">self</span>.inhibit_policy_mapping.as_ref().map(|field|
+                                        {
+                                            ::der::asn1::ContextSpecificRef {
+                                                tag_number: ::der::TagNumber::N1,
+                                                tag_mode: ::der::TagMode::Implicit,
+                                                value: field,
+                                            }
+                                        }).encoded_len()<span class="question-mark">?</span>].into_iter().try_fold(::der::Length::ZERO,
+            |acc, len| acc + len)
+    }
+    <span class="kw">fn </span>encode_value(<span class="kw-2">&amp;</span><span class="self">self</span>, writer: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>::der::Writer)
+        -&gt; ::der::Result&lt;()&gt; {
+        <span class="kw">use </span>::der::Encode <span class="kw">as _</span>;
+        <span class="self">self</span>.require_explicit_policy.as_ref().map(|field|
+                        {
+                            ::der::asn1::ContextSpecificRef {
+                                tag_number: ::der::TagNumber::N0,
+                                tag_mode: ::der::TagMode::Implicit,
+                                value: field,
+                            }
+                        }).encode(writer)<span class="question-mark">?</span>;
+        <span class="self">self</span>.inhibit_policy_mapping.as_ref().map(|field|
+                        {
+                            ::der::asn1::ContextSpecificRef {
+                                tag_number: ::der::TagNumber::N1,
+                                tag_mode: ::der::TagMode::Implicit,
+                                value: field,
+                            }
+                        }).encode(writer)<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(())
+    }
+}
+<span class="kw">impl</span>&lt;<span class="lifetime">'__der_lifetime</span>&gt; ::der::Sequence&lt;<span class="lifetime">'__der_lifetime</span>&gt; <span class="kw">for </span>PolicyConstraints
+    {}</span><span class="original"><a href="../../../../../der_derive/derive.Sequence.html">Sequence</a></span></span></span><span class="attr">)]
+<a href=#15 id=15 data-nosnippet>15</a>#[allow(missing_docs)]
+<a href=#16 id=16 data-nosnippet>16</a></span><span class="kw">pub struct </span><a href="#16-22">PolicyConstraints</a> {
+<a href=#17 id=17 data-nosnippet>17</a>    <span class="attr">#[asn1(context_specific = <span class="string">"0"</span>, optional = <span class="string">"true"</span>, tag_mode = <span class="string">"IMPLICIT"</span>)]
+<a href=#18 id=18 data-nosnippet>18</a>    </span><span class="kw">pub </span>require_explicit_policy: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>&gt;,
+<a href=#19 id=19 data-nosnippet>19</a>
+<a href=#20 id=20 data-nosnippet>20</a>    <span class="attr">#[asn1(context_specific = <span class="string">"1"</span>, optional = <span class="string">"true"</span>, tag_mode = <span class="string">"IMPLICIT"</span>)]
+<a href=#21 id=21 data-nosnippet>21</a>    </span><span class="kw">pub </span>inhibit_policy_mapping: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>&gt;,
+<a href=#22 id=22 data-nosnippet>22</a>}
+<a href=#23 id=23 data-nosnippet>23</a>
+<a href=#24 id=24 data-nosnippet>24</a><span class="kw">impl </span><a href="../../../../../const_oid/trait.AssociatedOid.html">AssociatedOid</a> <span class="kw">for </span><a href="#16-22">PolicyConstraints</a> {
+<a href=#25 id=25 data-nosnippet>25</a>    <span class="kw">const </span>OID: <a href="../../../../../const_oid/struct.ObjectIdentifier.html">ObjectIdentifier</a> = <a href="../../../../../const_oid/db/gen/rfc5280/constant.ID_CE_POLICY_CONSTRAINTS.html">ID_CE_POLICY_CONSTRAINTS</a>;
+<a href=#26 id=26 data-nosnippet>26</a>}
+<a href=#27 id=27 data-nosnippet>27</a>
+<a href=#28 id=28 data-nosnippet>28</a><span class="expansion"><input id=expand-28 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class=expanded><span class="kw">impl </span><span class="kw">crate</span>::ext::AsExtension <span class="kw">for </span>PolicyConstraints {
+    <span class="kw">fn </span>critical(<span class="kw-2">&amp;</span><span class="self">self</span>, _subject: <span class="kw-2">&amp;</span><span class="kw">crate</span>::name::Name,
+        _extensions: <span class="kw-2">&amp;</span>[<span class="kw">crate</span>::ext::Extension]) -&gt; bool {
+        <span class="bool-val">true
+    </span>}
+}</span><span class="original"><a href="../../../macros.rs.html#83-98">impl_extension!</a>(<a href="#16-22">PolicyConstraints</a>, critical = <span class="bool-val">true</span>)</span></span>;
+</code></pre></div></section></main></body></html>

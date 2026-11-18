@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["adler32"],"struct":["Adler32"],"trait":["Adler32Hash"]};

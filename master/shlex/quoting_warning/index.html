@@ -1,0 +1,255 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="A more detailed version of the warning at the top level about the `quote`/`join` family of APIs."><title>shlex::quoting_warning - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-e56847b5.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="shlex" data-themes="" data-resource-suffix="" data-rustdoc-version="1.92.0-nightly (975e6c8fe 2025-09-23)" data-channel="nightly" data-search-js="search-e256b49e.js" data-stringdex-js="stringdex-061df703.js" data-settings-js="settings-c38705f0.js" ><script src="../../static.files/storage-e2aeef58.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../static.files/main-ce535bd0.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Module quoting_warning</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../shlex/index.html">shlex</a><span class="version">1.3.0</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module quoting_<wbr>warning</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#list-of-issues" title="List of issues">List of issues</a><ul><li><a href="#nul-bytes" title="Nul bytes">Nul bytes</a></li><li><a href="#overlong-commands" title="Overlong commands">Overlong commands</a></li><li><a href="#control-characters-interactive-contexts-only" title="Control characters (interactive contexts only)">Control characters (interactive contexts only)</a></li></ul></li><li><a href="#solved-issues" title="Solved issues">Solved issues</a><ul><li><a href="#solved-past-vulnerability-ghsa-r7qv-8r2h-pg27--rustsec-2024-xxx" title="Solved: Past vulnerability (GHSA-r7qv-8r2h-pg27 / RUSTSEC-2024-XXX)">Solved: Past vulnerability (GHSA-r7qv-8r2h-pg27 / RUSTSEC-2024-XXX)</a></li><li><a href="#solved--and-" title="Solved: `!` and `^`">Solved: <code>!</code> and <code>^</code></a></li><li><a href="#solved-xa0" title="Solved: `\xa0`">Solved: <code>\xa0</code></a></li></ul></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="../index.html">In crate shlex</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">shlex</a></div><h1>Module <span>quoting_<wbr>warning</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/shlex/quoting_warning.md.html#5-363">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>A more detailed version of the <a href="../index.html#warning" title="mod shlex">warning at the top level</a> about the <code>quote</code>/<code>join</code>
+family of APIs.</p>
+<p>In general, passing the output of these APIs to a shell should recover the original string(s).
+This page lists cases where it fails to do so.</p>
+<p>In noninteractive contexts, there are only minor issues.  ‘Noninteractive’ includes shell scripts
+and <code>sh -c</code> arguments, or even scripts <code>source</code>d from interactive shells.  The issues are:</p>
+<ul>
+<li>
+<p><a href="#nul-bytes">Nul bytes</a></p>
+</li>
+<li>
+<p><a href="#overlong-commands">Overlong commands</a></p>
+</li>
+</ul>
+<p>If you are writing directly to the stdin of an interactive (<code>-i</code>) shell (i.e., if you are
+pretending to be a terminal), or if you are writing to a cooked-mode pty (even if the other end is
+noninteractive), then there is a <strong>severe</strong> security issue:</p>
+<ul>
+<li><a href="#control-characters-interactive-contexts-only">Control characters</a></li>
+</ul>
+<p>Finally, there are some <a href="#solved-issues">solved issues</a>.</p>
+<h2 id="list-of-issues"><a class="doc-anchor" href="#list-of-issues">§</a>List of issues</h2><h3 id="nul-bytes"><a class="doc-anchor" href="#nul-bytes">§</a>Nul bytes</h3>
+<p>For non-interactive shells, the most problematic input is nul bytes (bytes with value 0).  The
+non-deprecated functions all default to returning <a href="../enum.QuoteError.html#variant.Nul" title="variant shlex::QuoteError::Nul"><code>QuoteError::Nul</code></a> when encountering them, but
+the deprecated <a href="../fn.quote.html" title="fn shlex::quote"><code>quote</code></a> and <a href="../fn.join.html" title="fn shlex::join"><code>join</code></a> functions leave them as-is.</p>
+<p>In Unix, nul bytes can’t appear in command arguments, environment variables, or filenames.  It’s
+not a question of proper quoting; they just can’t be used at all.  This is a consequence of Unix’s
+system calls all being designed around nul-terminated C strings.</p>
+<p>Shells inherit that limitation.  Most of them do not accept nul bytes in strings even internally.
+Even when they do, it’s pretty much useless or even dangerous, since you can’t pass them to
+external commands.</p>
+<p>In some cases, you might fail to pass the nul byte to the shell in the first place.  For example,
+the following code uses <a href="../fn.join.html" title="fn shlex::join"><code>join</code></a> to tunnel a command over an SSH connection:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>std::process::Command::new(<span class="string">"ssh"</span>)
+    .arg(<span class="string">"myhost"</span>)
+    .arg(<span class="string">"--"</span>)
+    .arg(join(my_cmd_args))</code></pre></div>
+<p>If any argument in <code>my_cmd_args</code> contains a nul byte, then <code>join(my_cmd_args)</code> will contain a nul
+byte.  But <code>join(my_cmd_args)</code> is itself being passed as an argument to a command (the ssh
+command), and command arguments can’t contain nul bytes!  So this will simply result in the
+<code>Command</code> failing to launch.</p>
+<p>Still, there are other ways to smuggle nul bytes into a shell.  How the shell reacts depends on the
+shell and the method of smuggling.  For example, here is Bash 5.2.21 exhibiting three different
+behaviors:</p>
+<ul>
+<li>
+<p>With ANSI-C quoting, the string is truncated at the first nul byte:</p>
+<div class="example-wrap"><pre class="language-bash"><code>$ echo $&#39;foo\0bar&#39; | hexdump -C
+00000000  66 6f 6f 0a                                       |foo.|</code></pre></div></li>
+<li>
+<p>With command substitution, nul bytes are removed with a warning:</p>
+<div class="example-wrap"><pre class="language-bash"><code>$ echo $(printf &#39;foo\0bar&#39;) | hexdump -C
+bash: warning: command substitution: ignored null byte in input
+00000000  66 6f 6f 62 61 72 0a                              |foobar.|</code></pre></div></li>
+<li>
+<p>When a nul byte appears directly in a shell script, it’s removed with no warning:</p>
+<div class="example-wrap"><pre class="language-bash"><code>$ printf &#39;echo &quot;foo\0bar&quot;&#39; | bash | hexdump -C
+00000000  66 6f 6f 62 61 72 0a                              |foobar.|</code></pre></div></li>
+</ul>
+<p>Zsh, in contrast, actually allows nul bytes internally, in shell variables and even arguments to
+builtin commands.  But if a variable is exported to the environment, or if an argument is used for
+an external command, then the child process will see it silently truncated at the first nul.  This
+might actually be more dangerous, depending on the use case.</p>
+<h3 id="overlong-commands"><a class="doc-anchor" href="#overlong-commands">§</a>Overlong commands</h3>
+<p>If you pass a long string into a shell, several things might happen:</p>
+<ul>
+<li>
+<p>It might succeed, yet the shell might have trouble actually doing anything with it.  For example:</p>
+<div class="example-wrap"><pre class="language-bash"><code>x=$(printf &#39;%010000000d&#39; 0); /bin/echo $x
+bash: /bin/echo: Argument list too long</code></pre></div></li>
+<li>
+<p>If you’re using certain shells (e.g. Busybox Ash) <em>and</em> using a pty for communication, then the
+shell will impose a line length limit, ignoring all input past the limit.</p>
+</li>
+<li>
+<p>If you’re using a pty in cooked mode, then by default, if you write so many bytes as input that
+it fills the kernel’s internal buffer, the kernel will simply drop those bytes, instead of
+blocking waiting for the shell to empty out the buffer.  In other words, random bits of input can
+be lost, which is obviously insecure.</p>
+</li>
+</ul>
+<p>Future versions of this crate may add an option to <a href="../struct.Quoter.html" title="struct shlex::Quoter"><code>Quoter</code></a> to check the length for you.</p>
+<h3 id="control-characters-interactive-contexts-only"><a class="doc-anchor" href="#control-characters-interactive-contexts-only">§</a>Control characters (<em>interactive contexts only</em>)</h3>
+<p>Control characters are the bytes from <code>\x00</code> to <code>\x1f</code>, plus <code>\x7f</code>.  <code>\x00</code> (the nul byte) is
+discussed <a href="#nul-bytes">above</a>, but what about the rest?  Well, many of them correspond to terminal
+keyboard shortcuts.  For example, when you press Ctrl-A at a shell prompt, your terminal sends the
+byte <code>\x01</code>.  The shell sees that byte and (if not configured differently) takes the standard
+action for Ctrl-A, which is to move the cursor to the beginning of the line.</p>
+<p>This means that it’s quite dangerous to pipe bytes to an interactive shell.  For example, here is a
+program that tries to tell Bash to echo an arbitrary string, ‘safely’:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>std::process::{Command, Stdio};
+<span class="kw">use </span>std::io::Write;
+
+<span class="kw">let </span>evil_string = <span class="string">"\x01do_something_evil; "</span>;
+<span class="kw">let </span>quoted = shlex::try_quote(evil_string).unwrap();
+<span class="macro">println!</span>(<span class="string">"quoted string is {:?}"</span>, quoted);
+
+<span class="kw">let </span><span class="kw-2">mut </span>bash = Command::new(<span class="string">"bash"</span>)
+    .arg(<span class="string">"-i"</span>) <span class="comment">// force interactive mode
+    </span>.stdin(Stdio::piped())
+    .spawn()
+    .unwrap();
+<span class="kw">let </span>stdin = bash.stdin.as_mut().unwrap();
+<span class="macro">write!</span>(stdin, <span class="string">"echo {}\n"</span>, quoted).unwrap();</code></pre></div>
+<p>Here’s the output of the program (with irrelevant bits removed):</p>
+<div class="example-wrap"><pre class="language-text"><code>quoted string is &quot;&#39;\u{1}do_something_evil; &#39;&quot;
+/tmp comex$ do_something_evil; &#39;echo &#39;
+bash: do_something_evil: command not found
+bash: echo : command not found</code></pre></div>
+<p>Even though we quoted it, Bash still ran an arbitrary command!</p>
+<p>This is not because the quoting was insufficient, per se.  In single quotes, all input is supposed
+to be treated as raw data until the closing single quote.  And in fact, this would work fine
+without the <code>"-i"</code> argument.</p>
+<p>But line input is a separate stage from shell syntax parsing.  After all, if you type a single
+quote on the keyboard, you wouldn’t expect it to disable all your keyboard shortcuts.  So a control
+character always has its designated effect, no matter if it’s quoted or backslash-escaped.</p>
+<p>Also, some control characters are interpreted by the kernel tty layer instead, like CTRL-C to send
+SIGINT.  These can be an issue even with noninteractive shells, but only if using a pty for
+communication, as opposed to a pipe.</p>
+<p>To be safe, you just have to avoid sending them.</p>
+<h4 id="why-not-just-use-hex-escapes"><a class="doc-anchor" href="#why-not-just-use-hex-escapes">§</a>Why not just use hex escapes?</h4>
+<p>In any normal programming languages, this would be no big deal.</p>
+<p>Any normal language has a way to escape arbitrary characters in strings by writing out their
+numeric values.  For example, Rust lets you write them in hexadecimal, like <code>"\x4f"</code> (or
+<code>"\u{1d546}"</code> for Unicode).  In this way, arbitrary strings can be represented using only ‘nice’
+simple characters.  Any remotely suspicious character can be replaced with a numeric escape
+sequence, where the escape sequence itself consists only of alphanumeric characters and some
+punctuation.  The result may not be the most readable<sup id="fnref1"><a href="#fn1">1</a></sup>, but it’s quite safe from being
+misinterpreted or corrupted in transit.</p>
+<p>Shell is not normal.  It has no numeric escape sequences.</p>
+<p>There are a few different ways to quote characters (unquoted, unquoted-with-backslash, single
+quotes, double quotes), but all of them involve writing the character itself.  If the input
+contains a control character, the output must contain that same character.</p>
+<h4 id="mitigation-terminal-filters"><a class="doc-anchor" href="#mitigation-terminal-filters">§</a>Mitigation: terminal filters</h4>
+<p>In practice, automating interactive shells like in the above example is pretty uncommon these days.
+In most cases, the only way for a programmatically generated string to make its way to the input of
+an interactive shell is if a human copies and pastes it into their terminal.</p>
+<p>And many terminals detect when you paste a string containing control characters.  iTerm2 strips
+them out; gnome-terminal replaces them with alternate characters<sup id="fnref2"><a href="#fn2">2</a></sup>; Kitty outright prompts for
+confirmation.  This mitigates the risk.</p>
+<p>But it’s not perfect.  Some other terminals don’t implement this check or implement it incorrectly.
+Also, these checks tend to not filter the tab character, which could trigger tab completion.  In
+most cases that’s a non-issue, because most shells support paste bracketing, which disables tab and
+some other control characters<sup id="fnref3"><a href="#fn3">3</a></sup> within pasted text.  But in some cases paste bracketing
+gets disabled.</p>
+<h4 id="future-possibility-ansi-c-quoting"><a class="doc-anchor" href="#future-possibility-ansi-c-quoting">§</a>Future possibility: ANSI-C quoting</h4>
+<p>I said that shell syntax has no numeric escapes, but that only applies to <em>portable</em> shell syntax.
+Bash and Zsh support an obscure alternate quoting style with the syntax <code>$'foo'</code>.  It’s called
+<a href="https://www.gnu.org/software/bash/manual/html_node/ANSI_002dC-Quoting.html">“ANSI-C quoting”</a>, and inside it you can use all the escape sequences supported by C,
+including hex escapes:</p>
+<div class="example-wrap"><pre class="language-bash"><code>$ echo $&#39;\x41\n\x42&#39;
+A
+B</code></pre></div>
+<p>But other shells don’t support it — including Dash, a popular choice for <code>/bin/sh</code>, and Busybox’s
+Ash, frequently seen on stripped-down embedded systems.  This crate’s quoting functionality <a href="../index.html#compatibility" title="mod shlex">tries
+to be compatible</a> with those shells, plus all other POSIX-compatible shells.
+That makes ANSI-C quoting a no-go.</p>
+<p>Still, future versions of this crate may provide an option to enable ANSI-C quoting, at the cost of
+reduced portability.</p>
+<h4 id="future-possibility-printf"><a class="doc-anchor" href="#future-possibility-printf">§</a>Future possibility: printf</h4>
+<p>Another option would be to invoke the <code>printf</code> command, which is required by POSIX to support octal
+escapes.  For example, you could ‘escape’ the Rust string <code>"\x01"</code> into the shell syntax <code>"$(printf '\001')"</code>.  The shell will execute the command <code>printf</code> with the first argument being literally a
+backslash followed by three digits; <code>printf</code> will output the actual byte with value 1; and the
+shell will substitute that back into the original command.</p>
+<p>The problem is that ‘escaping’ a string into a command substitution just feels too surprising.  If
+nothing else, it only works with an actual shell; <a href="../index.html#compatibility" title="mod shlex">other languages’ shell parsing
+routines</a> wouldn’t understand it.  Neither would this crate’s own parser,
+though that could be fixed.</p>
+<p>Future versions of this crate may provide an option to use <code>printf</code> for quoting.</p>
+<h4 id="special-note-newlines"><a class="doc-anchor" href="#special-note-newlines">§</a>Special note: newlines</h4>
+<p>Did you know that <code>\r</code> and <code>\n</code> are control characters?  They aren’t as dangerous as other control
+characters (if quoted properly).  But there’s still an issue with them in interactive contexts.</p>
+<p>Namely, in some cases, interactive shells and/or the tty layer will ‘helpfully’ translate between
+different line ending conventions.  The possibilities include replacing <code>\r</code> with <code>\n</code>, replacing
+<code>\n</code> with <code>\r\n</code>, and others.  This can’t result in command injection, but it’s still a lossy
+transformation which can result in a failure to round-trip (i.e. the shell sees a different string
+from what was originally passed to <code>quote</code>).</p>
+<p>Numeric escapes would solve this as well.</p>
+<h2 id="solved-issues"><a class="doc-anchor" href="#solved-issues">§</a>Solved issues</h2><h3 id="solved-past-vulnerability-ghsa-r7qv-8r2h-pg27--rustsec-2024-xxx"><a class="doc-anchor" href="#solved-past-vulnerability-ghsa-r7qv-8r2h-pg27--rustsec-2024-xxx">§</a>Solved: Past vulnerability (GHSA-r7qv-8r2h-pg27 / RUSTSEC-2024-XXX)</h3>
+<p>Versions of this crate before 1.3.0 did not quote <code>{</code>, <code>}</code>, and <code>\xa0</code>.</p>
+<p>See:</p>
+<ul>
+<li><a href="https://github.com/advisories/GHSA-r7qv-8r2h-pg27">https://github.com/advisories/GHSA-r7qv-8r2h-pg27</a></li>
+<li>(TODO: Add Rustsec link)</li>
+</ul>
+<h3 id="solved--and-"><a class="doc-anchor" href="#solved--and-">§</a>Solved: <code>!</code> and <code>^</code></h3>
+<p>There are two non-control characters which have a special meaning in interactive contexts only: <code>!</code> and
+<code>^</code>.  Luckily, these can be escaped adequately.</p>
+<p>The <code>!</code> character triggers <a href="https://www.gnu.org/software/bash/manual/html_node/History-Interaction.html">history expansion</a>; the <code>^</code> character can trigger a variant of
+history expansion known as <a href="https://www.gnu.org/software/bash/manual/html_node/Event-Designators.html">Quick Substitution</a>.  Both of these characters get expanded even
+inside of double-quoted strings!</p>
+<p>If we’re in a double-quoted string, then we can’t just escape these characters with a backslash.
+Only a specific set of characters can be backslash-escaped inside double quotes; the set of
+supported characters depends on the shell, but it often doesn’t include <code>!</code> and <code>^</code>.<sup id="fnref4"><a href="#fn4">4</a></sup>
+Trying to backslash-escape an unsupported character produces a literal backslash:</p>
+<div class="example-wrap"><pre class="language-bash"><code>$ echo &quot;\!&quot;
+\!</code></pre></div>
+<p>However, these characters don’t get expanded in single-quoted strings, so this crate just
+single-quotes them.</p>
+<p>But there’s a Bash bug where <code>^</code> actually does get partially expanded in single-quoted strings:</p>
+<div class="example-wrap"><pre class="language-bash"><code>$ echo &#39;
+&gt; ^a^b
+&gt; &#39;
+
+!!:s^a^b</code></pre></div>
+<p>To work around that, this crate forces <code>^</code> to appear right after an opening single quote.  For
+example, the string <code>"^</code> is quoted into <code>'"''^'</code> instead of <code>'"^'</code>.  This restriction is overkill,
+since <code>^</code> is only meaningful right after a newline, but it’s a sufficient restriction (after all, a
+<code>^</code> character can’t be preceded by a newline if it’s forced to be preceded by a single quote), and
+for now it simplifies things.</p>
+<h3 id="solved-xa0"><a class="doc-anchor" href="#solved-xa0">§</a>Solved: <code>\xa0</code></h3>
+<p>The byte <code>\xa0</code> may be treated as a shell word separator, specifically on Bash on macOS when using
+the default UTF-8 locale, only when the input is invalid UTF-8.  This crate handles the issue by
+always using quotes for arguments containing this byte.</p>
+<p>In fact, this crate always uses quotes for arguments containing any non-ASCII bytes.  This may be
+changed in the future, since it’s a bit unfriendly to non-English users.  But for now it
+minimizes risk, especially considering the large number of different legacy single-byte locales
+someone might hypothetically be running their shell in.</p>
+<h4 id="demonstration"><a class="doc-anchor" href="#demonstration">§</a>Demonstration</h4><div class="example-wrap"><pre class="language-bash"><code>$ echo -e &#39;ls a\xa0b&#39; | bash
+ls: a: No such file or directory
+ls: b: No such file or directory</code></pre></div>
+<p>The normal behavior would be to output a single line, e.g.:</p>
+<div class="example-wrap"><pre class="language-bash"><code>$ echo -e &#39;ls a\xa0b&#39; | bash
+ls: cannot access &#39;a&#39;$&#39;\240&#39;&#39;b&#39;: No such file or directory</code></pre></div>
+<p>(The specific quoting in the error doesn’t matter.)</p>
+<h4 id="cause"><a class="doc-anchor" href="#cause">§</a>Cause</h4>
+<p>Just for fun, here’s why this behavior occurs:</p>
+<p>Bash decides which bytes serve as word separators based on the libc function <a href="https://man7.org/linux/man-pages/man3/isblank.3p.html"><code>isblank</code></a>.
+On macOS on UTF-8 locales, this passes for <code>\xa0</code>, corresponding to U+00A0 NO-BREAK SPACE.</p>
+<p>This is doubly unique compared to the other systems I tested (Linux/glibc, Linux/musl, and
+Windows/MSVC).  First, the other systems don’t allow bytes in the range [0x80, 0xFF] to pass
+<code>is<i>foo</i></code> functions in UTF-8 locales, even if the corresponding Unicode codepoint
+does pass, as determined by the wide-character equivalent function, <code>isw<i>foo</i></code>.
+Second, the other systems don’t treat U+00A0 as blank (even using <code>iswblank</code>).</p>
+<p>Meanwhile, Bash checks for multi-byte sequences and forbids them from being treated as special
+characters, so the proper UTF-8 encoding of U+00A0, <code>b"\xc2\xa0"</code>, is not treated as a word
+separator.  Treatment as a word separator only happens for <code>b"\xa0"</code> alone, which is illegal UTF-8.</p>
+<div class="footnotes"><hr><ol><li id="fn1"><p>This can lead to tough choices over which
+characters to escape and which to leave as-is, especially when Unicode gets involved and you
+have to balance the risk of confusion with the benefit of properly supporting non-English
+languages.
+<br>
+<br>
+We don’t have the luxury of those choices.&nbsp;<a href="#fnref1">↩</a></p></li><li id="fn2"><p>For example, backspace (in Unicode lingo, U+0008 BACKSPACE) turns into U+2408 SYMBOL FOR BACKSPACE.&nbsp;<a href="#fnref2">↩</a></p></li><li id="fn3"><p>It typically disables almost all handling of control characters by the shell proper,
+but one necessary exception is the end-of-paste sequence itself (which starts with the control
+character <code>\x1b</code>).  In addition, paste bracketing does not suppress handling of control
+characters by the kernel tty layer, such as <code>\x03</code> sending SIGINT (which typically clears the
+currently typed command, making it dangerous in a similar way to <code>\x01</code>).&nbsp;<a href="#fnref3">↩</a></p></li><li id="fn4"><p>For example, Dash doesn’t remove the backslash from <code>"\!"</code> because it simply doesn’t know
+anything about <code>!</code> as a special character: it doesn’t support history expansion.  On the other
+end of the spectrum, Zsh supports history expansion and does remove the backslash — though only
+in interactive mode.  Bash’s behavior is weirder.  It supports history expansion, and if you
+write <code>"\!"</code>, the backslash does prevent history expansion from occurring — but it doesn’t get
+removed!&nbsp;<a href="#fnref4">↩</a></p></li></ol></div></div></details></section></div></main></body></html>

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["mysql_like","pg"],"struct":["InvalidSqlState","SqlState","SqlStateClass"]};

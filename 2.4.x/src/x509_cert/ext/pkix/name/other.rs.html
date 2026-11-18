@@ -1,0 +1,136 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/x509-cert-0.2.5/src/ext/pkix/name/other.rs`."><title>other.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../../../../../" data-static-root-path="../../../../../static.files/" data-current-crate="x509_cert" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../../../../static.files/storage-41dd4d93.js"></script><script defer src="../../../../../static.files/src-script-813739b1.js"></script><script defer src="../../../../../src-files.js"></script><script defer src="../../../../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../../../../static.files/noscript-101b5a15.css"></noscript><link rel="icon" href="https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">x509_cert/ext/pkix/name/</div>other.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-2"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span>der::{<a href="../../../../../const_oid/struct.ObjectIdentifier.html">asn1::ObjectIdentifier</a>, <a href="../../../../../der/asn1/any/allocating/struct.Any.html">Any</a>, <a href="../../../../../der_derive/derive.Sequence.html">Sequence</a>, <a href="../../../../../der_derive/derive.ValueOrd.html">ValueOrd</a>};
+<a href=#2 id=2 data-nosnippet>2</a>
+<a href=#3 id=3 data-nosnippet>3</a><span class="doccomment">/// OtherName as defined in [RFC 5280 Section 4.2.1.6].
+<a href=#4 id=4 data-nosnippet>4</a>///
+<a href=#5 id=5 data-nosnippet>5</a>/// ```text
+<a href=#6 id=6 data-nosnippet>6</a>/// OtherName ::= SEQUENCE {
+<a href=#7 id=7 data-nosnippet>7</a>///     type-id    OBJECT IDENTIFIER,
+<a href=#8 id=8 data-nosnippet>8</a>///     value      [0] EXPLICIT ANY DEFINED BY type-id
+<a href=#9 id=9 data-nosnippet>9</a>/// }
+<a href=#10 id=10 data-nosnippet>10</a>/// ```
+<a href=#11 id=11 data-nosnippet>11</a>///
+<a href=#12 id=12 data-nosnippet>12</a>/// [RFC 5280 Section 4.2.1.6]: https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.1.6
+<a href=#13 id=13 data-nosnippet>13</a></span><span class="expansion"><input id=expand-13 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>OtherName {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
+        OtherName {
+            type_id: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.type_id),
+            value: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.value),
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[automatically_derived]#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>OtherName {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::debug_struct_field2_finish(f,
+            <span class="string">"OtherName type_id value"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.type_id, &amp;&amp;<span class="self">self</span>.value)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[automatically_derived]#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::cmp::Eq <span class="kw">for </span>OtherName {
+    <span class="attr">#[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    </span><span class="kw">fn </span>assert_fields_are_eq(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;ObjectIdentifier&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;Any&gt;;
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.Eq.html">Eq</a></span>, <span class=expanded><span class="attr">#[automatically_derived]#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::marker::StructuralPartialEq <span class="kw">for </span>OtherName { }
+<span class="attr">#[automatically_derived]#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::cmp::PartialEq <span class="kw">for </span>OtherName {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; bool {
+        <span class="self">self</span>.type_id == other.type_id &amp;&amp; <span class="self">self</span>.value == other.value
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.PartialEq.html">PartialEq</a></span>, <span class=expanded><span class="kw">impl</span>&lt;<span class="lifetime">'__der_lifetime</span>&gt; ::der::DecodeValue&lt;<span class="lifetime">'__der_lifetime</span>&gt; <span class="kw">for </span>OtherName {
+    <span class="kw">fn </span>decode_value&lt;R: ::der::Reader&lt;<span class="lifetime">'__der_lifetime</span>&gt;&gt;(reader: <span class="kw-2">&amp;mut </span>R,
+        header: ::der::Header) -&gt; ::der::Result&lt;<span class="self">Self</span>&gt; {
+        <span class="kw">use </span>::der::{Decode <span class="kw">as _</span>, DecodeValue <span class="kw">as _</span>, Reader <span class="kw">as _</span>};
+        reader.read_nested(header.length,
+            |reader|
+                {
+                    <span class="kw">let </span>type_id = reader.decode()<span class="question-mark">?</span>;
+                    <span class="kw">let </span>value =
+                        <span class="kw">match </span>::der::asn1::ContextSpecific::&lt;&gt;::decode(reader)<span class="question-mark">? </span>{
+                                        field <span class="kw">if </span>field.tag_number == ::der::TagNumber::N0 =&gt;
+                                            <span class="prelude-val">Some</span>(field),
+                                        <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
+                                    }.ok_or_else(||
+                                        {
+                                            der::Tag::ContextSpecific {
+                                                    number: ::der::TagNumber::N0,
+                                                    constructed: <span class="bool-val">false</span>,
+                                                }.value_error()
+                                        })<span class="question-mark">?</span>.value;
+                    <span class="prelude-val">Ok</span>(<span class="self">Self </span>{ type_id, value })
+                })
+    }
+}
+<span class="kw">impl</span>&lt;<span class="lifetime">'__der_lifetime</span>&gt; ::der::EncodeValue <span class="kw">for </span>OtherName {
+    <span class="kw">fn </span>value_len(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ::der::Result&lt;::der::Length&gt; {
+        <span class="kw">use </span>::der::Encode <span class="kw">as _</span>;
+        [<span class="self">self</span>.type_id.encoded_len()<span class="question-mark">?</span>,
+                        ::der::asn1::ContextSpecificRef {
+                                    tag_number: ::der::TagNumber::N0,
+                                    tag_mode: ::der::TagMode::Explicit,
+                                    value: <span class="kw-2">&amp;</span><span class="self">self</span>.value,
+                                }.encoded_len()<span class="question-mark">?</span>].into_iter().try_fold(::der::Length::ZERO,
+            |acc, len| acc + len)
+    }
+    <span class="kw">fn </span>encode_value(<span class="kw-2">&amp;</span><span class="self">self</span>, writer: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>::der::Writer)
+        -&gt; ::der::Result&lt;()&gt; {
+        <span class="kw">use </span>::der::Encode <span class="kw">as _</span>;
+        <span class="self">self</span>.type_id.encode(writer)<span class="question-mark">?</span>;
+        ::der::asn1::ContextSpecificRef {
+                    tag_number: ::der::TagNumber::N0,
+                    tag_mode: ::der::TagMode::Explicit,
+                    value: <span class="kw-2">&amp;</span><span class="self">self</span>.value,
+                }.encode(writer)<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(())
+    }
+}
+<span class="kw">impl</span>&lt;<span class="lifetime">'__der_lifetime</span>&gt; ::der::Sequence&lt;<span class="lifetime">'__der_lifetime</span>&gt; <span class="kw">for </span>OtherName {}</span><span class="original"><a href="../../../../../der_derive/derive.Sequence.html">Sequence</a></span>, <span class=expanded><span class="kw">impl </span>::der::ValueOrd <span class="kw">for </span>OtherName&lt;&gt; {
+    <span class="kw">fn </span>value_cmp(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>)
+        -&gt; ::der::Result&lt;::core::cmp::Ordering&gt; {
+        <span class="attr">#[allow(unused_imports)]
+        </span><span class="kw">use </span>::der::{DerOrd, ValueOrd};
+        <span class="kw">match </span><span class="self">self</span>.type_id.der_cmp(<span class="kw-2">&amp;</span>other.type_id)<span class="question-mark">? </span>{
+            ::core::cmp::Ordering::Equal =&gt; (),
+            other =&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(other),
+        }
+        <span class="kw">match </span><span class="self">self</span>.value.der_cmp(<span class="kw-2">&amp;</span>other.value)<span class="question-mark">? </span>{
+            ::core::cmp::Ordering::Equal =&gt; (),
+            other =&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(other),
+        }
+        <span class="prelude-val">Ok</span>(::core::cmp::Ordering::Equal)
+    }
+}</span><span class="original"><a href="../../../../../der_derive/derive.ValueOrd.html">ValueOrd</a></span></span></span><span class="attr">)]
+<a href=#14 id=14 data-nosnippet>14</a>#[allow(missing_docs)]
+<a href=#15 id=15 data-nosnippet>15</a></span><span class="kw">pub struct </span><a href="#15-20">OtherName</a> {
+<a href=#16 id=16 data-nosnippet>16</a>    <span class="kw">pub </span>type_id: <a href="../../../../../const_oid/struct.ObjectIdentifier.html">ObjectIdentifier</a>,
+<a href=#17 id=17 data-nosnippet>17</a>
+<a href=#18 id=18 data-nosnippet>18</a>    <span class="attr">#[asn1(context_specific = <span class="string">"0"</span>, tag_mode = <span class="string">"EXPLICIT"</span>)]
+<a href=#19 id=19 data-nosnippet>19</a>    </span><span class="kw">pub </span>value: <a href="../../../../../der/asn1/any/allocating/struct.Any.html">Any</a>,
+<a href=#20 id=20 data-nosnippet>20</a>}
+<a href=#21 id=21 data-nosnippet>21</a>
+<a href=#22 id=22 data-nosnippet>22</a><span class="attr">#[test]
+<a href=#23 id=23 data-nosnippet>23</a>#[cfg(test)]
+<a href=#24 id=24 data-nosnippet>24</a>#[allow(clippy::unwrap_used)]
+<a href=#25 id=25 data-nosnippet>25</a></span><span class="kw">fn </span>test() {
+<a href=#26 id=26 data-nosnippet>26</a>    <span class="kw">use </span>alloc::string::ToString;
+<a href=#27 id=27 data-nosnippet>27</a>    <span class="kw">use </span>der::{asn1::Utf8StringRef, Decode, Encode};
+<a href=#28 id=28 data-nosnippet>28</a>    <span class="kw">use </span>hex_literal::hex;
+<a href=#29 id=29 data-nosnippet>29</a>
+<a href=#30 id=30 data-nosnippet>30</a>    <span class="kw">let </span>input = <span class="macro">hex!</span>(<span class="string">"3021060A2B060104018237140203A0130C1155706E5F323134393530313330406D696C"</span>);
+<a href=#31 id=31 data-nosnippet>31</a>    <span class="kw">let </span>decoded = OtherName::from_der(<span class="kw-2">&amp;</span>input).unwrap();
+<a href=#32 id=32 data-nosnippet>32</a>
+<a href=#33 id=33 data-nosnippet>33</a>    <span class="kw">let </span>onval = Utf8StringRef::try_from(<span class="kw-2">&amp;</span>decoded.value).unwrap();
+<a href=#34 id=34 data-nosnippet>34</a>    <span class="macro">assert_eq!</span>(onval.to_string(), <span class="string">"Upn_214950130@mil"</span>);
+<a href=#35 id=35 data-nosnippet>35</a>
+<a href=#36 id=36 data-nosnippet>36</a>    <span class="kw">let </span>encoded = decoded.to_der().unwrap();
+<a href=#37 id=37 data-nosnippet>37</a>    <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>input[..], <span class="kw-2">&amp;</span>encoded);
+<a href=#38 id=38 data-nosnippet>38</a>}
+</code></pre></div></section></main></body></html>

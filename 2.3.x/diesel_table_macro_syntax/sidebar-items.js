@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["parse_table_with_schema"],"struct":["ColumnDef","PrimaryKey","TableDecl"]};

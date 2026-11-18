@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Params","ParamsConfusionError","ParamsError"],"struct":["MissingNamedParameterError"]};

@@ -1,0 +1,1262 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `diesel_async/src/pg/mod.rs`."><title>mod.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="diesel_async" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../../static.files/storage-41dd4d93.js"></script><script defer src="../../../static.files/src-script-813739b1.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">diesel_async/pg/</div>mod.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-4"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! Provides types and functions related to working with PostgreSQL
+<a href=#2 id=2 data-nosnippet>2</a>//!
+<a href=#3 id=3 data-nosnippet>3</a>//! Much of this module is re-exported from database agnostic locations.
+<a href=#4 id=4 data-nosnippet>4</a>//! However, if you are writing code specifically to extend Diesel on
+<a href=#5 id=5 data-nosnippet>5</a>//! PostgreSQL, you may need to work with this module directly.
+<a href=#6 id=6 data-nosnippet>6</a>
+<a href=#7 id=7 data-nosnippet>7</a></span><span class="kw">use </span><a href="error_helper.rs.html#7"><span class="self">self</span>::error_helper::ErrorHelper</a>;
+<a href=#8 id=8 data-nosnippet>8</a><span class="kw">use </span><a href="row.rs.html#6-8"><span class="self">self</span>::row::PgRow</a>;
+<a href=#9 id=9 data-nosnippet>9</a><span class="kw">use </span><a href="serialize.rs.html#5"><span class="self">self</span>::serialize::ToSqlHelper</a>;
+<a href=#10 id=10 data-nosnippet>10</a><span class="kw">use </span><a href="../lib.rs.html#423-433"><span class="kw">crate</span>::AsyncMultiConnectionHelper</a>;
+<a href=#11 id=11 data-nosnippet>11</a><span class="kw">use </span><span class="kw">crate</span>::stmt_cache::{<a href="../stmt_cache.rs.html#8">CallbackHelper</a>, <a href="../stmt_cache.rs.html#59-63">QueryFragmentHelper</a>, <a href="../stmt_cache.rs.html#57">StatementHelper</a>};
+<a href=#12 id=12 data-nosnippet>12</a><span class="kw">use crate</span>::{<a href="../transaction_manager.rs.html#170-192">AnsiTransactionManager</a>, <a href="../lib.rs.html#211-419">AsyncConnection</a>, <a href="../lib.rs.html#168-204">AsyncConnectionCore</a>, <a href="../lib.rs.html#159-165">SimpleAsyncConnection</a>};
+<a href=#13 id=13 data-nosnippet>13</a><span class="kw">use </span><a href="../../../diesel/connection/instrumentation/struct.StrQueryHelper.html">diesel::connection::StrQueryHelper</a>;
+<a href=#14 id=14 data-nosnippet>14</a><span class="kw">use </span>diesel::connection::statement_cache::{
+<a href=#15 id=15 data-nosnippet>15</a>    <a href="../../../diesel/connection/statement_cache/enum.PrepareForCache.html">PrepareForCache</a>, <a href="../../../diesel/connection/statement_cache/trait.PreparedStatement.html">PreparedStatement</a>, <a href="../../../diesel/connection/statement_cache/trait.QueryFragmentForCachedStatement.html">QueryFragmentForCachedStatement</a>, <a href="../../../diesel/connection/statement_cache/struct.StatementCache.html">StatementCache</a>,
+<a href=#16 id=16 data-nosnippet>16</a>};
+<a href=#17 id=17 data-nosnippet>17</a><span class="kw">use </span>diesel::connection::{<a href="../../../diesel/connection/enum.CacheSize.html">CacheSize</a>, <a href="../../../diesel/connection/instrumentation/trait.Instrumentation.html">Instrumentation</a>};
+<a href=#18 id=18 data-nosnippet>18</a><span class="kw">use </span>diesel::connection::{<a href="../../../diesel/connection/instrumentation/struct.DynInstrumentation.html">DynInstrumentation</a>, <a href="../../../diesel/connection/instrumentation/enum.InstrumentationEvent.html">InstrumentationEvent</a>};
+<a href=#19 id=19 data-nosnippet>19</a><span class="kw">use </span>diesel::pg::{
+<a href=#20 id=20 data-nosnippet>20</a>    <a href="../../../diesel/pg/backend/struct.Pg.html">Pg</a>, <a href="../../../diesel/pg/metadata_lookup/struct.PgMetadataCache.html">PgMetadataCache</a>, <a href="../../../diesel/pg/metadata_lookup/struct.PgMetadataCacheKey.html">PgMetadataCacheKey</a>, <a href="../../../diesel/pg/metadata_lookup/trait.PgMetadataLookup.html">PgMetadataLookup</a>, <a href="../../../diesel/pg/query_builder/struct.PgQueryBuilder.html">PgQueryBuilder</a>, <a href="../../../diesel/pg/backend/struct.PgTypeMetadata.html">PgTypeMetadata</a>,
+<a href=#21 id=21 data-nosnippet>21</a>};
+<a href=#22 id=22 data-nosnippet>22</a><span class="kw">use </span><a href="../../../diesel/query_builder/bind_collector/struct.RawBytesBindCollector.html">diesel::query_builder::bind_collector::RawBytesBindCollector</a>;
+<a href=#23 id=23 data-nosnippet>23</a><span class="kw">use </span>diesel::query_builder::{<a href="../../../diesel/query_builder/trait.AsQuery.html">AsQuery</a>, <a href="../../../diesel/query_builder/trait.QueryBuilder.html">QueryBuilder</a>, <a href="../../../diesel/query_builder/trait.QueryFragment.html">QueryFragment</a>, <a href="../../../diesel_derives/derive.QueryId.html">QueryId</a>};
+<a href=#24 id=24 data-nosnippet>24</a><span class="kw">use </span>diesel::result::{<a href="../../../diesel/result/enum.DatabaseErrorKind.html">DatabaseErrorKind</a>, <a href="../../../diesel/result/enum.Error.html">Error</a>};
+<a href=#25 id=25 data-nosnippet>25</a><span class="kw">use </span><a href="../../../diesel/sql_types/trait.TypeMetadata.html">diesel::sql_types::TypeMetadata</a>;
+<a href=#26 id=26 data-nosnippet>26</a><span class="kw">use </span>diesel::{<a href="../../../diesel/result/enum.ConnectionError.html">ConnectionError</a>, <a href="../../../diesel/result/type.ConnectionResult.html">ConnectionResult</a>, <a href="../../../diesel/result/type.QueryResult.html">QueryResult</a>};
+<a href=#27 id=27 data-nosnippet>27</a><span class="kw">use </span><a href="../../../futures_core/future/type.BoxFuture.html">futures_core::future::BoxFuture</a>;
+<a href=#28 id=28 data-nosnippet>28</a><span class="kw">use </span><a href="../../../futures_core/stream/type.BoxStream.html">futures_core::stream::BoxStream</a>;
+<a href=#29 id=29 data-nosnippet>29</a><span class="kw">use </span><a href="../../../futures_util/future/try_future/trait.TryFutureExt.html">futures_util::TryFutureExt</a>;
+<a href=#30 id=30 data-nosnippet>30</a><span class="kw">use </span><a href="../../../futures_util/future/either/enum.Either.html">futures_util::future::Either</a>;
+<a href=#31 id=31 data-nosnippet>31</a><span class="kw">use </span><a href="../../../futures_util/stream/try_stream/trait.TryStreamExt.html">futures_util::stream::TryStreamExt</a>;
+<a href=#32 id=32 data-nosnippet>32</a><span class="kw">use </span>futures_util::{<a href="../../../futures_util/future/future/trait.FutureExt.html">FutureExt</a>, <a href="../../../futures_util/stream/stream/trait.StreamExt.html">StreamExt</a>};
+<a href=#33 id=33 data-nosnippet>33</a><span class="kw">use </span>std::collections::{<a href="https://doc.rust-lang.org/nightly/std/collections/hash/map/struct.HashMap.html">HashMap</a>, <a href="https://doc.rust-lang.org/nightly/std/collections/hash/set/struct.HashSet.html">HashSet</a>};
+<a href=#34 id=34 data-nosnippet>34</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/core/future/future/trait.Future.html">std::future::Future</a>;
+<a href=#35 id=35 data-nosnippet>35</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html">std::sync::Arc</a>;
+<a href=#36 id=36 data-nosnippet>36</a><span class="kw">use </span>tokio::sync::{<a href="../../../tokio/sync/mutex/struct.Mutex.html">Mutex</a>, <a href="../../../tokio/sync/broadcast/index.html">broadcast</a>, <a href="../../../tokio/sync/mpsc/index.html">mpsc</a>, <a href="../../../tokio/sync/oneshot/index.html">oneshot</a>};
+<a href=#37 id=37 data-nosnippet>37</a><span class="kw">use </span><a href="../../../tokio_postgres/statement/struct.Statement.html">tokio_postgres::Statement</a>;
+<a href=#38 id=38 data-nosnippet>38</a><span class="kw">use </span><a href="../../../postgres_types/trait.ToSql.html">tokio_postgres::types::ToSql</a>;
+<a href=#39 id=39 data-nosnippet>39</a><span class="kw">use </span><a href="../../../postgres_types/struct.Type.html">tokio_postgres::types::Type</a>;
+<a href=#40 id=40 data-nosnippet>40</a>
+<a href=#41 id=41 data-nosnippet>41</a><span class="kw">pub use </span><a href="transaction_builder.rs.html#19-24"><span class="self">self</span>::transaction_builder::TransactionBuilder</a>;
+<a href=#42 id=42 data-nosnippet>42</a>
+<a href=#43 id=43 data-nosnippet>43</a><span class="kw">mod </span><a href="error_helper.rs.html#1-101">error_helper</a>;
+<a href=#44 id=44 data-nosnippet>44</a><span class="kw">mod </span><a href="row.rs.html#1-107">row</a>;
+<a href=#45 id=45 data-nosnippet>45</a><span class="kw">mod </span><a href="serialize.rs.html#1-45">serialize</a>;
+<a href=#46 id=46 data-nosnippet>46</a><span class="kw">mod </span><a href="transaction_builder.rs.html#1-441">transaction_builder</a>;
+<a href=#47 id=47 data-nosnippet>47</a>
+<a href=#48 id=48 data-nosnippet>48</a><span class="kw">const </span>FAKE_OID: <a href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a> = <span class="number">0</span>;
+<a href=#49 id=49 data-nosnippet>49</a>
+<a href=#50 id=50 data-nosnippet>50</a><span class="doccomment">/// A connection to a PostgreSQL database.
+<a href=#51 id=51 data-nosnippet>51</a>///
+<a href=#52 id=52 data-nosnippet>52</a>/// Connection URLs should be in the form
+<a href=#53 id=53 data-nosnippet>53</a>/// `postgres://[user[:password]@]host/database_name`
+<a href=#54 id=54 data-nosnippet>54</a>///
+<a href=#55 id=55 data-nosnippet>55</a>/// Checkout the documentation of the [tokio_postgres]
+<a href=#56 id=56 data-nosnippet>56</a>/// crate for details about the format
+<a href=#57 id=57 data-nosnippet>57</a>///
+<a href=#58 id=58 data-nosnippet>58</a>/// [tokio_postgres]: https://docs.rs/tokio-postgres/0.7.6/tokio_postgres/config/struct.Config.html#url
+<a href=#59 id=59 data-nosnippet>59</a>///
+<a href=#60 id=60 data-nosnippet>60</a>/// ## Pipelining
+<a href=#61 id=61 data-nosnippet>61</a>///
+<a href=#62 id=62 data-nosnippet>62</a>/// This connection supports *pipelined* requests. Pipelining can improve performance in use cases in which multiple,
+<a href=#63 id=63 data-nosnippet>63</a>/// independent queries need to be executed. In a traditional workflow, each query is sent to the server after the
+<a href=#64 id=64 data-nosnippet>64</a>/// previous query completes. In contrast, pipelining allows the client to send all of the queries to the server up
+<a href=#65 id=65 data-nosnippet>65</a>/// front, minimizing time spent by one side waiting for the other to finish sending data:
+<a href=#66 id=66 data-nosnippet>66</a>///
+<a href=#67 id=67 data-nosnippet>67</a>/// ```not_rust
+<a href=#68 id=68 data-nosnippet>68</a>///             Sequential                              Pipelined
+<a href=#69 id=69 data-nosnippet>69</a>/// | Client         | Server          |    | Client         | Server          |
+<a href=#70 id=70 data-nosnippet>70</a>/// |----------------|-----------------|    |----------------|-----------------|
+<a href=#71 id=71 data-nosnippet>71</a>/// | send query 1   |                 |    | send query 1   |                 |
+<a href=#72 id=72 data-nosnippet>72</a>/// |                | process query 1 |    | send query 2   | process query 1 |
+<a href=#73 id=73 data-nosnippet>73</a>/// | receive rows 1 |                 |    | send query 3   | process query 2 |
+<a href=#74 id=74 data-nosnippet>74</a>/// | send query 2   |                 |    | receive rows 1 | process query 3 |
+<a href=#75 id=75 data-nosnippet>75</a>/// |                | process query 2 |    | receive rows 2 |                 |
+<a href=#76 id=76 data-nosnippet>76</a>/// | receive rows 2 |                 |    | receive rows 3 |                 |
+<a href=#77 id=77 data-nosnippet>77</a>/// | send query 3   |                 |
+<a href=#78 id=78 data-nosnippet>78</a>/// |                | process query 3 |
+<a href=#79 id=79 data-nosnippet>79</a>/// | receive rows 3 |                 |
+<a href=#80 id=80 data-nosnippet>80</a>/// ```
+<a href=#81 id=81 data-nosnippet>81</a>///
+<a href=#82 id=82 data-nosnippet>82</a>/// In both cases, the PostgreSQL server is executing the queries **sequentially** - pipelining just allows both sides of
+<a href=#83 id=83 data-nosnippet>83</a>/// the connection to work concurrently when possible.
+<a href=#84 id=84 data-nosnippet>84</a>///
+<a href=#85 id=85 data-nosnippet>85</a>/// Pipelining happens automatically when futures are polled concurrently (for example, by using the futures `join`
+<a href=#86 id=86 data-nosnippet>86</a>/// combinator):
+<a href=#87 id=87 data-nosnippet>87</a>///
+<a href=#88 id=88 data-nosnippet>88</a>/// ```rust
+<a href=#89 id=89 data-nosnippet>89</a>/// # include!("../doctest_setup.rs");
+<a href=#90 id=90 data-nosnippet>90</a>/// use diesel_async::RunQueryDsl;
+<a href=#91 id=91 data-nosnippet>91</a>///
+<a href=#92 id=92 data-nosnippet>92</a>/// #
+<a href=#93 id=93 data-nosnippet>93</a>/// # #[tokio::main(flavor = "current_thread")]
+<a href=#94 id=94 data-nosnippet>94</a>/// # async fn main() {
+<a href=#95 id=95 data-nosnippet>95</a>/// #     run_test().await.unwrap();
+<a href=#96 id=96 data-nosnippet>96</a>/// # }
+<a href=#97 id=97 data-nosnippet>97</a>/// #
+<a href=#98 id=98 data-nosnippet>98</a>/// # async fn run_test() -&gt; QueryResult&lt;()&gt; {
+<a href=#99 id=99 data-nosnippet>99</a>/// #     use diesel::sql_types::{Text, Integer};
+<a href=#100 id=100 data-nosnippet>100</a>/// #     let conn = establish_connection().await;
+<a href=#101 id=101 data-nosnippet>101</a>///       let q1 = diesel::select(1_i32.into_sql::&lt;Integer&gt;());
+<a href=#102 id=102 data-nosnippet>102</a>///       let q2 = diesel::select(2_i32.into_sql::&lt;Integer&gt;());
+<a href=#103 id=103 data-nosnippet>103</a>///
+<a href=#104 id=104 data-nosnippet>104</a>///       // construct multiple futures for different queries
+<a href=#105 id=105 data-nosnippet>105</a>///       let f1 = q1.get_result::&lt;i32&gt;(&amp;mut &amp;conn);
+<a href=#106 id=106 data-nosnippet>106</a>///       let f2 = q2.get_result::&lt;i32&gt;(&amp;mut &amp;conn);
+<a href=#107 id=107 data-nosnippet>107</a>///
+<a href=#108 id=108 data-nosnippet>108</a>///       // wait on both results
+<a href=#109 id=109 data-nosnippet>109</a>///       let res = futures_util::try_join!(f1, f2)?;
+<a href=#110 id=110 data-nosnippet>110</a>///
+<a href=#111 id=111 data-nosnippet>111</a>///       assert_eq!(res.0, 1);
+<a href=#112 id=112 data-nosnippet>112</a>///       assert_eq!(res.1, 2);
+<a href=#113 id=113 data-nosnippet>113</a>///       # Ok(())
+<a href=#114 id=114 data-nosnippet>114</a>/// # }
+<a href=#115 id=115 data-nosnippet>115</a>/// ```
+<a href=#116 id=116 data-nosnippet>116</a>///
+<a href=#117 id=117 data-nosnippet>117</a>/// For more complex cases, an immutable reference to the connection need to be used:
+<a href=#118 id=118 data-nosnippet>118</a>/// ```rust
+<a href=#119 id=119 data-nosnippet>119</a>/// # include!("../doctest_setup.rs");
+<a href=#120 id=120 data-nosnippet>120</a>/// use diesel_async::RunQueryDsl;
+<a href=#121 id=121 data-nosnippet>121</a>///
+<a href=#122 id=122 data-nosnippet>122</a>/// #
+<a href=#123 id=123 data-nosnippet>123</a>/// # #[tokio::main(flavor = "current_thread")]
+<a href=#124 id=124 data-nosnippet>124</a>/// # async fn main() {
+<a href=#125 id=125 data-nosnippet>125</a>/// #     run_test().await.unwrap();
+<a href=#126 id=126 data-nosnippet>126</a>/// # }
+<a href=#127 id=127 data-nosnippet>127</a>/// #
+<a href=#128 id=128 data-nosnippet>128</a>/// # async fn run_test() -&gt; QueryResult&lt;()&gt; {
+<a href=#129 id=129 data-nosnippet>129</a>/// #     use diesel::sql_types::{Text, Integer};
+<a href=#130 id=130 data-nosnippet>130</a>/// #     let conn = &amp;mut establish_connection().await;
+<a href=#131 id=131 data-nosnippet>131</a>/// #
+<a href=#132 id=132 data-nosnippet>132</a>///       async fn fn12(mut conn: &amp;AsyncPgConnection) -&gt; QueryResult&lt;(i32, i32)&gt; {
+<a href=#133 id=133 data-nosnippet>133</a>///           let f1 = diesel::select(1_i32.into_sql::&lt;Integer&gt;()).get_result::&lt;i32&gt;(&amp;mut conn);
+<a href=#134 id=134 data-nosnippet>134</a>///           let f2 = diesel::select(2_i32.into_sql::&lt;Integer&gt;()).get_result::&lt;i32&gt;(&amp;mut conn);
+<a href=#135 id=135 data-nosnippet>135</a>///
+<a href=#136 id=136 data-nosnippet>136</a>///           futures_util::try_join!(f1, f2)
+<a href=#137 id=137 data-nosnippet>137</a>///       }
+<a href=#138 id=138 data-nosnippet>138</a>///
+<a href=#139 id=139 data-nosnippet>139</a>///       async fn fn34(mut conn: &amp;AsyncPgConnection) -&gt; QueryResult&lt;(i32, i32)&gt; {
+<a href=#140 id=140 data-nosnippet>140</a>///           let f3 = diesel::select(3_i32.into_sql::&lt;Integer&gt;()).get_result::&lt;i32&gt;(&amp;mut conn);
+<a href=#141 id=141 data-nosnippet>141</a>///           let f4 = diesel::select(4_i32.into_sql::&lt;Integer&gt;()).get_result::&lt;i32&gt;(&amp;mut conn);
+<a href=#142 id=142 data-nosnippet>142</a>///
+<a href=#143 id=143 data-nosnippet>143</a>///           futures_util::try_join!(f3, f4)
+<a href=#144 id=144 data-nosnippet>144</a>///       }
+<a href=#145 id=145 data-nosnippet>145</a>///
+<a href=#146 id=146 data-nosnippet>146</a>///       let f12 = fn12(&amp;conn);
+<a href=#147 id=147 data-nosnippet>147</a>///       let f34 = fn34(&amp;conn);
+<a href=#148 id=148 data-nosnippet>148</a>///
+<a href=#149 id=149 data-nosnippet>149</a>///       let ((r1, r2), (r3, r4)) = futures_util::try_join!(f12, f34).unwrap();
+<a href=#150 id=150 data-nosnippet>150</a>///
+<a href=#151 id=151 data-nosnippet>151</a>///       assert_eq!(r1, 1);
+<a href=#152 id=152 data-nosnippet>152</a>///       assert_eq!(r2, 2);
+<a href=#153 id=153 data-nosnippet>153</a>///       assert_eq!(r3, 3);
+<a href=#154 id=154 data-nosnippet>154</a>///       assert_eq!(r4, 4);
+<a href=#155 id=155 data-nosnippet>155</a>///       # Ok(())
+<a href=#156 id=156 data-nosnippet>156</a>/// # }
+<a href=#157 id=157 data-nosnippet>157</a>/// ```
+<a href=#158 id=158 data-nosnippet>158</a>///
+<a href=#159 id=159 data-nosnippet>159</a>/// ## TLS
+<a href=#160 id=160 data-nosnippet>160</a>///
+<a href=#161 id=161 data-nosnippet>161</a>/// Connections created by [`AsyncPgConnection::establish`] do not support TLS.
+<a href=#162 id=162 data-nosnippet>162</a>///
+<a href=#163 id=163 data-nosnippet>163</a>/// TLS support for tokio_postgres connections is implemented by external crates, e.g. [tokio_postgres_rustls].
+<a href=#164 id=164 data-nosnippet>164</a>///
+<a href=#165 id=165 data-nosnippet>165</a>/// [`AsyncPgConnection::try_from_client_and_connection`] can be used to construct a connection from an existing
+<a href=#166 id=166 data-nosnippet>166</a>/// [`tokio_postgres::Connection`] with TLS enabled.
+<a href=#167 id=167 data-nosnippet>167</a>///
+<a href=#168 id=168 data-nosnippet>168</a>/// [tokio_postgres_rustls]: https://docs.rs/tokio-postgres-rustls/0.12.0/tokio_postgres_rustls/
+<a href=#169 id=169 data-nosnippet>169</a></span><span class="kw">pub struct </span><a href="../../../diesel_async/struct.AsyncPgConnection.html">AsyncPgConnection</a> {
+<a href=#170 id=170 data-nosnippet>170</a>    conn: tokio_postgres::<a href="../../../tokio_postgres/client/struct.Client.html">Client</a>,
+<a href=#171 id=171 data-nosnippet>171</a>    stmt_cache: <a href="../../../tokio/sync/mutex/struct.Mutex.html">Mutex</a>&lt;<a href="../../../diesel/connection/statement_cache/struct.StatementCache.html">StatementCache</a>&lt;diesel::pg::<a href="../../../diesel/pg/backend/struct.Pg.html">Pg</a>, <a href="../stmt_cache.rs.html#57">StatementHelper</a>&lt;<a href="../../../tokio_postgres/statement/struct.Statement.html">Statement</a>&gt;&gt;&gt;,
+<a href=#172 id=172 data-nosnippet>172</a>    transaction_state: <a href="../../../tokio/sync/mutex/struct.Mutex.html">Mutex</a>&lt;<a href="../transaction_manager.rs.html#170-192">AnsiTransactionManager</a>&gt;,
+<a href=#173 id=173 data-nosnippet>173</a>    metadata_cache: <a href="../../../tokio/sync/mutex/struct.Mutex.html">Mutex</a>&lt;<a href="../../../diesel/pg/metadata_lookup/struct.PgMetadataCache.html">PgMetadataCache</a>&gt;,
+<a href=#174 id=174 data-nosnippet>174</a>    connection_future: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;broadcast::<a href="../../../tokio/sync/broadcast/struct.Receiver.html">Receiver</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html">Arc</a>&lt;tokio_postgres::<a href="../../../tokio_postgres/error/struct.Error.html">Error</a>&gt;&gt;&gt;,
+<a href=#175 id=175 data-nosnippet>175</a>    notification_rx: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;mpsc::<a href="../../../tokio/sync/mpsc/unbounded/struct.UnboundedReceiver.html">UnboundedReceiver</a>&lt;<a href="../../../diesel/result/type.QueryResult.html">QueryResult</a>&lt;diesel::pg::<a href="../../../diesel/pg/backend/struct.PgNotification.html">PgNotification</a>&gt;&gt;&gt;,
+<a href=#176 id=176 data-nosnippet>176</a>    shutdown_channel: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;oneshot::<a href="../../../tokio/sync/oneshot/struct.Sender.html">Sender</a>&lt;()&gt;&gt;,
+<a href=#177 id=177 data-nosnippet>177</a>    <span class="comment">// a sync mutex is fine here as we only hold it for a really short time
+<a href=#178 id=178 data-nosnippet>178</a>    </span>instrumentation: <a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html">Arc</a>&lt;std::sync::<a href="https://doc.rust-lang.org/nightly/std/sync/poison/mutex/struct.Mutex.html">Mutex</a>&lt;<a href="../../../diesel/connection/instrumentation/struct.DynInstrumentation.html">DynInstrumentation</a>&gt;&gt;,
+<a href=#179 id=179 data-nosnippet>179</a>}
+<a href=#180 id=180 data-nosnippet>180</a>
+<a href=#181 id=181 data-nosnippet>181</a><span class="kw">impl </span><a href="../lib.rs.html#159-165">SimpleAsyncConnection</a> <span class="kw">for </span><a href="#169-179">AsyncPgConnection</a> {
+<a href=#182 id=182 data-nosnippet>182</a>    <span class="kw">async fn </span>batch_execute(<span class="kw-2">&amp;mut </span><span class="self">self</span>, query: <span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>) -&gt; QueryResult&lt;()&gt; {
+<a href=#183 id=183 data-nosnippet>183</a>        SimpleAsyncConnection::batch_execute(<span class="kw-2">&amp;mut &amp;*</span><span class="self">self</span>, query).<span class="kw">await
+<a href=#184 id=184 data-nosnippet>184</a>    </span>}
+<a href=#185 id=185 data-nosnippet>185</a>}
+<a href=#186 id=186 data-nosnippet>186</a>
+<a href=#187 id=187 data-nosnippet>187</a><span class="kw">impl </span><a href="../lib.rs.html#159-165">SimpleAsyncConnection</a> <span class="kw">for </span><span class="kw-2">&amp;</span><a href="#169-179">AsyncPgConnection</a> {
+<a href=#188 id=188 data-nosnippet>188</a>    <span class="kw">async fn </span>batch_execute(<span class="kw-2">&amp;mut </span><span class="self">self</span>, query: <span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>) -&gt; QueryResult&lt;()&gt; {
+<a href=#189 id=189 data-nosnippet>189</a>        <span class="self">self</span>.record_instrumentation(InstrumentationEvent::start_query(<span class="kw-2">&amp;</span>StrQueryHelper::new(
+<a href=#190 id=190 data-nosnippet>190</a>            query,
+<a href=#191 id=191 data-nosnippet>191</a>        )));
+<a href=#192 id=192 data-nosnippet>192</a>        <span class="kw">let </span>connection_future = <span class="self">self</span>.connection_future.as_ref().map(|rx| rx.resubscribe());
+<a href=#193 id=193 data-nosnippet>193</a>        <span class="kw">let </span>batch_execute = <span class="self">self
+<a href=#194 id=194 data-nosnippet>194</a>            </span>.conn
+<a href=#195 id=195 data-nosnippet>195</a>            .batch_execute(query)
+<a href=#196 id=196 data-nosnippet>196</a>            .map_err(ErrorHelper)
+<a href=#197 id=197 data-nosnippet>197</a>            .map_err(Into::into);
+<a href=#198 id=198 data-nosnippet>198</a>
+<a href=#199 id=199 data-nosnippet>199</a>        <span class="kw">let </span>r = drive_future(connection_future, batch_execute).<span class="kw">await</span>;
+<a href=#200 id=200 data-nosnippet>200</a>        <span class="kw">let </span>r = {
+<a href=#201 id=201 data-nosnippet>201</a>            <span class="kw">let </span><span class="kw-2">mut </span>transaction_manager = <span class="self">self</span>.transaction_state.lock().<span class="kw">await</span>;
+<a href=#202 id=202 data-nosnippet>202</a>            update_transaction_manager_status(r, <span class="kw-2">&amp;mut </span>transaction_manager)
+<a href=#203 id=203 data-nosnippet>203</a>        };
+<a href=#204 id=204 data-nosnippet>204</a>        <span class="self">self</span>.record_instrumentation(InstrumentationEvent::finish_query(
+<a href=#205 id=205 data-nosnippet>205</a>            <span class="kw-2">&amp;</span>StrQueryHelper::new(query),
+<a href=#206 id=206 data-nosnippet>206</a>            r.as_ref().err(),
+<a href=#207 id=207 data-nosnippet>207</a>        ));
+<a href=#208 id=208 data-nosnippet>208</a>        r
+<a href=#209 id=209 data-nosnippet>209</a>    }
+<a href=#210 id=210 data-nosnippet>210</a>}
+<a href=#211 id=211 data-nosnippet>211</a>
+<a href=#212 id=212 data-nosnippet>212</a><span class="kw">impl </span><a href="../lib.rs.html#168-204">AsyncConnectionCore</a> <span class="kw">for </span><a href="#169-179">AsyncPgConnection</a> {
+<a href=#213 id=213 data-nosnippet>213</a>    <span class="comment">// The returned future must not outlive the connection it borrows.
+<a href=#214 id=214 data-nosnippet>214</a>    </span><span class="kw">type </span>LoadFuture&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>&gt; = <a href="../../../futures_core/future/type.BoxFuture.html">BoxFuture</a>&lt;<span class="lifetime">'conn</span>, <a href="../../../diesel/result/type.QueryResult.html">QueryResult</a>&lt;<span class="self">Self</span>::Stream&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>&gt;&gt;&gt;;
+<a href=#215 id=215 data-nosnippet>215</a>    <span class="kw">type </span>ExecuteFuture&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>&gt; = <a href="../../../futures_core/future/type.BoxFuture.html">BoxFuture</a>&lt;<span class="lifetime">'conn</span>, <a href="../../../diesel/result/type.QueryResult.html">QueryResult</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>&gt;&gt;;
+<a href=#216 id=216 data-nosnippet>216</a>    <span class="kw">type </span>Stream&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>&gt; = <a href="../../../futures_core/stream/type.BoxStream.html">BoxStream</a>&lt;<span class="lifetime">'static</span>, <a href="../../../diesel/result/type.QueryResult.html">QueryResult</a>&lt;<a href="row.rs.html#6-8">PgRow</a>&gt;&gt;;
+<a href=#217 id=217 data-nosnippet>217</a>    <span class="kw">type </span>Row&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>&gt; = <a href="row.rs.html#6-8">PgRow</a>;
+<a href=#218 id=218 data-nosnippet>218</a>    <span class="kw">type </span>Backend = diesel::pg::<a href="../../../diesel/pg/backend/struct.Pg.html">Pg</a>;
+<a href=#219 id=219 data-nosnippet>219</a>
+<a href=#220 id=220 data-nosnippet>220</a>    <span class="kw">fn </span>load&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>, T&gt;(<span class="kw-2">&amp;</span><span class="lifetime">'conn </span><span class="kw-2">mut </span><span class="self">self</span>, source: T) -&gt; <span class="self">Self</span>::LoadFuture&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>&gt;
+<a href=#221 id=221 data-nosnippet>221</a>    <span class="kw">where
+<a href=#222 id=222 data-nosnippet>222</a>        </span>T: <a href="../../../diesel/query_builder/trait.AsQuery.html">AsQuery</a> + <span class="lifetime">'query</span>,
+<a href=#223 id=223 data-nosnippet>223</a>        T::Query: <a href="../../../diesel/query_builder/trait.QueryFragment.html">QueryFragment</a>&lt;<span class="self">Self</span>::Backend&gt; + <a href="../../../diesel/query_builder/query_id/trait.QueryId.html">QueryId</a> + <span class="lifetime">'query</span>,
+<a href=#224 id=224 data-nosnippet>224</a>    {
+<a href=#225 id=225 data-nosnippet>225</a>        <span class="kw">let </span>query = <a href="#220">source</a>.<a href="../../../diesel/query_builder/trait.AsQuery.html#tymethod.as_query">as_query</a>();
+<a href=#226 id=226 data-nosnippet>226</a>        <span class="kw">let </span>load_future = <a class="self" href="#220">self</a>.<a href="#549-582">with_prepared_statement</a>(<a href="#225">query</a>, <a href="#341-352">load_prepared</a>);
+<a href=#227 id=227 data-nosnippet>227</a>
+<a href=#228 id=228 data-nosnippet>228</a>        <a class="self" href="#220">self</a>.<a href="#541-547">run_with_connection_future</a>(<a href="#226">load_future</a>)
+<a href=#229 id=229 data-nosnippet>229</a>    }
+<a href=#230 id=230 data-nosnippet>230</a>
+<a href=#231 id=231 data-nosnippet>231</a>    <span class="kw">fn </span>execute_returning_count&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>, T&gt;(
+<a href=#232 id=232 data-nosnippet>232</a>        <span class="kw-2">&amp;</span><span class="lifetime">'conn </span><span class="kw-2">mut </span><span class="self">self</span>,
+<a href=#233 id=233 data-nosnippet>233</a>        source: T,
+<a href=#234 id=234 data-nosnippet>234</a>    ) -&gt; <span class="self">Self</span>::ExecuteFuture&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>&gt;
+<a href=#235 id=235 data-nosnippet>235</a>    <span class="kw">where
+<a href=#236 id=236 data-nosnippet>236</a>        </span>T: <a href="../../../diesel/query_builder/trait.QueryFragment.html">QueryFragment</a>&lt;<span class="self">Self</span>::Backend&gt; + <a href="../../../diesel/query_builder/query_id/trait.QueryId.html">QueryId</a> + <span class="lifetime">'query</span>,
+<a href=#237 id=237 data-nosnippet>237</a>    {
+<a href=#238 id=238 data-nosnippet>238</a>        <span class="kw">let </span>execute = <a class="self" href="#232">self</a>.<a href="#549-582">with_prepared_statement</a>(<a href="#233">source</a>, <a href="#354-369">execute_prepared</a>);
+<a href=#239 id=239 data-nosnippet>239</a>        <a class="self" href="#232">self</a>.<a href="#541-547">run_with_connection_future</a>(<a href="#238">execute</a>)
+<a href=#240 id=240 data-nosnippet>240</a>    }
+<a href=#241 id=241 data-nosnippet>241</a>}
+<a href=#242 id=242 data-nosnippet>242</a>
+<a href=#243 id=243 data-nosnippet>243</a><span class="comment">// Enable query pipelining via shared references while binding futures
+<a href=#244 id=244 data-nosnippet>244</a>// to the lifetime of the borrowed connection.
+<a href=#245 id=245 data-nosnippet>245</a></span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; <a href="../lib.rs.html#168-204">AsyncConnectionCore</a> <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">'a </span><a href="#169-179">AsyncPgConnection</a> {
+<a href=#246 id=246 data-nosnippet>246</a>    <span class="kw">type </span>LoadFuture&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>&gt; = <a href="../../../futures_core/future/type.BoxFuture.html">BoxFuture</a>&lt;<span class="lifetime">'a</span>, <a href="../../../diesel/result/type.QueryResult.html">QueryResult</a>&lt;<span class="self">Self</span>::Stream&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>&gt;&gt;&gt;;
+<a href=#247 id=247 data-nosnippet>247</a>    <span class="kw">type </span>ExecuteFuture&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>&gt; = <a href="../../../futures_core/future/type.BoxFuture.html">BoxFuture</a>&lt;<span class="lifetime">'a</span>, <a href="../../../diesel/result/type.QueryResult.html">QueryResult</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>&gt;&gt;;
+<a href=#248 id=248 data-nosnippet>248</a>    <span class="kw">type </span>Stream&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>&gt; = <a href="../../../futures_core/stream/type.BoxStream.html">BoxStream</a>&lt;<span class="lifetime">'static</span>, <a href="../../../diesel/result/type.QueryResult.html">QueryResult</a>&lt;<a href="row.rs.html#6-8">PgRow</a>&gt;&gt;;
+<a href=#249 id=249 data-nosnippet>249</a>    <span class="kw">type </span>Row&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>&gt; = <a href="row.rs.html#6-8">PgRow</a>;
+<a href=#250 id=250 data-nosnippet>250</a>    <span class="kw">type </span>Backend = diesel::pg::<a href="../../../diesel/pg/backend/struct.Pg.html">Pg</a>;
+<a href=#251 id=251 data-nosnippet>251</a>
+<a href=#252 id=252 data-nosnippet>252</a>    <span class="kw">fn </span>load&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>, T&gt;(<span class="kw-2">&amp;</span><span class="lifetime">'conn </span><span class="kw-2">mut </span><span class="self">self</span>, source: T) -&gt; <span class="self">Self</span>::LoadFuture&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>&gt;
+<a href=#253 id=253 data-nosnippet>253</a>    <span class="kw">where
+<a href=#254 id=254 data-nosnippet>254</a>        </span>T: <a href="../../../diesel/query_builder/trait.AsQuery.html">AsQuery</a> + <span class="lifetime">'query</span>,
+<a href=#255 id=255 data-nosnippet>255</a>        T::Query: <a href="../../../diesel/query_builder/trait.QueryFragment.html">QueryFragment</a>&lt;<span class="self">Self</span>::Backend&gt; + <a href="../../../diesel/query_builder/query_id/trait.QueryId.html">QueryId</a> + <span class="lifetime">'query</span>,
+<a href=#256 id=256 data-nosnippet>256</a>    {
+<a href=#257 id=257 data-nosnippet>257</a>        <span class="kw">let </span>query = <a href="#252">source</a>.<a href="../../../diesel/query_builder/trait.AsQuery.html#tymethod.as_query">as_query</a>();
+<a href=#258 id=258 data-nosnippet>258</a>        <span class="kw">let </span>load_future = <a class="self" href="#252">self</a>.<a href="#549-582">with_prepared_statement</a>(<a href="#257">query</a>, <a href="#341-352">load_prepared</a>);
+<a href=#259 id=259 data-nosnippet>259</a>
+<a href=#260 id=260 data-nosnippet>260</a>        <a class="self" href="#252">self</a>.<a href="#541-547">run_with_connection_future</a>(<a href="#258">load_future</a>)
+<a href=#261 id=261 data-nosnippet>261</a>    }
+<a href=#262 id=262 data-nosnippet>262</a>
+<a href=#263 id=263 data-nosnippet>263</a>    <span class="kw">fn </span>execute_returning_count&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>, T&gt;(
+<a href=#264 id=264 data-nosnippet>264</a>        <span class="kw-2">&amp;</span><span class="lifetime">'conn </span><span class="kw-2">mut </span><span class="self">self</span>,
+<a href=#265 id=265 data-nosnippet>265</a>        source: T,
+<a href=#266 id=266 data-nosnippet>266</a>    ) -&gt; <span class="self">Self</span>::ExecuteFuture&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>&gt;
+<a href=#267 id=267 data-nosnippet>267</a>    <span class="kw">where
+<a href=#268 id=268 data-nosnippet>268</a>        </span>T: <a href="../../../diesel/query_builder/trait.QueryFragment.html">QueryFragment</a>&lt;<span class="self">Self</span>::Backend&gt; + <a href="../../../diesel/query_builder/query_id/trait.QueryId.html">QueryId</a> + <span class="lifetime">'query</span>,
+<a href=#269 id=269 data-nosnippet>269</a>    {
+<a href=#270 id=270 data-nosnippet>270</a>        <span class="kw">let </span>execute = <a class="self" href="#264">self</a>.<a href="#549-582">with_prepared_statement</a>(<a href="#265">source</a>, <a href="#354-369">execute_prepared</a>);
+<a href=#271 id=271 data-nosnippet>271</a>        <a class="self" href="#264">self</a>.<a href="#541-547">run_with_connection_future</a>(<a href="#270">execute</a>)
+<a href=#272 id=272 data-nosnippet>272</a>    }
+<a href=#273 id=273 data-nosnippet>273</a>}
+<a href=#274 id=274 data-nosnippet>274</a>
+<a href=#275 id=275 data-nosnippet>275</a><span class="kw">impl </span><a href="../lib.rs.html#211-419">AsyncConnection</a> <span class="kw">for </span><a href="#169-179">AsyncPgConnection</a> {
+<a href=#276 id=276 data-nosnippet>276</a>    <span class="kw">type </span>TransactionManager = <a href="../transaction_manager.rs.html#170-192">AnsiTransactionManager</a>;
+<a href=#277 id=277 data-nosnippet>277</a>
+<a href=#278 id=278 data-nosnippet>278</a>    <span class="kw">async fn </span>establish(database_url: <span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>) -&gt; ConnectionResult&lt;<span class="self">Self</span>&gt; {
+<a href=#279 id=279 data-nosnippet>279</a>        <span class="kw">let </span><span class="kw-2">mut </span>instrumentation = DynInstrumentation::default_instrumentation();
+<a href=#280 id=280 data-nosnippet>280</a>        instrumentation.on_connection_event(InstrumentationEvent::start_establish_connection(
+<a href=#281 id=281 data-nosnippet>281</a>            database_url,
+<a href=#282 id=282 data-nosnippet>282</a>        ));
+<a href=#283 id=283 data-nosnippet>283</a>        <span class="kw">let </span>instrumentation = Arc::new(std::sync::Mutex::new(instrumentation));
+<a href=#284 id=284 data-nosnippet>284</a>        <span class="kw">let </span>(client, connection) = tokio_postgres::connect(database_url, tokio_postgres::NoTls)
+<a href=#285 id=285 data-nosnippet>285</a>            .<span class="kw">await
+<a href=#286 id=286 data-nosnippet>286</a>            </span>.map_err(ErrorHelper)<span class="question-mark">?</span>;
+<a href=#287 id=287 data-nosnippet>287</a>
+<a href=#288 id=288 data-nosnippet>288</a>        <span class="kw">let </span>(error_rx, notification_rx, shutdown_tx) = drive_connection(connection);
+<a href=#289 id=289 data-nosnippet>289</a>
+<a href=#290 id=290 data-nosnippet>290</a>        <span class="kw">let </span>r = <span class="self">Self</span>::setup(
+<a href=#291 id=291 data-nosnippet>291</a>            client,
+<a href=#292 id=292 data-nosnippet>292</a>            <span class="prelude-val">Some</span>(error_rx),
+<a href=#293 id=293 data-nosnippet>293</a>            <span class="prelude-val">Some</span>(notification_rx),
+<a href=#294 id=294 data-nosnippet>294</a>            <span class="prelude-val">Some</span>(shutdown_tx),
+<a href=#295 id=295 data-nosnippet>295</a>            Arc::clone(<span class="kw-2">&amp;</span>instrumentation),
+<a href=#296 id=296 data-nosnippet>296</a>        )
+<a href=#297 id=297 data-nosnippet>297</a>        .<span class="kw">await</span>;
+<a href=#298 id=298 data-nosnippet>298</a>
+<a href=#299 id=299 data-nosnippet>299</a>        instrumentation
+<a href=#300 id=300 data-nosnippet>300</a>            .lock()
+<a href=#301 id=301 data-nosnippet>301</a>            .unwrap_or_else(|e| e.into_inner())
+<a href=#302 id=302 data-nosnippet>302</a>            .on_connection_event(InstrumentationEvent::finish_establish_connection(
+<a href=#303 id=303 data-nosnippet>303</a>                database_url,
+<a href=#304 id=304 data-nosnippet>304</a>                r.as_ref().err(),
+<a href=#305 id=305 data-nosnippet>305</a>            ));
+<a href=#306 id=306 data-nosnippet>306</a>        r
+<a href=#307 id=307 data-nosnippet>307</a>    }
+<a href=#308 id=308 data-nosnippet>308</a>
+<a href=#309 id=309 data-nosnippet>309</a>    <span class="kw">fn </span>transaction_state(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span><a href="../transaction_manager.rs.html#170-192">AnsiTransactionManager</a> {
+<a href=#310 id=310 data-nosnippet>310</a>        <a class="self" href="#309">self</a>.transaction_state.<a href="../../../tokio/sync/mutex/struct.Mutex.html#method.get_mut">get_mut</a>()
+<a href=#311 id=311 data-nosnippet>311</a>    }
+<a href=#312 id=312 data-nosnippet>312</a>
+<a href=#313 id=313 data-nosnippet>313</a>    <span class="kw">fn </span>instrumentation(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span><span class="kw">dyn </span><a href="../../../diesel/connection/instrumentation/trait.Instrumentation.html">Instrumentation</a> {
+<a href=#314 id=314 data-nosnippet>314</a>        <span class="comment">// there should be no other pending future when this is called
+<a href=#315 id=315 data-nosnippet>315</a>        // that means there is only one instance of this arc and
+<a href=#316 id=316 data-nosnippet>316</a>        // we can simply access the inner data
+<a href=#317 id=317 data-nosnippet>317</a>        </span><span class="kw">if let </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(instrumentation) = <a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html">Arc</a>::<a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html#method.get_mut">get_mut</a>(<span class="kw-2">&amp;mut </span><a class="self" href="#313">self</a>.instrumentation) {
+<a href=#318 id=318 data-nosnippet>318</a>            <span class="kw-2">&amp;mut **</span>(<a href="#317">instrumentation</a>.<a href="https://doc.rust-lang.org/nightly/std/sync/poison/mutex/struct.Mutex.html#method.get_mut">get_mut</a>().<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.unwrap_or_else">unwrap_or_else</a>(|p| <a href="#318">p</a>.<a href="https://doc.rust-lang.org/nightly/std/sync/poison/struct.PoisonError.html#method.into_inner">into_inner</a>()))
+<a href=#319 id=319 data-nosnippet>319</a>        } <span class="kw">else </span>{
+<a href=#320 id=320 data-nosnippet>320</a><span class="expansion"><input id=expand-320 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">            <span class=expanded>{
+    ::core::panicking::panic_fmt(<span class="macro">format_args!</span>(<span class="string">"Cannot access shared instrumentation"</span>));
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/std/macro.panic.html">panic!</a>(<span class="string">"Cannot access shared instrumentation"</span>)</span></span>
+<a href=#321 id=321 data-nosnippet>321</a>        }
+<a href=#322 id=322 data-nosnippet>322</a>    }
+<a href=#323 id=323 data-nosnippet>323</a>
+<a href=#324 id=324 data-nosnippet>324</a>    <span class="kw">fn </span>set_instrumentation(<span class="kw-2">&amp;mut </span><span class="self">self</span>, instrumentation: <span class="kw">impl </span><a href="../../../diesel/connection/instrumentation/trait.Instrumentation.html">Instrumentation</a>) {
+<a href=#325 id=325 data-nosnippet>325</a>        <a class="self" href="#324">self</a>.instrumentation = <a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html">Arc</a>::<a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html#method.new">new</a>(std::sync::<a href="https://doc.rust-lang.org/nightly/std/sync/poison/mutex/struct.Mutex.html">Mutex</a>::<a href="https://doc.rust-lang.org/nightly/std/sync/poison/mutex/struct.Mutex.html#method.new">new</a>(<a href="#324">instrumentation</a>.<a href="https://doc.rust-lang.org/nightly/core/convert/trait.Into.html#tymethod.into">into</a>()));
+<a href=#326 id=326 data-nosnippet>326</a>    }
+<a href=#327 id=327 data-nosnippet>327</a>
+<a href=#328 id=328 data-nosnippet>328</a>    <span class="kw">fn </span>set_prepared_statement_cache_size(<span class="kw-2">&amp;mut </span><span class="self">self</span>, size: <a href="../../../diesel/connection/enum.CacheSize.html">CacheSize</a>) {
+<a href=#329 id=329 data-nosnippet>329</a>        <a class="self" href="#328">self</a>.stmt_cache.<a href="../../../tokio/sync/mutex/struct.Mutex.html#method.get_mut">get_mut</a>().<a href="../../../diesel/connection/statement_cache/struct.StatementCache.html#method.set_cache_size">set_cache_size</a>(<a href="#328">size</a>)
+<a href=#330 id=330 data-nosnippet>330</a>    }
+<a href=#331 id=331 data-nosnippet>331</a>}
+<a href=#332 id=332 data-nosnippet>332</a>
+<a href=#333 id=333 data-nosnippet>333</a><span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/ops/drop/trait.Drop.html">Drop</a> <span class="kw">for </span><a href="#169-179">AsyncPgConnection</a> {
+<a href=#334 id=334 data-nosnippet>334</a>    <span class="kw">fn </span>drop(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
+<a href=#335 id=335 data-nosnippet>335</a>        <span class="kw">if let </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(tx) = <a class="self" href="#334">self</a>.shutdown_channel.<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.take">take</a>() {
+<a href=#336 id=336 data-nosnippet>336</a>            <span class="kw">let _ </span>= <a href="#335">tx</a>.<a href="../../../tokio/sync/oneshot/struct.Sender.html#method.send">send</a>(());
+<a href=#337 id=337 data-nosnippet>337</a>        }
+<a href=#338 id=338 data-nosnippet>338</a>    }
+<a href=#339 id=339 data-nosnippet>339</a>}
+<a href=#340 id=340 data-nosnippet>340</a>
+<a href=#341 id=341 data-nosnippet>341</a><span class="kw">async fn </span>load_prepared(
+<a href=#342 id=342 data-nosnippet>342</a>    conn: <span class="kw-2">&amp;</span>tokio_postgres::<a href="../../../tokio_postgres/client/struct.Client.html">Client</a>,
+<a href=#343 id=343 data-nosnippet>343</a>    stmt: <a href="../../../tokio_postgres/statement/struct.Statement.html">Statement</a>,
+<a href=#344 id=344 data-nosnippet>344</a>    binds: <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="serialize.rs.html#5">ToSqlHelper</a>&gt;,
+<a href=#345 id=345 data-nosnippet>345</a>) -&gt; QueryResult&lt;BoxStream&lt;<span class="lifetime">'static</span>, QueryResult&lt;PgRow&gt;&gt;&gt; {
+<a href=#346 id=346 data-nosnippet>346</a>    <span class="kw">let </span>res = conn.query_raw(<span class="kw-2">&amp;</span>stmt, binds).<span class="kw">await</span>.map_err(ErrorHelper)<span class="question-mark">?</span>;
+<a href=#347 id=347 data-nosnippet>347</a>
+<a href=#348 id=348 data-nosnippet>348</a>    <span class="prelude-val">Ok</span>(res
+<a href=#349 id=349 data-nosnippet>349</a>        .map_err(|e| diesel::result::Error::from(ErrorHelper(e)))
+<a href=#350 id=350 data-nosnippet>350</a>        .map_ok(PgRow::new)
+<a href=#351 id=351 data-nosnippet>351</a>        .boxed())
+<a href=#352 id=352 data-nosnippet>352</a>}
+<a href=#353 id=353 data-nosnippet>353</a>
+<a href=#354 id=354 data-nosnippet>354</a><span class="kw">async fn </span>execute_prepared(
+<a href=#355 id=355 data-nosnippet>355</a>    conn: <span class="kw-2">&amp;</span>tokio_postgres::<a href="../../../tokio_postgres/client/struct.Client.html">Client</a>,
+<a href=#356 id=356 data-nosnippet>356</a>    stmt: <a href="../../../tokio_postgres/statement/struct.Statement.html">Statement</a>,
+<a href=#357 id=357 data-nosnippet>357</a>    binds: <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="serialize.rs.html#5">ToSqlHelper</a>&gt;,
+<a href=#358 id=358 data-nosnippet>358</a>) -&gt; QueryResult&lt;usize&gt; {
+<a href=#359 id=359 data-nosnippet>359</a>    <span class="kw">let </span>binds = binds
+<a href=#360 id=360 data-nosnippet>360</a>        .iter()
+<a href=#361 id=361 data-nosnippet>361</a>        .map(|b| b <span class="kw">as </span><span class="kw-2">&amp;</span>(<span class="kw">dyn </span>ToSql + Sync))
+<a href=#362 id=362 data-nosnippet>362</a>        .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
+<a href=#363 id=363 data-nosnippet>363</a>
+<a href=#364 id=364 data-nosnippet>364</a>    <span class="kw">let </span>res = tokio_postgres::Client::execute(conn, <span class="kw-2">&amp;</span>stmt, <span class="kw-2">&amp;</span>binds <span class="kw">as </span><span class="kw-2">&amp;</span>[<span class="kw">_</span>])
+<a href=#365 id=365 data-nosnippet>365</a>        .<span class="kw">await
+<a href=#366 id=366 data-nosnippet>366</a>        </span>.map_err(ErrorHelper)<span class="question-mark">?</span>;
+<a href=#367 id=367 data-nosnippet>367</a>    res.try_into()
+<a href=#368 id=368 data-nosnippet>368</a>        .map_err(|e| diesel::result::Error::DeserializationError(Box::new(e)))
+<a href=#369 id=369 data-nosnippet>369</a>}
+<a href=#370 id=370 data-nosnippet>370</a>
+<a href=#371 id=371 data-nosnippet>371</a><span class="attr">#[inline(always)]
+<a href=#372 id=372 data-nosnippet>372</a></span><span class="kw">fn </span>update_transaction_manager_status&lt;T&gt;(
+<a href=#373 id=373 data-nosnippet>373</a>    query_result: <a href="../../../diesel/result/type.QueryResult.html">QueryResult</a>&lt;T&gt;,
+<a href=#374 id=374 data-nosnippet>374</a>    transaction_manager: <span class="kw-2">&amp;mut </span><a href="../transaction_manager.rs.html#170-192">AnsiTransactionManager</a>,
+<a href=#375 id=375 data-nosnippet>375</a>) -&gt; <a href="../../../diesel/result/type.QueryResult.html">QueryResult</a>&lt;T&gt; {
+<a href=#376 id=376 data-nosnippet>376</a>    <span class="kw">if let </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(diesel::result::Error::<a href="../../../diesel/result/enum.Error.html#variant.DatabaseError">DatabaseError</a>(DatabaseErrorKind::<a href="../../../diesel/result/enum.DatabaseErrorKind.html#variant.SerializationFailure">SerializationFailure</a>, <span class="kw">_</span>)) =
+<a href=#377 id=377 data-nosnippet>377</a>        <a href="#373">query_result</a>
+<a href=#378 id=378 data-nosnippet>378</a>        &amp;&amp; !<a href="#374">transaction_manager</a>.is_commit
+<a href=#379 id=379 data-nosnippet>379</a>    {
+<a href=#380 id=380 data-nosnippet>380</a>        <a href="#374">transaction_manager</a>
+<a href=#381 id=381 data-nosnippet>381</a>            .status
+<a href=#382 id=382 data-nosnippet>382</a>            .<a href="../../../diesel/connection/transaction_manager/enum.TransactionManagerStatus.html#method.set_requires_rollback_maybe_up_to_top_level">set_requires_rollback_maybe_up_to_top_level</a>(<span class="bool-val">true</span>);
+<a href=#383 id=383 data-nosnippet>383</a>    }
+<a href=#384 id=384 data-nosnippet>384</a>    <a href="#373">query_result</a>
+<a href=#385 id=385 data-nosnippet>385</a>}
+<a href=#386 id=386 data-nosnippet>386</a>
+<a href=#387 id=387 data-nosnippet>387</a><span class="kw">fn </span>prepare_statement_helper&lt;<span class="lifetime">'conn</span>&gt;(
+<a href=#388 id=388 data-nosnippet>388</a>    conn: <span class="kw-2">&amp;</span><span class="lifetime">'conn </span>tokio_postgres::<a href="../../../tokio_postgres/client/struct.Client.html">Client</a>,
+<a href=#389 id=389 data-nosnippet>389</a>    sql: <span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>,
+<a href=#390 id=390 data-nosnippet>390</a>    _is_for_cache: <a href="../../../diesel/connection/statement_cache/enum.PrepareForCache.html">PrepareForCache</a>,
+<a href=#391 id=391 data-nosnippet>391</a>    metadata: <span class="kw-2">&amp;</span>[<a href="../../../diesel/pg/backend/struct.PgTypeMetadata.html">PgTypeMetadata</a>],
+<a href=#392 id=392 data-nosnippet>392</a>) -&gt; <a href="../stmt_cache.rs.html#8">CallbackHelper</a>&lt;
+<a href=#393 id=393 data-nosnippet>393</a>    <span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/future/future/trait.Future.html">Future</a>&lt;Output = <a href="../../../diesel/result/type.QueryResult.html">QueryResult</a>&lt;(<a href="../stmt_cache.rs.html#57">StatementHelper</a>&lt;<a href="../../../tokio_postgres/statement/struct.Statement.html">Statement</a>&gt;, <span class="kw-2">&amp;</span><span class="lifetime">'conn </span>tokio_postgres::<a href="../../../tokio_postgres/client/struct.Client.html">Client</a>)&gt;&gt;
+<a href=#394 id=394 data-nosnippet>394</a>    + <a href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html">Send</a>
+<a href=#395 id=395 data-nosnippet>395</a>    + <span class="kw">use</span>&lt;<span class="lifetime">'conn</span>&gt;,
+<a href=#396 id=396 data-nosnippet>396</a>&gt; {
+<a href=#397 id=397 data-nosnippet>397</a>    <span class="kw">let </span>bind_types = <a href="#391">metadata</a>
+<a href=#398 id=398 data-nosnippet>398</a>        .<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.iter">iter</a>()
+<a href=#399 id=399 data-nosnippet>399</a>        .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.map">map</a>(<a href="#418-433">type_from_oid</a>)
+<a href=#400 id=400 data-nosnippet>400</a>        .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.collect">collect</a>::&lt;<a href="../../../diesel/result/type.QueryResult.html">QueryResult</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<span class="kw">_</span>&gt;&gt;&gt;();
+<a href=#401 id=401 data-nosnippet>401</a>    <span class="comment">// ideally we wouldn't clone the SQL string here
+<a href=#402 id=402 data-nosnippet>402</a>    // but as we usually cache statements anyway
+<a href=#403 id=403 data-nosnippet>403</a>    // this is a fixed one time const
+<a href=#404 id=404 data-nosnippet>404</a>    //
+<a href=#405 id=405 data-nosnippet>405</a>    // The problem with not cloning it is that we then cannot express
+<a href=#406 id=406 data-nosnippet>406</a>    // the right result lifetime anymore (at least not easily)
+<a href=#407 id=407 data-nosnippet>407</a>    </span><span class="kw">let </span>sql = <a href="#389">sql</a>.<a href="https://doc.rust-lang.org/nightly/alloc/string/trait.ToString.html#tymethod.to_string">to_string</a>();
+<a href=#408 id=408 data-nosnippet>408</a>    <a href="../stmt_cache.rs.html#8">CallbackHelper</a>(<span class="kw">async move </span>{
+<a href=#409 id=409 data-nosnippet>409</a>        <span class="kw">let </span>bind_types = bind_types<span class="question-mark">?</span>;
+<a href=#410 id=410 data-nosnippet>410</a>        <span class="kw">let </span>stmt = conn
+<a href=#411 id=411 data-nosnippet>411</a>            .prepare_typed(<span class="kw-2">&amp;</span>sql, <span class="kw-2">&amp;</span>bind_types)
+<a href=#412 id=412 data-nosnippet>412</a>            .<span class="kw">await
+<a href=#413 id=413 data-nosnippet>413</a>            </span>.<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.map_err">map_err</a>(<a href="error_helper.rs.html#7">ErrorHelper</a>);
+<a href=#414 id=414 data-nosnippet>414</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>((<a href="../stmt_cache.rs.html#57">StatementHelper</a>(stmt<span class="question-mark">?</span>), <a href="#388">conn</a>))
+<a href=#415 id=415 data-nosnippet>415</a>    })
+<a href=#416 id=416 data-nosnippet>416</a>}
+<a href=#417 id=417 data-nosnippet>417</a>
+<a href=#418 id=418 data-nosnippet>418</a><span class="kw">fn </span>type_from_oid(t: <span class="kw-2">&amp;</span><a href="../../../diesel/pg/backend/struct.PgTypeMetadata.html">PgTypeMetadata</a>) -&gt; <a href="../../../diesel/result/type.QueryResult.html">QueryResult</a>&lt;<a href="../../../postgres_types/struct.Type.html">Type</a>&gt; {
+<a href=#419 id=419 data-nosnippet>419</a>    <span class="kw">let </span>oid = t
+<a href=#420 id=420 data-nosnippet>420</a>        .oid()
+<a href=#421 id=421 data-nosnippet>421</a>        .map_err(|e| diesel::result::Error::SerializationError(Box::new(e) <span class="kw">as _</span>))<span class="question-mark">?</span>;
+<a href=#422 id=422 data-nosnippet>422</a>
+<a href=#423 id=423 data-nosnippet>423</a>    <span class="kw">if let </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(tpe) = <a href="../../../postgres_types/struct.Type.html">Type</a>::<a href="../../../postgres_types/struct.Type.html#method.from_oid">from_oid</a>(<a href="#419">oid</a>) {
+<a href=#424 id=424 data-nosnippet>424</a>        <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="#423">tpe</a>);
+<a href=#425 id=425 data-nosnippet>425</a>    }
+<a href=#426 id=426 data-nosnippet>426</a>
+<a href=#427 id=427 data-nosnippet>427</a>    <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="../../../postgres_types/struct.Type.html">Type</a>::<a href="../../../postgres_types/struct.Type.html#method.new">new</a>(
+<a href=#428 id=428 data-nosnippet>428</a><span class="expansion"><input id=expand-428 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        <span class=expanded>::alloc::__export::must_use({
+        ::alloc::fmt::format(<span class="macro">format_args!</span>(<span class="string">"diesel_custom_type_{0}"</span>, oid))
+    })</span><span class="original"><a href="https://doc.rust-lang.org/nightly/alloc/macro.format.html">format!</a>(<span class="string">"diesel_custom_type_{oid}"</span>)</span></span>,
+<a href=#429 id=429 data-nosnippet>429</a>        <a href="#419">oid</a>,
+<a href=#430 id=430 data-nosnippet>430</a>        tokio_postgres::types::Kind::<a href="../../../postgres_types/enum.Kind.html#variant.Simple">Simple</a>,
+<a href=#431 id=431 data-nosnippet>431</a>        <span class="string">"public"</span>.<a href="https://doc.rust-lang.org/nightly/core/convert/trait.Into.html#tymethod.into">into</a>(),
+<a href=#432 id=432 data-nosnippet>432</a>    ))
+<a href=#433 id=433 data-nosnippet>433</a>}
+<a href=#434 id=434 data-nosnippet>434</a>
+<a href=#435 id=435 data-nosnippet>435</a><span class="kw">impl </span><a href="#169-179">AsyncPgConnection</a> {
+<a href=#436 id=436 data-nosnippet>436</a>    <span class="doccomment">/// Build a transaction, specifying additional details such as isolation level
+<a href=#437 id=437 data-nosnippet>437</a>    ///
+<a href=#438 id=438 data-nosnippet>438</a>    /// See [`TransactionBuilder`] for more examples.
+<a href=#439 id=439 data-nosnippet>439</a>    ///
+<a href=#440 id=440 data-nosnippet>440</a>    /// [`TransactionBuilder`]: crate::pg::TransactionBuilder
+<a href=#441 id=441 data-nosnippet>441</a>    ///
+<a href=#442 id=442 data-nosnippet>442</a>    /// ```rust
+<a href=#443 id=443 data-nosnippet>443</a>    /// # include!("../doctest_setup.rs");
+<a href=#444 id=444 data-nosnippet>444</a>    /// #
+<a href=#445 id=445 data-nosnippet>445</a>    /// # #[tokio::main(flavor = "current_thread")]
+<a href=#446 id=446 data-nosnippet>446</a>    /// # async fn main() {
+<a href=#447 id=447 data-nosnippet>447</a>    /// #     run_test().await.unwrap();
+<a href=#448 id=448 data-nosnippet>448</a>    /// # }
+<a href=#449 id=449 data-nosnippet>449</a>    /// #
+<a href=#450 id=450 data-nosnippet>450</a>    /// # async fn run_test() -&gt; QueryResult&lt;()&gt; {
+<a href=#451 id=451 data-nosnippet>451</a>    /// #     use schema::users::dsl::*;
+<a href=#452 id=452 data-nosnippet>452</a>    /// #     let conn = &amp;mut connection_no_transaction().await;
+<a href=#453 id=453 data-nosnippet>453</a>    /// conn.build_transaction()
+<a href=#454 id=454 data-nosnippet>454</a>    ///     .read_only()
+<a href=#455 id=455 data-nosnippet>455</a>    ///     .serializable()
+<a href=#456 id=456 data-nosnippet>456</a>    ///     .deferrable()
+<a href=#457 id=457 data-nosnippet>457</a>    ///     .run(async |conn| Ok(()))
+<a href=#458 id=458 data-nosnippet>458</a>    ///     .await
+<a href=#459 id=459 data-nosnippet>459</a>    /// # }
+<a href=#460 id=460 data-nosnippet>460</a>    /// ```
+<a href=#461 id=461 data-nosnippet>461</a>    </span><span class="kw">pub fn </span>build_transaction(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <a href="transaction_builder.rs.html#19-24">TransactionBuilder</a>&lt;<span class="lifetime">'_</span>, <span class="self">Self</span>&gt; {
+<a href=#462 id=462 data-nosnippet>462</a>        <a href="transaction_builder.rs.html#19-24">TransactionBuilder</a>::<a href="transaction_builder.rs.html#30-37">new</a>(<a class="self" href="#461">self</a>)
+<a href=#463 id=463 data-nosnippet>463</a>    }
+<a href=#464 id=464 data-nosnippet>464</a>
+<a href=#465 id=465 data-nosnippet>465</a>    <span class="doccomment">/// Construct a new `AsyncPgConnection` instance from an existing [`tokio_postgres::Client`]
+<a href=#466 id=466 data-nosnippet>466</a>    </span><span class="kw">pub async fn </span>try_from(conn: tokio_postgres::<a href="../../../tokio_postgres/client/struct.Client.html">Client</a>) -&gt; ConnectionResult&lt;<span class="self">Self</span>&gt; {
+<a href=#467 id=467 data-nosnippet>467</a>        <span class="self">Self</span>::setup(
+<a href=#468 id=468 data-nosnippet>468</a>            conn,
+<a href=#469 id=469 data-nosnippet>469</a>            <span class="prelude-val">None</span>,
+<a href=#470 id=470 data-nosnippet>470</a>            <span class="prelude-val">None</span>,
+<a href=#471 id=471 data-nosnippet>471</a>            <span class="prelude-val">None</span>,
+<a href=#472 id=472 data-nosnippet>472</a>            Arc::new(std::sync::Mutex::new(
+<a href=#473 id=473 data-nosnippet>473</a>                DynInstrumentation::default_instrumentation(),
+<a href=#474 id=474 data-nosnippet>474</a>            )),
+<a href=#475 id=475 data-nosnippet>475</a>        )
+<a href=#476 id=476 data-nosnippet>476</a>        .<span class="kw">await
+<a href=#477 id=477 data-nosnippet>477</a>    </span>}
+<a href=#478 id=478 data-nosnippet>478</a>
+<a href=#479 id=479 data-nosnippet>479</a>    <span class="doccomment">/// Constructs a new `AsyncPgConnection` from an existing [`tokio_postgres::Client`] and
+<a href=#480 id=480 data-nosnippet>480</a>    /// [`tokio_postgres::Connection`]
+<a href=#481 id=481 data-nosnippet>481</a>    </span><span class="kw">pub async fn </span>try_from_client_and_connection&lt;S&gt;(
+<a href=#482 id=482 data-nosnippet>482</a>        client: tokio_postgres::<a href="../../../tokio_postgres/client/struct.Client.html">Client</a>,
+<a href=#483 id=483 data-nosnippet>483</a>        conn: tokio_postgres::<a href="../../../tokio_postgres/connection/struct.Connection.html">Connection</a>&lt;tokio_postgres::<a href="../../../tokio_postgres/socket/struct.Socket.html">Socket</a>, S&gt;,
+<a href=#484 id=484 data-nosnippet>484</a>    ) -&gt; ConnectionResult&lt;<span class="self">Self</span>&gt;
+<a href=#485 id=485 data-nosnippet>485</a>    <span class="kw">where
+<a href=#486 id=486 data-nosnippet>486</a>        </span>S: <a href="../../../tokio_postgres/tls/trait.TlsStream.html">tokio_postgres::tls::TlsStream</a> + <a href="https://doc.rust-lang.org/nightly/core/marker/trait.Unpin.html">Unpin</a> + <a href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html">Send</a> + <span class="lifetime">'static</span>,
+<a href=#487 id=487 data-nosnippet>487</a>    {
+<a href=#488 id=488 data-nosnippet>488</a>        <span class="kw">let </span>(error_rx, notification_rx, shutdown_tx) = drive_connection(conn);
+<a href=#489 id=489 data-nosnippet>489</a>
+<a href=#490 id=490 data-nosnippet>490</a>        <span class="self">Self</span>::setup(
+<a href=#491 id=491 data-nosnippet>491</a>            client,
+<a href=#492 id=492 data-nosnippet>492</a>            <span class="prelude-val">Some</span>(error_rx),
+<a href=#493 id=493 data-nosnippet>493</a>            <span class="prelude-val">Some</span>(notification_rx),
+<a href=#494 id=494 data-nosnippet>494</a>            <span class="prelude-val">Some</span>(shutdown_tx),
+<a href=#495 id=495 data-nosnippet>495</a>            Arc::new(std::sync::Mutex::new(
+<a href=#496 id=496 data-nosnippet>496</a>                DynInstrumentation::default_instrumentation(),
+<a href=#497 id=497 data-nosnippet>497</a>            )),
+<a href=#498 id=498 data-nosnippet>498</a>        )
+<a href=#499 id=499 data-nosnippet>499</a>        .<span class="kw">await
+<a href=#500 id=500 data-nosnippet>500</a>    </span>}
+<a href=#501 id=501 data-nosnippet>501</a>
+<a href=#502 id=502 data-nosnippet>502</a>    <span class="kw">async fn </span>setup(
+<a href=#503 id=503 data-nosnippet>503</a>        conn: tokio_postgres::<a href="../../../tokio_postgres/client/struct.Client.html">Client</a>,
+<a href=#504 id=504 data-nosnippet>504</a>        connection_future: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;broadcast::<a href="../../../tokio/sync/broadcast/struct.Receiver.html">Receiver</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html">Arc</a>&lt;tokio_postgres::<a href="../../../tokio_postgres/error/struct.Error.html">Error</a>&gt;&gt;&gt;,
+<a href=#505 id=505 data-nosnippet>505</a>        notification_rx: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;mpsc::<a href="../../../tokio/sync/mpsc/unbounded/struct.UnboundedReceiver.html">UnboundedReceiver</a>&lt;<a href="../../../diesel/result/type.QueryResult.html">QueryResult</a>&lt;diesel::pg::<a href="../../../diesel/pg/backend/struct.PgNotification.html">PgNotification</a>&gt;&gt;&gt;,
+<a href=#506 id=506 data-nosnippet>506</a>        shutdown_channel: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;oneshot::<a href="../../../tokio/sync/oneshot/struct.Sender.html">Sender</a>&lt;()&gt;&gt;,
+<a href=#507 id=507 data-nosnippet>507</a>        instrumentation: <a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html">Arc</a>&lt;std::sync::<a href="https://doc.rust-lang.org/nightly/std/sync/poison/mutex/struct.Mutex.html">Mutex</a>&lt;<a href="../../../diesel/connection/instrumentation/struct.DynInstrumentation.html">DynInstrumentation</a>&gt;&gt;,
+<a href=#508 id=508 data-nosnippet>508</a>    ) -&gt; ConnectionResult&lt;<span class="self">Self</span>&gt; {
+<a href=#509 id=509 data-nosnippet>509</a>        <span class="kw">let </span><span class="kw-2">mut </span>conn = <span class="self">Self </span>{
+<a href=#510 id=510 data-nosnippet>510</a>            conn,
+<a href=#511 id=511 data-nosnippet>511</a>            stmt_cache: Mutex::new(StatementCache::new()),
+<a href=#512 id=512 data-nosnippet>512</a>            transaction_state: Mutex::new(AnsiTransactionManager::default()),
+<a href=#513 id=513 data-nosnippet>513</a>            metadata_cache: Mutex::new(PgMetadataCache::new()),
+<a href=#514 id=514 data-nosnippet>514</a>            connection_future,
+<a href=#515 id=515 data-nosnippet>515</a>            notification_rx,
+<a href=#516 id=516 data-nosnippet>516</a>            shutdown_channel,
+<a href=#517 id=517 data-nosnippet>517</a>            instrumentation,
+<a href=#518 id=518 data-nosnippet>518</a>        };
+<a href=#519 id=519 data-nosnippet>519</a>        conn.set_config_options()
+<a href=#520 id=520 data-nosnippet>520</a>            .<span class="kw">await
+<a href=#521 id=521 data-nosnippet>521</a>            </span>.map_err(ConnectionError::CouldntSetupConfiguration)<span class="question-mark">?</span>;
+<a href=#522 id=522 data-nosnippet>522</a>        <span class="prelude-val">Ok</span>(conn)
+<a href=#523 id=523 data-nosnippet>523</a>    }
+<a href=#524 id=524 data-nosnippet>524</a>
+<a href=#525 id=525 data-nosnippet>525</a>    <span class="doccomment">/// Constructs a cancellation token that can later be used to request cancellation of a query running on the connection associated with this client.
+<a href=#526 id=526 data-nosnippet>526</a>    </span><span class="kw">pub fn </span>cancel_token(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; tokio_postgres::<a href="../../../tokio_postgres/cancel_token/struct.CancelToken.html">CancelToken</a> {
+<a href=#527 id=527 data-nosnippet>527</a>        <a class="self" href="#526">self</a>.conn.<a href="../../../tokio_postgres/client/struct.Client.html#method.cancel_token">cancel_token</a>()
+<a href=#528 id=528 data-nosnippet>528</a>    }
+<a href=#529 id=529 data-nosnippet>529</a>
+<a href=#530 id=530 data-nosnippet>530</a>    <span class="kw">async fn </span>set_config_options(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; QueryResult&lt;()&gt; {
+<a href=#531 id=531 data-nosnippet>531</a>        <span class="kw">use </span><span class="kw">crate</span>::run_query_dsl::RunQueryDsl;
+<a href=#532 id=532 data-nosnippet>532</a>
+<a href=#533 id=533 data-nosnippet>533</a>        futures_util::future::try_join(
+<a href=#534 id=534 data-nosnippet>534</a>            diesel::sql_query(<span class="string">"SET TIME ZONE 'UTC'"</span>).execute(<span class="kw-2">&amp;mut &amp;*</span><span class="self">self</span>),
+<a href=#535 id=535 data-nosnippet>535</a>            diesel::sql_query(<span class="string">"SET CLIENT_ENCODING TO 'UTF8'"</span>).execute(<span class="kw-2">&amp;mut &amp;*</span><span class="self">self</span>),
+<a href=#536 id=536 data-nosnippet>536</a>        )
+<a href=#537 id=537 data-nosnippet>537</a>        .<span class="kw">await</span><span class="question-mark">?</span>;
+<a href=#538 id=538 data-nosnippet>538</a>        <span class="prelude-val">Ok</span>(())
+<a href=#539 id=539 data-nosnippet>539</a>    }
+<a href=#540 id=540 data-nosnippet>540</a>
+<a href=#541 id=541 data-nosnippet>541</a>    <span class="kw">fn </span>run_with_connection_future&lt;<span class="lifetime">'a</span>, R: <span class="lifetime">'a</span>&gt;(
+<a href=#542 id=542 data-nosnippet>542</a>        <span class="kw-2">&amp;</span><span class="self">self</span>,
+<a href=#543 id=543 data-nosnippet>543</a>        future: <span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/future/future/trait.Future.html">Future</a>&lt;Output = <a href="../../../diesel/result/type.QueryResult.html">QueryResult</a>&lt;R&gt;&gt; + <a href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html">Send</a> + <span class="lifetime">'a</span>,
+<a href=#544 id=544 data-nosnippet>544</a>    ) -&gt; <a href="../../../futures_core/future/type.BoxFuture.html">BoxFuture</a>&lt;<span class="lifetime">'a</span>, <a href="../../../diesel/result/type.QueryResult.html">QueryResult</a>&lt;R&gt;&gt; {
+<a href=#545 id=545 data-nosnippet>545</a>        <span class="kw">let </span>connection_future = <a class="self" href="#542">self</a>.connection_future.<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.as_ref">as_ref</a>().<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.map">map</a>(|rx| <a href="#545">rx</a>.<a href="../../../tokio/sync/broadcast/struct.Receiver.html#method.resubscribe">resubscribe</a>());
+<a href=#546 id=546 data-nosnippet>546</a>        <a href="#1019-1040">drive_future</a>(<a href="#545">connection_future</a>, <a href="#543">future</a>).<a href="../../../futures_util/future/future/trait.FutureExt.html#method.boxed">boxed</a>()
+<a href=#547 id=547 data-nosnippet>547</a>    }
+<a href=#548 id=548 data-nosnippet>548</a>
+<a href=#549 id=549 data-nosnippet>549</a>    <span class="kw">fn </span>with_prepared_statement&lt;<span class="lifetime">'a</span>, T, F, R&gt;(
+<a href=#550 id=550 data-nosnippet>550</a>        <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="self">self</span>,
+<a href=#551 id=551 data-nosnippet>551</a>        query: T,
+<a href=#552 id=552 data-nosnippet>552</a>        callback: <span class="kw">fn</span>(<span class="kw-2">&amp;</span><span class="lifetime">'a </span>tokio_postgres::<a href="../../../tokio_postgres/client/struct.Client.html">Client</a>, <a href="../../../tokio_postgres/statement/struct.Statement.html">Statement</a>, <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="serialize.rs.html#5">ToSqlHelper</a>&gt;) -&gt; F,
+<a href=#553 id=553 data-nosnippet>553</a>    ) -&gt; <a href="../../../futures_core/future/type.BoxFuture.html">BoxFuture</a>&lt;<span class="lifetime">'a</span>, <a href="../../../diesel/result/type.QueryResult.html">QueryResult</a>&lt;R&gt;&gt;
+<a href=#554 id=554 data-nosnippet>554</a>    <span class="kw">where
+<a href=#555 id=555 data-nosnippet>555</a>        </span>T: <a href="../../../diesel/query_builder/trait.QueryFragment.html">QueryFragment</a>&lt;diesel::pg::<a href="../../../diesel/pg/backend/struct.Pg.html">Pg</a>&gt; + <a href="../../../diesel/query_builder/query_id/trait.QueryId.html">QueryId</a>,
+<a href=#556 id=556 data-nosnippet>556</a>        F: <a href="https://doc.rust-lang.org/nightly/core/future/future/trait.Future.html">Future</a>&lt;Output = <a href="../../../diesel/result/type.QueryResult.html">QueryResult</a>&lt;R&gt;&gt; + <a href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html">Send</a> + <span class="lifetime">'a</span>,
+<a href=#557 id=557 data-nosnippet>557</a>        R: <a href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html">Send</a>,
+<a href=#558 id=558 data-nosnippet>558</a>    {
+<a href=#559 id=559 data-nosnippet>559</a>        <a class="self" href="#550">self</a>.<a href="#720-725">record_instrumentation</a>(<a href="../../../diesel/connection/instrumentation/enum.InstrumentationEvent.html">InstrumentationEvent</a>::<a href="../../../diesel/connection/instrumentation/enum.InstrumentationEvent.html#method.start_query">start_query</a>(<span class="kw-2">&amp;</span>diesel::<a href="../../../diesel/query_builder/fn.debug_query.html">debug_query</a>(
+<a href=#560 id=560 data-nosnippet>560</a>            <span class="kw-2">&amp;</span><a href="#551">query</a>,
+<a href=#561 id=561 data-nosnippet>561</a>        )));
+<a href=#562 id=562 data-nosnippet>562</a>        <span class="comment">// we explicitly destruct the query here before going into the async block
+<a href=#563 id=563 data-nosnippet>563</a>        //
+<a href=#564 id=564 data-nosnippet>564</a>        // That's required to remove the send bound from `T` as we have translated
+<a href=#565 id=565 data-nosnippet>565</a>        // the query type to just a string (for the SQL) and a bunch of bytes (for the binds)
+<a href=#566 id=566 data-nosnippet>566</a>        // which both are `Send`.
+<a href=#567 id=567 data-nosnippet>567</a>        // We also collect the query id (essentially an integer) and the safe_to_cache flag here
+<a href=#568 id=568 data-nosnippet>568</a>        // so there is no need to even access the query in the async block below
+<a href=#569 id=569 data-nosnippet>569</a>        </span><span class="kw">let </span><span class="kw-2">mut </span>query_builder = <a href="../../../diesel/pg/query_builder/struct.PgQueryBuilder.html">PgQueryBuilder</a>::<a href="https://doc.rust-lang.org/nightly/core/default/trait.Default.html#tymethod.default">default</a>();
+<a href=#570 id=570 data-nosnippet>570</a>
+<a href=#571 id=571 data-nosnippet>571</a>        <span class="kw">let </span>bind_data = <a href="#786-913">construct_bind_data</a>(<span class="kw-2">&amp;</span><a href="#551">query</a>);
+<a href=#572 id=572 data-nosnippet>572</a>
+<a href=#573 id=573 data-nosnippet>573</a>        <span class="comment">// The code that doesn't need the `T` generic parameter is in a separate function to reduce LLVM IR lines
+<a href=#574 id=574 data-nosnippet>574</a>        </span><a class="self" href="#550">self</a>.<a href="#584-718">with_prepared_statement_after_sql_built</a>(
+<a href=#575 id=575 data-nosnippet>575</a>            <a href="#552">callback</a>,
+<a href=#576 id=576 data-nosnippet>576</a>            <a href="#551">query</a>.<a href="../../../diesel/query_builder/trait.QueryFragment.html#method.is_safe_to_cache_prepared">is_safe_to_cache_prepared</a>(<span class="kw-2">&amp;</span><a href="../../../diesel/pg/backend/struct.Pg.html">Pg</a>),
+<a href=#577 id=577 data-nosnippet>577</a>            T::<a href="../../../diesel/query_builder/query_id/trait.QueryId.html#method.query_id">query_id</a>(),
+<a href=#578 id=578 data-nosnippet>578</a>            <a href="#551">query</a>.<a href="../../../diesel/query_builder/trait.QueryFragment.html#method.to_sql">to_sql</a>(<span class="kw-2">&amp;mut </span><a href="#569">query_builder</a>, <span class="kw-2">&amp;</span><a href="../../../diesel/pg/backend/struct.Pg.html">Pg</a>),
+<a href=#579 id=579 data-nosnippet>579</a>            <a href="#569">query_builder</a>,
+<a href=#580 id=580 data-nosnippet>580</a>            <a href="#571">bind_data</a>,
+<a href=#581 id=581 data-nosnippet>581</a>        )
+<a href=#582 id=582 data-nosnippet>582</a>    }
+<a href=#583 id=583 data-nosnippet>583</a>
+<a href=#584 id=584 data-nosnippet>584</a>    <span class="kw">fn </span>with_prepared_statement_after_sql_built&lt;<span class="lifetime">'a</span>, F, R&gt;(
+<a href=#585 id=585 data-nosnippet>585</a>        <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="self">self</span>,
+<a href=#586 id=586 data-nosnippet>586</a>        callback: <span class="kw">fn</span>(<span class="kw-2">&amp;</span><span class="lifetime">'a </span>tokio_postgres::<a href="../../../tokio_postgres/client/struct.Client.html">Client</a>, <a href="../../../tokio_postgres/statement/struct.Statement.html">Statement</a>, <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="serialize.rs.html#5">ToSqlHelper</a>&gt;) -&gt; F,
+<a href=#587 id=587 data-nosnippet>587</a>        is_safe_to_cache_prepared: <a href="../../../diesel/result/type.QueryResult.html">QueryResult</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>&gt;,
+<a href=#588 id=588 data-nosnippet>588</a>        query_id: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;std::any::<a href="https://doc.rust-lang.org/nightly/core/any/struct.TypeId.html">TypeId</a>&gt;,
+<a href=#589 id=589 data-nosnippet>589</a>        to_sql_result: <a href="../../../diesel/result/type.QueryResult.html">QueryResult</a>&lt;()&gt;,
+<a href=#590 id=590 data-nosnippet>590</a>        query_builder: <a href="../../../diesel/pg/query_builder/struct.PgQueryBuilder.html">PgQueryBuilder</a>,
+<a href=#591 id=591 data-nosnippet>591</a>        bind_data: <a href="#779-784">BindData</a>,
+<a href=#592 id=592 data-nosnippet>592</a>    ) -&gt; <a href="../../../futures_core/future/type.BoxFuture.html">BoxFuture</a>&lt;<span class="lifetime">'a</span>, <a href="../../../diesel/result/type.QueryResult.html">QueryResult</a>&lt;R&gt;&gt;
+<a href=#593 id=593 data-nosnippet>593</a>    <span class="kw">where
+<a href=#594 id=594 data-nosnippet>594</a>        </span>F: <a href="https://doc.rust-lang.org/nightly/core/future/future/trait.Future.html">Future</a>&lt;Output = <a href="../../../diesel/result/type.QueryResult.html">QueryResult</a>&lt;R&gt;&gt; + <a href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html">Send</a> + <span class="lifetime">'a</span>,
+<a href=#595 id=595 data-nosnippet>595</a>        R: <a href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html">Send</a>,
+<a href=#596 id=596 data-nosnippet>596</a>    {
+<a href=#597 id=597 data-nosnippet>597</a>        <span class="kw">let </span>raw_connection = <span class="kw-2">&amp;</span><a class="self" href="#585">self</a>.conn;
+<a href=#598 id=598 data-nosnippet>598</a>        <span class="kw">let </span>stmt_cache = <span class="kw-2">&amp;</span><a class="self" href="#585">self</a>.stmt_cache;
+<a href=#599 id=599 data-nosnippet>599</a>        <span class="kw">let </span>metadata_cache = <span class="kw-2">&amp;</span><a class="self" href="#585">self</a>.metadata_cache;
+<a href=#600 id=600 data-nosnippet>600</a>        <span class="kw">let </span>tm = <span class="kw-2">&amp;</span><a class="self" href="#585">self</a>.transaction_state;
+<a href=#601 id=601 data-nosnippet>601</a>        <span class="kw">let </span>instrumentation = <a class="self" href="#585">self</a>.instrumentation.<a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">clone</a>();
+<a href=#602 id=602 data-nosnippet>602</a>        <span class="kw">let </span><a href="#779-784">BindData</a> {
+<a href=#603 id=603 data-nosnippet>603</a>            collect_bind_result,
+<a href=#604 id=604 data-nosnippet>604</a>            fake_oid_locations,
+<a href=#605 id=605 data-nosnippet>605</a>            generated_oids,
+<a href=#606 id=606 data-nosnippet>606</a>            <span class="kw-2">mut </span>bind_collector,
+<a href=#607 id=607 data-nosnippet>607</a>        } = <a href="#591">bind_data</a>;
+<a href=#608 id=608 data-nosnippet>608</a>
+<a href=#609 id=609 data-nosnippet>609</a>        <span class="kw">async move </span>{
+<a href=#610 id=610 data-nosnippet>610</a>            <span class="kw">let </span>sql = to_sql_result.map(|<span class="kw">_</span>| query_builder.finish())<span class="question-mark">?</span>;
+<a href=#611 id=611 data-nosnippet>611</a>            <span class="kw">let </span>res = <span class="kw">async </span>{
+<a href=#612 id=612 data-nosnippet>612</a>            <span class="kw">let </span>is_safe_to_cache_prepared = is_safe_to_cache_prepared<span class="question-mark">?</span>;
+<a href=#613 id=613 data-nosnippet>613</a>            collect_bind_result<span class="question-mark">?</span>;
+<a href=#614 id=614 data-nosnippet>614</a>            <span class="comment">// Check whether we need to resolve some types at all
+<a href=#615 id=615 data-nosnippet>615</a>            //
+<a href=#616 id=616 data-nosnippet>616</a>            // If the user doesn't use custom types there is no need
+<a href=#617 id=617 data-nosnippet>617</a>            // to bother with that at all
+<a href=#618 id=618 data-nosnippet>618</a>            </span><span class="kw">if let </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(<span class="kw-2">ref </span>unresolved_types) = <a href="#605">generated_oids</a> {
+<a href=#619 id=619 data-nosnippet>619</a>                <span class="kw">let </span>metadata_cache = <span class="kw-2">&amp;mut *</span>metadata_cache.lock().<span class="kw">await</span>;
+<a href=#620 id=620 data-nosnippet>620</a>                <span class="kw">let </span><span class="kw-2">mut </span>real_oids = <a href="https://doc.rust-lang.org/nightly/std/collections/hash/map/struct.HashMap.html">HashMap</a>::<a href="https://doc.rust-lang.org/nightly/std/collections/hash/map/struct.HashMap.html#method.new">new</a>();
+<a href=#621 id=621 data-nosnippet>621</a>
+<a href=#622 id=622 data-nosnippet>622</a>                <span class="kw">for </span>((schema, lookup_type_name), (fake_oid, fake_array_oid)) <span class="kw">in
+<a href=#623 id=623 data-nosnippet>623</a>                    </span>unresolved_types
+<a href=#624 id=624 data-nosnippet>624</a>                {
+<a href=#625 id=625 data-nosnippet>625</a>                    <span class="comment">// for each unresolved item
+<a href=#626 id=626 data-nosnippet>626</a>                    // we check whether it's already in the cache
+<a href=#627 id=627 data-nosnippet>627</a>                    // or perform a lookup and insert it into the cache
+<a href=#628 id=628 data-nosnippet>628</a>                    </span><span class="kw">let </span>cache_key = PgMetadataCacheKey::new(
+<a href=#629 id=629 data-nosnippet>629</a>                        schema.as_deref().map(Into::into),
+<a href=#630 id=630 data-nosnippet>630</a>                        lookup_type_name.into(),
+<a href=#631 id=631 data-nosnippet>631</a>                    );
+<a href=#632 id=632 data-nosnippet>632</a>                    <span class="kw">let </span>real_metadata = <span class="kw">if let </span><span class="prelude-val">Some</span>(type_metadata) =
+<a href=#633 id=633 data-nosnippet>633</a>                        metadata_cache.lookup_type(<span class="kw-2">&amp;</span>cache_key)
+<a href=#634 id=634 data-nosnippet>634</a>                    {
+<a href=#635 id=635 data-nosnippet>635</a>                        type_metadata
+<a href=#636 id=636 data-nosnippet>636</a>                    } <span class="kw">else </span>{
+<a href=#637 id=637 data-nosnippet>637</a>                        <span class="kw">let </span>type_metadata =
+<a href=#638 id=638 data-nosnippet>638</a>                            lookup_type(schema.clone(), lookup_type_name.clone(), raw_connection)
+<a href=#639 id=639 data-nosnippet>639</a>                                .<span class="kw">await</span><span class="question-mark">?</span>;
+<a href=#640 id=640 data-nosnippet>640</a>                        metadata_cache.store_type(cache_key, type_metadata);
+<a href=#641 id=641 data-nosnippet>641</a>
+<a href=#642 id=642 data-nosnippet>642</a>                        PgTypeMetadata::from_result(<span class="prelude-val">Ok</span>(type_metadata))
+<a href=#643 id=643 data-nosnippet>643</a>                    };
+<a href=#644 id=644 data-nosnippet>644</a>                    <span class="comment">// let (fake_oid, fake_array_oid) = metadata_lookup.fake_oids(index);
+<a href=#645 id=645 data-nosnippet>645</a>                    </span><span class="kw">let </span>(real_oid, real_array_oid) = unwrap_oids(<span class="kw-2">&amp;</span>real_metadata);
+<a href=#646 id=646 data-nosnippet>646</a>                    real_oids.extend([(<span class="kw-2">*</span>fake_oid, real_oid), (<span class="kw-2">*</span>fake_array_oid, real_array_oid)]);
+<a href=#647 id=647 data-nosnippet>647</a>                }
+<a href=#648 id=648 data-nosnippet>648</a>
+<a href=#649 id=649 data-nosnippet>649</a>                <span class="comment">// Replace fake OIDs with real OIDs in `bind_collector.metadata`
+<a href=#650 id=650 data-nosnippet>650</a>                </span><span class="kw">for </span>m <span class="kw">in </span><span class="kw-2">&amp;mut </span>bind_collector.metadata {
+<a href=#651 id=651 data-nosnippet>651</a>                    <span class="kw">let </span>(oid, array_oid) = unwrap_oids(m);
+<a href=#652 id=652 data-nosnippet>652</a>                    <span class="kw-2">*</span>m = PgTypeMetadata::new(
+<a href=#653 id=653 data-nosnippet>653</a>                        real_oids.get(<span class="kw-2">&amp;</span>oid).copied().unwrap_or(oid),
+<a href=#654 id=654 data-nosnippet>654</a>                        real_oids.get(<span class="kw-2">&amp;</span>array_oid).copied().unwrap_or(array_oid)
+<a href=#655 id=655 data-nosnippet>655</a>                    );
+<a href=#656 id=656 data-nosnippet>656</a>                }
+<a href=#657 id=657 data-nosnippet>657</a>                <span class="comment">// Replace fake OIDs with real OIDs in `bind_collector.binds`
+<a href=#658 id=658 data-nosnippet>658</a>                </span><span class="kw">for </span>(bind_index, byte_index) <span class="kw">in </span>fake_oid_locations {
+<a href=#659 id=659 data-nosnippet>659</a>                    replace_fake_oid(<span class="kw-2">&amp;mut </span>bind_collector.binds, <span class="kw-2">&amp;</span>real_oids, bind_index, byte_index)
+<a href=#660 id=660 data-nosnippet>660</a>                        .ok_or_else(|| {
+<a href=#661 id=661 data-nosnippet>661</a>                            Error::SerializationError(
+<a href=#662 id=662 data-nosnippet>662</a><span class="expansion"><input id=expand-662 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                                <span class=expanded>::alloc::__export::must_use({
+        ::alloc::fmt::format(<span class="macro">format_args!</span>(<span class="string">"diesel_async failed to replace a type OID serialized in bind value {0}"</span>,
+                bind_index))
+    })</span><span class="original"><span class="macro">format!</span>(<span class="string">"diesel_async failed to replace a type OID serialized in bind value {bind_index}"</span>)</span></span>.into(),
+<a href=#663 id=663 data-nosnippet>663</a>                            )
+<a href=#664 id=664 data-nosnippet>664</a>                        })<span class="question-mark">?</span>;
+<a href=#665 id=665 data-nosnippet>665</a>                }
+<a href=#666 id=666 data-nosnippet>666</a>            }
+<a href=#667 id=667 data-nosnippet>667</a>            <span class="kw">let </span>stmt = {
+<a href=#668 id=668 data-nosnippet>668</a>                <span class="kw">let </span><span class="kw-2">mut </span>stmt_cache = stmt_cache.lock().<span class="kw">await</span>;
+<a href=#669 id=669 data-nosnippet>669</a>                <span class="kw">let </span>helper = <a href="../stmt_cache.rs.html#59-63">QueryFragmentHelper</a> {
+<a href=#670 id=670 data-nosnippet>670</a>                    sql: <a href="#610">sql</a>.<a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">clone</a>(),
+<a href=#671 id=671 data-nosnippet>671</a>                    safe_to_cache: <a href="#612">is_safe_to_cache_prepared</a>,
+<a href=#672 id=672 data-nosnippet>672</a>                    bind_count: <a href="#606">bind_collector</a>.binds.<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html#method.len">len</a>(),
+<a href=#673 id=673 data-nosnippet>673</a>                };
+<a href=#674 id=674 data-nosnippet>674</a>                <span class="kw">let </span>instrumentation = <a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html">Arc</a>::<a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">clone</a>(<span class="kw-2">&amp;</span><a href="#601">instrumentation</a>);
+<a href=#675 id=675 data-nosnippet>675</a>                stmt_cache
+<a href=#676 id=676 data-nosnippet>676</a>                    .cached_statement_non_generic(
+<a href=#677 id=677 data-nosnippet>677</a>                        query_id,
+<a href=#678 id=678 data-nosnippet>678</a>                        <span class="kw-2">&amp;</span>helper,
+<a href=#679 id=679 data-nosnippet>679</a>                        <span class="kw-2">&amp;</span>Pg,
+<a href=#680 id=680 data-nosnippet>680</a>                        <span class="kw-2">&amp;</span>bind_collector.metadata,
+<a href=#681 id=681 data-nosnippet>681</a>                        raw_connection,
+<a href=#682 id=682 data-nosnippet>682</a>                        prepare_statement_helper,
+<a href=#683 id=683 data-nosnippet>683</a>                        <span class="kw-2">&amp;mut </span><span class="kw">move </span>|event: InstrumentationEvent&lt;<span class="lifetime">'_</span>&gt;| {
+<a href=#684 id=684 data-nosnippet>684</a>                            <span class="comment">// we wrap this lock into another callback to prevent locking
+<a href=#685 id=685 data-nosnippet>685</a>                            // the instrumentation longer than necessary
+<a href=#686 id=686 data-nosnippet>686</a>                            </span>instrumentation.lock().unwrap_or_else(|e| e.into_inner())
+<a href=#687 id=687 data-nosnippet>687</a>                                .on_connection_event(event);
+<a href=#688 id=688 data-nosnippet>688</a>                        },
+<a href=#689 id=689 data-nosnippet>689</a>                    )
+<a href=#690 id=690 data-nosnippet>690</a>                    .<span class="kw">await</span><span class="question-mark">?
+<a href=#691 id=691 data-nosnippet>691</a>                    </span>.<span class="number">0
+<a href=#692 id=692 data-nosnippet>692</a>                    </span>.<span class="number">0
+<a href=#693 id=693 data-nosnippet>693</a>                    </span>.<a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">clone</a>()
+<a href=#694 id=694 data-nosnippet>694</a>            };
+<a href=#695 id=695 data-nosnippet>695</a>
+<a href=#696 id=696 data-nosnippet>696</a>            <span class="kw">let </span>binds = <a href="#606">bind_collector</a>
+<a href=#697 id=697 data-nosnippet>697</a>                .metadata
+<a href=#698 id=698 data-nosnippet>698</a>                .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/collect/trait.IntoIterator.html#tymethod.into_iter">into_iter</a>()
+<a href=#699 id=699 data-nosnippet>699</a>                .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.zip">zip</a>(<a href="#606">bind_collector</a>.binds)
+<a href=#700 id=700 data-nosnippet>700</a>                .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.map">map</a>(|(meta, bind)| <a href="serialize.rs.html#5">ToSqlHelper</a>(<a href="#700">meta</a>, <a href="#700">bind</a>))
+<a href=#701 id=701 data-nosnippet>701</a>                .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.collect">collect</a>::&lt;<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<span class="kw">_</span>&gt;&gt;();
+<a href=#702 id=702 data-nosnippet>702</a>                callback(raw_connection, stmt.clone(), binds).<span class="kw">await
+<a href=#703 id=703 data-nosnippet>703</a>            </span>};
+<a href=#704 id=704 data-nosnippet>704</a>            <span class="kw">let </span>res = res.<span class="kw">await</span>;
+<a href=#705 id=705 data-nosnippet>705</a>            <span class="kw">let </span><span class="kw-2">mut </span>tm = tm.lock().<span class="kw">await</span>;
+<a href=#706 id=706 data-nosnippet>706</a>            <span class="kw">let </span>r = <a href="#372-385">update_transaction_manager_status</a>(<a href="#704">res</a>, <span class="kw-2">&amp;mut </span><a href="#705">tm</a>);
+<a href=#707 id=707 data-nosnippet>707</a>            <a href="#601">instrumentation</a>
+<a href=#708 id=708 data-nosnippet>708</a>                .<a href="https://doc.rust-lang.org/nightly/std/sync/poison/mutex/struct.Mutex.html#method.lock">lock</a>()
+<a href=#709 id=709 data-nosnippet>709</a>                .<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.unwrap_or_else">unwrap_or_else</a>(|p| <a href="#709">p</a>.<a href="https://doc.rust-lang.org/nightly/std/sync/poison/struct.PoisonError.html#method.into_inner">into_inner</a>())
+<a href=#710 id=710 data-nosnippet>710</a>                .<a href="../../../diesel/connection/instrumentation/struct.DynInstrumentation.html#method.on_connection_event">on_connection_event</a>(<a href="../../../diesel/connection/instrumentation/enum.InstrumentationEvent.html">InstrumentationEvent</a>::<a href="../../../diesel/connection/instrumentation/enum.InstrumentationEvent.html#method.finish_query">finish_query</a>(
+<a href=#711 id=711 data-nosnippet>711</a>                    <span class="kw-2">&amp;</span><a href="../../../diesel/connection/instrumentation/struct.StrQueryHelper.html">StrQueryHelper</a>::<a href="../../../diesel/connection/instrumentation/struct.StrQueryHelper.html#method.new">new</a>(<span class="kw-2">&amp;</span><a href="#610">sql</a>),
+<a href=#712 id=712 data-nosnippet>712</a>                    <a href="#706">r</a>.<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.as_ref">as_ref</a>().<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.err">err</a>(),
+<a href=#713 id=713 data-nosnippet>713</a>                ));
+<a href=#714 id=714 data-nosnippet>714</a>
+<a href=#715 id=715 data-nosnippet>715</a>            <a href="#706">r</a>
+<a href=#716 id=716 data-nosnippet>716</a>        }
+<a href=#717 id=717 data-nosnippet>717</a>        .<a href="../../../futures_util/future/future/trait.FutureExt.html#method.boxed">boxed</a>()
+<a href=#718 id=718 data-nosnippet>718</a>    }
+<a href=#719 id=719 data-nosnippet>719</a>
+<a href=#720 id=720 data-nosnippet>720</a>    <span class="kw">fn </span>record_instrumentation(<span class="kw-2">&amp;</span><span class="self">self</span>, event: <a href="../../../diesel/connection/instrumentation/enum.InstrumentationEvent.html">InstrumentationEvent</a>&lt;<span class="lifetime">'_</span>&gt;) {
+<a href=#721 id=721 data-nosnippet>721</a>        <a class="self" href="#720">self</a>.instrumentation
+<a href=#722 id=722 data-nosnippet>722</a>            .<a href="https://doc.rust-lang.org/nightly/std/sync/poison/mutex/struct.Mutex.html#method.lock">lock</a>()
+<a href=#723 id=723 data-nosnippet>723</a>            .<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.unwrap_or_else">unwrap_or_else</a>(|p| <a href="#723">p</a>.<a href="https://doc.rust-lang.org/nightly/std/sync/poison/struct.PoisonError.html#method.into_inner">into_inner</a>())
+<a href=#724 id=724 data-nosnippet>724</a>            .<a href="../../../diesel/connection/instrumentation/struct.DynInstrumentation.html#method.on_connection_event">on_connection_event</a>(<a href="#720">event</a>);
+<a href=#725 id=725 data-nosnippet>725</a>    }
+<a href=#726 id=726 data-nosnippet>726</a>
+<a href=#727 id=727 data-nosnippet>727</a>    <span class="doccomment">/// See Postgres documentation for SQL commands [NOTIFY][] and [LISTEN][]
+<a href=#728 id=728 data-nosnippet>728</a>    ///
+<a href=#729 id=729 data-nosnippet>729</a>    /// The returned stream yields all notifications received by the connection, not only notifications received
+<a href=#730 id=730 data-nosnippet>730</a>    /// after calling the function. The returned stream will never close, so no notifications will just result
+<a href=#731 id=731 data-nosnippet>731</a>    /// in a pending state.
+<a href=#732 id=732 data-nosnippet>732</a>    ///
+<a href=#733 id=733 data-nosnippet>733</a>    /// If there's no connection available to poll, the stream will yield no notifications and be pending forever.
+<a href=#734 id=734 data-nosnippet>734</a>    /// This can happen if you created the [`AsyncPgConnection`] by the [`try_from`] constructor.
+<a href=#735 id=735 data-nosnippet>735</a>    ///
+<a href=#736 id=736 data-nosnippet>736</a>    /// [NOTIFY]: https://www.postgresql.org/docs/current/sql-notify.html
+<a href=#737 id=737 data-nosnippet>737</a>    /// [LISTEN]: https://www.postgresql.org/docs/current/sql-listen.html
+<a href=#738 id=738 data-nosnippet>738</a>    /// [`AsyncPgConnection`]: crate::pg::AsyncPgConnection
+<a href=#739 id=739 data-nosnippet>739</a>    /// [`try_from`]: crate::pg::AsyncPgConnection::try_from
+<a href=#740 id=740 data-nosnippet>740</a>    ///
+<a href=#741 id=741 data-nosnippet>741</a>    /// ```rust
+<a href=#742 id=742 data-nosnippet>742</a>    /// # include!("../doctest_setup.rs");
+<a href=#743 id=743 data-nosnippet>743</a>    /// #
+<a href=#744 id=744 data-nosnippet>744</a>    /// # #[tokio::main(flavor = "current_thread")]
+<a href=#745 id=745 data-nosnippet>745</a>    /// # async fn main() {
+<a href=#746 id=746 data-nosnippet>746</a>    /// #     run_test().await.unwrap();
+<a href=#747 id=747 data-nosnippet>747</a>    /// # }
+<a href=#748 id=748 data-nosnippet>748</a>    /// #
+<a href=#749 id=749 data-nosnippet>749</a>    /// # async fn run_test() -&gt; QueryResult&lt;()&gt; {
+<a href=#750 id=750 data-nosnippet>750</a>    /// #     use diesel_async::RunQueryDsl;
+<a href=#751 id=751 data-nosnippet>751</a>    /// #     use futures_util::StreamExt;
+<a href=#752 id=752 data-nosnippet>752</a>    /// #     let conn = &amp;mut connection_no_transaction().await;
+<a href=#753 id=753 data-nosnippet>753</a>    /// // register the notifications channel we want to receive notifications for
+<a href=#754 id=754 data-nosnippet>754</a>    /// diesel::sql_query("LISTEN example_channel").execute(conn).await?;
+<a href=#755 id=755 data-nosnippet>755</a>    /// // send some notification (usually done from a different connection/thread/application)
+<a href=#756 id=756 data-nosnippet>756</a>    /// diesel::sql_query("NOTIFY example_channel, 'additional data'").execute(conn).await?;
+<a href=#757 id=757 data-nosnippet>757</a>    ///
+<a href=#758 id=758 data-nosnippet>758</a>    /// let mut notifications = std::pin::pin!(conn.notifications_stream());
+<a href=#759 id=759 data-nosnippet>759</a>    /// let mut notification = notifications.next().await.unwrap().unwrap();
+<a href=#760 id=760 data-nosnippet>760</a>    ///
+<a href=#761 id=761 data-nosnippet>761</a>    /// assert_eq!(notification.channel, "example_channel");
+<a href=#762 id=762 data-nosnippet>762</a>    /// assert_eq!(notification.payload, "additional data");
+<a href=#763 id=763 data-nosnippet>763</a>    /// println!("Notification received from process with id {}", notification.process_id);
+<a href=#764 id=764 data-nosnippet>764</a>    /// # Ok(())
+<a href=#765 id=765 data-nosnippet>765</a>    /// # }
+<a href=#766 id=766 data-nosnippet>766</a>    /// ```
+<a href=#767 id=767 data-nosnippet>767</a>    </span><span class="kw">pub fn </span>notifications_stream(
+<a href=#768 id=768 data-nosnippet>768</a>        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+<a href=#769 id=769 data-nosnippet>769</a>    ) -&gt; <span class="kw">impl </span><a href="../../../futures_core/stream/trait.Stream.html">futures_core::Stream</a>&lt;Item = <a href="../../../diesel/result/type.QueryResult.html">QueryResult</a>&lt;diesel::pg::<a href="../../../diesel/pg/backend/struct.PgNotification.html">PgNotification</a>&gt;&gt; + <span class="lifetime">'_ </span>{
+<a href=#770 id=770 data-nosnippet>770</a>        <span class="kw">match </span><span class="kw-2">&amp;mut </span><a class="self" href="#768">self</a>.notification_rx {
+<a href=#771 id=771 data-nosnippet>771</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a> =&gt; Either::<a href="../../../futures_util/future/either/enum.Either.html#variant.Left">Left</a>(futures_util::stream::<a href="../../../futures_util/stream/pending/fn.pending.html">pending</a>()),
+<a href=#772 id=772 data-nosnippet>772</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(rx) =&gt; Either::<a href="../../../futures_util/future/either/enum.Either.html#variant.Right">Right</a>(futures_util::stream::<a href="../../../futures_util/stream/unfold/fn.unfold.html">unfold</a>(<a href="#772">rx</a>, |rx| <span class="kw">async </span>{
+<a href=#773 id=773 data-nosnippet>773</a>                rx.recv().<span class="kw">await</span>.<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.map">map</a>(<span class="kw">move </span>|item| (<a href="#773">item</a>, <a href="#772">rx</a>))
+<a href=#774 id=774 data-nosnippet>774</a>            })),
+<a href=#775 id=775 data-nosnippet>775</a>        }
+<a href=#776 id=776 data-nosnippet>776</a>    }
+<a href=#777 id=777 data-nosnippet>777</a>}
+<a href=#778 id=778 data-nosnippet>778</a>
+<a href=#779 id=779 data-nosnippet>779</a><span class="kw">struct </span>BindData {
+<a href=#780 id=780 data-nosnippet>780</a>    collect_bind_result: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;(), <a href="../../../diesel/result/enum.Error.html">Error</a>&gt;,
+<a href=#781 id=781 data-nosnippet>781</a>    fake_oid_locations: <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;(<a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>, <a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>)&gt;,
+<a href=#782 id=782 data-nosnippet>782</a>    generated_oids: <a href="#915">GeneratedOidTypeMap</a>,
+<a href=#783 id=783 data-nosnippet>783</a>    bind_collector: <a href="../../../diesel/query_builder/bind_collector/struct.RawBytesBindCollector.html">RawBytesBindCollector</a>&lt;<a href="../../../diesel/pg/backend/struct.Pg.html">Pg</a>&gt;,
+<a href=#784 id=784 data-nosnippet>784</a>}
+<a href=#785 id=785 data-nosnippet>785</a>
+<a href=#786 id=786 data-nosnippet>786</a><span class="kw">fn </span>construct_bind_data(query: <span class="kw-2">&amp;</span><span class="kw">dyn </span><a href="../../../diesel/query_builder/trait.QueryFragment.html">QueryFragment</a>&lt;diesel::pg::<a href="../../../diesel/pg/backend/struct.Pg.html">Pg</a>&gt;) -&gt; <a href="#779-784">BindData</a> {
+<a href=#787 id=787 data-nosnippet>787</a>    <span class="comment">// we don't resolve custom types here yet, we do that later
+<a href=#788 id=788 data-nosnippet>788</a>    // in the async block below as we might need to perform lookup
+<a href=#789 id=789 data-nosnippet>789</a>    // queries for that.
+<a href=#790 id=790 data-nosnippet>790</a>    //
+<a href=#791 id=791 data-nosnippet>791</a>    // We apply this workaround to prevent requiring all the diesel
+<a href=#792 id=792 data-nosnippet>792</a>    // serialization code to being async
+<a href=#793 id=793 data-nosnippet>793</a>    //
+<a href=#794 id=794 data-nosnippet>794</a>    // We give out constant fake oids here to optimize for the "happy" path
+<a href=#795 id=795 data-nosnippet>795</a>    // without custom type lookup
+<a href=#796 id=796 data-nosnippet>796</a>    </span><span class="kw">let </span><span class="kw-2">mut </span>bind_collector_0 = <a href="../../../diesel/query_builder/bind_collector/struct.RawBytesBindCollector.html">RawBytesBindCollector</a>::&lt;diesel::pg::<a href="../../../diesel/pg/backend/struct.Pg.html">Pg</a>&gt;::<a href="../../../diesel/query_builder/bind_collector/struct.RawBytesBindCollector.html#method.new">new</a>();
+<a href=#797 id=797 data-nosnippet>797</a>    <span class="kw">let </span><span class="kw-2">mut </span>metadata_lookup_0 = <a href="#920-924">PgAsyncMetadataLookup</a> {
+<a href=#798 id=798 data-nosnippet>798</a>        custom_oid: <span class="bool-val">false</span>,
+<a href=#799 id=799 data-nosnippet>799</a>        generated_oids: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#800 id=800 data-nosnippet>800</a>        oid_generator: <a href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html">Box</a>::<a href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html#method.new">new</a>(|<span class="kw">_</span>, <span class="kw">_</span>| (<a href="#48">FAKE_OID</a>, <a href="#48">FAKE_OID</a>)),
+<a href=#801 id=801 data-nosnippet>801</a>    };
+<a href=#802 id=802 data-nosnippet>802</a>    <span class="kw">let </span>collect_bind_result_0 =
+<a href=#803 id=803 data-nosnippet>803</a>        <a href="#786">query</a>.<a href="../../../diesel/query_builder/trait.QueryFragment.html#method.collect_binds">collect_binds</a>(<span class="kw-2">&amp;mut </span><a href="#796">bind_collector_0</a>, <span class="kw-2">&amp;mut </span><a href="#797">metadata_lookup_0</a>, <span class="kw-2">&amp;</span><a href="../../../diesel/pg/backend/struct.Pg.html">Pg</a>);
+<a href=#804 id=804 data-nosnippet>804</a>    <span class="comment">// we have encountered a custom type oid, so we need to perform more work here.
+<a href=#805 id=805 data-nosnippet>805</a>    // These oids can occur in two locations:
+<a href=#806 id=806 data-nosnippet>806</a>    //
+<a href=#807 id=807 data-nosnippet>807</a>    // * In the collected metadata -&gt; relatively easy to resolve, just need to replace them below
+<a href=#808 id=808 data-nosnippet>808</a>    // * As part of the serialized bind blob -&gt; hard to replace
+<a href=#809 id=809 data-nosnippet>809</a>    //
+<a href=#810 id=810 data-nosnippet>810</a>    // To address the second case, we perform a second run of the bind collector
+<a href=#811 id=811 data-nosnippet>811</a>    // with a different set of fake oids. Then we compare the output of the two runs
+<a href=#812 id=812 data-nosnippet>812</a>    // and use that information to infer where to replace bytes in the serialized output
+<a href=#813 id=813 data-nosnippet>813</a>    </span><span class="kw">if </span><a href="#797">metadata_lookup_0</a>.custom_oid {
+<a href=#814 id=814 data-nosnippet>814</a>        <span class="comment">// we try to get the maximum oid we encountered here
+<a href=#815 id=815 data-nosnippet>815</a>        // to be sure that we don't accidentally give out a fake oid below that collides with
+<a href=#816 id=816 data-nosnippet>816</a>        // something
+<a href=#817 id=817 data-nosnippet>817</a>        </span><span class="kw">let </span><span class="kw-2">mut </span>max_oid = <a href="#796">bind_collector_0</a>
+<a href=#818 id=818 data-nosnippet>818</a>            .metadata
+<a href=#819 id=819 data-nosnippet>819</a>            .<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.iter">iter</a>()
+<a href=#820 id=820 data-nosnippet>820</a>            .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.flat_map">flat_map</a>(|t| {
+<a href=#821 id=821 data-nosnippet>821</a>                [
+<a href=#822 id=822 data-nosnippet>822</a>                    <a href="#820">t</a>.<a href="../../../diesel/pg/backend/struct.PgTypeMetadata.html#method.oid">oid</a>().<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.unwrap_or_default">unwrap_or_default</a>(),
+<a href=#823 id=823 data-nosnippet>823</a>                    <a href="#820">t</a>.<a href="../../../diesel/pg/backend/struct.PgTypeMetadata.html#method.array_oid">array_oid</a>().<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.unwrap_or_default">unwrap_or_default</a>(),
+<a href=#824 id=824 data-nosnippet>824</a>                ]
+<a href=#825 id=825 data-nosnippet>825</a>            })
+<a href=#826 id=826 data-nosnippet>826</a>            .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.max">max</a>()
+<a href=#827 id=827 data-nosnippet>827</a>            .<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.unwrap_or_default">unwrap_or_default</a>();
+<a href=#828 id=828 data-nosnippet>828</a>        <span class="kw">let </span><span class="kw-2">mut </span>bind_collector_1 = <a href="../../../diesel/query_builder/bind_collector/struct.RawBytesBindCollector.html">RawBytesBindCollector</a>::&lt;diesel::pg::<a href="../../../diesel/pg/backend/struct.Pg.html">Pg</a>&gt;::<a href="../../../diesel/query_builder/bind_collector/struct.RawBytesBindCollector.html#method.new">new</a>();
+<a href=#829 id=829 data-nosnippet>829</a>        <span class="kw">let </span><span class="kw-2">mut </span>metadata_lookup_1 = <a href="#920-924">PgAsyncMetadataLookup</a> {
+<a href=#830 id=830 data-nosnippet>830</a>            custom_oid: <span class="bool-val">false</span>,
+<a href=#831 id=831 data-nosnippet>831</a>            generated_oids: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(<a href="https://doc.rust-lang.org/nightly/std/collections/hash/map/struct.HashMap.html">HashMap</a>::<a href="https://doc.rust-lang.org/nightly/std/collections/hash/map/struct.HashMap.html#method.new">new</a>()),
+<a href=#832 id=832 data-nosnippet>832</a>            oid_generator: <a href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html">Box</a>::<a href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html#method.new">new</a>(<span class="kw">move </span>|<span class="kw">_</span>, <span class="kw">_</span>| {
+<a href=#833 id=833 data-nosnippet>833</a>                <a href="#817">max_oid</a> += <span class="number">2</span>;
+<a href=#834 id=834 data-nosnippet>834</a>                (<a href="#817">max_oid</a>, <a href="#817">max_oid</a> + <span class="number">1</span>)
+<a href=#835 id=835 data-nosnippet>835</a>            }),
+<a href=#836 id=836 data-nosnippet>836</a>        };
+<a href=#837 id=837 data-nosnippet>837</a>        <span class="kw">let </span>collect_bind_result_1 =
+<a href=#838 id=838 data-nosnippet>838</a>            <a href="#786">query</a>.<a href="../../../diesel/query_builder/trait.QueryFragment.html#method.collect_binds">collect_binds</a>(<span class="kw-2">&amp;mut </span><a href="#828">bind_collector_1</a>, <span class="kw-2">&amp;mut </span><a href="#829">metadata_lookup_1</a>, <span class="kw-2">&amp;</span><a href="../../../diesel/pg/backend/struct.Pg.html">Pg</a>);
+<a href=#839 id=839 data-nosnippet>839</a>
+<a href=#840 id=840 data-nosnippet>840</a><span class="expansion"><input id=expand-840 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        <span class=expanded>{
+    <span class="kw">match </span>(<span class="kw-2">&amp;</span>bind_collector_0.binds.len(), <span class="kw-2">&amp;</span>bind_collector_0.metadata.len()) {
+        (left_val, right_val) =&gt; {
+            <span class="kw">if </span>!(<span class="kw-2">*</span>left_val == <span class="kw-2">*</span>right_val) {
+                <span class="kw">let </span>kind = ::core::panicking::AssertKind::Eq;
+                ::core::panicking::assert_failed(kind, <span class="kw-2">&amp;*</span>left_val,
+                    <span class="kw-2">&amp;*</span>right_val, ::core::option::Option::None);
+            }
+        }
+    }
+};</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.assert_eq.html">assert_eq!</a>(
+<a href=#841 id=841 data-nosnippet>841</a>            bind_collector_0.binds.len(),
+<a href=#842 id=842 data-nosnippet>842</a>            bind_collector_0.metadata.len()
+<a href=#843 id=843 data-nosnippet>843</a>        )</span></span>;
+<a href=#844 id=844 data-nosnippet>844</a>        <span class="kw">let </span>fake_oid_locations = std::iter::<a href="https://doc.rust-lang.org/nightly/core/iter/adapters/zip/fn.zip.html">zip</a>(
+<a href=#845 id=845 data-nosnippet>845</a>            <a href="#796">bind_collector_0</a>
+<a href=#846 id=846 data-nosnippet>846</a>                .binds
+<a href=#847 id=847 data-nosnippet>847</a>                .<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.iter">iter</a>()
+<a href=#848 id=848 data-nosnippet>848</a>                .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.zip">zip</a>(<span class="kw-2">&amp;</span><a href="#796">bind_collector_0</a>.metadata),
+<a href=#849 id=849 data-nosnippet>849</a>            <span class="kw-2">&amp;</span><a href="#828">bind_collector_1</a>.binds,
+<a href=#850 id=850 data-nosnippet>850</a>        )
+<a href=#851 id=851 data-nosnippet>851</a>        .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.enumerate">enumerate</a>()
+<a href=#852 id=852 data-nosnippet>852</a>        .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.flat_map">flat_map</a>(|(bind_index, ((bytes_0, metadata_0), bytes_1))| {
+<a href=#853 id=853 data-nosnippet>853</a>            <span class="comment">// custom oids might appear in the serialized bind arguments for arrays or composite (record) types
+<a href=#854 id=854 data-nosnippet>854</a>            // in both cases the relevant buffer is a custom type on it's own
+<a href=#855 id=855 data-nosnippet>855</a>            // so we only need to check the cases that contain a fake OID on their own
+<a href=#856 id=856 data-nosnippet>856</a></span><span class="expansion"><input id=expand-856 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">            <span class="kw">let </span>(bytes_0, bytes_1) = <span class="kw">if </span><span class=expanded><span class="attr">#[allow(non_exhaustive_omitted_patterns)] </span><span class="kw">match </span>metadata_0.oid() {
+    <span class="prelude-val">Ok</span>(FAKE_OID) =&gt; <span class="bool-val">true</span>,
+    <span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.matches.html">matches!</a>(metadata_0.oid(), <span class="prelude-val">Ok</span>(FAKE_OID))</span></span> {
+<a href=#857 id=857 data-nosnippet>857</a>                (
+<a href=#858 id=858 data-nosnippet>858</a>                    <a href="#852">bytes_0</a>.<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.as_deref">as_deref</a>().<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.unwrap_or_default">unwrap_or_default</a>(),
+<a href=#859 id=859 data-nosnippet>859</a>                    <a href="#852">bytes_1</a>.<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.as_deref">as_deref</a>().<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.unwrap_or_default">unwrap_or_default</a>(),
+<a href=#860 id=860 data-nosnippet>860</a>                )
+<a href=#861 id=861 data-nosnippet>861</a>            } <span class="kw">else </span>{
+<a href=#862 id=862 data-nosnippet>862</a>                <span class="comment">// for all other cases, just return an empty
+<a href=#863 id=863 data-nosnippet>863</a>                // list to make the iteration below a no-op
+<a href=#864 id=864 data-nosnippet>864</a>                // and prevent the need of boxing
+<a href=#865 id=865 data-nosnippet>865</a>                </span>(<span class="kw-2">&amp;</span>[] <span class="kw">as </span><span class="kw-2">&amp;</span>[<span class="kw">_</span>], <span class="kw-2">&amp;</span>[] <span class="kw">as </span><span class="kw-2">&amp;</span>[<span class="kw">_</span>])
+<a href=#866 id=866 data-nosnippet>866</a>            };
+<a href=#867 id=867 data-nosnippet>867</a>            <span class="kw">let </span>lookup_map = <a href="#829">metadata_lookup_1</a>
+<a href=#868 id=868 data-nosnippet>868</a>                .generated_oids
+<a href=#869 id=869 data-nosnippet>869</a>                .<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.as_ref">as_ref</a>()
+<a href=#870 id=870 data-nosnippet>870</a>                .<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.map">map</a>(|map| {
+<a href=#871 id=871 data-nosnippet>871</a>                    <a href="#870">map</a>.<a href="https://doc.rust-lang.org/nightly/std/collections/hash/map/struct.HashMap.html#method.values">values</a>()
+<a href=#872 id=872 data-nosnippet>872</a>                        .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.flat_map">flat_map</a>(|(oid, array_oid)| [<span class="kw-2">*</span><a href="#872">oid</a>, <span class="kw-2">*</span><a href="#872">array_oid</a>])
+<a href=#873 id=873 data-nosnippet>873</a>                        .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.collect">collect</a>::&lt;<a href="https://doc.rust-lang.org/nightly/std/collections/hash/set/struct.HashSet.html">HashSet</a>&lt;<span class="kw">_</span>&gt;&gt;()
+<a href=#874 id=874 data-nosnippet>874</a>                })
+<a href=#875 id=875 data-nosnippet>875</a>                .<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.unwrap_or_default">unwrap_or_default</a>();
+<a href=#876 id=876 data-nosnippet>876</a>            std::iter::<a href="https://doc.rust-lang.org/nightly/core/iter/adapters/zip/fn.zip.html">zip</a>(
+<a href=#877 id=877 data-nosnippet>877</a>                <a href="#856">bytes_0</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.windows">windows</a>(std::mem::<a href="https://doc.rust-lang.org/nightly/core/mem/fn.size_of_val.html">size_of_val</a>(<span class="kw-2">&amp;</span><a href="#48">FAKE_OID</a>)),
+<a href=#878 id=878 data-nosnippet>878</a>                <a href="#856">bytes_1</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.windows">windows</a>(std::mem::<a href="https://doc.rust-lang.org/nightly/core/mem/fn.size_of_val.html">size_of_val</a>(<span class="kw-2">&amp;</span><a href="#48">FAKE_OID</a>)),
+<a href=#879 id=879 data-nosnippet>879</a>            )
+<a href=#880 id=880 data-nosnippet>880</a>            .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.enumerate">enumerate</a>()
+<a href=#881 id=881 data-nosnippet>881</a>            .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.filter_map">filter_map</a>(<span class="kw">move </span>|(byte_index, (l, r))| {
+<a href=#882 id=882 data-nosnippet>882</a>                <span class="comment">// here we infer if some byte sequence is a fake oid
+<a href=#883 id=883 data-nosnippet>883</a>                // We use the following conditions for that:
+<a href=#884 id=884 data-nosnippet>884</a>                //
+<a href=#885 id=885 data-nosnippet>885</a>                // * The first byte sequence matches the constant FAKE_OID
+<a href=#886 id=886 data-nosnippet>886</a>                // * The second sequence does not match the constant FAKE_OID
+<a href=#887 id=887 data-nosnippet>887</a>                // * The second sequence is contained in the set of generated oid,
+<a href=#888 id=888 data-nosnippet>888</a>                //   otherwise we get false positives around the boundary
+<a href=#889 id=889 data-nosnippet>889</a>                //   of a to be replaced byte sequence
+<a href=#890 id=890 data-nosnippet>890</a>                </span><span class="kw">let </span>r_val = <a href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>::<a href="https://doc.rust-lang.org/nightly/core/primitive.u32.html#method.from_be_bytes">from_be_bytes</a>(<a href="#881">r</a>.<a href="https://doc.rust-lang.org/nightly/core/convert/trait.TryInto.html#tymethod.try_into">try_into</a>().<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.expect">expect</a>(<span class="string">"That's the right size"</span>));
+<a href=#891 id=891 data-nosnippet>891</a>                (<a href="#881">l</a> == <a href="#48">FAKE_OID</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.u32.html#method.to_be_bytes">to_be_bytes</a>()
+<a href=#892 id=892 data-nosnippet>892</a>                    &amp;&amp; <a href="#881">r</a> != <a href="#48">FAKE_OID</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.u32.html#method.to_be_bytes">to_be_bytes</a>()
+<a href=#893 id=893 data-nosnippet>893</a>                    &amp;&amp; <a href="#867">lookup_map</a>.<a href="https://doc.rust-lang.org/nightly/std/collections/hash/set/struct.HashSet.html#method.contains">contains</a>(<span class="kw-2">&amp;</span><a href="#890">r_val</a>))
+<a href=#894 id=894 data-nosnippet>894</a>                .<a href="https://doc.rust-lang.org/nightly/core/primitive.bool.html#method.then_some">then_some</a>((<a href="#852">bind_index</a>, <a href="#881">byte_index</a>))
+<a href=#895 id=895 data-nosnippet>895</a>            })
+<a href=#896 id=896 data-nosnippet>896</a>        })
+<a href=#897 id=897 data-nosnippet>897</a>        <span class="comment">// Avoid storing the bind collectors in the returned Future
+<a href=#898 id=898 data-nosnippet>898</a>        </span>.<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.collect">collect</a>::&lt;<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<span class="kw">_</span>&gt;&gt;();
+<a href=#899 id=899 data-nosnippet>899</a>        <a href="#779-784">BindData</a> {
+<a href=#900 id=900 data-nosnippet>900</a>            collect_bind_result: <a href="#802">collect_bind_result_0</a>.<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.and">and</a>(<a href="#837">collect_bind_result_1</a>),
+<a href=#901 id=901 data-nosnippet>901</a>            <a href="#844">fake_oid_locations</a>,
+<a href=#902 id=902 data-nosnippet>902</a>            generated_oids: <a href="#829">metadata_lookup_1</a>.generated_oids,
+<a href=#903 id=903 data-nosnippet>903</a>            bind_collector: <a href="#828">bind_collector_1</a>,
+<a href=#904 id=904 data-nosnippet>904</a>        }
+<a href=#905 id=905 data-nosnippet>905</a>    } <span class="kw">else </span>{
+<a href=#906 id=906 data-nosnippet>906</a>        <a href="#779-784">BindData</a> {
+<a href=#907 id=907 data-nosnippet>907</a>            collect_bind_result: <a href="#802">collect_bind_result_0</a>,
+<a href=#908 id=908 data-nosnippet>908</a>            fake_oid_locations: <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>::<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html#method.new">new</a>(),
+<a href=#909 id=909 data-nosnippet>909</a>            generated_oids: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#910 id=910 data-nosnippet>910</a>            bind_collector: <a href="#796">bind_collector_0</a>,
+<a href=#911 id=911 data-nosnippet>911</a>        }
+<a href=#912 id=912 data-nosnippet>912</a>    }
+<a href=#913 id=913 data-nosnippet>913</a>}
+<a href=#914 id=914 data-nosnippet>914</a>
+<a href=#915 id=915 data-nosnippet>915</a><span class="kw">type </span>GeneratedOidTypeMap = <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/collections/hash/map/struct.HashMap.html">HashMap</a>&lt;(<a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>&gt;, <a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>), (<a href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>, <a href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>)&gt;&gt;;
+<a href=#916 id=916 data-nosnippet>916</a><span class="kw">type </span>OidGenerator = <span class="kw">dyn </span><a href="https://doc.rust-lang.org/nightly/core/ops/function/trait.FnMut.html">FnMut</a>(<span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>, <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>&gt;) -&gt; (<a href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>, <a href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>) + <span class="lifetime">'static</span>;
+<a href=#917 id=917 data-nosnippet>917</a>
+<a href=#918 id=918 data-nosnippet>918</a><span class="doccomment">/// Collects types that need to be looked up, and causes fake OIDs to be written into the bind collector
+<a href=#919 id=919 data-nosnippet>919</a>/// so they can be replaced with asynchronously fetched OIDs after the original query is dropped
+<a href=#920 id=920 data-nosnippet>920</a></span><span class="kw">struct </span>PgAsyncMetadataLookup {
+<a href=#921 id=921 data-nosnippet>921</a>    custom_oid: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>,
+<a href=#922 id=922 data-nosnippet>922</a>    generated_oids: <a href="#915">GeneratedOidTypeMap</a>,
+<a href=#923 id=923 data-nosnippet>923</a>    oid_generator: <a href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html">Box</a>&lt;<a href="#916">OidGenerator</a>&gt;,
+<a href=#924 id=924 data-nosnippet>924</a>}
+<a href=#925 id=925 data-nosnippet>925</a>
+<a href=#926 id=926 data-nosnippet>926</a><span class="kw">impl </span><a href="../../../diesel/pg/metadata_lookup/trait.PgMetadataLookup.html">PgMetadataLookup</a> <span class="kw">for </span><a href="#920-924">PgAsyncMetadataLookup</a> {
+<a href=#927 id=927 data-nosnippet>927</a>    <span class="kw">fn </span>lookup_type(<span class="kw-2">&amp;mut </span><span class="self">self</span>, type_name: <span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>, schema: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>&gt;) -&gt; <a href="../../../diesel/pg/backend/struct.PgTypeMetadata.html">PgTypeMetadata</a> {
+<a href=#928 id=928 data-nosnippet>928</a>        <a class="self" href="#927">self</a>.custom_oid = <span class="bool-val">true</span>;
+<a href=#929 id=929 data-nosnippet>929</a>
+<a href=#930 id=930 data-nosnippet>930</a>        <span class="kw">let </span>oid = <span class="kw">if let </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(map) = <span class="kw-2">&amp;mut </span><a class="self" href="#927">self</a>.generated_oids {
+<a href=#931 id=931 data-nosnippet>931</a>            <span class="kw-2">*</span><a href="#930">map</a>.<a href="https://doc.rust-lang.org/nightly/std/collections/hash/map/struct.HashMap.html#method.entry">entry</a>((<a href="#927">schema</a>.<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.map">map</a>(ToOwned::<a href="https://doc.rust-lang.org/nightly/alloc/borrow/trait.ToOwned.html#tymethod.to_owned">to_owned</a>), <a href="#927">type_name</a>.<a href="https://doc.rust-lang.org/nightly/alloc/borrow/trait.ToOwned.html#tymethod.to_owned">to_owned</a>()))
+<a href=#932 id=932 data-nosnippet>932</a>                .<a href="https://doc.rust-lang.org/nightly/std/collections/hash/map/enum.Entry.html#method.or_insert_with">or_insert_with</a>(|| (<a class="self" href="#927">self</a>.oid_generator)(<a href="#927">type_name</a>, <a href="#927">schema</a>))
+<a href=#933 id=933 data-nosnippet>933</a>        } <span class="kw">else </span>{
+<a href=#934 id=934 data-nosnippet>934</a>            (<a class="self" href="#927">self</a>.oid_generator)(<a href="#927">type_name</a>, <a href="#927">schema</a>)
+<a href=#935 id=935 data-nosnippet>935</a>        };
+<a href=#936 id=936 data-nosnippet>936</a>
+<a href=#937 id=937 data-nosnippet>937</a>        <a href="../../../diesel/pg/backend/struct.PgTypeMetadata.html">PgTypeMetadata</a>::<a href="../../../diesel/pg/backend/struct.PgTypeMetadata.html#method.from_result">from_result</a>(<a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="#930">oid</a>))
+<a href=#938 id=938 data-nosnippet>938</a>    }
+<a href=#939 id=939 data-nosnippet>939</a>
+<a href=#940 id=940 data-nosnippet>940</a>    <span class="kw">fn </span>as_any&lt;<span class="lifetime">'a</span>&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span>(<span class="kw">dyn </span><a href="https://doc.rust-lang.org/nightly/core/any/trait.Any.html">std::any::Any</a> + <span class="lifetime">'a</span>)
+<a href=#941 id=941 data-nosnippet>941</a>    <span class="kw">where
+<a href=#942 id=942 data-nosnippet>942</a>        </span><span class="self">Self</span>: <span class="lifetime">'a</span>,
+<a href=#943 id=943 data-nosnippet>943</a>    {
+<a href=#944 id=944 data-nosnippet>944</a>        <a class="self" href="#940">self</a>
+<a href=#945 id=945 data-nosnippet>945</a>    }
+<a href=#946 id=946 data-nosnippet>946</a>}
+<a href=#947 id=947 data-nosnippet>947</a>
+<a href=#948 id=948 data-nosnippet>948</a><span class="kw">impl </span><a href="../lib.rs.html#423-433">AsyncMultiConnectionHelper</a> <span class="kw">for </span><a href="#169-179">AsyncPgConnection</a> {
+<a href=#949 id=949 data-nosnippet>949</a>    <span class="kw">fn </span>to_any&lt;<span class="lifetime">'a</span>&gt;(
+<a href=#950 id=950 data-nosnippet>950</a>        lookup: <span class="kw-2">&amp;mut </span>&lt;<span class="self">Self</span>::Backend <span class="kw">as </span>TypeMetadata&gt;::<a href="../../../diesel/sql_types/trait.TypeMetadata.html#associatedtype.MetadataLookup">MetadataLookup</a>,
+<a href=#951 id=951 data-nosnippet>951</a>    ) -&gt; <span class="kw-2">&amp;mut </span>(<span class="kw">dyn </span><a href="https://doc.rust-lang.org/nightly/core/any/trait.Any.html">std::any::Any</a> + <span class="lifetime">'a</span>) {
+<a href=#952 id=952 data-nosnippet>952</a>        <a href="#950">lookup</a>.<a href="../../../diesel/pg/metadata_lookup/trait.PgMetadataLookup.html#method.as_any">as_any</a>()
+<a href=#953 id=953 data-nosnippet>953</a>    }
+<a href=#954 id=954 data-nosnippet>954</a>
+<a href=#955 id=955 data-nosnippet>955</a>    <span class="kw">fn </span>from_any(
+<a href=#956 id=956 data-nosnippet>956</a>        lookup: <span class="kw-2">&amp;mut </span><span class="kw">dyn </span><a href="https://doc.rust-lang.org/nightly/core/any/trait.Any.html">std::any::Any</a>,
+<a href=#957 id=957 data-nosnippet>957</a>    ) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="kw-2">&amp;mut </span>&lt;<span class="self">Self</span>::Backend <span class="kw">as </span>diesel::sql_types::TypeMetadata&gt;::<a href="../../../diesel/sql_types/trait.TypeMetadata.html#associatedtype.MetadataLookup">MetadataLookup</a>&gt; {
+<a href=#958 id=958 data-nosnippet>958</a>        <a href="#956">lookup</a>
+<a href=#959 id=959 data-nosnippet>959</a>            .<a href="https://doc.rust-lang.org/nightly/core/any/trait.Any.html#method.downcast_mut">downcast_mut</a>::&lt;<a href="#920-924">PgAsyncMetadataLookup</a>&gt;()
+<a href=#960 id=960 data-nosnippet>960</a>            .<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.map">map</a>(|v| <a href="#960">v</a> <span class="kw">as </span><span class="kw-2">&amp;mut </span><span class="kw">dyn </span><a href="../../../diesel/pg/metadata_lookup/trait.PgMetadataLookup.html">PgMetadataLookup</a>)
+<a href=#961 id=961 data-nosnippet>961</a>    }
+<a href=#962 id=962 data-nosnippet>962</a>}
+<a href=#963 id=963 data-nosnippet>963</a>
+<a href=#964 id=964 data-nosnippet>964</a><span class="kw">async fn </span>lookup_type(
+<a href=#965 id=965 data-nosnippet>965</a>    schema: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>&gt;,
+<a href=#966 id=966 data-nosnippet>966</a>    type_name: <a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>,
+<a href=#967 id=967 data-nosnippet>967</a>    raw_connection: <span class="kw-2">&amp;</span>tokio_postgres::<a href="../../../tokio_postgres/client/struct.Client.html">Client</a>,
+<a href=#968 id=968 data-nosnippet>968</a>) -&gt; QueryResult&lt;(u32, u32)&gt; {
+<a href=#969 id=969 data-nosnippet>969</a>    <span class="kw">let </span>r = <span class="kw">if let </span><span class="prelude-val">Some</span>(schema) = schema.as_ref() {
+<a href=#970 id=970 data-nosnippet>970</a>        raw_connection
+<a href=#971 id=971 data-nosnippet>971</a>            .query_one(
+<a href=#972 id=972 data-nosnippet>972</a>                <span class="string">"SELECT pg_type.oid, pg_type.typarray FROM pg_type \
+<a href=#973 id=973 data-nosnippet>973</a>             INNER JOIN pg_namespace ON pg_type.typnamespace = pg_namespace.oid \
+<a href=#974 id=974 data-nosnippet>974</a>             WHERE pg_type.typname = $1 AND pg_namespace.nspname = $2 \
+<a href=#975 id=975 data-nosnippet>975</a>             LIMIT 1"</span>,
+<a href=#976 id=976 data-nosnippet>976</a>                <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>type_name, schema],
+<a href=#977 id=977 data-nosnippet>977</a>            )
+<a href=#978 id=978 data-nosnippet>978</a>            .<span class="kw">await
+<a href=#979 id=979 data-nosnippet>979</a>            </span>.map_err(ErrorHelper)<span class="question-mark">?
+<a href=#980 id=980 data-nosnippet>980</a>    </span>} <span class="kw">else </span>{
+<a href=#981 id=981 data-nosnippet>981</a>        raw_connection
+<a href=#982 id=982 data-nosnippet>982</a>            .query_one(
+<a href=#983 id=983 data-nosnippet>983</a>                <span class="string">"SELECT pg_type.oid, pg_type.typarray FROM pg_type \
+<a href=#984 id=984 data-nosnippet>984</a>             WHERE pg_type.oid = quote_ident($1)::regtype::oid \
+<a href=#985 id=985 data-nosnippet>985</a>             LIMIT 1"</span>,
+<a href=#986 id=986 data-nosnippet>986</a>                <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>type_name],
+<a href=#987 id=987 data-nosnippet>987</a>            )
+<a href=#988 id=988 data-nosnippet>988</a>            .<span class="kw">await
+<a href=#989 id=989 data-nosnippet>989</a>            </span>.map_err(ErrorHelper)<span class="question-mark">?
+<a href=#990 id=990 data-nosnippet>990</a>    </span>};
+<a href=#991 id=991 data-nosnippet>991</a>    <span class="prelude-val">Ok</span>((r.get(<span class="number">0</span>), r.get(<span class="number">1</span>)))
+<a href=#992 id=992 data-nosnippet>992</a>}
+<a href=#993 id=993 data-nosnippet>993</a>
+<a href=#994 id=994 data-nosnippet>994</a><span class="kw">fn </span>unwrap_oids(metadata: <span class="kw-2">&amp;</span><a href="../../../diesel/pg/backend/struct.PgTypeMetadata.html">PgTypeMetadata</a>) -&gt; (<a href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>, <a href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>) {
+<a href=#995 id=995 data-nosnippet>995</a>    <span class="kw">let </span>err_msg = <span class="string">"PgTypeMetadata is supposed to always be Ok here"</span>;
+<a href=#996 id=996 data-nosnippet>996</a>    (
+<a href=#997 id=997 data-nosnippet>997</a>        <a href="#994">metadata</a>.<a href="../../../diesel/pg/backend/struct.PgTypeMetadata.html#method.oid">oid</a>().<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.expect">expect</a>(<a href="#995">err_msg</a>),
+<a href=#998 id=998 data-nosnippet>998</a>        <a href="#994">metadata</a>.<a href="../../../diesel/pg/backend/struct.PgTypeMetadata.html#method.array_oid">array_oid</a>().<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.expect">expect</a>(<a href="#995">err_msg</a>),
+<a href=#999 id=999 data-nosnippet>999</a>    )
+<a href=#1000 id=1000 data-nosnippet>1000</a>}
+<a href=#1001 id=1001 data-nosnippet>1001</a>
+<a href=#1002 id=1002 data-nosnippet>1002</a><span class="kw">fn </span>replace_fake_oid(
+<a href=#1003 id=1003 data-nosnippet>1003</a>    binds: <span class="kw-2">&amp;mut </span>[<a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>&gt;&gt;],
+<a href=#1004 id=1004 data-nosnippet>1004</a>    real_oids: <span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/collections/hash/map/struct.HashMap.html">HashMap</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>, <a href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>&gt;,
+<a href=#1005 id=1005 data-nosnippet>1005</a>    bind_index: <a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>,
+<a href=#1006 id=1006 data-nosnippet>1006</a>    byte_index: <a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>,
+<a href=#1007 id=1007 data-nosnippet>1007</a>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;()&gt; {
+<a href=#1008 id=1008 data-nosnippet>1008</a>    <span class="kw">let </span>serialized_oid = binds
+<a href=#1009 id=1009 data-nosnippet>1009</a>        .get_mut(bind_index)<span class="question-mark">?
+<a href=#1010 id=1010 data-nosnippet>1010</a>        </span>.as_mut()<span class="question-mark">?
+<a href=#1011 id=1011 data-nosnippet>1011</a>        </span>.get_mut(byte_index..)<span class="question-mark">?
+<a href=#1012 id=1012 data-nosnippet>1012</a>        </span>.first_chunk_mut::&lt;<span class="number">4</span>&gt;()<span class="question-mark">?</span>;
+<a href=#1013 id=1013 data-nosnippet>1013</a>    <span class="kw-2">*</span><a href="#1008">serialized_oid</a> = real_oids
+<a href=#1014 id=1014 data-nosnippet>1014</a>        .get(<span class="kw-2">&amp;</span>u32::from_be_bytes(<span class="kw-2">*</span>serialized_oid))<span class="question-mark">?
+<a href=#1015 id=1015 data-nosnippet>1015</a>        </span>.<a href="https://doc.rust-lang.org/nightly/core/primitive.u32.html#method.to_be_bytes">to_be_bytes</a>();
+<a href=#1016 id=1016 data-nosnippet>1016</a>    <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(())
+<a href=#1017 id=1017 data-nosnippet>1017</a>}
+<a href=#1018 id=1018 data-nosnippet>1018</a>
+<a href=#1019 id=1019 data-nosnippet>1019</a><span class="kw">async fn </span>drive_future&lt;R&gt;(
+<a href=#1020 id=1020 data-nosnippet>1020</a>    connection_future: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;broadcast::<a href="../../../tokio/sync/broadcast/struct.Receiver.html">Receiver</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html">Arc</a>&lt;tokio_postgres::<a href="../../../tokio_postgres/error/struct.Error.html">Error</a>&gt;&gt;&gt;,
+<a href=#1021 id=1021 data-nosnippet>1021</a>    client_future: <span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/future/future/trait.Future.html">Future</a>&lt;Output = <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;R, diesel::result::<a href="../../../diesel/result/enum.Error.html">Error</a>&gt;&gt;,
+<a href=#1022 id=1022 data-nosnippet>1022</a>) -&gt; <span class="prelude-ty">Result</span>&lt;R, diesel::result::Error&gt; {
+<a href=#1023 id=1023 data-nosnippet>1023</a>    <span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw-2">mut </span>connection_future) = connection_future {
+<a href=#1024 id=1024 data-nosnippet>1024</a><span class="expansion"><input id=expand-1024 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        <span class="kw">let </span>client_future = <span class=expanded>{
+    <span class="kw">super let </span><span class="kw-2">mut </span>pinned: ::core::pin::PinMacroHelper&lt;<span class="kw">_</span>&gt; =
+        ::core::pin::PinMacroHelper { value: client_future };
+    <span class="kw">unsafe </span>{ ::core::pin::pin_new_unchecked_in_helper(<span class="kw-2">&amp;mut </span>pinned) }
+}</span><span class="original"><span class="macro">std::pin::pin!</span>(client_future)</span></span>;
+<a href=#1025 id=1025 data-nosnippet>1025</a><span class="expansion"><input id=expand-1025 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        <span class="kw">let </span>connection_future = <span class=expanded>{
+    <span class="kw">super let </span><span class="kw-2">mut </span>pinned: ::core::pin::PinMacroHelper&lt;<span class="kw">_</span>&gt; =
+        ::core::pin::PinMacroHelper { value: connection_future.recv() };
+    <span class="kw">unsafe </span>{ ::core::pin::pin_new_unchecked_in_helper(<span class="kw-2">&amp;mut </span>pinned) }
+}</span><span class="original"><span class="macro">std::pin::pin!</span>(connection_future.recv())</span></span>;
+<a href=#1026 id=1026 data-nosnippet>1026</a>        <span class="kw">match </span>futures_util::future::select(client_future, connection_future).<span class="kw">await </span>{
+<a href=#1027 id=1027 data-nosnippet>1027</a>            Either::Left((res, <span class="kw">_</span>)) =&gt; res,
+<a href=#1028 id=1028 data-nosnippet>1028</a>            <span class="comment">// we got an error from the background task
+<a href=#1029 id=1029 data-nosnippet>1029</a>            // return it to the user
+<a href=#1030 id=1030 data-nosnippet>1030</a>            </span>Either::Right((<span class="prelude-val">Ok</span>(e), <span class="kw">_</span>)) =&gt; <span class="prelude-val">Err</span>(<span class="self">self</span>::error_helper::from_tokio_postgres_error(e)),
+<a href=#1031 id=1031 data-nosnippet>1031</a>            <span class="comment">// seems like the background thread died for whatever reason
+<a href=#1032 id=1032 data-nosnippet>1032</a>            </span>Either::Right((<span class="prelude-val">Err</span>(e), <span class="kw">_</span>)) =&gt; <span class="prelude-val">Err</span>(diesel::result::Error::DatabaseError(
+<a href=#1033 id=1033 data-nosnippet>1033</a>                DatabaseErrorKind::UnableToSendCommand,
+<a href=#1034 id=1034 data-nosnippet>1034</a>                Box::new(e.to_string()),
+<a href=#1035 id=1035 data-nosnippet>1035</a>            )),
+<a href=#1036 id=1036 data-nosnippet>1036</a>        }
+<a href=#1037 id=1037 data-nosnippet>1037</a>    } <span class="kw">else </span>{
+<a href=#1038 id=1038 data-nosnippet>1038</a>        client_future.<span class="kw">await
+<a href=#1039 id=1039 data-nosnippet>1039</a>    </span>}
+<a href=#1040 id=1040 data-nosnippet>1040</a>}
+<a href=#1041 id=1041 data-nosnippet>1041</a>
+<a href=#1042 id=1042 data-nosnippet>1042</a><span class="kw">fn </span>drive_connection&lt;S&gt;(
+<a href=#1043 id=1043 data-nosnippet>1043</a>    <span class="kw-2">mut </span>conn: tokio_postgres::<a href="../../../tokio_postgres/connection/struct.Connection.html">Connection</a>&lt;tokio_postgres::<a href="../../../tokio_postgres/socket/struct.Socket.html">Socket</a>, S&gt;,
+<a href=#1044 id=1044 data-nosnippet>1044</a>) -&gt; (
+<a href=#1045 id=1045 data-nosnippet>1045</a>    broadcast::<a href="../../../tokio/sync/broadcast/struct.Receiver.html">Receiver</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html">Arc</a>&lt;tokio_postgres::<a href="../../../tokio_postgres/error/struct.Error.html">Error</a>&gt;&gt;,
+<a href=#1046 id=1046 data-nosnippet>1046</a>    mpsc::<a href="../../../tokio/sync/mpsc/unbounded/struct.UnboundedReceiver.html">UnboundedReceiver</a>&lt;<a href="../../../diesel/result/type.QueryResult.html">QueryResult</a>&lt;diesel::pg::<a href="../../../diesel/pg/backend/struct.PgNotification.html">PgNotification</a>&gt;&gt;,
+<a href=#1047 id=1047 data-nosnippet>1047</a>    oneshot::<a href="../../../tokio/sync/oneshot/struct.Sender.html">Sender</a>&lt;()&gt;,
+<a href=#1048 id=1048 data-nosnippet>1048</a>)
+<a href=#1049 id=1049 data-nosnippet>1049</a><span class="kw">where
+<a href=#1050 id=1050 data-nosnippet>1050</a>    </span>S: <a href="../../../tokio_postgres/tls/trait.TlsStream.html">tokio_postgres::tls::TlsStream</a> + <a href="https://doc.rust-lang.org/nightly/core/marker/trait.Unpin.html">Unpin</a> + <a href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html">Send</a> + <span class="lifetime">'static</span>,
+<a href=#1051 id=1051 data-nosnippet>1051</a>{
+<a href=#1052 id=1052 data-nosnippet>1052</a>    <span class="kw">let </span>(error_tx, error_rx) = tokio::sync::broadcast::<a href="../../../tokio/sync/broadcast/fn.channel.html">channel</a>(<span class="number">1</span>);
+<a href=#1053 id=1053 data-nosnippet>1053</a>    <span class="kw">let </span>(notification_tx, notification_rx) = tokio::sync::mpsc::<a href="../../../tokio/sync/mpsc/unbounded/fn.unbounded_channel.html">unbounded_channel</a>();
+<a href=#1054 id=1054 data-nosnippet>1054</a>    <span class="kw">let </span>(shutdown_tx, <span class="kw-2">mut </span>shutdown_rx) = tokio::sync::oneshot::<a href="../../../tokio/sync/oneshot/fn.channel.html">channel</a>();
+<a href=#1055 id=1055 data-nosnippet>1055</a>    <span class="kw">let </span><span class="kw-2">mut </span>conn = futures_util::stream::<a href="../../../futures_util/stream/poll_fn/fn.poll_fn.html">poll_fn</a>(<span class="kw">move </span>|cx| <a href="#1043">conn</a>.<a href="../../../tokio_postgres/connection/struct.Connection.html#method.poll_message">poll_message</a>(<a href="#1055">cx</a>));
+<a href=#1056 id=1056 data-nosnippet>1056</a>
+<a href=#1057 id=1057 data-nosnippet>1057</a>    tokio::<a href="../../../tokio/task/spawn/fn.spawn.html">spawn</a>(<span class="kw">async move </span>{
+<a href=#1058 id=1058 data-nosnippet>1058</a>        <span class="kw">loop </span>{
+<a href=#1059 id=1059 data-nosnippet>1059</a>            <span class="kw">match </span>futures_util::future::select(<span class="kw-2">&amp;mut </span>shutdown_rx, conn.next()).<span class="kw">await </span>{
+<a href=#1060 id=1060 data-nosnippet>1060</a>                Either::<a href="../../../futures_util/future/either/enum.Either.html#variant.Left">Left</a>(<span class="kw">_</span>) | Either::<a href="../../../futures_util/future/either/enum.Either.html#variant.Right">Right</a>((<a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>, <span class="kw">_</span>)) =&gt; <span class="kw">break</span>,
+<a href=#1061 id=1061 data-nosnippet>1061</a>                Either::<a href="../../../futures_util/future/either/enum.Either.html#variant.Right">Right</a>((<a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(<a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(tokio_postgres::AsyncMessage::<a href="../../../tokio_postgres/enum.AsyncMessage.html#variant.Notification">Notification</a>(notif))), <span class="kw">_</span>)) =&gt; {
+<a href=#1062 id=1062 data-nosnippet>1062</a>                    <span class="kw">let _</span>: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<span class="kw">_</span>, <span class="kw">_</span>&gt; = <a href="#1053">notification_tx</a>.<a href="../../../tokio/sync/mpsc/unbounded/struct.UnboundedSender.html#method.send">send</a>(<a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(diesel::pg::<a href="../../../diesel/pg/backend/struct.PgNotification.html">PgNotification</a> {
+<a href=#1063 id=1063 data-nosnippet>1063</a>                        process_id: <a href="#1061">notif</a>.<a href="../../../tokio_postgres/struct.Notification.html#method.process_id">process_id</a>(),
+<a href=#1064 id=1064 data-nosnippet>1064</a>                        channel: <a href="#1061">notif</a>.<a href="../../../tokio_postgres/struct.Notification.html#method.channel">channel</a>().<a href="https://doc.rust-lang.org/nightly/alloc/borrow/trait.ToOwned.html#tymethod.to_owned">to_owned</a>(),
+<a href=#1065 id=1065 data-nosnippet>1065</a>                        payload: <a href="#1061">notif</a>.<a href="../../../tokio_postgres/struct.Notification.html#method.payload">payload</a>().<a href="https://doc.rust-lang.org/nightly/alloc/borrow/trait.ToOwned.html#tymethod.to_owned">to_owned</a>(),
+<a href=#1066 id=1066 data-nosnippet>1066</a>                    }));
+<a href=#1067 id=1067 data-nosnippet>1067</a>                }
+<a href=#1068 id=1068 data-nosnippet>1068</a>                Either::<a href="../../../futures_util/future/either/enum.Either.html#variant.Right">Right</a>((<a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(<a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<span class="kw">_</span>)), <span class="kw">_</span>)) =&gt; {}
+<a href=#1069 id=1069 data-nosnippet>1069</a>                Either::<a href="../../../futures_util/future/either/enum.Either.html#variant.Right">Right</a>((<a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(<a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(e)), <span class="kw">_</span>)) =&gt; {
+<a href=#1070 id=1070 data-nosnippet>1070</a>                    <span class="kw">let </span>e = <a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html">Arc</a>::<a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html#method.new">new</a>(<a href="#1069">e</a>);
+<a href=#1071 id=1071 data-nosnippet>1071</a>                    <span class="kw">let _</span>: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<span class="kw">_</span>, <span class="kw">_</span>&gt; = <a href="#1052">error_tx</a>.<a href="../../../tokio/sync/broadcast/struct.Sender.html#method.send">send</a>(<a href="#1070">e</a>.<a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">clone</a>());
+<a href=#1072 id=1072 data-nosnippet>1072</a>                    <span class="kw">let _</span>: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<span class="kw">_</span>, <span class="kw">_</span>&gt; =
+<a href=#1073 id=1073 data-nosnippet>1073</a>                        <a href="#1053">notification_tx</a>.<a href="../../../tokio/sync/mpsc/unbounded/struct.UnboundedSender.html#method.send">send</a>(<a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(error_helper::<a href="error_helper.rs.html#21-56">from_tokio_postgres_error</a>(<a href="#1070">e</a>)));
+<a href=#1074 id=1074 data-nosnippet>1074</a>                    <span class="kw">break</span>;
+<a href=#1075 id=1075 data-nosnippet>1075</a>                }
+<a href=#1076 id=1076 data-nosnippet>1076</a>            }
+<a href=#1077 id=1077 data-nosnippet>1077</a>        }
+<a href=#1078 id=1078 data-nosnippet>1078</a>    });
+<a href=#1079 id=1079 data-nosnippet>1079</a>
+<a href=#1080 id=1080 data-nosnippet>1080</a>    (<a href="#1052">error_rx</a>, <a href="#1053">notification_rx</a>, <a href="#1054">shutdown_tx</a>)
+<a href=#1081 id=1081 data-nosnippet>1081</a>}
+<a href=#1082 id=1082 data-nosnippet>1082</a>
+<a href=#1083 id=1083 data-nosnippet>1083</a><span class="attr">#[cfg(any(
+<a href=#1084 id=1084 data-nosnippet>1084</a>    feature = <span class="string">"deadpool"</span>,
+<a href=#1085 id=1085 data-nosnippet>1085</a>    feature = <span class="string">"bb8"</span>,
+<a href=#1086 id=1086 data-nosnippet>1086</a>    feature = <span class="string">"mobc"</span>,
+<a href=#1087 id=1087 data-nosnippet>1087</a>    feature = <span class="string">"r2d2"
+<a href=#1088 id=1088 data-nosnippet>1088</a></span>))]
+<a href=#1089 id=1089 data-nosnippet>1089</a></span><span class="kw">impl </span><a href="../pooled_connection/mod.rs.html#184-231"><span class="kw">crate</span>::pooled_connection::PoolableConnection</a> <span class="kw">for </span><a href="#169-179">AsyncPgConnection</a> {
+<a href=#1090 id=1090 data-nosnippet>1090</a>    <span class="kw">fn </span>is_broken(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a> {
+<a href=#1091 id=1091 data-nosnippet>1091</a>        <span class="kw">use </span><a href="../transaction_manager.rs.html#57-141"><span class="kw">crate</span>::TransactionManager</a>;
+<a href=#1092 id=1092 data-nosnippet>1092</a>
+<a href=#1093 id=1093 data-nosnippet>1093</a>        <span class="self">Self</span>::TransactionManager::<a href="../transaction_manager.rs.html#138-140">is_broken_transaction_manager</a>(<a class="self" href="#1090">self</a>) || <a class="self" href="#1090">self</a>.conn.<a href="../../../tokio_postgres/client/struct.Client.html#method.is_closed">is_closed</a>()
+<a href=#1094 id=1094 data-nosnippet>1094</a>    }
+<a href=#1095 id=1095 data-nosnippet>1095</a>}
+<a href=#1096 id=1096 data-nosnippet>1096</a>
+<a href=#1097 id=1097 data-nosnippet>1097</a><span class="kw">impl </span><a href="../../../diesel/connection/statement_cache/trait.QueryFragmentForCachedStatement.html">QueryFragmentForCachedStatement</a>&lt;<a href="../../../diesel/pg/backend/struct.Pg.html">Pg</a>&gt; <span class="kw">for </span><a href="../stmt_cache.rs.html#59-63">QueryFragmentHelper</a> {
+<a href=#1098 id=1098 data-nosnippet>1098</a>    <span class="kw">fn </span>construct_sql(<span class="kw-2">&amp;</span><span class="self">self</span>, _backend: <span class="kw-2">&amp;</span><a href="../../../diesel/pg/backend/struct.Pg.html">Pg</a>) -&gt; <a href="../../../diesel/result/type.QueryResult.html">QueryResult</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>&gt; {
+<a href=#1099 id=1099 data-nosnippet>1099</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a class="self" href="#1098">self</a>.sql.<a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">clone</a>())
+<a href=#1100 id=1100 data-nosnippet>1100</a>    }
+<a href=#1101 id=1101 data-nosnippet>1101</a>
+<a href=#1102 id=1102 data-nosnippet>1102</a>    <span class="kw">fn </span>is_safe_to_cache_prepared(<span class="kw-2">&amp;</span><span class="self">self</span>, _backend: <span class="kw-2">&amp;</span><a href="../../../diesel/pg/backend/struct.Pg.html">Pg</a>) -&gt; <a href="../../../diesel/result/type.QueryResult.html">QueryResult</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>&gt; {
+<a href=#1103 id=1103 data-nosnippet>1103</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a class="self" href="#1102">self</a>.safe_to_cache)
+<a href=#1104 id=1104 data-nosnippet>1104</a>    }
+<a href=#1105 id=1105 data-nosnippet>1105</a>
+<a href=#1106 id=1106 data-nosnippet>1106</a>    <span class="kw">fn </span>parameter_count(<span class="kw-2">&amp;</span><span class="self">self</span>, _backend: <span class="kw-2">&amp;</span><a href="../../../diesel/pg/backend/struct.Pg.html">Pg</a>) -&gt; <a href="../../../diesel/result/type.QueryResult.html">QueryResult</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>&gt; {
+<a href=#1107 id=1107 data-nosnippet>1107</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a class="self" href="#1106">self</a>.bind_count)
+<a href=#1108 id=1108 data-nosnippet>1108</a>    }
+<a href=#1109 id=1109 data-nosnippet>1109</a>}
+<a href=#1110 id=1110 data-nosnippet>1110</a>
+<a href=#1111 id=1111 data-nosnippet>1111</a><span class="kw">impl </span><a href="../../../diesel/connection/statement_cache/trait.PreparedStatement.html">PreparedStatement</a> <span class="kw">for </span><a href="../stmt_cache.rs.html#57">StatementHelper</a>&lt;<a href="../../../tokio_postgres/statement/struct.Statement.html">Statement</a>&gt; {
+<a href=#1112 id=1112 data-nosnippet>1112</a>    <span class="kw">fn </span>parameter_count(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a> {
+<a href=#1113 id=1113 data-nosnippet>1113</a>        <a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>::<a href="https://doc.rust-lang.org/nightly/core/convert/trait.TryFrom.html#tymethod.try_from">try_from</a>(<a class="self" href="#1112">self</a>.<span class="number">0</span>.<a href="../../../tokio_postgres/statement/struct.Statement.html#method.params">params</a>().<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.len">len</a>()).<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.expect">expect</a>(<span class="string">"usize is not larger than 64 bits"</span>)
+<a href=#1114 id=1114 data-nosnippet>1114</a>    }
+<a href=#1115 id=1115 data-nosnippet>1115</a>}
+<a href=#1116 id=1116 data-nosnippet>1116</a>
+<a href=#1117 id=1117 data-nosnippet>1117</a><span class="attr">#[cfg(test)]
+<a href=#1118 id=1118 data-nosnippet>1118</a></span><span class="kw">mod </span>tests {
+<a href=#1119 id=1119 data-nosnippet>1119</a>    <span class="kw">use super</span>::<span class="kw-2">*</span>;
+<a href=#1120 id=1120 data-nosnippet>1120</a>    <span class="kw">use </span><span class="kw">crate</span>::run_query_dsl::RunQueryDsl;
+<a href=#1121 id=1121 data-nosnippet>1121</a>    <span class="kw">use </span>diesel::IntoSql;
+<a href=#1122 id=1122 data-nosnippet>1122</a>    <span class="kw">use </span>diesel::sql_types::Integer;
+<a href=#1123 id=1123 data-nosnippet>1123</a>    <span class="kw">use </span>futures_util::future::try_join;
+<a href=#1124 id=1124 data-nosnippet>1124</a>
+<a href=#1125 id=1125 data-nosnippet>1125</a>    <span class="attr">#[tokio::test]
+<a href=#1126 id=1126 data-nosnippet>1126</a>    </span><span class="kw">async fn </span>pipelining() {
+<a href=#1127 id=1127 data-nosnippet>1127</a>        <span class="kw">let </span>database_url = dotenvy::var(<span class="string">"PG_DATABASE_URL"</span>)
+<a href=#1128 id=1128 data-nosnippet>1128</a>            .or_else(|<span class="kw">_</span>| dotenvy::var(<span class="string">"DATABASE_URL"</span>))
+<a href=#1129 id=1129 data-nosnippet>1129</a>            .expect(<span class="string">"DATABASE_URL must be set in order to run tests"</span>);
+<a href=#1130 id=1130 data-nosnippet>1130</a>
+<a href=#1131 id=1131 data-nosnippet>1131</a>        <span class="kw">let </span>conn = <span class="kw">crate</span>::AsyncPgConnection::establish(<span class="kw-2">&amp;</span>database_url)
+<a href=#1132 id=1132 data-nosnippet>1132</a>            .<span class="kw">await
+<a href=#1133 id=1133 data-nosnippet>1133</a>            </span>.unwrap();
+<a href=#1134 id=1134 data-nosnippet>1134</a>
+<a href=#1135 id=1135 data-nosnippet>1135</a>        <span class="kw">let </span>q1 = diesel::select(<span class="number">1_i32</span>.into_sql::&lt;Integer&gt;());
+<a href=#1136 id=1136 data-nosnippet>1136</a>        <span class="kw">let </span>q2 = diesel::select(<span class="number">2_i32</span>.into_sql::&lt;Integer&gt;());
+<a href=#1137 id=1137 data-nosnippet>1137</a>
+<a href=#1138 id=1138 data-nosnippet>1138</a>        <span class="kw">let </span>f1 = q1.get_result::&lt;i32&gt;(<span class="kw-2">&amp;mut &amp;</span>conn);
+<a href=#1139 id=1139 data-nosnippet>1139</a>        <span class="kw">let </span>f2 = q2.get_result::&lt;i32&gt;(<span class="kw-2">&amp;mut &amp;</span>conn);
+<a href=#1140 id=1140 data-nosnippet>1140</a>
+<a href=#1141 id=1141 data-nosnippet>1141</a>        <span class="kw">let </span>(r1, r2) = try_join(f1, f2).<span class="kw">await</span>.unwrap();
+<a href=#1142 id=1142 data-nosnippet>1142</a>
+<a href=#1143 id=1143 data-nosnippet>1143</a>        <span class="macro">assert_eq!</span>(r1, <span class="number">1</span>);
+<a href=#1144 id=1144 data-nosnippet>1144</a>        <span class="macro">assert_eq!</span>(r2, <span class="number">2</span>);
+<a href=#1145 id=1145 data-nosnippet>1145</a>    }
+<a href=#1146 id=1146 data-nosnippet>1146</a>
+<a href=#1147 id=1147 data-nosnippet>1147</a>    <span class="attr">#[tokio::test]
+<a href=#1148 id=1148 data-nosnippet>1148</a>    </span><span class="kw">async fn </span>pipelining_with_composed_futures() {
+<a href=#1149 id=1149 data-nosnippet>1149</a>        <span class="kw">let </span>database_url = dotenvy::var(<span class="string">"PG_DATABASE_URL"</span>)
+<a href=#1150 id=1150 data-nosnippet>1150</a>            .or_else(|<span class="kw">_</span>| dotenvy::var(<span class="string">"DATABASE_URL"</span>))
+<a href=#1151 id=1151 data-nosnippet>1151</a>            .expect(<span class="string">"DATABASE_URL must be set in order to run tests"</span>);
+<a href=#1152 id=1152 data-nosnippet>1152</a>
+<a href=#1153 id=1153 data-nosnippet>1153</a>        <span class="kw">let </span>conn = <span class="kw">crate</span>::AsyncPgConnection::establish(<span class="kw-2">&amp;</span>database_url)
+<a href=#1154 id=1154 data-nosnippet>1154</a>            .<span class="kw">await
+<a href=#1155 id=1155 data-nosnippet>1155</a>            </span>.unwrap();
+<a href=#1156 id=1156 data-nosnippet>1156</a>
+<a href=#1157 id=1157 data-nosnippet>1157</a>        <span class="kw">async fn </span>fn12(<span class="kw-2">mut </span>conn: <span class="kw-2">&amp;</span>AsyncPgConnection) -&gt; QueryResult&lt;(i32, i32)&gt; {
+<a href=#1158 id=1158 data-nosnippet>1158</a>            <span class="kw">let </span>f1 = diesel::select(<span class="number">1_i32</span>.into_sql::&lt;Integer&gt;()).get_result::&lt;i32&gt;(<span class="kw-2">&amp;mut </span>conn);
+<a href=#1159 id=1159 data-nosnippet>1159</a>            <span class="kw">let </span>f2 = diesel::select(<span class="number">2_i32</span>.into_sql::&lt;Integer&gt;()).get_result::&lt;i32&gt;(<span class="kw-2">&amp;mut </span>conn);
+<a href=#1160 id=1160 data-nosnippet>1160</a>
+<a href=#1161 id=1161 data-nosnippet>1161</a>            try_join(f1, f2).<span class="kw">await
+<a href=#1162 id=1162 data-nosnippet>1162</a>        </span>}
+<a href=#1163 id=1163 data-nosnippet>1163</a>
+<a href=#1164 id=1164 data-nosnippet>1164</a>        <span class="kw">async fn </span>fn34(<span class="kw-2">mut </span>conn: <span class="kw-2">&amp;</span>AsyncPgConnection) -&gt; QueryResult&lt;(i32, i32)&gt; {
+<a href=#1165 id=1165 data-nosnippet>1165</a>            <span class="kw">let </span>f3 = diesel::select(<span class="number">3_i32</span>.into_sql::&lt;Integer&gt;()).get_result::&lt;i32&gt;(<span class="kw-2">&amp;mut </span>conn);
+<a href=#1166 id=1166 data-nosnippet>1166</a>            <span class="kw">let </span>f4 = diesel::select(<span class="number">4_i32</span>.into_sql::&lt;Integer&gt;()).get_result::&lt;i32&gt;(<span class="kw-2">&amp;mut </span>conn);
+<a href=#1167 id=1167 data-nosnippet>1167</a>
+<a href=#1168 id=1168 data-nosnippet>1168</a>            try_join(f3, f4).<span class="kw">await
+<a href=#1169 id=1169 data-nosnippet>1169</a>        </span>}
+<a href=#1170 id=1170 data-nosnippet>1170</a>
+<a href=#1171 id=1171 data-nosnippet>1171</a>        <span class="kw">let </span>f12 = fn12(<span class="kw-2">&amp;</span>conn);
+<a href=#1172 id=1172 data-nosnippet>1172</a>        <span class="kw">let </span>f34 = fn34(<span class="kw-2">&amp;</span>conn);
+<a href=#1173 id=1173 data-nosnippet>1173</a>
+<a href=#1174 id=1174 data-nosnippet>1174</a>        <span class="kw">let </span>((r1, r2), (r3, r4)) = try_join(f12, f34).<span class="kw">await</span>.unwrap();
+<a href=#1175 id=1175 data-nosnippet>1175</a>
+<a href=#1176 id=1176 data-nosnippet>1176</a>        <span class="macro">assert_eq!</span>(r1, <span class="number">1</span>);
+<a href=#1177 id=1177 data-nosnippet>1177</a>        <span class="macro">assert_eq!</span>(r2, <span class="number">2</span>);
+<a href=#1178 id=1178 data-nosnippet>1178</a>        <span class="macro">assert_eq!</span>(r3, <span class="number">3</span>);
+<a href=#1179 id=1179 data-nosnippet>1179</a>        <span class="macro">assert_eq!</span>(r4, <span class="number">4</span>);
+<a href=#1180 id=1180 data-nosnippet>1180</a>    }
+<a href=#1181 id=1181 data-nosnippet>1181</a>
+<a href=#1182 id=1182 data-nosnippet>1182</a>    <span class="attr">#[tokio::test]
+<a href=#1183 id=1183 data-nosnippet>1183</a>    </span><span class="kw">async fn </span>pipelining_with_composed_futures_and_transaction() {
+<a href=#1184 id=1184 data-nosnippet>1184</a>        <span class="kw">let </span>database_url = dotenvy::var(<span class="string">"PG_DATABASE_URL"</span>)
+<a href=#1185 id=1185 data-nosnippet>1185</a>            .or_else(|<span class="kw">_</span>| dotenvy::var(<span class="string">"DATABASE_URL"</span>))
+<a href=#1186 id=1186 data-nosnippet>1186</a>            .expect(<span class="string">"DATABASE_URL must be set in order to run tests"</span>);
+<a href=#1187 id=1187 data-nosnippet>1187</a>
+<a href=#1188 id=1188 data-nosnippet>1188</a>        <span class="kw">let </span><span class="kw-2">mut </span>conn = <span class="kw">crate</span>::AsyncPgConnection::establish(<span class="kw-2">&amp;</span>database_url)
+<a href=#1189 id=1189 data-nosnippet>1189</a>            .<span class="kw">await
+<a href=#1190 id=1190 data-nosnippet>1190</a>            </span>.unwrap();
+<a href=#1191 id=1191 data-nosnippet>1191</a>
+<a href=#1192 id=1192 data-nosnippet>1192</a>        <span class="kw">async fn </span>fn12(<span class="kw-2">mut </span>conn: <span class="kw-2">&amp;</span>AsyncPgConnection) -&gt; QueryResult&lt;(i32, i32)&gt; {
+<a href=#1193 id=1193 data-nosnippet>1193</a>            <span class="kw">let </span>f1 = diesel::select(<span class="number">1_i32</span>.into_sql::&lt;Integer&gt;()).get_result::&lt;i32&gt;(<span class="kw-2">&amp;mut </span>conn);
+<a href=#1194 id=1194 data-nosnippet>1194</a>            <span class="kw">let </span>f2 = diesel::select(<span class="number">2_i32</span>.into_sql::&lt;Integer&gt;()).get_result::&lt;i32&gt;(<span class="kw-2">&amp;mut </span>conn);
+<a href=#1195 id=1195 data-nosnippet>1195</a>
+<a href=#1196 id=1196 data-nosnippet>1196</a>            try_join(f1, f2).<span class="kw">await
+<a href=#1197 id=1197 data-nosnippet>1197</a>        </span>}
+<a href=#1198 id=1198 data-nosnippet>1198</a>
+<a href=#1199 id=1199 data-nosnippet>1199</a>        <span class="kw">async fn </span>fn37(
+<a href=#1200 id=1200 data-nosnippet>1200</a>            <span class="kw-2">mut </span>conn: <span class="kw-2">&amp;</span>AsyncPgConnection,
+<a href=#1201 id=1201 data-nosnippet>1201</a>        ) -&gt; QueryResult&lt;(usize, (Vec&lt;i32&gt;, (i32, (Vec&lt;i32&gt;, i32))))&gt; {
+<a href=#1202 id=1202 data-nosnippet>1202</a>            <span class="kw">let </span>f3 = diesel::select(<span class="number">0_i32</span>.into_sql::&lt;Integer&gt;()).execute(<span class="kw-2">&amp;mut </span>conn);
+<a href=#1203 id=1203 data-nosnippet>1203</a>            <span class="kw">let </span>f4 = diesel::select(<span class="number">4_i32</span>.into_sql::&lt;Integer&gt;()).load::&lt;i32&gt;(<span class="kw-2">&amp;mut </span>conn);
+<a href=#1204 id=1204 data-nosnippet>1204</a>            <span class="kw">let </span>f5 = diesel::select(<span class="number">5_i32</span>.into_sql::&lt;Integer&gt;()).get_result::&lt;i32&gt;(<span class="kw-2">&amp;mut </span>conn);
+<a href=#1205 id=1205 data-nosnippet>1205</a>            <span class="kw">let </span>f6 = diesel::select(<span class="number">6_i32</span>.into_sql::&lt;Integer&gt;()).get_results::&lt;i32&gt;(<span class="kw-2">&amp;mut </span>conn);
+<a href=#1206 id=1206 data-nosnippet>1206</a>            <span class="kw">let </span>f7 = diesel::select(<span class="number">7_i32</span>.into_sql::&lt;Integer&gt;()).first::&lt;i32&gt;(<span class="kw-2">&amp;mut </span>conn);
+<a href=#1207 id=1207 data-nosnippet>1207</a>
+<a href=#1208 id=1208 data-nosnippet>1208</a>            try_join(f3, try_join(f4, try_join(f5, try_join(f6, f7)))).<span class="kw">await
+<a href=#1209 id=1209 data-nosnippet>1209</a>        </span>}
+<a href=#1210 id=1210 data-nosnippet>1210</a>
+<a href=#1211 id=1211 data-nosnippet>1211</a>        conn.transaction(<span class="kw">async </span>|conn| {
+<a href=#1212 id=1212 data-nosnippet>1212</a>            <span class="kw">let </span>f12 = fn12(conn);
+<a href=#1213 id=1213 data-nosnippet>1213</a>            <span class="kw">let </span>f37 = fn37(conn);
+<a href=#1214 id=1214 data-nosnippet>1214</a>
+<a href=#1215 id=1215 data-nosnippet>1215</a>            <span class="kw">let </span>((r1, r2), (r3, (r4, (r5, (r6, r7))))) = try_join(f12, f37).<span class="kw">await</span>.unwrap();
+<a href=#1216 id=1216 data-nosnippet>1216</a>
+<a href=#1217 id=1217 data-nosnippet>1217</a>            <span class="macro">assert_eq!</span>(r1, <span class="number">1</span>);
+<a href=#1218 id=1218 data-nosnippet>1218</a>            <span class="macro">assert_eq!</span>(r2, <span class="number">2</span>);
+<a href=#1219 id=1219 data-nosnippet>1219</a>            <span class="macro">assert_eq!</span>(r3, <span class="number">1</span>);
+<a href=#1220 id=1220 data-nosnippet>1220</a>            <span class="macro">assert_eq!</span>(r4, <span class="macro">vec!</span>[<span class="number">4</span>]);
+<a href=#1221 id=1221 data-nosnippet>1221</a>            <span class="macro">assert_eq!</span>(r5, <span class="number">5</span>);
+<a href=#1222 id=1222 data-nosnippet>1222</a>            <span class="macro">assert_eq!</span>(r6, <span class="macro">vec!</span>[<span class="number">6</span>]);
+<a href=#1223 id=1223 data-nosnippet>1223</a>            <span class="macro">assert_eq!</span>(r7, <span class="number">7</span>);
+<a href=#1224 id=1224 data-nosnippet>1224</a>
+<a href=#1225 id=1225 data-nosnippet>1225</a>            fn12(conn).<span class="kw">await</span><span class="question-mark">?</span>;
+<a href=#1226 id=1226 data-nosnippet>1226</a>            fn37(conn).<span class="kw">await</span><span class="question-mark">?</span>;
+<a href=#1227 id=1227 data-nosnippet>1227</a>
+<a href=#1228 id=1228 data-nosnippet>1228</a>            QueryResult::&lt;<span class="kw">_</span>&gt;::Ok(())
+<a href=#1229 id=1229 data-nosnippet>1229</a>        })
+<a href=#1230 id=1230 data-nosnippet>1230</a>        .<span class="kw">await
+<a href=#1231 id=1231 data-nosnippet>1231</a>        </span>.unwrap();
+<a href=#1232 id=1232 data-nosnippet>1232</a>    }
+<a href=#1233 id=1233 data-nosnippet>1233</a>}
+</code></pre></div></section></main></body></html>

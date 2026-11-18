@@ -1,0 +1,45 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Observe the referenced data and prevent the compiler from removing previous writes to it."><title>optimization_barrier in zeroize - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="zeroize" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../static.files/storage-41dd4d93.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-101b5a15.css"></noscript><link rel="icon" href="https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg"></head><body class="rustdoc fn"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">optimization_barrier</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><a class="logo-container" href="../zeroize/index.html"><img src="https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg" alt="logo"></a><h2><a href="../zeroize/index.html">zeroize</a><span class="version">1.9.1</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">optimization_<wbr>barrier</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#examples" title="Examples">Examples</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="index.html">In crate zeroize</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="index.html">zeroize</a></div><h1>Function <span class="fn">optimization_<wbr>barrier</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/zeroize/barrier.rs.html#53-104">Source</a> </span></div><pre class="rust item-decl"><code>pub fn optimization_barrier&lt;T: ?<a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html" title="trait core::marker::Sized">Sized</a>&gt;(val: <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.reference.html">&amp;T</a>)</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Observe the referenced data and prevent the compiler from removing previous writes to it.</p>
+<p>This function acts like <a href="https://doc.rust-lang.org/nightly/core/hint/fn.black_box.html" title="fn core::hint::black_box"><code>core::hint::black_box</code></a> but takes a reference and
+does not return the passed value.</p>
+<p>It’s implemented using the <a href="https://doc.rust-lang.org/nightly/core/arch/macro.asm.html" title="macro core::arch::asm"><code>core::arch::asm!</code></a> macro on target arches where <code>asm!</code> is stable,
+i.e. <code>aarch64</code>, <code>arm</code>, <code>arm64ec</code>, <code>loongarch64</code>, <code>riscv32</code>, <code>riscv64</code>, <code>s390x</code>, <code>x86</code>, and
+<code>x86_64</code>.</p>
+<p>On all other targets it’s implemented using <a href="https://doc.rust-lang.org/nightly/core/hint/fn.black_box.html" title="fn core::hint::black_box"><code>core::hint::black_box</code></a> and custom <code>black_box</code>
+implemented using <code>#[inline(never)]</code> and <code>read_volatile</code>.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>core::num::NonZeroU32;
+<span class="kw">use </span>zeroize::{ZeroizeOnDrop, zeroize_flat_type};
+
+
+<span class="kw">struct </span>DataToZeroize {
+    buf: [u8; <span class="number">32</span>],
+    <span class="comment">// `ThirdPartyType` can be a type with private fields
+    // defined in a third-party crate and which does not implement
+    // `Zeroize` or zeroization on drop.
+    </span>data: ThirdPartyType,
+    pos: NonZeroU32,
+}
+
+<span class="kw">struct </span>SomeMoreFlatData(u64);
+
+<span class="kw">impl </span>Drop <span class="kw">for </span>DataToZeroize {
+    <span class="kw">fn </span>drop(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
+        <span class="self">self</span>.buf = [<span class="number">0u8</span>; <span class="number">32</span>];
+        <span class="self">self</span>.data = ThirdPartyType::default();
+        <span class="self">self</span>.pos = NonZeroU32::new(<span class="number">32</span>).unwrap();
+        zeroize::optimization_barrier(<span class="self">self</span>);
+    }
+}
+
+<span class="kw">impl </span>zeroize::ZeroizeOnDrop <span class="kw">for </span>DataToZeroize {}
+
+<span class="kw">let </span><span class="kw-2">mut </span>data = DataToZeroize {
+    buf: [<span class="number">3u8</span>; <span class="number">32</span>],
+    data: ThirdPartyType::default(),
+    pos: NonZeroU32::new(<span class="number">32</span>).unwrap(),
+};
+
+<span class="comment">// data gets zeroized when dropped</span></code></pre></div>
+<p>Note that erasure of <code>ThirdPartyType</code> demonstrated above can be fragile if it contains
+<code>MaybeUninit</code> or <code>union</code> data. It also does not perform erasure of types like <code>Box</code> or <code>Vec</code>.</p>
+</div></details></section></div></main></body></html>

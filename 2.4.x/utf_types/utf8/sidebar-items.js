@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Ascii","LeadForFourByte","LeadForMultiByte","LeadForThreeByte","LeadForTwoByte","NonAscii","UnconstrainedContinuation"],"struct":["FourByteSequence","PreparedThreeBytes","PreparedTwoBytes","ThreeByteSequence","TwoByteSequence","Utf8ByteError"],"trait":["Utf8ByteSequence"]};

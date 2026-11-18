@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"macro":[["impl_newtype",1]],"mod":["anchor","attr","certificate","crl","ext","name","request","serial_number","time"]};

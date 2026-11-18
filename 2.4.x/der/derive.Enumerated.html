@@ -1,0 +1,30 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Derive decoders and encoders for ASN.1 `Enumerated` types on a C-like `enum` type."><title>Enumerated in der - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="der" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../static.files/storage-41dd4d93.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-101b5a15.css"></noscript><link rel="icon" href="https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg"></head><body class="rustdoc derive"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Enumerated</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><a class="logo-container" href="../der/index.html"><img src="https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg" alt="logo"></a><h2><a href="../der/index.html">der</a><span class="version">0.7.10</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Enumerated</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#usage" title="Usage">Usage</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="index.html">In crate der</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="index.html">der</a></div><h1>Derive Macro <span class="derive">Enumerated</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/der_derive/lib.rs.html#232">Source</a> </span></div><pre class="rust item-decl"><code>#[derive(Enumerated)]
+{
+    <span class="comment">// Attributes available to this derive:</span>
+    #[asn1]
+}
+</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Derive decoders and encoders for ASN.1 <a href="derive.Enumerated.html" title="derive der::Enumerated"><code>Enumerated</code></a> types on a
+C-like <code>enum</code> type.</p>
+<h2 id="usage"><a class="doc-anchor" href="#usage">§</a>Usage</h2>
+<p>The <code>Enumerated</code> proc macro requires a C-like enum which impls <code>Copy</code>
+and has a <code>#[repr]</code> of <code>u8</code>, <code>u16</code>, or <code>u32</code>:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">use </span>der::Enumerated;
+
+<span class="attr">#[derive(Enumerated, Copy, Clone, Debug, Eq, PartialEq)]
+#[repr(u32)]
+</span><span class="kw">pub enum </span>CrlReason {
+    Unspecified = <span class="number">0</span>,
+    KeyCompromise = <span class="number">1</span>,
+    CaCompromise = <span class="number">2</span>,
+    AffiliationChanged = <span class="number">3</span>,
+    Superseded = <span class="number">4</span>,
+    CessationOfOperation = <span class="number">5</span>,
+    CertificateHold = <span class="number">6</span>,
+    RemoveFromCrl = <span class="number">8</span>,
+    PrivilegeWithdrawn = <span class="number">9</span>,
+    AaCompromised = <span class="number">10
+</span>}</code></pre></div>
+<p>Note that the derive macro will write a <code>TryFrom&lt;...&gt;</code> impl for the
+provided <code>#[repr]</code>, which is used by the decoder.</p>
+</div></details></section></div></main></body></html>

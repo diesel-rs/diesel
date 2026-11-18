@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["methods"],"trait":["BelongingToDsl","CombineDsl","CompatibleType","JoinOnDsl","QueryDsl","RunQueryDsl","SaveChangesDsl","UpdateAndFetchResults"]};

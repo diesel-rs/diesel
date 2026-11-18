@@ -1,0 +1,137 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="An async connection to a database"><title>AsyncConnection in diesel_async - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="diesel_async" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../static.files/storage-41dd4d93.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc trait"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">AsyncConnection</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../diesel_async/index.html">diesel_<wbr>async</a><span class="version">0.10.0</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Async<wbr>Connection</a></h2><h3><a href="#required-methods">Required Methods</a></h3><ul class="block"><li><a href="#tymethod.establish" title="establish">establish</a></li><li><a href="#tymethod.set_instrumentation" title="set_instrumentation">set_instrumentation</a></li><li><a href="#tymethod.set_prepared_statement_cache_size" title="set_prepared_statement_cache_size">set_prepared_statement_cache_size</a></li></ul><h3><a href="#provided-methods">Provided Methods</a></h3><ul class="block"><li><a href="#method.begin_test_transaction" title="begin_test_transaction">begin_test_transaction</a></li><li><a href="#method.test_transaction" title="test_transaction">test_transaction</a></li><li><a href="#method.transaction" title="transaction">transaction</a></li></ul><h3><a href="#dyn-compatibility">Dyn Compatibility</a></h3><h3><a href="#implementors">Implementors</a></h3></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="index.html">In crate diesel_<wbr>async</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="index.html">diesel_async</a></div><h1>Trait <span class="trait">Async<wbr>Connection</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/diesel_async/lib.rs.html#211-419">Source</a> </span></div><pre class="rust item-decl"><code>pub trait AsyncConnection: <a class="trait" href="trait.AsyncConnectionCore.html" title="trait diesel_async::AsyncConnectionCore">AsyncConnectionCore</a> + <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html" title="trait core::marker::Sized">Sized</a> {
+    // Required methods
+    fn <a href="#tymethod.establish" class="fn">establish</a>(
+        database_url: &amp;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>,
+    ) -&gt; impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/future/future/trait.Future.html" title="trait core::future::future::Future">Future</a>&lt;Output = <a class="type" href="../diesel/result/type.ConnectionResult.html" title="type diesel::result::ConnectionResult">ConnectionResult</a>&lt;Self&gt;&gt; + <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a>;
+<span class="item-spacer"></span>    fn <a href="#tymethod.set_instrumentation" class="fn">set_instrumentation</a>(&amp;mut self, instrumentation: impl <a class="trait" href="../diesel/connection/instrumentation/trait.Instrumentation.html" title="trait diesel::connection::instrumentation::Instrumentation">Instrumentation</a>);
+<span class="item-spacer"></span>    fn <a href="#tymethod.set_prepared_statement_cache_size" class="fn">set_prepared_statement_cache_size</a>(&amp;mut self, size: <a class="enum" href="../diesel/connection/enum.CacheSize.html" title="enum diesel::connection::CacheSize">CacheSize</a>);
+
+    // Provided methods
+    fn <a href="#method.transaction" class="fn">transaction</a>&lt;'a, 'conn, R, E, F&gt;(
+        &amp;'conn mut self,
+        callback: F,
+    ) -&gt; impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/future/future/trait.Future.html" title="trait core::future::future::Future">Future</a>&lt;Output = <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;R, E&gt;&gt; + <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> + 'conn
+       <span class="where">where for&lt;'r&gt; F: <a class="trait" href="https://doc.rust-lang.org/nightly/core/ops/async_function/trait.AsyncFnOnce.html" title="trait core::ops::async_function::AsyncFnOnce">AsyncFnOnce</a>(&amp;'r mut Self) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;R, E&gt; + AsyncFunc&lt;&amp;'r mut Self, <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;R, E&gt;, Fut: <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a>&gt; + <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> + 'a,
+             E: <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html" title="trait core::convert::From">From</a>&lt;<a class="enum" href="../diesel/result/enum.Error.html" title="enum diesel::result::Error">Error</a>&gt; + <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> + 'a,
+             R: <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> + 'a,
+             'a: 'conn</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.begin_test_transaction" class="fn">begin_test_transaction</a>(
+        &amp;mut self,
+    ) -&gt; impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/future/future/trait.Future.html" title="trait core::future::future::Future">Future</a>&lt;Output = <a class="type" href="../diesel/result/type.QueryResult.html" title="type diesel::result::QueryResult">QueryResult</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.unit.html">()</a>&gt;&gt; + <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.test_transaction" class="fn">test_transaction</a>&lt;'conn, 'a, R, E, F&gt;(
+        &amp;'conn mut self,
+        f: F,
+    ) -&gt; impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/future/future/trait.Future.html" title="trait core::future::future::Future">Future</a>&lt;Output = R&gt; + <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> + 'conn
+       <span class="where">where for&lt;'r&gt; F: <a class="trait" href="https://doc.rust-lang.org/nightly/core/ops/async_function/trait.AsyncFnOnce.html" title="trait core::ops::async_function::AsyncFnOnce">AsyncFnOnce</a>(&amp;'r mut Self) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;R, E&gt; + AsyncFunc&lt;&amp;'r mut Self, <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;R, E&gt;, Fut: <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a>&gt; + <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> + 'a,
+             E: <a class="trait" href="https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html" title="trait core::fmt::Debug">Debug</a> + <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> + 'a,
+             R: <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> + 'a,
+             'a: 'conn</span> { ... }
+}</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>An async connection to a database</p>
+<p>This trait represents an async database connection. It can be used to query the database through
+the query dsl provided by diesel, custom extensions or raw sql queries. It essentially mirrors
+the sync diesel <a href="../diesel/connection/trait.Connection.html" title="trait diesel::connection::Connection"><code>Connection</code></a> implementation</p>
+</div></details><h2 id="required-methods" class="section-header">Required Methods<a href="#required-methods" class="anchor">§</a></h2><div class="methods"><details class="toggle method-toggle" open><summary><section id="tymethod.establish" class="method"><a class="src rightside" href="../src/diesel_async/lib.rs.html#220">Source</a><h4 class="code-header">fn <a href="#tymethod.establish" class="fn">establish</a>(
+    database_url: &amp;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>,
+) -&gt; impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/future/future/trait.Future.html" title="trait core::future::future::Future">Future</a>&lt;Output = <a class="type" href="../diesel/result/type.ConnectionResult.html" title="type diesel::result::ConnectionResult">ConnectionResult</a>&lt;Self&gt;&gt; + <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a></h4></section></summary><div class="docblock"><p>Establishes a new connection to the database</p>
+<p>The argument to this method and the method’s behavior varies by backend.
+See the documentation for that backend’s connection class
+for details about what it accepts and how it behaves.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.set_instrumentation" class="method"><a class="src rightside" href="../src/diesel_async/lib.rs.html#415">Source</a><h4 class="code-header">fn <a href="#tymethod.set_instrumentation" class="fn">set_instrumentation</a>(&amp;mut self, instrumentation: impl <a class="trait" href="../diesel/connection/instrumentation/trait.Instrumentation.html" title="trait diesel::connection::instrumentation::Instrumentation">Instrumentation</a>)</h4></section></summary><div class="docblock"><p>Set a specific <a href="../diesel/connection/instrumentation/trait.Instrumentation.html" title="trait diesel::connection::instrumentation::Instrumentation"><code>Instrumentation</code></a> implementation for this connection</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.set_prepared_statement_cache_size" class="method"><a class="src rightside" href="../src/diesel_async/lib.rs.html#418">Source</a><h4 class="code-header">fn <a href="#tymethod.set_prepared_statement_cache_size" class="fn">set_prepared_statement_cache_size</a>(&amp;mut self, size: <a class="enum" href="../diesel/connection/enum.CacheSize.html" title="enum diesel::connection::CacheSize">CacheSize</a>)</h4></section></summary><div class="docblock"><p>Set the prepared statement cache size to <a href="../diesel/connection/enum.CacheSize.html" title="enum diesel::connection::CacheSize"><code>CacheSize</code></a> for this connection</p>
+</div></details></div><h2 id="provided-methods" class="section-header">Provided Methods<a href="#provided-methods" class="anchor">§</a></h2><div class="methods"><details class="toggle method-toggle" open><summary><section id="method.transaction" class="method"><a class="src rightside" href="../src/diesel_async/lib.rs.html#298-312">Source</a><h4 class="code-header">fn <a href="#method.transaction" class="fn">transaction</a>&lt;'a, 'conn, R, E, F&gt;(
+    &amp;'conn mut self,
+    callback: F,
+) -&gt; impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/future/future/trait.Future.html" title="trait core::future::future::Future">Future</a>&lt;Output = <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;R, E&gt;&gt; + <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> + 'conn<div class="where">where
+    for&lt;'r&gt; F: <a class="trait" href="https://doc.rust-lang.org/nightly/core/ops/async_function/trait.AsyncFnOnce.html" title="trait core::ops::async_function::AsyncFnOnce">AsyncFnOnce</a>(&amp;'r mut Self) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;R, E&gt; + AsyncFunc&lt;&amp;'r mut Self, <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;R, E&gt;, Fut: <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a>&gt; + <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> + 'a,
+    E: <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html" title="trait core::convert::From">From</a>&lt;<a class="enum" href="../diesel/result/enum.Error.html" title="enum diesel::result::Error">Error</a>&gt; + <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> + 'a,
+    R: <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> + 'a,
+    'a: 'conn,</div></h4></section></summary><div class="docblock"><p>Executes the given function inside of a database transaction</p>
+<p>This function executes the provided closure <code>f</code> inside a database
+transaction. If there is already an open transaction for the current
+connection savepoints will be used instead. The connection is committed if
+the closure returns <code>Ok(_)</code>, it will be rolled back if it returns <code>Err(_)</code>.
+For both cases the original result value will be returned from this function.</p>
+<p>If the transaction fails to commit due to a <code>SerializationFailure</code> or a
+<code>ReadOnlyTransaction</code> a rollback will be attempted.
+If the rollback fails, the error will be returned in a
+<a href="../diesel/result/enum.Error.html#variant.RollbackErrorOnCommit" title="variant diesel::result::Error::RollbackErrorOnCommit"><code>Error::RollbackErrorOnCommit</code></a>,
+from which you will be able to extract both the original commit error and
+the rollback error.
+In addition, the connection will be considered broken
+as it contains a uncommitted unabortable open transaction. Any further
+interaction with the transaction system will result in an returned error
+in this case.</p>
+<p>If the closure returns an <code>Err(_)</code> and the rollback fails the function
+will return that rollback error directly, and the transaction manager will
+be marked as broken as it contains a uncommitted unabortable open transaction.</p>
+<p>If a nested transaction fails to release the corresponding savepoint
+the error will be returned directly.</p>
+<p><strong>WARNING:</strong> Canceling the returned future does currently <strong>not</strong>
+close an already open transaction. You may end up with a connection
+containing a dangling transaction.</p>
+<h5 id="example"><a class="doc-anchor" href="#example">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>diesel::result::Error;
+<span class="kw">use </span>diesel_async::{RunQueryDsl, AsyncConnection};
+
+conn.transaction::&lt;<span class="kw">_</span>, Error, <span class="kw">_</span>&gt;(<span class="kw">async </span>|conn| {
+    diesel::insert_into(users)
+        .values(name.eq(<span class="string">"Ruby"</span>))
+        .execute(conn)
+        .<span class="kw">await</span><span class="question-mark">?</span>;
+
+    <span class="kw">let </span>all_names = users.select(name).load::&lt;String&gt;(conn).<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="string">"Sean"</span>, <span class="string">"Tess"</span>, <span class="string">"Ruby"</span>], all_names);
+
+    <span class="prelude-val">Ok</span>(())
+}).<span class="kw">await</span><span class="question-mark">?</span>;
+
+conn.transaction::&lt;(), <span class="kw">_</span>, <span class="kw">_</span>&gt;(<span class="kw">async </span>|conn| {
+    diesel::insert_into(users)
+        .values(name.eq(<span class="string">"Pascal"</span>))
+        .execute(conn)
+        .<span class="kw">await</span><span class="question-mark">?</span>;
+
+    <span class="kw">let </span>all_names = users.select(name).load::&lt;String&gt;(conn).<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="string">"Sean"</span>, <span class="string">"Tess"</span>, <span class="string">"Ruby"</span>, <span class="string">"Pascal"</span>], all_names);
+
+    <span class="comment">// If we want to roll back the transaction, but don't have an
+    // actual error to return, we can return `RollbackTransaction`.
+    </span><span class="prelude-val">Err</span>(Error::RollbackTransaction)
+}).<span class="kw">await</span>;
+
+<span class="kw">let </span>all_names = users.select(name).load::&lt;String&gt;(conn).<span class="kw">await</span><span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="string">"Sean"</span>, <span class="string">"Tess"</span>, <span class="string">"Ruby"</span>], all_names);</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="method.begin_test_transaction" class="method"><a class="src rightside" href="../src/diesel_async/lib.rs.html#317-336">Source</a><h4 class="code-header">fn <a href="#method.begin_test_transaction" class="fn">begin_test_transaction</a>(
+    &amp;mut self,
+) -&gt; impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/future/future/trait.Future.html" title="trait core::future::future::Future">Future</a>&lt;Output = <a class="type" href="../diesel/result/type.QueryResult.html" title="type diesel::result::QueryResult">QueryResult</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.unit.html">()</a>&gt;&gt; + <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a></h4></section></summary><div class="docblock"><p>Creates a transaction that will never be committed. This is useful for
+tests. Panics if called while inside of a transaction or
+if called with a connection containing a broken transaction</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.test_transaction" class="method"><a class="src rightside" href="../src/diesel_async/lib.rs.html#374-404">Source</a><h4 class="code-header">fn <a href="#method.test_transaction" class="fn">test_transaction</a>&lt;'conn, 'a, R, E, F&gt;(
+    &amp;'conn mut self,
+    f: F,
+) -&gt; impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/future/future/trait.Future.html" title="trait core::future::future::Future">Future</a>&lt;Output = R&gt; + <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> + 'conn<div class="where">where
+    for&lt;'r&gt; F: <a class="trait" href="https://doc.rust-lang.org/nightly/core/ops/async_function/trait.AsyncFnOnce.html" title="trait core::ops::async_function::AsyncFnOnce">AsyncFnOnce</a>(&amp;'r mut Self) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;R, E&gt; + AsyncFunc&lt;&amp;'r mut Self, <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;R, E&gt;, Fut: <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a>&gt; + <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> + 'a,
+    E: <a class="trait" href="https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html" title="trait core::fmt::Debug">Debug</a> + <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> + 'a,
+    R: <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> + 'a,
+    'a: 'conn,</div></h4></section></summary><div class="docblock"><p>Executes the given function inside a transaction, but does not commit
+it. Panics if the given function returns an error.</p>
+<h5 id="example-1"><a class="doc-anchor" href="#example-1">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>diesel::result::Error;
+<span class="kw">use </span>diesel_async::{RunQueryDsl, AsyncConnection};
+
+conn.test_transaction::&lt;<span class="kw">_</span>, Error, <span class="kw">_</span>&gt;(<span class="kw">async </span>|conn| {
+    diesel::insert_into(users)
+        .values(name.eq(<span class="string">"Ruby"</span>))
+        .execute(conn)
+        .<span class="kw">await</span><span class="question-mark">?</span>;
+
+    <span class="kw">let </span>all_names = users.select(name).load::&lt;String&gt;(conn).<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="string">"Sean"</span>, <span class="string">"Tess"</span>, <span class="string">"Ruby"</span>], all_names);
+
+    <span class="prelude-val">Ok</span>(())
+}).<span class="kw">await</span>;
+
+<span class="comment">// Even though we returned `Ok`, the transaction wasn't committed.
+</span><span class="kw">let </span>all_names = users.select(name).load::&lt;String&gt;(conn).<span class="kw">await</span><span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="string">"Sean"</span>, <span class="string">"Tess"</span>], all_names);</code></pre></div></div></details></div><h2 id="dyn-compatibility" class="section-header">Dyn Compatibility<a href="#dyn-compatibility" class="anchor">§</a></h2><div class="dyn-compatibility-info"><p>This trait is <b>not</b> <a href="https://doc.rust-lang.org/nightly/reference/items/traits.html#dyn-compatibility">dyn compatible</a>.</p><p><i>In older versions of Rust, dyn compatibility was called "object safety".</i></p></div><h2 id="implementors" class="section-header">Implementors<a href="#implementors" class="anchor">§</a></h2><div id="implementors-list"><div class="negative-marker"></div><section id="impl-AsyncConnection-for-AsyncPgConnection" class="impl"><a class="src rightside" href="../src/diesel_async/pg/mod.rs.html#275-331">Source</a><a href="#impl-AsyncConnection-for-AsyncPgConnection" class="anchor">§</a><h3 class="code-header">impl <a class="trait" href="trait.AsyncConnection.html" title="trait diesel_async::AsyncConnection">AsyncConnection</a> for <a class="struct" href="struct.AsyncPgConnection.html" title="struct diesel_async::AsyncPgConnection">AsyncPgConnection</a></h3></section><section id="impl-AsyncConnection-for-C" class="impl"><a class="src rightside" href="../src/diesel_async/deref_connection.rs.html#60-96">Source</a><a href="#impl-AsyncConnection-for-C" class="anchor">§</a><h3 class="code-header">impl&lt;C&gt; <a class="trait" href="trait.AsyncConnection.html" title="trait diesel_async::AsyncConnection">AsyncConnection</a> for C<div class="where">where
+    C: <a class="trait" href="https://doc.rust-lang.org/nightly/core/ops/deref/trait.DerefMut.html" title="trait core::ops::deref::DerefMut">DerefMut</a> + <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a>,
+    C::<a class="associatedtype" href="https://doc.rust-lang.org/nightly/core/ops/deref/trait.Deref.html#associatedtype.Target" title="type core::ops::deref::Deref::Target">Target</a>: <a class="trait" href="trait.AsyncConnection.html" title="trait diesel_async::AsyncConnection">AsyncConnection</a>,</div></h3></section></div><script src="../trait.impl/diesel_async/trait.AsyncConnection.js" async></script></section></div></main></body></html>

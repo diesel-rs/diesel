@@ -1,0 +1,42 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Implements `Identifiable` for references of the current type"><title>Identifiable in diesel_derives - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-ba5701c5741a7b69.css" id="mainThemeStyle"><div id="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="diesel_derives" data-themes="" data-resource-suffix="" data-rustdoc-version="1.71.0-nightly (7908a1d65 2023-04-17)" data-search-js="search-e077946657036a58.js" data-settings-js="settings-298e1ea74db45b39.js" data-settings-css="settings-7bfb4c59cc6bc502.css" data-theme-light-css="light-0f8c037637f9eb3e.css" data-theme-dark-css="dark-1097f8e92a01e3cf.css" data-theme-ayu-css="ayu-614652228113ac93.css" ></div><script src="../static.files/storage-62ce34ea385b278a.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-1a524efa7bd4ab32.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../static.files/light-0f8c037637f9eb3e.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../static.files/dark-1097f8e92a01e3cf.css"><link rel="stylesheet" href="../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc derive"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="logo-container" href="../diesel_derives/index.html"><img class="rust-logo" src="../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><h2></h2></nav><nav class="sidebar"><a class="logo-container" href="../diesel_derives/index.html"><img class="rust-logo" src="../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><div class="sidebar-elems"><h2><a href="index.html">In diesel_derives</a></h2></div></nav><main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Derive Macro <a href="index.html">diesel_derives</a>::<wbr><a class="derive" href="#">Identifiable</a><button id="copy-path" title="Copy item path to clipboard"><img src="../static.files/clipboard-7571035ce49a181d.svg" width="19" height="18" alt="Copy item path"></button></h1><span class="out-of-band"><a class="srclink" href="../src/diesel_derives/lib.rs.html#261">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>#[derive(Identifiable)]
+{
+    // Attributes available to this derive:
+    #[diesel]
+    #[table_name]
+    #[column_name]
+    #[primary_key]
+}
+</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Implements <code>Identifiable</code> for references of the current type</p>
+<p>By default, the primary key field is assumed to be a single field called <code>id</code>.
+If it’s not, you can put <code>#[diesel(primary_key(your_id))]</code> on your struct.
+If you have a composite primary key, the syntax is <code>#[diesel(primary_key(id1, id2))]</code>.</p>
+<p>By default, <code>#[derive(Identifiable)]</code> will assume that your table is
+in scope and its name is the plural form of your struct name.
+Diesel uses very simple pluralization rules.
+It only adds an <code>s</code> to the end, and converts <code>CamelCase</code> to <code>snake_case</code>.
+If your table name does not follow this convention or is not in scope,
+you can specify a path to the table with <code>#[diesel(table_name = path::to::table)]</code>.
+Our rules for inferring table names is considered public API.
+It will never change without a major version bump.</p>
+<p>This derive generates the following impls:</p>
+<ul>
+<li><code>impl Identifiable for &amp;'a YourType</code></li>
+<li><code>impl Identifiable for &amp;'_ &amp;'a YourType</code></li>
+</ul>
+<h2 id="attributes"><a href="#attributes">Attributes</a></h2><h3 id="optional-container-attributes"><a href="#optional-container-attributes">Optional container attributes</a></h3>
+<ul>
+<li><code>#[diesel(table_name = path::to::table)]</code> specifies a path to the table this
+type belongs to. The path is relative to the current module.
+If this attribute is not used, the type name converted to
+<code>snake_case</code> with an added <code>s</code> is used as table name</li>
+<li><code>#[diesel(primary_key(id1, id2))]</code> to specify the struct field that
+that corresponds to the primary key. If not used, <code>id</code> will be
+assumed as primary key field</li>
+</ul>
+<h2 id="optional-field-attributes"><a href="#optional-field-attributes">Optional field attributes</a></h2>
+<ul>
+<li><code>#[diesel(column_name = some_column_name)]</code>, overrides the column the current
+field maps to to <code>some_column_name</code>. By default the field name is used
+as column name.</li>
+</ul>
+</div></details></section></div></main></body></html>

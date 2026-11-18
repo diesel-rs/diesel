@@ -1,0 +1,153 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Block and Stream Ciphers for Encryption and Decryption."><title>aws_lc_rs::cipher - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="aws_lc_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../static.files/storage-41dd4d93.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Module cipher</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../aws_lc_rs/index.html">aws_<wbr>lc_<wbr>rs</a><span class="version">1.19.0</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module cipher</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#-read-before-using" title="🛑 Read Before Using">🛑 Read Before Using</a></li><li><a href="#examples" title="Examples">Examples</a><ul><li><a href="#encryption-modes" title="Encryption Modes">Encryption Modes</a></li><li><a href="#constructing-a-decryptioncontext-for-decryption" title="Constructing a `DecryptionContext` for decryption.">Constructing a <code>DecryptionContext</code> for decryption.</a></li><li><a href="#feature-flags" title="Feature flags">Feature flags</a></li><li><a href="#getting-an-immutable-reference-to-the-iv-slice" title="Getting an immutable reference to the IV slice.">Getting an immutable reference to the IV slice.</a></li></ul></li></ul><h3><a href="#structs">Module Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#constants" title="Constants">Constants</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="../index.html">In crate aws_<wbr>lc_<wbr>rs</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">aws_lc_rs</a></div><h1>Module <span>cipher</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/aws_lc_rs/cipher.rs.html#6-2555">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Block and Stream Ciphers for Encryption and Decryption.</p>
+<h2 id="-read-before-using"><a class="doc-anchor" href="#-read-before-using">§</a>🛑 Read Before Using</h2>
+<p>This module provides access to block and stream cipher algorithms.
+The modes provided here only provide confidentiality, but <strong>do not</strong>
+provide integrity or authentication verification of ciphertext.</p>
+<p>These algorithms are provided solely for applications requiring them
+in order to maintain backwards compatibility in legacy applications.</p>
+<p>If you are developing new applications requiring data encryption see
+the algorithms provided in <a href="../aead/index.html" title="mod aws_lc_rs::aead"><code>aead</code></a>.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2><h3 id="encryption-modes"><a class="doc-anchor" href="#encryption-modes">§</a>Encryption Modes</h3><h4 id="aes-128-cbc"><a class="doc-anchor" href="#aes-128-cbc">§</a>AES-128 CBC</h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>aws_lc_rs::cipher::{
+    PaddedBlockDecryptingKey, PaddedBlockEncryptingKey, UnboundCipherKey, AES_128,
+};
+<span class="kw">use </span>std::io::Read;
+
+<span class="kw">let </span>original_message = <span class="string">"This is a secret message!"</span>.as_bytes();
+<span class="kw">let </span><span class="kw-2">mut </span>in_out_buffer = Vec::from(original_message);
+
+<span class="kw">let </span>key_bytes: <span class="kw-2">&amp;</span>[u8] = <span class="kw-2">&amp;</span>[
+    <span class="number">0xff</span>, <span class="number">0x0b</span>, <span class="number">0xe5</span>, <span class="number">0x84</span>, <span class="number">0x64</span>, <span class="number">0x0b</span>, <span class="number">0x00</span>, <span class="number">0xc8</span>, <span class="number">0x90</span>, <span class="number">0x7a</span>, <span class="number">0x4b</span>, <span class="number">0xbf</span>, <span class="number">0x82</span>, <span class="number">0x7c</span>, <span class="number">0xb6</span>,
+    <span class="number">0xd1</span>,
+];
+
+<span class="kw">let </span>key = UnboundCipherKey::new(<span class="kw-2">&amp;</span>AES_128, key_bytes)<span class="question-mark">?</span>;
+<span class="kw">let </span><span class="kw-2">mut </span>encrypting_key = PaddedBlockEncryptingKey::cbc_pkcs7(key)<span class="question-mark">?</span>;
+<span class="kw">let </span>context = encrypting_key.encrypt(<span class="kw-2">&amp;mut </span>in_out_buffer)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>key = UnboundCipherKey::new(<span class="kw-2">&amp;</span>AES_128, key_bytes)<span class="question-mark">?</span>;
+<span class="kw">let </span><span class="kw-2">mut </span>decrypting_key = PaddedBlockDecryptingKey::cbc_pkcs7(key)<span class="question-mark">?</span>;
+<span class="kw">let </span>plaintext = decrypting_key.decrypt(<span class="kw-2">&amp;mut </span>in_out_buffer, context)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(original_message, plaintext);</code></pre></div><h4 id="aes-128-ctr"><a class="doc-anchor" href="#aes-128-ctr">§</a>AES-128 CTR</h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>aws_lc_rs::cipher::{DecryptingKey, EncryptingKey, UnboundCipherKey, AES_128};
+
+<span class="kw">let </span>original_message = <span class="string">"This is a secret message!"</span>.as_bytes();
+<span class="kw">let </span><span class="kw-2">mut </span>in_out_buffer = Vec::from(original_message);
+
+<span class="kw">let </span>key_bytes: <span class="kw-2">&amp;</span>[u8] = <span class="kw-2">&amp;</span>[
+    <span class="number">0xff</span>, <span class="number">0x0b</span>, <span class="number">0xe5</span>, <span class="number">0x84</span>, <span class="number">0x64</span>, <span class="number">0x0b</span>, <span class="number">0x00</span>, <span class="number">0xc8</span>, <span class="number">0x90</span>, <span class="number">0x7a</span>, <span class="number">0x4b</span>, <span class="number">0xbf</span>, <span class="number">0x82</span>, <span class="number">0x7c</span>, <span class="number">0xb6</span>,
+    <span class="number">0xd1</span>,
+];
+
+<span class="kw">let </span>key = UnboundCipherKey::new(<span class="kw-2">&amp;</span>AES_128, key_bytes)<span class="question-mark">?</span>;
+<span class="kw">let </span><span class="kw-2">mut </span>encrypting_key = EncryptingKey::ctr(key)<span class="question-mark">?</span>;
+<span class="kw">let </span>context = encrypting_key.encrypt(<span class="kw-2">&amp;mut </span>in_out_buffer)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>key = UnboundCipherKey::new(<span class="kw-2">&amp;</span>AES_128, key_bytes)<span class="question-mark">?</span>;
+<span class="kw">let </span><span class="kw-2">mut </span>decrypting_key = DecryptingKey::ctr(key)<span class="question-mark">?</span>;
+<span class="kw">let </span>plaintext = decrypting_key.decrypt(<span class="kw-2">&amp;mut </span>in_out_buffer, context)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(original_message, plaintext);</code></pre></div><h4 id="aes-128-cbc-streaming-cipher"><a class="doc-anchor" href="#aes-128-cbc-streaming-cipher">§</a>AES-128 CBC Streaming Cipher</h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>aws_lc_rs::cipher::{
+    StreamingDecryptingKey, StreamingEncryptingKey, UnboundCipherKey, AES_128,
+};
+<span class="kw">let </span>original_message = <span class="string">"This is a secret message!"</span>.as_bytes();
+<span class="kw">let </span>key_bytes: <span class="kw-2">&amp;</span>[u8] = <span class="kw-2">&amp;</span>[
+    <span class="number">0xff</span>, <span class="number">0x0b</span>, <span class="number">0xe5</span>, <span class="number">0x84</span>, <span class="number">0x64</span>, <span class="number">0x0b</span>, <span class="number">0x00</span>, <span class="number">0xc8</span>, <span class="number">0x90</span>, <span class="number">0x7a</span>, <span class="number">0x4b</span>, <span class="number">0xbf</span>, <span class="number">0x82</span>, <span class="number">0x7c</span>,
+    <span class="number">0xb6</span>, <span class="number">0xd1</span>,
+];
+<span class="comment">// Prepare ciphertext buffer
+</span><span class="kw">let </span><span class="kw-2">mut </span>ciphertext_buffer = <span class="macro">vec!</span>[<span class="number">0u8</span>; original_message.len() + AES_128.block_len()];
+<span class="kw">let </span>ciphertext_slice = ciphertext_buffer.as_mut_slice();
+
+<span class="comment">// Create StreamingEncryptingKey
+</span><span class="kw">let </span>key = UnboundCipherKey::new(<span class="kw-2">&amp;</span>AES_128, key_bytes).unwrap();
+<span class="kw">let </span><span class="kw-2">mut </span>encrypting_key = StreamingEncryptingKey::cbc_pkcs7(key).unwrap();
+
+<span class="comment">// Encrypt
+</span><span class="kw">let </span><span class="kw-2">mut </span>first_update = encrypting_key
+                           .update(original_message, ciphertext_slice)
+                           .unwrap();
+<span class="kw">let </span>first_update_len = first_update.written().len();
+<span class="kw">let </span>(context, final_update) = encrypting_key.finish(first_update.remainder_mut()).unwrap();
+<span class="kw">let </span>ciphertext_len = first_update_len + final_update.written().len();
+<span class="kw">let </span>ciphertext = <span class="kw-2">&amp;</span>ciphertext_slice[<span class="number">0</span>..ciphertext_len];
+
+<span class="comment">// Prepare plaintext buffer
+</span><span class="kw">let </span><span class="kw-2">mut </span>plaintext_buffer = <span class="macro">vec!</span>[<span class="number">0u8</span>; ciphertext_len + AES_128.block_len()];
+<span class="kw">let </span>plaintext_slice = plaintext_buffer.as_mut_slice();
+
+<span class="comment">// Create StreamingDecryptingKey
+</span><span class="kw">let </span>key = UnboundCipherKey::new(<span class="kw-2">&amp;</span>AES_128, key_bytes).unwrap();
+<span class="kw">let </span><span class="kw-2">mut </span>decrypting_key = StreamingDecryptingKey::cbc_pkcs7(key, context).unwrap();
+
+<span class="comment">// Decrypt
+</span><span class="kw">let </span><span class="kw-2">mut </span>first_update = decrypting_key.update(ciphertext, plaintext_slice).unwrap();
+<span class="kw">let </span>first_update_len = first_update.written().len();
+<span class="kw">let </span>final_update = decrypting_key.finish(first_update.remainder_mut()).unwrap();
+<span class="kw">let </span>plaintext_len = first_update_len + final_update.written().len();
+<span class="kw">let </span>plaintext = <span class="kw-2">&amp;</span>plaintext_slice[<span class="number">0</span>..plaintext_len];
+
+<span class="macro">assert_eq!</span>(original_message, plaintext);</code></pre></div><h4 id="aes-128-cfb-128-bit-mode"><a class="doc-anchor" href="#aes-128-cfb-128-bit-mode">§</a>AES-128 CFB 128-bit mode</h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>aws_lc_rs::cipher::{DecryptingKey, EncryptingKey, UnboundCipherKey, AES_128};
+
+<span class="kw">let </span>original_message = <span class="string">"This is a secret message!"</span>.as_bytes();
+<span class="kw">let </span><span class="kw-2">mut </span>in_out_buffer = Vec::from(original_message);
+
+<span class="kw">let </span>key_bytes: <span class="kw-2">&amp;</span>[u8] = <span class="kw-2">&amp;</span>[
+    <span class="number">0xff</span>, <span class="number">0x0b</span>, <span class="number">0xe5</span>, <span class="number">0x84</span>, <span class="number">0x64</span>, <span class="number">0x0b</span>, <span class="number">0x00</span>, <span class="number">0xc8</span>, <span class="number">0x90</span>, <span class="number">0x7a</span>, <span class="number">0x4b</span>, <span class="number">0xbf</span>, <span class="number">0x82</span>, <span class="number">0x7c</span>, <span class="number">0xb6</span>,
+    <span class="number">0xd1</span>,
+];
+
+<span class="kw">let </span>key = UnboundCipherKey::new(<span class="kw-2">&amp;</span>AES_128, key_bytes)<span class="question-mark">?</span>;
+<span class="kw">let </span><span class="kw-2">mut </span>encrypting_key = EncryptingKey::cfb128(key)<span class="question-mark">?</span>;
+<span class="kw">let </span>context = encrypting_key.encrypt(<span class="kw-2">&amp;mut </span>in_out_buffer)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>key = UnboundCipherKey::new(<span class="kw-2">&amp;</span>AES_128, key_bytes)<span class="question-mark">?</span>;
+<span class="kw">let </span><span class="kw-2">mut </span>decrypting_key = DecryptingKey::cfb128(key)<span class="question-mark">?</span>;
+<span class="kw">let </span>plaintext = decrypting_key.decrypt(<span class="kw-2">&amp;mut </span>in_out_buffer, context)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(original_message, plaintext);</code></pre></div><h3 id="constructing-a-decryptioncontext-for-decryption"><a class="doc-anchor" href="#constructing-a-decryptioncontext-for-decryption">§</a>Constructing a <code>DecryptionContext</code> for decryption.</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>aws_lc_rs::cipher::{DecryptingKey, DecryptionContext, UnboundCipherKey, AES_128};
+<span class="kw">use </span>aws_lc_rs::iv::{FixedLength, IV_LEN_128_BIT};
+
+<span class="kw">let </span>context = DecryptionContext::Iv128(FixedLength::&lt;IV_LEN_128_BIT&gt;::from(<span class="kw-2">&amp;</span>[
+    <span class="number">0x8d</span>, <span class="number">0xdb</span>, <span class="number">0x7d</span>, <span class="number">0xf1</span>, <span class="number">0x56</span>, <span class="number">0xf5</span>, <span class="number">0x1c</span>, <span class="number">0xde</span>, <span class="number">0x63</span>, <span class="number">0xe3</span>, <span class="number">0x4a</span>, <span class="number">0x34</span>, <span class="number">0xb0</span>, <span class="number">0xdf</span>, <span class="number">0x28</span>,
+    <span class="number">0xf0</span>,
+]));
+
+<span class="kw">let </span>ciphertext: <span class="kw-2">&amp;</span>[u8] = <span class="kw-2">&amp;</span>[
+    <span class="number">0x79</span>, <span class="number">0x8c</span>, <span class="number">0x04</span>, <span class="number">0x58</span>, <span class="number">0xcf</span>, <span class="number">0x98</span>, <span class="number">0xb1</span>, <span class="number">0xe9</span>, <span class="number">0x97</span>, <span class="number">0x6b</span>, <span class="number">0xa1</span>, <span class="number">0xce</span>,
+];
+
+<span class="kw">let </span><span class="kw-2">mut </span>in_out_buffer = Vec::from(ciphertext);
+
+<span class="kw">let </span>key = UnboundCipherKey::new(
+    <span class="kw-2">&amp;</span>AES_128,
+    <span class="kw-2">&amp;</span>[
+        <span class="number">0x5b</span>, <span class="number">0xfc</span>, <span class="number">0xe7</span>, <span class="number">0x5e</span>, <span class="number">0x57</span>, <span class="number">0xc5</span>, <span class="number">0x4d</span>, <span class="number">0xda</span>, <span class="number">0x2d</span>, <span class="number">0xd4</span>, <span class="number">0x7e</span>, <span class="number">0x07</span>, <span class="number">0x0a</span>, <span class="number">0xef</span>,
+        <span class="number">0x43</span>, <span class="number">0x29</span>,
+    ],
+)<span class="question-mark">?</span>;
+<span class="kw">let </span><span class="kw-2">mut </span>decrypting_key = DecryptingKey::ctr(key)<span class="question-mark">?</span>;
+<span class="kw">let </span>plaintext = decrypting_key.decrypt(<span class="kw-2">&amp;mut </span>in_out_buffer, context)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="string">"Hello World!"</span>.as_bytes(), plaintext);
+</code></pre></div><h3 id="feature-flags"><a class="doc-anchor" href="#feature-flags">§</a>Feature flags</h3><h4 id="legacy-des"><a class="doc-anchor" href="#legacy-des">§</a><code>legacy-des</code></h4>
+<p>Enables single DES and Triple DES (<code>DES_FOR_LEGACY_USE_ONLY</code>,
+<code>DES_EDE_FOR_LEGACY_USE_ONLY</code>, <code>DES_EDE3_FOR_LEGACY_USE_ONLY</code>) for legacy
+interoperability. Only CBC and ECB modes are supported. All exposed items
+are <code>#[deprecated]</code>. See the crate-level <a href="../index.html#legacy-des" title="mod aws_lc_rs">feature flag
+documentation</a> for details and security caveats.</p>
+<h3 id="getting-an-immutable-reference-to-the-iv-slice"><a class="doc-anchor" href="#getting-an-immutable-reference-to-the-iv-slice">§</a>Getting an immutable reference to the IV slice.</h3>
+<p><code>TryFrom&lt;&amp;DecryptionContext&gt;</code> is implemented for <code>&amp;[u8]</code> allowing immutable references
+to IV bytes returned from cipher encryption operations. Note this is implemented as a <code>TryFrom</code> as it
+may fail for future enum variants that aren’t representable as a single slice.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// x is type `DecryptionContext`
+</span><span class="kw">let </span>iv: <span class="kw-2">&amp;</span>[u8] = (<span class="kw-2">&amp;</span>x).try_into()<span class="question-mark">?</span>;</code></pre></div></div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.Algorithm.html" title="struct aws_lc_rs::cipher::Algorithm">Algorithm</a></dt><dd>A cipher algorithm.</dd><dt><a class="struct" href="struct.BufferUpdate.html" title="struct aws_lc_rs::cipher::BufferUpdate">Buffer<wbr>Update</a></dt><dd>A struct indicating the portion of a buffer written to, and/or not written to, during an
+encryption/decryption operation.</dd><dt><a class="struct" href="struct.DecryptingKey.html" title="struct aws_lc_rs::cipher::DecryptingKey">Decrypting<wbr>Key</a></dt><dd>A cipher decryption key that does not perform block padding.</dd><dt><a class="struct" href="struct.EncryptingKey.html" title="struct aws_lc_rs::cipher::EncryptingKey">Encrypting<wbr>Key</a></dt><dd>A cipher encryption key that does not perform block padding.</dd><dt><a class="struct" href="struct.PaddedBlockDecryptingKey.html" title="struct aws_lc_rs::cipher::PaddedBlockDecryptingKey">Padded<wbr>Block<wbr>Decrypting<wbr>Key</a></dt><dd>A cipher decryption key that performs block padding.</dd><dt><a class="struct" href="struct.PaddedBlockEncryptingKey.html" title="struct aws_lc_rs::cipher::PaddedBlockEncryptingKey">Padded<wbr>Block<wbr>Encrypting<wbr>Key</a></dt><dd>A cipher encryption key that performs block padding.</dd><dt><a class="struct" href="struct.StreamingDecryptingKey.html" title="struct aws_lc_rs::cipher::StreamingDecryptingKey">Streaming<wbr>Decrypting<wbr>Key</a></dt><dd>A key for streaming decryption operations.</dd><dt><a class="struct" href="struct.StreamingEncryptingKey.html" title="struct aws_lc_rs::cipher::StreamingEncryptingKey">Streaming<wbr>Encrypting<wbr>Key</a></dt><dd>A key for streaming encryption operations.</dd><dt><a class="struct" href="struct.UnboundCipherKey.html" title="struct aws_lc_rs::cipher::UnboundCipherKey">Unbound<wbr>Cipher<wbr>Key</a></dt><dd>A key bound to a particular cipher algorithm.</dd></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.AlgorithmId.html" title="enum aws_lc_rs::cipher::AlgorithmId">Algorithm<wbr>Id</a></dt><dd>Cipher algorithm identifier.</dd><dt><a class="enum" href="enum.DecryptionContext.html" title="enum aws_lc_rs::cipher::DecryptionContext">Decryption<wbr>Context</a></dt><dd>The contextual data used to encrypt or decrypt data.</dd><dt><a class="enum" href="enum.EncryptionContext.html" title="enum aws_lc_rs::cipher::EncryptionContext">Encryption<wbr>Context</a></dt><dd>The contextual data used to encrypt or decrypt data.</dd><dt><a class="enum" href="enum.OperatingMode.html" title="enum aws_lc_rs::cipher::OperatingMode">Operating<wbr>Mode</a></dt><dd>The cipher operating mode.</dd></dl><h2 id="constants" class="section-header">Constants<a href="#constants" class="anchor">§</a></h2><dl class="item-table"><dt><a class="constant" href="constant.AES_128.html" title="constant aws_lc_rs::cipher::AES_128">AES_128</a></dt><dd>AES 128-bit cipher</dd><dt><a class="constant" href="constant.AES_192.html" title="constant aws_lc_rs::cipher::AES_192">AES_192</a></dt><dd>AES 192-bit cipher</dd><dt><a class="constant" href="constant.AES_256.html" title="constant aws_lc_rs::cipher::AES_256">AES_256</a></dt><dd>AES 256-bit cipher</dd><dt><a class="constant" href="constant.AES_128_KEY_LEN.html" title="constant aws_lc_rs::cipher::AES_128_KEY_LEN">AES_<wbr>128_<wbr>KEY_<wbr>LEN</a></dt><dd>The number of bytes in an AES 128-bit key
+Length of an AES-128 key in bytes.</dd><dt><a class="constant" href="constant.AES_192_KEY_LEN.html" title="constant aws_lc_rs::cipher::AES_192_KEY_LEN">AES_<wbr>192_<wbr>KEY_<wbr>LEN</a></dt><dd>The number of bytes in an AES 192-bit key
+Length of an AES-192 key in bytes.</dd><dt><a class="constant" href="constant.AES_256_KEY_LEN.html" title="constant aws_lc_rs::cipher::AES_256_KEY_LEN">AES_<wbr>256_<wbr>KEY_<wbr>LEN</a></dt><dd>The number of bytes in an AES 256-bit key
+Length of an AES-256 key in bytes.</dd><dt><a class="constant" href="constant.AES_CBC_IV_LEN.html" title="constant aws_lc_rs::cipher::AES_CBC_IV_LEN">AES_<wbr>CBC_<wbr>IV_<wbr>LEN</a></dt><dd>The number of bytes for an AES-CBC initialization vector (IV)
+The number of bytes for an AES-CBC initialization vector (IV)</dd><dt><a class="constant" href="constant.AES_CFB_IV_LEN.html" title="constant aws_lc_rs::cipher::AES_CFB_IV_LEN">AES_<wbr>CFB_<wbr>IV_<wbr>LEN</a></dt><dd>The number of bytes for an AES-CFB initialization vector (IV)
+The number of bytes for an AES-CFB initialization vector (IV)</dd><dt><a class="constant" href="constant.AES_CTR_IV_LEN.html" title="constant aws_lc_rs::cipher::AES_CTR_IV_LEN">AES_<wbr>CTR_<wbr>IV_<wbr>LEN</a></dt><dd>The number of bytes for an AES-CTR initialization vector (IV)
+The number of bytes for an AES-CTR initialization vector (IV)</dd><dt><a class="constant" href="constant.AES_OFB_IV_LEN.html" title="constant aws_lc_rs::cipher::AES_OFB_IV_LEN">AES_<wbr>OFB_<wbr>IV_<wbr>LEN</a></dt><dd>The number of bytes for an AES-OFB initialization vector (IV)
+The number of bytes for an AES-OFB initialization vector (IV)</dd></dl></section></div></main></body></html>

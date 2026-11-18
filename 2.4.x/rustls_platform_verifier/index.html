@@ -1,0 +1,255 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="rustls-platform-verifier"><title>rustls_platform_verifier - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="rustls_platform_verifier" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../static.files/storage-41dd4d93.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Crate rustls_platform_verifier</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../rustls_platform_verifier/index.html">rustls_<wbr>platform_<wbr>verifier</a><span class="version">0.7.1</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#rustls-platform-verifier" title="rustls-platform-verifier">rustls-platform-verifier</a><ul><li><a href="#deployment-considerations" title="Deployment Considerations">Deployment Considerations</a></li><li><a href="#installation-and-setup" title="Installation and setup">Installation and setup</a></li><li><a href="#credits" title="Credits">Credits</a></li></ul></li></ul><h3><a href="#structs">Crate Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#traits" title="Traits">Traits</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1>Crate <span>rustls_<wbr>platform_<wbr>verifier</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/rustls_platform_verifier/lib.rs.html#1-92">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="rustls-platform-verifier"><a class="doc-anchor" href="#rustls-platform-verifier">§</a>rustls-platform-verifier</h2>
+<p><a href="https://crates.io/crates/rustls-platform-verifier"><img src="https://img.shields.io/crates/v/rustls-platform-verifier.svg" alt="crates.io version" /></a>
+<a href="https://docs.rs/rustls-platform-verifier"><img src="https://docs.rs/rustls-platform-verifier/badge.svg" alt="crate documentation" /></a>
+<img src="https://img.shields.io/badge/rustc-1.85+-blue.svg" alt="MSRV" />
+<a href="https://crates.io/crates/rustls-platform-verifier"><img src="https://img.shields.io/crates/d/rustls-platform-verifier.svg" alt="crates.io downloads" /></a>
+<img src="https://github.com/1Password/rustls-platform-verifier/workflows/CI/badge.svg" alt="CI" /></p>
+<p>A Rust library to verify the validity of TLS certificates based on the operating system’s certificate facilities.
+On operating systems that don’t have these, <code>webpki</code> and/or <code>rustls-native-certs</code> is used instead.</p>
+<p>This crate is advantageous over <code>rustls-native-certs</code> on its own for a few reasons:</p>
+<ul>
+<li>Improved correctness and security, as the OSes <a href="https://support.apple.com/en-us/HT212865">CA constraints</a> will be taken into account.</li>
+<li>Better integration with OS certificate stores and enterprise CA deployments.</li>
+<li>Revocation support via verifying validity via OCSP and CRLs.</li>
+<li>Less I/O and memory overhead because all the platform CAs don’t need to be loaded and parsed.</li>
+</ul>
+<p>This library supports the following platforms and flows:</p>
+<div class="table"><table><thead><tr><th>OS</th><th>Certificate Store</th><th>Verification Method</th><th>Revocation Support</th></tr></thead><tbody>
+<tr><td>Windows</td><td>Windows platform certificate store</td><td>Windows API certificate verification</td><td>Yes</td></tr>
+<tr><td>macOS (10.14+)</td><td>macOS platform roots and keychain certificate</td><td>macOS <code>Security.framework</code></td><td>Yes</td></tr>
+<tr><td>iOS</td><td>iOS platform roots and keychain certificates</td><td>iOS <code>Security.framework</code></td><td>Yes</td></tr>
+<tr><td>Android</td><td>Android System Trust Store</td><td>Android Trust Manager</td><td>Sometimes<sup id="fnref1"><a href="#fn1">1</a></sup></td></tr>
+<tr><td>Linux</td><td>System CA bundle, or user-provided certs<sup id="fnref2"><a href="#fn2">2</a></sup></td><td>webpki</td><td>No<sup id="fnref3"><a href="#fn3">3</a></sup></td></tr>
+<tr><td>WASM</td><td>webpki roots</td><td>webpki</td><td>No<sup id="fnref3-2"><a href="#fn3">3</a></sup></td></tr>
+</tbody></table>
+</div><h3 id="deployment-considerations"><a class="doc-anchor" href="#deployment-considerations">§</a>Deployment Considerations</h3>
+<p>When choosing to use <code>rustls-platform-verifier</code> or another trust store option, these differences are important to consider. They
+are primarily about root certificate availability:</p>
+<div class="table"><table><thead><tr><th>Backend</th><th>Updates</th><th>Roots used</th><th>Supports system-local roots</th></tr></thead><tbody>
+<tr><td><code>rustls-platform-verifier</code> (non-Linux/BSD)</td><td>Updated by OS</td><td>System store, with full (dis)trust decisions from every source available.</td><td>Yes</td></tr>
+<tr><td><code>rustls-native-certs</code> + <code>webpki</code></td><td>Updated by OS</td><td>System store, with no (dis)trust decisions. All roots are treated equally regardless of their status.</td><td>Yes, with exceptions</td></tr>
+<tr><td><code>webpki-roots</code> + <code>webpki</code></td><td>Static, manual updates required</td><td>Hardcoded Mozilla CA roots, limited support for constrained roots.</td><td>No</td></tr>
+</tbody></table>
+</div>
+<p><strong>In general</strong>: It is the opinion of the <code>rustls</code> and <code>rustls-platform-verifier</code> teams that this is the best default available for client-side libraries and applications
+making connections to TLS servers when running on common operating systems. This is because it gets both live trust information (new roots, explicit markers, and auto-managed CRLs)
+and better matches the common expectation of apps running on that platform (to use proxies, for example). Otherwise, it becomes your maintenance burden to
+ship updates right away in order to handle increasing numbers of positive and negative trust events in the WebPKI/certificate ecosystem, or risk availability and security concerns.</p>
+<h5 id="linuxbsd"><a class="doc-anchor" href="#linuxbsd">§</a>Linux/BSD</h5>
+<p>As of the time of writing, <code>rustls-platform-verifier</code> on these OSes only loads the trust stores from the OS once upon startup. This is the same behavior as <code>rustls-native-certs</code>, but the
+abstraction allows better behavior on the other platforms without extra work for downstreams.</p>
+<h5 id="other"><a class="doc-anchor" href="#other">§</a>Other</h5>
+<p>Alternatively, there is a clear answer to use static <code>webpki-roots</code> in your application instead if you are deploying containerized applications frequently, where root store changes
+will make it to production faster and any possibly used trust root is static by definition.</p>
+<p>Even though platform verifiers are sometimes implemented in memory-unsafe languages, it is very unlikely that Rust apps using this library will become a point of weakness.
+This is due to either using a smaller set of servers or just being less exposed then other critical functions of the operating system, default web browser, etc.
+But if your activity is identical or close to one of the following examples that process large amounts of untrusted input, a 100% Rust option like <code>webpki</code> is a more secure option:</p>
+<ul>
+<li>Seeing how many TLS servers <code>rustls</code> with a specific configuration can connect to.</li>
+<li>Harvesting data from various untrusted TLS endpoints exposed on the internet.</li>
+<li>Extracting info from a known-evil endpoint.</li>
+<li>Scanning all TLS certificates on the open internet.</li>
+</ul>
+<p><code>rustls-platform-verifier</code> is widely deployed by several applications that use the <code>rustls</code> stack, such as 1Password, Bitwarden, Signal, and <code>rustup</code>, on a wide set of OSes.
+This means that it has received lots of exposure to edge cases and has real-world experience/expertise invested into it to ensure optimal compatibility and security.</p>
+<h3 id="installation-and-setup"><a class="doc-anchor" href="#installation-and-setup">§</a>Installation and setup</h3>
+<p>On most platforms, no setup should be required beyond adding the dependency via <code>cargo</code>:</p>
+<div class="example-wrap"><pre class="language-toml"><code>rustls-platform-verifier = &quot;0.5&quot;</code></pre></div>
+<p>To get a rustls <code>ClientConfig</code> configured to use the platform verifier use:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>rustls::ClientConfig;
+<span class="kw">use </span>rustls_platform_verifier::ConfigVerifierExt;
+<span class="kw">let </span>config = ClientConfig::with_platform_verifier();</code></pre></div>
+<p>This crate will use the <a href="https://docs.rs/rustls/latest/rustls/crypto/struct.CryptoProvider.html#using-the-per-process-default-cryptoprovider">rustls process-default crypto provider</a>. To construct a <code>ClientConfig</code> with a different <code>CryptoProvider</code>, use:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>rustls::ClientConfig;
+<span class="kw">use </span>rustls_platform_verifier::BuilderVerifierExt;
+<span class="kw">let </span>arc_crypto_provider = std::sync::Arc::new(rustls::crypto::aws_lc_rs::default_provider());
+<span class="kw">let </span>config = ClientConfig::builder_with_provider(arc_crypto_provider)
+    .with_safe_default_protocol_versions()
+    .unwrap()
+    .with_platform_verifier()
+    .unwrap()
+    .with_no_client_auth();</code></pre></div><h4 id="android"><a class="doc-anchor" href="#android">§</a>Android</h4>
+<p>Some manual setup is required, outside of <code>cargo</code>, to use this crate on Android. In order to
+use Android’s certificate verifier, the crate needs to call into the JVM. A small Kotlin
+component must be included in your app’s build to support <code>rustls-platform-verifier</code>.</p>
+<h5 id="gradle-setup"><a class="doc-anchor" href="#gradle-setup">§</a>Gradle Setup</h5>
+<p><code>rustls-platform-verifier</code> distributes the required native components in a Maven-compatible format via GitHub, but the project must be setup to locate them
+automatically and correctly. These steps assume you are using <code>.gradle</code> Groovy files because they’re the most common, but if you are using
+Kotlin scripts (<code>.gradle.kts</code>) for configuration instead, an example snippet is included towards the end of this section.</p>
+<p>Each snippet includes a <a href="https://docs.gradle.org/current/javadoc/org/gradle/api/provider/ValueSource.html"><code>ValueSource</code></a> implementation that obtains a
+Cargo-synchronized dependency version performantly, and is also friendly to Gradle’s configuration cache. The version can be be selected manually instead,
+but runtime crashes may occur if a SemVer incompatible version is used.</p>
+<p>Inside of your project’s <code>build.gradle</code> file, add the following code and Maven repository definition:</p>
+<p><code>$PATH_TO_LOCK_FILE</code> is the relative path to the Cargo lockfile of your crate or workspace (<code>Cargo.lock</code>).</p>
+<div class="example-wrap"><pre class="language-groovy"><code>
+repositories {
+    maven {
+        url = &quot;https://github.com/rustls/rustls-platform-verifier/raw/maven-archive/android-release-support/maven/&quot;
+    }
+}
+
+abstract class RustlsVersion implements ValueSource&lt;String, RustlsVersion.Params&gt; {
+    interface Params extends ValueSourceParameters {
+        RegularFileProperty getLockFile()
+    }
+
+    static final String CRATE_NAME = &quot;rustls-platform-verifier-android&quot;
+
+    @Override
+    String obtain() {
+        def lockFile = parameters.lockFile.get().asFile
+        def lines = lockFile.readLines()
+        def idx = lines.findIndexOf { it.trim() == &quot;name = \&quot;$CRATE_NAME\&quot;&quot; }
+        def version = idx &lt; 0 ? null : lines.drop(idx + 1)
+            .find { it.stripLeading().startsWith(&quot;version = &quot;) }
+            ?.find(/&quot;([^&quot;]*)&quot;/) { match, v -&gt; v }
+        if (!version) throw new GradleException(&quot;$CRATE_NAME not found in $lockFile&quot;)
+        return version
+    }
+}
+
+def rustlsPlatformVerifierVersion = providers.of(RustlsVersion) { spec -&gt;
+    spec.parameters.lockFile.set(layout.projectDirectory.file($PATH_TO_LOCK_FILE))
+}
+
+configurations.configureEach { configuration -&gt;
+    configuration.resolutionStrategy.eachDependency { details -&gt;
+        if (details.requested.group == &quot;org.rustls&quot; &amp;&amp; details.requested.name == &quot;rustls-platform-verifier&quot;) {
+            details.useVersion(rustlsPlatformVerifierVersion.get())
+            details.because(&quot;native component version must be identical to version of ${RustlsVersion.CRATE_NAME}&quot;)
+        }
+    }
+}</code></pre></div>
+<p>Then, wherever you declare your dependencies, add the following:</p>
+<div class="example-wrap"><pre class="language-groovy"><code>implementation &quot;rustls:rustls-platform-verifier&quot;</code></pre></div>
+<p>The dependency intentionally has no static version, it is only resolved dynamically at configuration time by the build script.</p>
+<p>Cargo automatically handles finding the downloaded crate in the correct location for your project. It also handles updating the version when
+new releases of <code>rustls-platform-verifier</code> are published. If you only use published releases, no extra maintenance should be required.</p>
+<p>These script snippets can be tweaked as best suits your project, but the <code>cargo metadata</code> invocation must be included so that the Android
+implementation part can be located on-disk.</p>
+<h6 id="kotlin-and-gradle"><a class="doc-anchor" href="#kotlin-and-gradle">§</a>Kotlin and Gradle</h6>
+<p><code>build.gradle.kts</code>:</p>
+<div class="example-wrap"><pre class="language-kotlin"><code>
+repositories {
+    maven {
+        url = uri(&quot;https://github.com/rustls/rustls-platform-verifier/raw/maven-archive/android-release-support/maven/&quot;)
+    }
+}
+
+abstract class RustlsVersion : ValueSource&lt;String, RustlsVersion.Params&gt; {
+    interface Params : ValueSourceParameters {
+        val lockFile: RegularFileProperty
+    }
+
+    companion object {
+        const val CRATE_NAME = &quot;rustls-platform-verifier-android&quot;
+    }
+
+    override fun obtain(): String {
+        val version = parameters.lockFile.get().asFile.readLines().let { lines -&gt;
+            val nameIdx = lines.indexOfFirst { it.trim() == &quot;name = \&quot;$CRATE_NAME\&quot;&quot; }
+            if (nameIdx &lt; 0) {
+                null
+            } else {
+                lines.drop(nameIdx + 1)
+                    .firstOrNull { it.trimStart().startsWith(&quot;version = &quot;) }
+                    ?.substringAfter(&#39;&quot;&#39;, &quot;&quot;)
+                    ?.substringBefore(&#39;&quot;&#39;, &quot;&quot;)
+                    ?.takeIf { it.isNotEmpty() }
+            }
+        }
+        return version?: error(&quot;$CRATE_NAME not found in Cargo.lock&quot;)
+    }
+}
+
+val rustlsPlatformVerifierVersion = providers.of(RustlsVersion::class.java) {
+    parameters.lockFile.set(layout.projectDirectory.file($PATH_TO_LOCK_FILE))
+}
+
+configurations.configureEach {
+    resolutionStrategy.eachDependency {
+        if (requested.group == &quot;org.rustls&quot; &amp;&amp; requested.name == &quot;rustls-platform-verifier&quot;) {
+            useVersion(rustlsPlatformVerifierVersion.get())
+            because(&quot;native component version must be identical to version of ${RustlsVersion.CRATE_NAME}&quot;)
+        }
+    }
+}
+
+dependencies {
+    // `rustls-platform-verifier` is a Rust crate, but it also has a Kotlin component.
+    implementation(libs.rustls.platform.verifier)
+}</code></pre></div>
+<p><code>libs.version.toml</code>:</p>
+<div class="example-wrap"><pre class="language-toml"><code># We keep the dependency unversioned because its version is selected dynamically during configuration.
+rustls-platform-verifier = { group = &quot;rustls&quot;, name = &quot;rustls-platform-verifier&quot; }</code></pre></div><h5 id="proguard"><a class="doc-anchor" href="#proguard">§</a>Proguard</h5>
+<p>If your Android application makes use of Proguard for optimizations, its important to make sure that the Android verifier component isn’t optimized
+out because it looks like dead code. Proguard is unable to see any JNI usage, so your rules must manually opt into keeping it. The following rule
+can do this for you:</p>
+<div class="example-wrap"><pre class="language-text"><code>-keep, includedescriptorclasses class org.rustls.platformverifier.** { *; }</code></pre></div><h5 id="crate-initialization"><a class="doc-anchor" href="#crate-initialization">§</a>Crate initialization</h5>
+<p>In order for the crate to call into the JVM, it needs handles from Android. These
+are provided by one of the <code>init_with_env</code>, <code>init_with_refs</code> or <code>init_with_runtime</code> functions. These give <code>rustls-platform-verifier</code>
+the resources it needs to make calls into the Android certificate verifier.</p>
+<p>As an example, if your Rust Android component which the “native” Android
+part of your app calls at startup has an initialization, like this:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jni::jni_mangle;
+<span class="kw">use </span>jni::objects::{JClass, JObject};
+<span class="kw">use </span>jni::EnvUnowned;
+
+<span class="attr">#[jni_mangle(<span class="string">"com.orgname.application.Application"</span>)]
+</span><span class="kw">pub fn </span>init&lt;<span class="lifetime">'caller</span>&gt;(
+    <span class="kw-2">mut </span>unowned_env: EnvUnowned&lt;<span class="lifetime">'caller</span>&gt;,
+    _class: JClass&lt;<span class="lifetime">'caller</span>&gt;,
+    context: JObject&lt;<span class="lifetime">'caller</span>&gt;,
+) {
+    <span class="comment">// ... initialize your app's other parts here.
+</span>}</code></pre></div>
+<p>In the simplest case, you should to insert a call to <code>rustls_platform_verifier::android::init_with_env()</code> here,
+before any networking has a chance to run. This only needs to be called once and
+the verifier will be valid for the lifetime of your app’s process.</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jni::errors::ThrowRuntimeExAndDefault;
+<span class="kw">use </span>jni::jni_mangle;
+<span class="kw">use </span>jni::objects::{JClass, JObject};
+<span class="kw">use </span>jni::EnvUnowned;
+
+<span class="attr">#[jni_mangle(<span class="string">"com.orgname.application.Application"</span>)]
+</span><span class="kw">pub fn </span>init&lt;<span class="lifetime">'caller</span>&gt;(
+    <span class="kw-2">mut </span>unowned_env: EnvUnowned&lt;<span class="lifetime">'caller</span>&gt;,
+    _class: JClass&lt;<span class="lifetime">'caller</span>&gt;,
+    context: JObject&lt;<span class="lifetime">'caller</span>&gt;,
+) {
+    <span class="comment">// ... initialize your app's other parts here.
+
+    // Then, initialize the certificate verifier for future use.
+    </span>unowned_env
+        .with_env(|env| rustls_platform_verifier::android::init_with_env(env, context))
+        .resolve::&lt;ThrowRuntimeExAndDefault&gt;();
+}</code></pre></div>
+<p>In more advanced cases, such as where your code already stores long-lived handles into
+the Android environment, you can alternatively use <code>init_with_runtime</code>. This function takes
+a <code>&amp;'static</code> reference to something that implements the <code>android::Runtime</code> trait, which the
+crate then uses to obtain the access when required to the JVM.</p>
+<h3 id="credits"><a class="doc-anchor" href="#credits">§</a>Credits</h3>
+<p>Made with ❤️ by the <a href="https://1password.com/">1Password</a> and <code>rustls</code> teams. Portions of the Android and Windows verifier
+implementations were adapted and referenced from Chromium’s previous verifier implementations as well.</p>
+<h5 id="license"><a class="doc-anchor" href="#license">§</a>License</h5><sup>
+Licensed under either of <a href="LICENSE-APACHE">Apache License, Version
+2.0</a> or <a href="LICENSE-MIT">MIT license</a> at your option.
+</sup>
+<br>
+<sub>
+Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in this crate by you, as defined in the Apache-2.0 license, shall
+be dual licensed as above, without any additional terms or conditions.
+</sub><div class="footnotes"><hr><ol><li id="fn1"><p>On Android, revocation checking requires API version &gt;= 24 (e.g. at least Android 7.0, August 2016).
+When available, revocation checking is only performed for the end-entity certificate. If a stapled OCSP
+response for the end-entity cert isn’t provided, and the certificate omits both a OCSP responder URL and
+CRL distribution point to fetch revocation information from, revocation checking may fail.&nbsp;<a href="#fnref1">↩</a></p></li><li id="fn2"><p>On Linux the <a href="https://github.com/rustls/rustls-native-certs">rustls-native-certs</a> and <a href="https://github.com/alexcrichton/openssl-probe">openssl-probe</a> crates are used to try and discover the system CA bundle.
+Users may wish to augment these certificates with <a href="https://github.com/rustls/webpki-roots">webpki-roots</a> using <a href="https://docs.rs/rustls-platform-verifier/latest/rustls_platform_verifier/struct.Verifier.html#method.new_with_extra_roots"><code>Verifier::new_with_extra_roots</code></a> in case
+a system CA bundle is unavailable.&nbsp;<a href="#fnref2">↩</a></p></li><li id="fn3"><p>The fall-back webpki verifier configured for Linux/WASM does not support providing CRLs for revocation
+checking. If you require revocation checking on these platforms, prefer constructing your own
+<code>WebPkiServerVerifier</code>, providing necessary CRLs. See the Rustls <a href="https://docs.rs/rustls/latest/rustls/client/struct.ServerCertVerifierBuilder.html"><code>ServerCertVerifierBuilder</code></a> docs for more
+information.&nbsp;<a href="#fnref3">↩&nbsp;<sup>1</sup></a>&nbsp;<sup><a href="#fnref3-2">2</a></sup></p></li></ol></div></div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.Verifier.html" title="struct rustls_platform_verifier::Verifier">Verifier</a></dt><dd>A TLS certificate verifier that uses the system’s root store and WebPKI.</dd></dl><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><dl class="item-table"><dt><a class="trait" href="trait.BuilderVerifierExt.html" title="trait rustls_platform_verifier::BuilderVerifierExt">Builder<wbr>Verifier<wbr>Ext</a></dt><dd>Extension trait to help configure <a href="../rustls/client/client_conn/struct.ClientConfig.html" title="struct rustls::client::client_conn::ClientConfig"><code>ClientConfig</code></a>s with the platform verifier.</dd><dt><a class="trait" href="trait.ConfigVerifierExt.html" title="trait rustls_platform_verifier::ConfigVerifierExt">Config<wbr>Verifier<wbr>Ext</a></dt><dd>Extension trait to help build a <a href="../rustls/client/client_conn/struct.ClientConfig.html" title="struct rustls::client::client_conn::ClientConfig"><code>ClientConfig</code></a> with the platform verifier.</dd></dl></section></div></main></body></html>

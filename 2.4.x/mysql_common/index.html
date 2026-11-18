@@ -1,0 +1,281 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="This crate is an implementation of basic MySql protocol primitives."><title>mysql_common - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="mysql_common" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../static.files/storage-41dd4d93.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Crate mysql_common</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../mysql_common/index.html">mysql_<wbr>common</a><span class="version">0.37.3</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#supported-rust-types" title="Supported rust types">Supported rust types</a></li><li><a href="#crate-features" title="Crate features">Crate features</a></li><li><a href="#derive-macros" title="Derive Macros">Derive Macros</a><ul><li><a href="#fromvalue-derive" title="`FromValue` Derive"><code>FromValue</code> Derive</a></li><li><a href="#fromrow-derive" title="`FromRow` Derive"><code>FromRow</code> Derive</a></li></ul></li></ul><h3><a href="#reexports">Crate Items</a></h3><ul class="block"><li><a href="#reexports" title="Re-exports">Re-exports</a></li><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#macros" title="Macros">Macros</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1>Crate <span>mysql_<wbr>common</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/mysql_common/lib.rs.html#9-809">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>This crate is an implementation of basic MySql protocol primitives.</p>
+<p>This crate:</p>
+<ul>
+<li>defines basic MySql constants;</li>
+<li>implements necessary functionality for MySql <code>cached_sha2_password</code>,
+<code>mysql_native_password</code> and legacy authentication plugins;</li>
+<li>implements helper traits for MySql protocol IO;</li>
+<li>implements support of named parameters for prepared statements;</li>
+<li>implements parsers for a subset of MySql/MariaDb protocol packets (including binlog packets);</li>
+<li>defines rust representation of MySql/MariaDb protocol values and rows;</li>
+<li>implements conversion between MySql values and rust types, between MySql rows and tuples
+of rust types.</li>
+<li>implements <a href="#derive-macros">FromRow and FromValue derive macros</a></li>
+</ul>
+<h3 id="supported-rust-types"><a class="doc-anchor" href="#supported-rust-types">§</a>Supported rust types</h3>
+<p>Crate offers conversion from/to MySql values for following types (please see MySql documentation
+on supported ranges for numeric types). Following table refers to MySql protocol types
+(see <code>Value</code> struct) and not to MySql column types. Please see <a href="https://dev.mysql.com/doc/internals/en/binary-protocol-value.html">MySql documentation</a> for
+column and protocol type correspondence:</p>
+<div class="table"><table><thead><tr><th>Type</th><th>Notes</th></tr></thead><tbody>
+<tr><td><code>{i,u}8..{i,u}128</code>, <code>{i,u}size</code></td><td>MySql int/uint will be converted, bytes will be parsed.<br>⚠️ Note that range of <code>{i,u}128</code> is greater than supported by MySql integer types but it’ll be serialized anyway (as decimal bytes string).</td></tr>
+<tr><td><code>f32</code></td><td>MySql float will be converted to <code>f32</code>, bytes will be parsed as <code>f32</code>.<br>⚠️ MySql double won’t be converted to <code>f32</code> to avoid precision loss (see #17)</td></tr>
+<tr><td><code>f64</code></td><td>MySql float and double will be converted to <code>f64</code>, bytes will be parsed as <code>f64</code>.</td></tr>
+<tr><td><code>bool</code></td><td>MySql int {<code>0</code>, <code>1</code>} or bytes {<code>"0x30"</code>, <code>"0x31"</code>}</td></tr>
+<tr><td><code>Vec&lt;u8&gt;</code></td><td>MySql bytes</td></tr>
+<tr><td><code>String</code></td><td>MySql bytes parsed as utf8</td></tr>
+<tr><td><code>Duration</code> (<code>std</code> and <code>time</code>)</td><td>MySql time or bytes parsed as MySql time string</td></tr>
+<tr><td>[<code>time::PrimitiveDateTime</code>] (v0.2.x)</td><td>MySql date time or bytes parsed as MySql date time string (⚠️ lossy! microseconds are ignored)</td></tr>
+<tr><td>[<code>time::Date</code>] (v0.2.x)</td><td>MySql date or bytes parsed as MySql date string (⚠️ lossy! microseconds are ignored)</td></tr>
+<tr><td>[<code>time::Time</code>] (v0.2.x)</td><td>MySql time or bytes parsed as MySql time string (⚠️ lossy! microseconds are ignored)</td></tr>
+<tr><td>[<code>time::Duration</code>] (v0.2.x)</td><td>MySql time or bytes parsed as MySql time string</td></tr>
+<tr><td>[<code>time::PrimitiveDateTime</code>] (v0.3.x)</td><td>MySql date time or bytes parsed as MySql date time string (⚠️ lossy! microseconds are ignored)</td></tr>
+<tr><td>[<code>time::Date</code>] (v0.3.x)</td><td>MySql date or bytes parsed as MySql date string (⚠️ lossy! microseconds are ignored)</td></tr>
+<tr><td>[<code>time::Time</code>] (v0.3.x)</td><td>MySql time or bytes parsed as MySql time string (⚠️ lossy! microseconds are ignored)</td></tr>
+<tr><td>[<code>time::Duration</code>] (v0.3.x)</td><td>MySql time or bytes parsed as MySql time string</td></tr>
+<tr><td>[<code>chrono::NaiveTime</code>]</td><td>MySql date or bytes parsed as MySql date string</td></tr>
+<tr><td>[<code>chrono::NaiveDate</code>]</td><td>MySql date or bytes parsed as MySql date string</td></tr>
+<tr><td>[<code>chrono::NaiveDateTime</code>]</td><td>MySql date or bytes parsed as MySql date string</td></tr>
+<tr><td><a href="../uuid/struct.Uuid.html" title="struct uuid::Uuid"><code>uuid::Uuid</code></a></td><td>MySql bytes parsed using <code>Uuid::from_slice</code></td></tr>
+<tr><td><a href="../serde_json/value/enum.Value.html" title="enum serde_json::value::Value"><code>serde_json::Value</code></a></td><td>MySql bytes parsed using <code>serde_json::from_str</code></td></tr>
+<tr><td><code>mysql_common::Deserialized&lt;T : DeserializeOwned&gt;</code></td><td>MySql bytes parsed using <code>serde_json::from_str</code></td></tr>
+<tr><td><code>Option&lt;T: FromValue&gt;</code></td><td>Must be used for nullable columns to avoid errors</td></tr>
+<tr><td>[<code>rust_decimal::Decimal</code>]</td><td>MySql int, uint or bytes parsed using <code>Decimal::from_str</code>.<br>⚠️ Note that this type doesn’t support full range of MySql <code>DECIMAL</code> type.</td></tr>
+<tr><td>[<code>bigdecimal::BigDecimal</code>]</td><td>MySql int, uint, floats or bytes parsed using <code>BigDecimal::parse_bytes</code>.<br>⚠️ Note that range of this type is greater than supported by MySql <code>DECIMAL</code> type but it’ll be serialized anyway.</td></tr>
+<tr><td><code>num_bigint::{BigInt, BigUint}</code></td><td>MySql int, uint or bytes parsed using <code>_::parse_bytes</code>.<br>⚠️ Note that range of this type is greater than supported by MySql integer types but it’ll be serialized anyway (as decimal bytes string).</td></tr>
+</tbody></table>
+</div>
+<p>Also crate provides from-row conversion for the following list of types (see <code>FromRow</code> trait):</p>
+<div class="table"><table><thead><tr><th>Type</th><th>Notes</th></tr></thead><tbody>
+<tr><td><code>Row</code></td><td>Trivial conversion for <code>Row</code> itself.</td></tr>
+<tr><td><code>T: FromValue</code></td><td>For rows with a single column.</td></tr>
+<tr><td><code>(T1: FromValue [, ..., T12: FromValue])</code></td><td>Row to a tuple of arity 1-12.</td></tr>
+<tr><td>[<code>frunk::hlist::HList</code>] types</td><td>Useful to overcome tuple arity limitation</td></tr>
+</tbody></table>
+</div><h3 id="crate-features"><a class="doc-anchor" href="#crate-features">§</a>Crate features</h3><div class="table"><table><thead><tr><th>Feature</th><th>Description</th><th>Default</th></tr></thead><tbody>
+<tr><td><code>bigdecimal</code></td><td>Enables <code>bigdecimal</code> &gt;=0.3.x, &lt;0.5.x types support</td><td>🔴</td></tr>
+<tr><td><code>chrono</code></td><td>Enables <code>chrono</code> types support</td><td>🔴</td></tr>
+<tr><td><code>rust_decimal</code></td><td>Enables <code>rust_decimal</code> types support</td><td>🔴</td></tr>
+<tr><td><code>time</code></td><td>Enables <code>time</code> v0.3.x types support</td><td>🔴</td></tr>
+<tr><td><code>frunk</code></td><td>Enables <code>FromRow</code> for <code>frunk::Hlist!</code> types</td><td>🔴</td></tr>
+<tr><td><code>derive</code></td><td>Enables <a href="#derive-macros"><code>FromValue</code> and <code>FromRow</code> derive macros</a></td><td>🟢</td></tr>
+<tr><td><code>binlog</code></td><td>Binlog-related functionality</td><td>🔴</td></tr>
+<tr><td><code>client_ed25519</code></td><td>Enables <a href="https://mariadb.com/kb/en/authentication-plugin-ed25519/">ed25519</a> authentication plugin support</td><td>🔴</td></tr>
+</tbody></table>
+</div><h2 id="derive-macros"><a class="doc-anchor" href="#derive-macros">§</a>Derive Macros</h2><h3 id="fromvalue-derive"><a class="doc-anchor" href="#fromvalue-derive">§</a><code>FromValue</code> Derive</h3>
+<p>Supported derivations:</p>
+<ul>
+<li>for enum – you should carefully read the <a href="https://dev.mysql.com/doc/refman/8.0/en/enum.html">corresponding section of MySql documentation</a>.</li>
+<li>for newtypes (see <a href="https://doc.rust-lang.org/rust-by-example/generics/new_types.html">New Type Idiom</a>) – given that the wrapped type itself satisfies
+<code>FromValue</code>.</li>
+</ul>
+<h4 id="enums"><a class="doc-anchor" href="#enums">§</a>Enums</h4><h5 id="container-attributes"><a class="doc-anchor" href="#container-attributes">§</a>Container attributes:</h5>
+<ul>
+<li><code>#[mysql(crate_name = "some_name")]</code> – overrides an attempt to guess a crate that provides
+required traits</li>
+<li><code>#[mysql(rename_all = ...)]</code> – rename all the variants according to the given case
+convention. The possible values are “lowercase”, “UPPERCASE”, “PascalCase”, “camelCase”,
+“snake_case”, “SCREAMING_SNAKE_CASE”, “kebab-case”, “SCREAMING-KEBAB-CASE”</li>
+<li><code>#[mysql(is_integer)]</code> – tells derive macro that the value is an integer rather than MySql
+ENUM. Macro won’t warn if variants are sparse or greater than u16 and will not try to parse
+textual representation.</li>
+<li><code>#[mysql(is_string)]</code> – tells derive macro that the value is a string rather than MySql
+ENUM. Macro won’t warn if variants are sparse or greater than u16 and will not try to parse
+integer representation.</li>
+</ul>
+<h5 id="example"><a class="doc-anchor" href="#example">§</a>Example</h5>
+<p>Given <code>ENUM('x-small', 'small', 'medium', 'large', 'x-large')</code> on MySql side:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="kw">fn </span>main() {
+
+<span class="doccomment">/// Note: the `crate_name` attribute should not be necessary.
+</span><span class="attr">#[derive(FromValue)]
+#[mysql(rename_all = <span class="string">"kebab-case"</span>, crate_name = <span class="string">"mysql_common"</span>)]
+#[repr(u8)]
+</span><span class="kw">enum </span>Size {
+    XSmall = <span class="number">1</span>,
+    Small,
+    Medium,
+    Large,
+    XLarge,
+}
+
+<span class="kw">fn </span>assert_from_row_works(x: Row) -&gt; Size {
+    from_row(x)
+}
+
+}</code></pre></div><h4 id="newtypes"><a class="doc-anchor" href="#newtypes">§</a>Newtypes</h4>
+<p>It is expected, that wrapper value satisfies <code>FromValue</code> or <code>deserialize_with</code> is given.
+Also note, that to support <code>FromRow</code> the wrapped value must satisfy <code>Into&lt;Value&gt;</code> or
+<code>serialize_with</code> must be given.</p>
+<h5 id="container-attributes-1"><a class="doc-anchor" href="#container-attributes-1">§</a>Container attributes:</h5>
+<ul>
+<li><code>#[mysql(crate_name = "some_name")]</code> – overrides an attempt to guess a crate to import types from</li>
+<li><code>#[mysql(bound = "Foo: Bar, Baz: Quux")]</code> – use the following additional bounds</li>
+<li><code>#[mysql(deserialize_with = "some::path")]</code> – use the following function to deserialize
+the wrapped value. Expected signature is <code>fn (Value) -&gt; Result&lt;Wrapped, FromValueError&gt;</code>.</li>
+<li><code>#[mysql(serialize_with = "some::path")]</code> – use the following function to serialize
+the wrapped value. Expected signature is <code>fn (Wrapped) -&gt; Value</code>.</li>
+</ul>
+<h5 id="example-1"><a class="doc-anchor" href="#example-1">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="doccomment">/// Trivial example
+</span><span class="attr">#[derive(FromValue)]
+</span><span class="kw">struct </span>Inch(i32);
+
+<span class="doccomment">/// Example of a {serialize|deserialize}_with.
+</span><span class="attr">#[derive(FromValue)]
+#[mysql(deserialize_with = <span class="string">"neg_de"</span>, serialize_with = <span class="string">"neg_ser"</span>)]
+</span><span class="kw">struct </span>Neg(i64);
+
+<span class="doccomment">/// Wrapped generic. Bounds are inferred.
+</span><span class="attr">#[derive(FromValue)]
+</span><span class="kw">struct </span>Foo&lt;T&gt;(<span class="prelude-ty">Option</span>&lt;T&gt;);
+
+<span class="doccomment">/// Example of additional bounds.
+</span><span class="attr">#[derive(FromValue)]
+#[mysql(bound = <span class="string">"'b: 'a, T: 'a, U: From&lt;String&gt;, V: From&lt;u64&gt;"</span>)]
+</span><span class="kw">struct </span>Bar&lt;<span class="lifetime">'a</span>, <span class="lifetime">'b</span>, <span class="kw">const </span>N: usize, T, U, V&gt;(ComplexTypeToWrap&lt;<span class="lifetime">'a</span>, <span class="lifetime">'b</span>, N, T, U, V&gt;);
+
+<span class="kw">fn </span>assert_from_row_works&lt;<span class="lifetime">'a</span>, <span class="lifetime">'b</span>, <span class="kw">const </span>N: usize, T, U, V&gt;(x: Row) -&gt; (Inch, Neg, Foo&lt;u8&gt;, Bar&lt;<span class="lifetime">'a</span>, <span class="lifetime">'b</span>, N, T, U, V&gt;)
+<span class="kw">where </span><span class="lifetime">'b</span>: <span class="lifetime">'a</span>, T: <span class="lifetime">'a</span>, U: From&lt;String&gt;, V: From&lt;u64&gt;,
+{
+    from_row(x)
+}
+
+
+<span class="comment">// test boilerplate..
+
+
+</span><span class="doccomment">/// Dummy complex type with additional bounds on FromValue impl.
+</span><span class="kw">struct </span>ComplexTypeToWrap&lt;<span class="lifetime">'a</span>, <span class="lifetime">'b</span>, <span class="kw">const </span>N: usize, T, U, V&gt;([(<span class="kw-2">&amp;</span><span class="lifetime">'a </span>T, <span class="kw-2">&amp;</span><span class="lifetime">'b </span>U, V); N]);
+
+<span class="kw">struct </span>FakeIr;
+
+<span class="kw">impl </span>TryFrom&lt;Value&gt; <span class="kw">for </span>FakeIr {
+    <span class="comment">// ...
+</span>}
+
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, <span class="lifetime">'b</span>: <span class="lifetime">'a</span>, <span class="kw">const </span>N: usize, T: <span class="lifetime">'a</span>, U: From&lt;String&gt;, V: From&lt;u64&gt;&gt; From&lt;FakeIr&gt; <span class="kw">for </span>ComplexTypeToWrap&lt;<span class="lifetime">'a</span>, <span class="lifetime">'b</span>, N, T, U, V&gt; {
+    <span class="comment">// ...
+</span>}
+
+<span class="kw">impl </span>From&lt;FakeIr&gt; <span class="kw">for </span>Value {
+    <span class="comment">// ...
+</span>}
+
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, <span class="lifetime">'b</span>: <span class="lifetime">'a</span>, <span class="kw">const </span>N: usize, T: <span class="lifetime">'a</span>, U: From&lt;String&gt;, V: From&lt;u64&gt;&gt; FromValue <span class="kw">for </span>ComplexTypeToWrap&lt;<span class="lifetime">'a</span>, <span class="lifetime">'b</span>, N, T, U, V&gt; {
+    <span class="kw">type </span>Intermediate = FakeIr;
+}
+
+<span class="kw">fn </span>neg_de(v: Value) -&gt; <span class="prelude-ty">Result</span>&lt;i64, FromValueError&gt; {
+    <span class="kw">match </span>v {
+        Value::Int(x) =&gt; <span class="prelude-val">Ok</span>(-x),
+        Value::UInt(x) =&gt; <span class="prelude-val">Ok</span>(-(x <span class="kw">as </span>i64)),
+        x =&gt; <span class="prelude-val">Err</span>(FromValueError(x)),
+    }
+}
+
+<span class="kw">fn </span>neg_ser(x: i64) -&gt; Value {
+    Value::Int(-x)
+}
+</code></pre></div><h3 id="fromrow-derive"><a class="doc-anchor" href="#fromrow-derive">§</a><code>FromRow</code> Derive</h3>
+<p>Also defines some constants on the struct:</p>
+<ul>
+<li><code>const TABLE_NAME: &amp;str</code> – if <code>table_name</code> is given</li>
+<li><code>const {}_FIELD: &amp;str</code> – for each struct field (<code>{}</code> is a SCREAMING_SNAKE_CASE representation
+of a struct field name (not a column name))</li>
+</ul>
+<p>Supported derivations:</p>
+<ul>
+<li>for a struct with named fields – field name will be used as a column name to search for a value</li>
+</ul>
+<h4 id="container-attributes-2"><a class="doc-anchor" href="#container-attributes-2">§</a>Container attributes:</h4>
+<ul>
+<li><code>#[mysql(crate_name = "some_name")]</code> – overrides an attempt to guess a crate that provides
+required traits</li>
+<li><code>#[mysql(rename_all = ...)]</code> – rename all column names according to the given case
+convention. The possible values are “lowercase”, “UPPERCASE”, “PascalCase”, “camelCase”,
+“snake_case”, “SCREAMING_SNAKE_CASE”, “kebab-case”, “SCREAMING-KEBAB-CASE”</li>
+<li><code>#[mysql(table_name = "some_name")]</code> – defines <code>pub const TABLE_NAME: &amp;str</code> on the struct</li>
+</ul>
+<h4 id="field-attributes"><a class="doc-anchor" href="#field-attributes">§</a>Field attributes:</h4>
+<ul>
+<li><code>#[mysql(rename = "some_name")]</code> – overrides column name of a field</li>
+<li><code>#[mysql(json)]</code> - column will be interpreted as a JSON string containing
+a value of a field type</li>
+<li><code>#[mysql(deserialize_with = "some::path")]</code> – the following function
+will be used to deserialize the field (instead of <code>FromValue</code>). Expected signature is
+<code>fn (Value) -&gt; Result&lt;T, FromValueError&gt;</code>.</li>
+<li><code>#[mysql(serialize_with = "some::path")]</code> – the following function
+will be used to serialize the field (instead of <code>Into&lt;Value&gt;</code>). Expected signature is
+<code>fn (T) -&gt; Value</code>.</li>
+</ul>
+<h4 id="example-2"><a class="doc-anchor" href="#example-2">§</a>Example</h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>time::{
+    macros::{datetime, offset}, OffsetDateTime, PrimitiveDateTime, UtcOffset,
+};
+
+<span class="doccomment">/// Note: the `crate_name` attribute should not be necessary.
+</span><span class="attr">#[derive(Debug, PartialEq, Eq, FromRow)]
+#[mysql(table_name = <span class="string">"Foos"</span>, crate_name = <span class="string">"mysql_common"</span>)]
+</span><span class="kw">struct </span>Foo {
+    id: u64,
+    <span class="attr">#[mysql(
+        serialize_with = <span class="string">"datetime_to_value"</span>,
+        deserialize_with = <span class="string">"value_to_datetime"</span>,
+    )]
+    </span>ctime: OffsetDateTime,
+    <span class="attr">#[mysql(json, rename = <span class="string">"def"</span>)]
+    </span>definition: Bar,
+    child: <span class="prelude-ty">Option</span>&lt;u64&gt;,
+}
+
+<span class="kw">fn </span>value_to_datetime(value: Value) -&gt; <span class="prelude-ty">Result</span>&lt;OffsetDateTime, FromValueError&gt; {
+    <span class="comment">// assume mysql session timezone has been properly set up
+    </span><span class="kw">const </span>OFFSET: UtcOffset = <span class="macro">offset!</span>(+<span class="number">3</span>);
+
+    <span class="kw">let </span>primitive = PrimitiveDateTime::from_value_opt(value)<span class="question-mark">?</span>;
+    <span class="prelude-val">Ok</span>(primitive.assume_offset(OFFSET))
+}
+
+<span class="kw">fn </span>datetime_to_value(datetime: OffsetDateTime) -&gt; Value {
+    <span class="comment">// assume mysql session timezone has been properly set up
+    </span>PrimitiveDateTime::new(datetime.date(), datetime.time()).into()
+}
+
+<span class="attr">#[derive(Debug, serde::Deserialize, PartialEq, Eq)]
+</span><span class="kw">enum </span>Bar {
+    Left,
+    Right,
+}
+
+<span class="doccomment">/// Returns the following row:
+///
+/// ```
+/// +----+-----------+-------+------------------------+
+/// | id | def       | child | ctime                  |
+/// +----+-----------+-------+------------------------+
+/// | 42 | '"Right"' | NULL  | '2015-05-15 12:00:00'  |
+/// +----+-----------+-------+------------------------+
+/// ```
+</span><span class="kw">fn </span>get_row() -&gt; Row {
+    <span class="comment">// ...
+</span>}
+
+<span class="macro">assert_eq!</span>(Foo::TABLE_NAME, <span class="string">"Foos"</span>);
+<span class="macro">assert_eq!</span>(Foo::ID_FIELD, <span class="string">"id"</span>);
+<span class="macro">assert_eq!</span>(Foo::DEFINITION_FIELD, <span class="string">"def"</span>);
+<span class="macro">assert_eq!</span>(Foo::CHILD_FIELD, <span class="string">"child"</span>);
+
+<span class="kw">let </span>foo = from_row::&lt;Foo&gt;(get_row());
+<span class="macro">assert_eq!</span>(
+    foo,
+    Foo {
+        id: <span class="number">42</span>,
+        definition: Bar::Right,
+        child: <span class="prelude-val">None</span>,
+        ctime: <span class="macro">datetime!</span>(<span class="number">2015</span>-<span class="number">05</span>-<span class="number">15 12</span>:<span class="number">00 </span>+<span class="number">3</span>),
+    }
+);</code></pre></div></div></details><h2 id="reexports" class="section-header">Re-exports<a href="#reexports" class="anchor">§</a></h2><dl class="item-table reexports"><dt id="reexport.Value"><code>pub use value::<a class="enum" href="value/enum.Value.html" title="enum mysql_common::value::Value">Value</a>;</code></dt><dt id="reexport.FromValueError"><code>pub use value::convert::<a class="struct" href="value/convert/struct.FromValueError.html" title="struct mysql_common::value::convert::FromValueError">FromValueError</a>;</code></dt><dt id="reexport.Row"><code>pub use row::<a class="struct" href="row/struct.Row.html" title="struct mysql_common::row::Row">Row</a>;</code></dt><dt id="reexport.FromRowError"><code>pub use row::convert::<a class="struct" href="row/convert/struct.FromRowError.html" title="struct mysql_common::row::convert::FromRowError">FromRowError</a>;</code></dt><dt id="reexport.Deserialized"><code>pub use value::json::<a class="struct" href="value/json/struct.Deserialized.html" title="struct mysql_common::value::json::Deserialized">Deserialized</a>;</code></dt><dt id="reexport.Serialized"><code>pub use value::json::<a class="struct" href="value/json/struct.Serialized.html" title="struct mysql_common::value::json::Serialized">Serialized</a>;</code></dt><dt id="reexport.uuid"><code>pub use <a class="mod" href="../uuid/index.html" title="mod uuid">uuid</a>;</code></dt><dt id="reexport.num_bigint"><code>pub use <a class="mod" href="../num_bigint/index.html" title="mod num_bigint">num_bigint</a>;</code></dt><dt id="reexport.serde"><code>pub use <a class="mod" href="../serde/index.html" title="mod serde">serde</a>;</code></dt><dt id="reexport.serde_json"><code>pub use <a class="mod" href="../serde_json/index.html" title="mod serde_json">serde_json</a>;</code></dt></dl><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="bitflags_ext/index.html" title="mod mysql_common::bitflags_ext">bitflags_<wbr>ext</a></dt><dt><a class="mod" href="collations/index.html" title="mod mysql_common::collations">collations</a></dt><dt><a class="mod" href="constants/index.html" title="mod mysql_common::constants">constants</a></dt><dt><a class="mod" href="crypto/index.html" title="mod mysql_common::crypto">crypto</a></dt><dt><a class="mod" href="io/index.html" title="mod mysql_common::io">io</a></dt><dt><a class="mod" href="misc/index.html" title="mod mysql_common::misc">misc</a></dt><dt><a class="mod" href="named_params/index.html" title="mod mysql_common::named_params">named_<wbr>params</a></dt><dt><a class="mod" href="packets/index.html" title="mod mysql_common::packets">packets</a></dt><dt><a class="mod" href="params/index.html" title="mod mysql_common::params">params</a></dt><dt><a class="mod" href="prelude/index.html" title="mod mysql_common::prelude">prelude</a></dt><dt><a class="mod" href="proto/index.html" title="mod mysql_common::proto">proto</a></dt><dt><a class="mod" href="row/index.html" title="mod mysql_common::row">row</a></dt><dt><a class="mod" href="scramble/index.html" title="mod mysql_common::scramble">scramble</a></dt><dt><a class="mod" href="value/index.html" title="mod mysql_common::value">value</a></dt></dl><h2 id="macros" class="section-header">Macros<a href="#macros" class="anchor">§</a></h2><dl class="item-table"><dt><a class="macro" href="macro.params.html" title="macro mysql_common::params">params</a></dt><dd>This macro is a convenient way to pass named parameters to a statement.</dd></dl></section></div></main></body></html>

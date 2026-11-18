@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["utf16","utf8"]};

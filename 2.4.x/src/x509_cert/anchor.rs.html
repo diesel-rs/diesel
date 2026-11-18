@@ -1,0 +1,807 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/x509-cert-0.2.5/src/anchor.rs`."><title>anchor.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="x509_cert" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../static.files/storage-41dd4d93.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-101b5a15.css"></noscript><link rel="icon" href="https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">x509_cert/</div>anchor.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! Trust anchor-related structures as defined in RFC 5914
+<a href=#2 id=2 data-nosnippet>2</a>
+<a href=#3 id=3 data-nosnippet>3</a></span><span class="kw">use </span><span class="kw">crate</span>::ext::pkix::{<a href="ext/pkix/certpolicy.rs.html#22">certpolicy::CertificatePolicies</a>, <a href="ext/pkix/constraints/name.rs.html#22-28">NameConstraints</a>};
+<a href=#4 id=4 data-nosnippet>4</a><span class="kw">use crate</span>::{<a href="ext.rs.html#45">ext::Extensions</a>, <a href="name.rs.html#15">name::Name</a>};
+<a href=#5 id=5 data-nosnippet>5</a><span class="kw">use crate</span>::{<a href="certificate.rs.html#181">Certificate</a>, <a href="certificate.rs.html#89">TbsCertificate</a>};
+<a href=#6 id=6 data-nosnippet>6</a>
+<a href=#7 id=7 data-nosnippet>7</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">alloc::string::String</a>;
+<a href=#8 id=8 data-nosnippet>8</a><span class="kw">use </span><a href="../../der/asn1/octet_string/allocating/struct.OctetString.html">der::asn1::OctetString</a>;
+<a href=#9 id=9 data-nosnippet>9</a><span class="kw">use </span>der::flagset::{<a href="../../flagset/macro.flags.html">flags</a>, <a href="../../flagset/struct.FlagSet.html">FlagSet</a>};
+<a href=#10 id=10 data-nosnippet>10</a><span class="kw">use </span>der::{<a href="../../der_derive/derive.Choice.html">Choice</a>, <a href="../../der_derive/derive.Enumerated.html">Enumerated</a>, <a href="../../der_derive/derive.Sequence.html">Sequence</a>};
+<a href=#11 id=11 data-nosnippet>11</a><span class="kw">use </span><a href="../../spki/spki/type.SubjectPublicKeyInfoOwned.html">spki::SubjectPublicKeyInfoOwned</a>;
+<a href=#12 id=12 data-nosnippet>12</a>
+<a href=#13 id=13 data-nosnippet>13</a><span class="doccomment">/// Version identifier for TrustAnchorInfo
+<a href=#14 id=14 data-nosnippet>14</a></span><span class="expansion"><input id=expand-14 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]#[doc(hidden)]</span><span class="kw">unsafe impl </span>::core::clone::TrivialClone
+    <span class="kw">for </span>Version {
+}
+<span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>Version {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{ <span class="kw-2">*</span><span class="self">self </span>}
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>Version {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::write_str(f, <span class="string">"V1"</span>)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::default::Default <span class="kw">for </span>Version {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{ <span class="self">Self</span>::V1 }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/default/derive.Default.html">Default</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::marker::Copy <span class="kw">for </span>Version { }</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/marker/derive.Copy.html">Copy</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::marker::StructuralPartialEq <span class="kw">for </span>Version {
+}
+<span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::cmp::PartialEq <span class="kw">for </span>Version {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; bool { <span class="bool-val">true </span>}
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.PartialEq.html">PartialEq</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::cmp::Eq <span class="kw">for </span>Version { }</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.Eq.html">Eq</a></span>, <span class=expanded><span class="kw">impl</span>&lt;<span class="lifetime">'__der_lifetime</span>&gt; ::der::DecodeValue&lt;<span class="lifetime">'__der_lifetime</span>&gt; <span class="kw">for </span>Version {
+    <span class="kw">fn </span>decode_value&lt;R: ::der::Reader&lt;<span class="lifetime">'__der_lifetime</span>&gt;&gt;(reader: <span class="kw-2">&amp;mut </span>R,
+        header: ::der::Header) -&gt; ::der::Result&lt;<span class="self">Self</span>&gt; {
+        &lt;u8 <span class="kw">as </span>::der::DecodeValue&gt;::decode_value(reader, header)<span class="question-mark">?</span>.try_into()
+    }
+}
+<span class="kw">impl </span>::der::EncodeValue <span class="kw">for </span>Version {
+    <span class="kw">fn </span>value_len(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ::der::Result&lt;::der::Length&gt; {
+        ::der::EncodeValue::value_len(<span class="kw-2">&amp;</span>(<span class="kw-2">*</span><span class="self">self </span><span class="kw">as </span>u8))
+    }
+    <span class="kw">fn </span>encode_value(<span class="kw-2">&amp;</span><span class="self">self</span>, encoder: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>::der::Writer)
+        -&gt; ::der::Result&lt;()&gt; {
+        ::der::EncodeValue::encode_value(<span class="kw-2">&amp;</span>(<span class="kw-2">*</span><span class="self">self </span><span class="kw">as </span>u8), encoder)
+    }
+}
+<span class="kw">impl </span>::der::FixedTag <span class="kw">for </span>Version {
+    <span class="kw">const </span>TAG: ::der::Tag = ::der::Tag::Integer;
+}
+<span class="kw">impl </span>TryFrom&lt;u8&gt; <span class="kw">for </span>Version {
+    <span class="kw">type </span>Error = ::der::Error;
+    <span class="kw">fn </span>try_from(n: u8) -&gt; ::der::Result&lt;<span class="self">Self</span>&gt; {
+        <span class="kw">match </span>n {
+            <span class="number">0 </span>=&gt; <span class="prelude-val">Ok</span>(<span class="self">Self</span>::V1),
+            <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(::der::Tag::Integer.value_error()),
+        }
+    }
+}</span><span class="original"><a href="../../der_derive/derive.Enumerated.html">Enumerated</a></span></span></span><span class="attr">)]
+<a href=#15 id=15 data-nosnippet>15</a>#[asn1(<span class="kw">type </span>= <span class="string">"INTEGER"</span>)]
+<a href=#16 id=16 data-nosnippet>16</a>#[repr(<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>)]
+<a href=#17 id=17 data-nosnippet>17</a></span><span class="kw">pub enum </span><a href="#17-21">Version</a> {
+<a href=#18 id=18 data-nosnippet>18</a>    <span class="doccomment">/// Version 1 (default)
+<a href=#19 id=19 data-nosnippet>19</a>    </span><span class="attr">#[default]
+<a href=#20 id=20 data-nosnippet>20</a>    </span>V1 = <span class="number">0</span>,
+<a href=#21 id=21 data-nosnippet>21</a>}
+<a href=#22 id=22 data-nosnippet>22</a>
+<a href=#23 id=23 data-nosnippet>23</a><span class="doccomment">/// ```text
+<a href=#24 id=24 data-nosnippet>24</a>/// TrustAnchorInfo ::= SEQUENCE {
+<a href=#25 id=25 data-nosnippet>25</a>///     version         TrustAnchorInfoVersion DEFAULT v1,
+<a href=#26 id=26 data-nosnippet>26</a>///     pubKey          SubjectPublicKeyInfo,
+<a href=#27 id=27 data-nosnippet>27</a>///     keyId           KeyIdentifier,
+<a href=#28 id=28 data-nosnippet>28</a>///     taTitle         TrustAnchorTitle OPTIONAL,
+<a href=#29 id=29 data-nosnippet>29</a>///     certPath        CertPathControls OPTIONAL,
+<a href=#30 id=30 data-nosnippet>30</a>///     exts            [1] EXPLICIT Extensions   OPTIONAL,
+<a href=#31 id=31 data-nosnippet>31</a>///     taTitleLangTag  [2] UTF8String OPTIONAL
+<a href=#32 id=32 data-nosnippet>32</a>/// }
+<a href=#33 id=33 data-nosnippet>33</a>///
+<a href=#34 id=34 data-nosnippet>34</a>/// TrustAnchorInfoVersion ::= INTEGER { v1(1) }
+<a href=#35 id=35 data-nosnippet>35</a>///
+<a href=#36 id=36 data-nosnippet>36</a>/// TrustAnchorTitle ::= UTF8String (SIZE (1..64))
+<a href=#37 id=37 data-nosnippet>37</a>/// ```
+<a href=#38 id=38 data-nosnippet>38</a></span><span class="expansion"><input id=expand-38 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>TrustAnchorInfo {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
+        TrustAnchorInfo {
+            version: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.version),
+            pub_key: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.pub_key),
+            key_id: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.key_id),
+            ta_title: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.ta_title),
+            cert_path: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.cert_path),
+            extensions: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.extensions),
+            ta_title_lang_tag: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.ta_title_lang_tag),
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[automatically_derived]#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>TrustAnchorInfo {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        <span class="kw">let </span>names: <span class="kw-2">&amp;</span><span class="lifetime">'static </span><span class="kw">_ </span>=
+            <span class="string">"TrustAnchorInfo version pub_key key_id ta_title cert_path extensions ta_title_lang_tag"</span>;
+        <span class="kw">let </span>values: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="kw">dyn </span>::core::fmt::Debug] =
+            <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="self">self</span>.version, <span class="kw-2">&amp;</span><span class="self">self</span>.pub_key, <span class="kw-2">&amp;</span><span class="self">self</span>.key_id, <span class="kw-2">&amp;</span><span class="self">self</span>.ta_title,
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.cert_path, <span class="kw-2">&amp;</span><span class="self">self</span>.extensions,
+                        &amp;&amp;<span class="self">self</span>.ta_title_lang_tag];
+        ::core::fmt::Formatter::debug_struct_fields_finish(f, names, values)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[automatically_derived]#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::marker::StructuralPartialEq <span class="kw">for </span>TrustAnchorInfo { }
+<span class="attr">#[automatically_derived]#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::cmp::PartialEq <span class="kw">for </span>TrustAnchorInfo {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; bool {
+        <span class="self">self</span>.version == other.version &amp;&amp; <span class="self">self</span>.pub_key == other.pub_key &amp;&amp;
+                            <span class="self">self</span>.key_id == other.key_id &amp;&amp;
+                        <span class="self">self</span>.ta_title == other.ta_title &amp;&amp;
+                    <span class="self">self</span>.cert_path == other.cert_path &amp;&amp;
+                <span class="self">self</span>.extensions == other.extensions &amp;&amp;
+            <span class="self">self</span>.ta_title_lang_tag == other.ta_title_lang_tag
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.PartialEq.html">PartialEq</a></span>, <span class=expanded><span class="attr">#[automatically_derived]#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::cmp::Eq <span class="kw">for </span>TrustAnchorInfo {
+    <span class="attr">#[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    </span><span class="kw">fn </span>assert_fields_are_eq(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;Version&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;SubjectPublicKeyInfoOwned&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;OctetString&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;CertPathControls&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;Extensions&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt;;
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.Eq.html">Eq</a></span>, <span class=expanded><span class="kw">impl</span>&lt;<span class="lifetime">'__der_lifetime</span>&gt; ::der::DecodeValue&lt;<span class="lifetime">'__der_lifetime</span>&gt; <span class="kw">for </span>TrustAnchorInfo
+    {
+    <span class="kw">fn </span>decode_value&lt;R: ::der::Reader&lt;<span class="lifetime">'__der_lifetime</span>&gt;&gt;(reader: <span class="kw-2">&amp;mut </span>R,
+        header: ::der::Header) -&gt; ::der::Result&lt;<span class="self">Self</span>&gt; {
+        <span class="kw">use </span>::der::{Decode <span class="kw">as _</span>, DecodeValue <span class="kw">as _</span>, Reader <span class="kw">as _</span>};
+        reader.read_nested(header.length,
+            |reader|
+                {
+                    <span class="kw">let </span>version =
+                        <span class="prelude-ty">Option</span>::&lt;Version&gt;::decode(reader)<span class="question-mark">?</span>.unwrap_or_else(Default::default);
+                    ;
+                    <span class="kw">let </span>pub_key = reader.decode()<span class="question-mark">?</span>;
+                    <span class="kw">let </span>key_id = reader.decode()<span class="question-mark">?</span>;
+                    <span class="kw">let </span>ta_title = reader.decode()<span class="question-mark">?</span>;
+                    <span class="kw">let </span>cert_path = reader.decode()<span class="question-mark">?</span>;
+                    <span class="kw">let </span>extensions =
+                        ::der::asn1::ContextSpecific::&lt;&gt;::decode_explicit(reader,
+                                    ::der::TagNumber::N1)<span class="question-mark">?</span>.map(|cs| cs.value);
+                    <span class="kw">let </span>ta_title_lang_tag =
+                        ::der::asn1::ContextSpecific::&lt;&gt;::decode_implicit(reader,
+                                    ::der::TagNumber::N2)<span class="question-mark">?</span>.map(|cs| cs.value);
+                    <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
+                            version,
+                            pub_key,
+                            key_id,
+                            ta_title,
+                            cert_path,
+                            extensions,
+                            ta_title_lang_tag,
+                        })
+                })
+    }
+}
+<span class="kw">impl</span>&lt;<span class="lifetime">'__der_lifetime</span>&gt; ::der::EncodeValue <span class="kw">for </span>TrustAnchorInfo {
+    <span class="kw">fn </span>value_len(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ::der::Result&lt;::der::Length&gt; {
+        <span class="kw">use </span>::der::Encode <span class="kw">as _</span>;
+        [{
+                                    <span class="kw">let </span>default_value: Version = Default::default();
+                                    <span class="kw">if </span><span class="kw-2">&amp;</span><span class="self">self</span>.version == <span class="kw-2">&amp;</span>default_value {
+                                        <span class="prelude-val">None
+                                    </span>} <span class="kw">else </span>{ <span class="prelude-val">Some</span>(<span class="self">self</span>.version) }
+                                }.encoded_len()<span class="question-mark">?</span>, <span class="self">self</span>.pub_key.encoded_len()<span class="question-mark">?</span>,
+                        <span class="self">self</span>.key_id.encoded_len()<span class="question-mark">?</span>, <span class="self">self</span>.ta_title.encoded_len()<span class="question-mark">?</span>,
+                        <span class="self">self</span>.cert_path.encoded_len()<span class="question-mark">?</span>,
+                        <span class="self">self</span>.extensions.as_ref().map(|field|
+                                        {
+                                            ::der::asn1::ContextSpecificRef {
+                                                tag_number: ::der::TagNumber::N1,
+                                                tag_mode: ::der::TagMode::Explicit,
+                                                value: field,
+                                            }
+                                        }).encoded_len()<span class="question-mark">?</span>,
+                        <span class="self">self</span>.ta_title_lang_tag.as_ref().map(|field|
+                                        {
+                                            ::der::asn1::ContextSpecificRef {
+                                                tag_number: ::der::TagNumber::N2,
+                                                tag_mode: ::der::TagMode::Implicit,
+                                                value: field,
+                                            }
+                                        }).encoded_len()<span class="question-mark">?</span>].into_iter().try_fold(::der::Length::ZERO,
+            |acc, len| acc + len)
+    }
+    <span class="kw">fn </span>encode_value(<span class="kw-2">&amp;</span><span class="self">self</span>, writer: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>::der::Writer)
+        -&gt; ::der::Result&lt;()&gt; {
+        <span class="kw">use </span>::der::Encode <span class="kw">as _</span>;
+        {
+                    <span class="kw">let </span>default_value: Version = Default::default();
+                    <span class="kw">if </span><span class="kw-2">&amp;</span><span class="self">self</span>.version == <span class="kw-2">&amp;</span>default_value {
+                        <span class="prelude-val">None
+                    </span>} <span class="kw">else </span>{ <span class="prelude-val">Some</span>(<span class="self">self</span>.version) }
+                }.encode(writer)<span class="question-mark">?</span>;
+        <span class="self">self</span>.pub_key.encode(writer)<span class="question-mark">?</span>;
+        <span class="self">self</span>.key_id.encode(writer)<span class="question-mark">?</span>;
+        <span class="self">self</span>.ta_title.encode(writer)<span class="question-mark">?</span>;
+        <span class="self">self</span>.cert_path.encode(writer)<span class="question-mark">?</span>;
+        <span class="self">self</span>.extensions.as_ref().map(|field|
+                        {
+                            ::der::asn1::ContextSpecificRef {
+                                tag_number: ::der::TagNumber::N1,
+                                tag_mode: ::der::TagMode::Explicit,
+                                value: field,
+                            }
+                        }).encode(writer)<span class="question-mark">?</span>;
+        <span class="self">self</span>.ta_title_lang_tag.as_ref().map(|field|
+                        {
+                            ::der::asn1::ContextSpecificRef {
+                                tag_number: ::der::TagNumber::N2,
+                                tag_mode: ::der::TagMode::Implicit,
+                                value: field,
+                            }
+                        }).encode(writer)<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(())
+    }
+}
+<span class="kw">impl</span>&lt;<span class="lifetime">'__der_lifetime</span>&gt; ::der::Sequence&lt;<span class="lifetime">'__der_lifetime</span>&gt; <span class="kw">for </span>TrustAnchorInfo {}</span><span class="original"><a href="../../der_derive/derive.Sequence.html">Sequence</a></span></span></span><span class="attr">)]
+<a href=#39 id=39 data-nosnippet>39</a>#[allow(missing_docs)]
+<a href=#40 id=40 data-nosnippet>40</a></span><span class="kw">pub struct </span><a href="#40-59">TrustAnchorInfo</a> {
+<a href=#41 id=41 data-nosnippet>41</a>    <span class="attr">#[asn1(default = <span class="string">"Default::default"</span>)]
+<a href=#42 id=42 data-nosnippet>42</a>    </span><span class="kw">pub </span>version: <a href="#17-21">Version</a>,
+<a href=#43 id=43 data-nosnippet>43</a>
+<a href=#44 id=44 data-nosnippet>44</a>    <span class="kw">pub </span>pub_key: <a href="../../spki/spki/type.SubjectPublicKeyInfoOwned.html">SubjectPublicKeyInfoOwned</a>,
+<a href=#45 id=45 data-nosnippet>45</a>
+<a href=#46 id=46 data-nosnippet>46</a>    <span class="kw">pub </span>key_id: <a href="../../der/asn1/octet_string/allocating/struct.OctetString.html">OctetString</a>,
+<a href=#47 id=47 data-nosnippet>47</a>
+<a href=#48 id=48 data-nosnippet>48</a>    <span class="attr">#[asn1(optional = <span class="string">"true"</span>)]
+<a href=#49 id=49 data-nosnippet>49</a>    </span><span class="kw">pub </span>ta_title: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>&gt;,
+<a href=#50 id=50 data-nosnippet>50</a>
+<a href=#51 id=51 data-nosnippet>51</a>    <span class="attr">#[asn1(optional = <span class="string">"true"</span>)]
+<a href=#52 id=52 data-nosnippet>52</a>    </span><span class="kw">pub </span>cert_path: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="#73-90">CertPathControls</a>&gt;,
+<a href=#53 id=53 data-nosnippet>53</a>
+<a href=#54 id=54 data-nosnippet>54</a>    <span class="attr">#[asn1(context_specific = <span class="string">"1"</span>, tag_mode = <span class="string">"EXPLICIT"</span>, optional = <span class="string">"true"</span>)]
+<a href=#55 id=55 data-nosnippet>55</a>    </span><span class="kw">pub </span>extensions: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="ext.rs.html#45">Extensions</a>&gt;,
+<a href=#56 id=56 data-nosnippet>56</a>
+<a href=#57 id=57 data-nosnippet>57</a>    <span class="attr">#[asn1(context_specific = <span class="string">"2"</span>, tag_mode = <span class="string">"IMPLICIT"</span>, optional = <span class="string">"true"</span>)]
+<a href=#58 id=58 data-nosnippet>58</a>    </span><span class="kw">pub </span>ta_title_lang_tag: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>&gt;,
+<a href=#59 id=59 data-nosnippet>59</a>}
+<a href=#60 id=60 data-nosnippet>60</a>
+<a href=#61 id=61 data-nosnippet>61</a><span class="doccomment">/// ```text
+<a href=#62 id=62 data-nosnippet>62</a>/// CertPathControls ::= SEQUENCE {
+<a href=#63 id=63 data-nosnippet>63</a>///     taName              Name,
+<a href=#64 id=64 data-nosnippet>64</a>///     certificate         [0] Certificate OPTIONAL,
+<a href=#65 id=65 data-nosnippet>65</a>///     policySet           [1] CertificatePolicies OPTIONAL,
+<a href=#66 id=66 data-nosnippet>66</a>///     policyFlags         [2] CertPolicyFlags OPTIONAL,
+<a href=#67 id=67 data-nosnippet>67</a>///     nameConstr          [3] NameConstraints OPTIONAL,
+<a href=#68 id=68 data-nosnippet>68</a>///     pathLenConstraint   [4] INTEGER (0..MAX) OPTIONAL
+<a href=#69 id=69 data-nosnippet>69</a>/// }
+<a href=#70 id=70 data-nosnippet>70</a>/// ```
+<a href=#71 id=71 data-nosnippet>71</a></span><span class="expansion"><input id=expand-71 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>CertPathControls {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
+        CertPathControls {
+            ta_name: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.ta_name),
+            certificate: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.certificate),
+            policy_set: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.policy_set),
+            policy_flags: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.policy_flags),
+            name_constr: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.name_constr),
+            path_len_constraint: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.path_len_constraint),
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[automatically_derived]#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>CertPathControls {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        <span class="kw">let </span>names: <span class="kw-2">&amp;</span><span class="lifetime">'static </span><span class="kw">_ </span>=
+            <span class="string">"CertPathControls ta_name certificate policy_set policy_flags name_constr path_len_constraint"</span>;
+        <span class="kw">let </span>values: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="kw">dyn </span>::core::fmt::Debug] =
+            <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="self">self</span>.ta_name, <span class="kw-2">&amp;</span><span class="self">self</span>.certificate, <span class="kw-2">&amp;</span><span class="self">self</span>.policy_set,
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.policy_flags, <span class="kw-2">&amp;</span><span class="self">self</span>.name_constr,
+                        &amp;&amp;<span class="self">self</span>.path_len_constraint];
+        ::core::fmt::Formatter::debug_struct_fields_finish(f, names, values)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[automatically_derived]#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::cmp::Eq <span class="kw">for </span>CertPathControls {
+    <span class="attr">#[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    </span><span class="kw">fn </span>assert_fields_are_eq(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;Name&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;Certificate&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;CertificatePolicies&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;CertPolicyFlags&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;NameConstraints&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;u32&gt;&gt;;
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.Eq.html">Eq</a></span>, <span class=expanded><span class="attr">#[automatically_derived]#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::marker::StructuralPartialEq <span class="kw">for </span>CertPathControls { }
+<span class="attr">#[automatically_derived]#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::cmp::PartialEq <span class="kw">for </span>CertPathControls {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; bool {
+        <span class="self">self</span>.ta_name == other.ta_name &amp;&amp; <span class="self">self</span>.certificate == other.certificate
+                        &amp;&amp; <span class="self">self</span>.policy_set == other.policy_set &amp;&amp;
+                    <span class="self">self</span>.policy_flags == other.policy_flags &amp;&amp;
+                <span class="self">self</span>.name_constr == other.name_constr &amp;&amp;
+            <span class="self">self</span>.path_len_constraint == other.path_len_constraint
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.PartialEq.html">PartialEq</a></span>, <span class=expanded><span class="kw">impl</span>&lt;<span class="lifetime">'__der_lifetime</span>&gt; ::der::DecodeValue&lt;<span class="lifetime">'__der_lifetime</span>&gt; <span class="kw">for </span>CertPathControls
+    {
+    <span class="kw">fn </span>decode_value&lt;R: ::der::Reader&lt;<span class="lifetime">'__der_lifetime</span>&gt;&gt;(reader: <span class="kw-2">&amp;mut </span>R,
+        header: ::der::Header) -&gt; ::der::Result&lt;<span class="self">Self</span>&gt; {
+        <span class="kw">use </span>::der::{Decode <span class="kw">as _</span>, DecodeValue <span class="kw">as _</span>, Reader <span class="kw">as _</span>};
+        reader.read_nested(header.length,
+            |reader|
+                {
+                    <span class="kw">let </span>ta_name = reader.decode()<span class="question-mark">?</span>;
+                    <span class="kw">let </span>certificate =
+                        ::der::asn1::ContextSpecific::&lt;&gt;::decode_implicit(reader,
+                                    ::der::TagNumber::N0)<span class="question-mark">?</span>.map(|cs| cs.value);
+                    <span class="kw">let </span>policy_set =
+                        ::der::asn1::ContextSpecific::&lt;&gt;::decode_implicit(reader,
+                                    ::der::TagNumber::N1)<span class="question-mark">?</span>.map(|cs| cs.value);
+                    <span class="kw">let </span>policy_flags =
+                        ::der::asn1::ContextSpecific::&lt;&gt;::decode_implicit(reader,
+                                    ::der::TagNumber::N2)<span class="question-mark">?</span>.map(|cs| cs.value);
+                    <span class="kw">let </span>name_constr =
+                        ::der::asn1::ContextSpecific::&lt;&gt;::decode_implicit(reader,
+                                    ::der::TagNumber::N3)<span class="question-mark">?</span>.map(|cs| cs.value);
+                    <span class="kw">let </span>path_len_constraint =
+                        ::der::asn1::ContextSpecific::&lt;&gt;::decode_implicit(reader,
+                                    ::der::TagNumber::N4)<span class="question-mark">?</span>.map(|cs| cs.value);
+                    <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
+                            ta_name,
+                            certificate,
+                            policy_set,
+                            policy_flags,
+                            name_constr,
+                            path_len_constraint,
+                        })
+                })
+    }
+}
+<span class="kw">impl</span>&lt;<span class="lifetime">'__der_lifetime</span>&gt; ::der::EncodeValue <span class="kw">for </span>CertPathControls {
+    <span class="kw">fn </span>value_len(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ::der::Result&lt;::der::Length&gt; {
+        <span class="kw">use </span>::der::Encode <span class="kw">as _</span>;
+        [<span class="self">self</span>.ta_name.encoded_len()<span class="question-mark">?</span>,
+                        <span class="self">self</span>.certificate.as_ref().map(|field|
+                                        {
+                                            ::der::asn1::ContextSpecificRef {
+                                                tag_number: ::der::TagNumber::N0,
+                                                tag_mode: ::der::TagMode::Implicit,
+                                                value: field,
+                                            }
+                                        }).encoded_len()<span class="question-mark">?</span>,
+                        <span class="self">self</span>.policy_set.as_ref().map(|field|
+                                        {
+                                            ::der::asn1::ContextSpecificRef {
+                                                tag_number: ::der::TagNumber::N1,
+                                                tag_mode: ::der::TagMode::Implicit,
+                                                value: field,
+                                            }
+                                        }).encoded_len()<span class="question-mark">?</span>,
+                        <span class="self">self</span>.policy_flags.as_ref().map(|field|
+                                        {
+                                            ::der::asn1::ContextSpecificRef {
+                                                tag_number: ::der::TagNumber::N2,
+                                                tag_mode: ::der::TagMode::Implicit,
+                                                value: field,
+                                            }
+                                        }).encoded_len()<span class="question-mark">?</span>,
+                        <span class="self">self</span>.name_constr.as_ref().map(|field|
+                                        {
+                                            ::der::asn1::ContextSpecificRef {
+                                                tag_number: ::der::TagNumber::N3,
+                                                tag_mode: ::der::TagMode::Implicit,
+                                                value: field,
+                                            }
+                                        }).encoded_len()<span class="question-mark">?</span>,
+                        <span class="self">self</span>.path_len_constraint.as_ref().map(|field|
+                                        {
+                                            ::der::asn1::ContextSpecificRef {
+                                                tag_number: ::der::TagNumber::N4,
+                                                tag_mode: ::der::TagMode::Implicit,
+                                                value: field,
+                                            }
+                                        }).encoded_len()<span class="question-mark">?</span>].into_iter().try_fold(::der::Length::ZERO,
+            |acc, len| acc + len)
+    }
+    <span class="kw">fn </span>encode_value(<span class="kw-2">&amp;</span><span class="self">self</span>, writer: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>::der::Writer)
+        -&gt; ::der::Result&lt;()&gt; {
+        <span class="kw">use </span>::der::Encode <span class="kw">as _</span>;
+        <span class="self">self</span>.ta_name.encode(writer)<span class="question-mark">?</span>;
+        <span class="self">self</span>.certificate.as_ref().map(|field|
+                        {
+                            ::der::asn1::ContextSpecificRef {
+                                tag_number: ::der::TagNumber::N0,
+                                tag_mode: ::der::TagMode::Implicit,
+                                value: field,
+                            }
+                        }).encode(writer)<span class="question-mark">?</span>;
+        <span class="self">self</span>.policy_set.as_ref().map(|field|
+                        {
+                            ::der::asn1::ContextSpecificRef {
+                                tag_number: ::der::TagNumber::N1,
+                                tag_mode: ::der::TagMode::Implicit,
+                                value: field,
+                            }
+                        }).encode(writer)<span class="question-mark">?</span>;
+        <span class="self">self</span>.policy_flags.as_ref().map(|field|
+                        {
+                            ::der::asn1::ContextSpecificRef {
+                                tag_number: ::der::TagNumber::N2,
+                                tag_mode: ::der::TagMode::Implicit,
+                                value: field,
+                            }
+                        }).encode(writer)<span class="question-mark">?</span>;
+        <span class="self">self</span>.name_constr.as_ref().map(|field|
+                        {
+                            ::der::asn1::ContextSpecificRef {
+                                tag_number: ::der::TagNumber::N3,
+                                tag_mode: ::der::TagMode::Implicit,
+                                value: field,
+                            }
+                        }).encode(writer)<span class="question-mark">?</span>;
+        <span class="self">self</span>.path_len_constraint.as_ref().map(|field|
+                        {
+                            ::der::asn1::ContextSpecificRef {
+                                tag_number: ::der::TagNumber::N4,
+                                tag_mode: ::der::TagMode::Implicit,
+                                value: field,
+                            }
+                        }).encode(writer)<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(())
+    }
+}
+<span class="kw">impl</span>&lt;<span class="lifetime">'__der_lifetime</span>&gt; ::der::Sequence&lt;<span class="lifetime">'__der_lifetime</span>&gt; <span class="kw">for </span>CertPathControls {}</span><span class="original"><a href="../../der_derive/derive.Sequence.html">Sequence</a></span></span></span><span class="attr">)]
+<a href=#72 id=72 data-nosnippet>72</a>#[allow(missing_docs)]
+<a href=#73 id=73 data-nosnippet>73</a></span><span class="kw">pub struct </span><a href="#73-90">CertPathControls</a> {
+<a href=#74 id=74 data-nosnippet>74</a>    <span class="kw">pub </span>ta_name: <a href="name.rs.html#15">Name</a>,
+<a href=#75 id=75 data-nosnippet>75</a>
+<a href=#76 id=76 data-nosnippet>76</a>    <span class="attr">#[asn1(context_specific = <span class="string">"0"</span>, tag_mode = <span class="string">"IMPLICIT"</span>, optional = <span class="string">"true"</span>)]
+<a href=#77 id=77 data-nosnippet>77</a>    </span><span class="kw">pub </span>certificate: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="certificate.rs.html#181">Certificate</a>&gt;,
+<a href=#78 id=78 data-nosnippet>78</a>
+<a href=#79 id=79 data-nosnippet>79</a>    <span class="attr">#[asn1(context_specific = <span class="string">"1"</span>, tag_mode = <span class="string">"IMPLICIT"</span>, optional = <span class="string">"true"</span>)]
+<a href=#80 id=80 data-nosnippet>80</a>    </span><span class="kw">pub </span>policy_set: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="ext/pkix/certpolicy.rs.html#22">CertificatePolicies</a>&gt;,
+<a href=#81 id=81 data-nosnippet>81</a>
+<a href=#82 id=82 data-nosnippet>82</a>    <span class="attr">#[asn1(context_specific = <span class="string">"2"</span>, tag_mode = <span class="string">"IMPLICIT"</span>, optional = <span class="string">"true"</span>)]
+<a href=#83 id=83 data-nosnippet>83</a>    </span><span class="kw">pub </span>policy_flags: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="#115">CertPolicyFlags</a>&gt;,
+<a href=#84 id=84 data-nosnippet>84</a>
+<a href=#85 id=85 data-nosnippet>85</a>    <span class="attr">#[asn1(context_specific = <span class="string">"3"</span>, tag_mode = <span class="string">"IMPLICIT"</span>, optional = <span class="string">"true"</span>)]
+<a href=#86 id=86 data-nosnippet>86</a>    </span><span class="kw">pub </span>name_constr: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="ext/pkix/constraints/name.rs.html#22-28">NameConstraints</a>&gt;,
+<a href=#87 id=87 data-nosnippet>87</a>
+<a href=#88 id=88 data-nosnippet>88</a>    <span class="attr">#[asn1(context_specific = <span class="string">"4"</span>, tag_mode = <span class="string">"IMPLICIT"</span>, optional = <span class="string">"true"</span>)]
+<a href=#89 id=89 data-nosnippet>89</a>    </span><span class="kw">pub </span>path_len_constraint: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>&gt;,
+<a href=#90 id=90 data-nosnippet>90</a>}
+<a href=#91 id=91 data-nosnippet>91</a>
+<a href=#92 id=92 data-nosnippet>92</a><span class="expansion"><input id=expand-92 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class=expanded><span class="attr">#[doc = <span class="string">r" Certificate policies as defined in [RFC 5280 Section 4.2.1.13]."</span>]
+#[doc = <span class="string">r""</span>]
+#[doc = <span class="string">r" ```text"</span>]
+#[doc = <span class="string">r" CertPolicyFlags ::= BIT STRING {"</span>]
+#[doc = <span class="string">r"     inhibitPolicyMapping    (0),"</span>]
+#[doc = <span class="string">r"     requireExplicitPolicy   (1),"</span>]
+#[doc = <span class="string">r"     inhibitAnyPolicy        (2)"</span>]
+#[doc = <span class="string">r" }"</span>]
+#[doc = <span class="string">r" ```"</span>]
+#[doc = <span class="string">r""</span>]
+#[doc =
+<span class="string">r" [RFC 5280 Section 4.2.1.13]: https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.1.13"</span>]
+#[allow(missing_docs)]
+</span><span class="kw">pub enum </span>CertPolicies {
+    InhibitPolicyMapping,
+    RequireExplicitPolicy,
+    InhibitAnyPolicy,
+}
+<span class="attr">#[automatically_derived]#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::marker::Copy <span class="kw">for </span>CertPolicies { }
+<span class="attr">#[automatically_derived]#[doc(hidden)]#[allow(missing_docs)]
+</span><span class="kw">unsafe impl </span>::core::clone::TrivialClone <span class="kw">for </span>CertPolicies { }
+<span class="attr">#[automatically_derived]#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>CertPolicies {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{ <span class="kw-2">*</span><span class="self">self </span>}
+}
+<span class="attr">#[automatically_derived]#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>CertPolicies {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::write_str(f,
+            <span class="kw">match </span><span class="self">self </span>{
+                CertPolicies::InhibitPolicyMapping =&gt; <span class="string">"InhibitPolicyMapping"</span>,
+                CertPolicies::RequireExplicitPolicy =&gt;
+                    <span class="string">"RequireExplicitPolicy"</span>,
+                CertPolicies::InhibitAnyPolicy =&gt; <span class="string">"InhibitAnyPolicy"</span>,
+            })
+    }
+}
+<span class="attr">#[automatically_derived]#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::marker::StructuralPartialEq <span class="kw">for </span>CertPolicies { }
+<span class="attr">#[automatically_derived]#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::cmp::PartialEq <span class="kw">for </span>CertPolicies {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; bool {
+        ::core::intrinsics::discriminant_value(<span class="self">self</span>) ==
+            ::core::intrinsics::discriminant_value(other)
+    }
+}
+<span class="attr">#[automatically_derived]#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::cmp::Eq <span class="kw">for </span>CertPolicies { }
+<span class="kw">impl </span>::flagset::Flags <span class="kw">for </span>CertPolicies {
+    <span class="kw">type </span>Type = u8;
+    <span class="kw">const </span>ZERO: <span class="self">Self</span>::Type = <span class="number">0</span>;
+    <span class="kw">const </span>LIST: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>[<span class="self">Self</span>] =
+        <span class="kw-2">&amp;</span>[CertPolicies::InhibitPolicyMapping,
+                    CertPolicies::RequireExplicitPolicy,
+                    CertPolicies::InhibitAnyPolicy];
+}
+<span class="kw">impl </span>::core::convert::From&lt;CertPolicies&gt; <span class="kw">for </span>::flagset::FlagSet&lt;CertPolicies&gt;
+    {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>from(value: CertPolicies) -&gt; <span class="self">Self </span>{
+        <span class="kw">unsafe </span>{
+            <span class="kw">match </span>value {
+                CertPolicies::InhibitPolicyMapping =&gt;
+                    <span class="self">Self</span>::new_unchecked(<span class="number">1 </span>&lt;&lt; <span class="number">0</span>),
+                CertPolicies::RequireExplicitPolicy =&gt;
+                    <span class="self">Self</span>::new_unchecked(<span class="number">1 </span>&lt;&lt; <span class="number">1</span>),
+                CertPolicies::InhibitAnyPolicy =&gt; <span class="self">Self</span>::new_unchecked(<span class="number">1 </span>&lt;&lt; <span class="number">2</span>),
+            }
+        }
+    }
+}
+<span class="kw">impl </span>::core::ops::Not <span class="kw">for </span>CertPolicies {
+    <span class="kw">type </span>Output = ::flagset::FlagSet&lt;CertPolicies&gt;;
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>not(<span class="self">self</span>) -&gt; <span class="self">Self</span>::Output { !::flagset::FlagSet::from(<span class="self">self</span>) }
+}
+<span class="kw">impl</span>&lt;R: ::core::convert::Into&lt;::flagset::FlagSet&lt;CertPolicies&gt;&gt;&gt;
+    ::core::ops::BitAnd&lt;R&gt; <span class="kw">for </span>CertPolicies {
+    <span class="kw">type </span>Output = ::flagset::FlagSet&lt;CertPolicies&gt;;
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>bitand(<span class="self">self</span>, rhs: R) -&gt; <span class="self">Self</span>::Output {
+        ::flagset::FlagSet::from(<span class="self">self</span>) &amp; rhs
+    }
+}
+<span class="kw">impl</span>&lt;R: ::core::convert::Into&lt;::flagset::FlagSet&lt;CertPolicies&gt;&gt;&gt;
+    ::core::ops::BitOr&lt;R&gt; <span class="kw">for </span>CertPolicies {
+    <span class="kw">type </span>Output = ::flagset::FlagSet&lt;CertPolicies&gt;;
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>bitor(<span class="self">self</span>, rhs: R) -&gt; <span class="self">Self</span>::Output {
+        ::flagset::FlagSet::from(<span class="self">self</span>) | rhs
+    }
+}
+<span class="kw">impl</span>&lt;R: ::core::convert::Into&lt;::flagset::FlagSet&lt;CertPolicies&gt;&gt;&gt;
+    ::core::ops::BitXor&lt;R&gt; <span class="kw">for </span>CertPolicies {
+    <span class="kw">type </span>Output = ::flagset::FlagSet&lt;CertPolicies&gt;;
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>bitxor(<span class="self">self</span>, rhs: R) -&gt; <span class="self">Self</span>::Output {
+        ::flagset::FlagSet::from(<span class="self">self</span>) ^ rhs
+    }
+}
+<span class="kw">impl</span>&lt;R: ::core::convert::Into&lt;::flagset::FlagSet&lt;CertPolicies&gt;&gt;&gt;
+    ::core::ops::Sub&lt;R&gt; <span class="kw">for </span>CertPolicies {
+    <span class="kw">type </span>Output = ::flagset::FlagSet&lt;CertPolicies&gt;;
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>sub(<span class="self">self</span>, rhs: R) -&gt; <span class="self">Self</span>::Output {
+        ::flagset::FlagSet::from(<span class="self">self</span>) - rhs
+    }
+}
+<span class="kw">impl</span>&lt;R: ::core::convert::Into&lt;::flagset::FlagSet&lt;CertPolicies&gt;&gt;&gt;
+    ::core::ops::Rem&lt;R&gt; <span class="kw">for </span>CertPolicies {
+    <span class="kw">type </span>Output = ::flagset::FlagSet&lt;CertPolicies&gt;;
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>rem(<span class="self">self</span>, rhs: R) -&gt; <span class="self">Self</span>::Output {
+        ::flagset::FlagSet::from(<span class="self">self</span>) % rhs
+    }
+}</span><span class="original"><a href="../../flagset/macro.flags.html">flags!</a> {
+<a href=#93 id=93 data-nosnippet>93</a>    <span class="doccomment">/// Certificate policies as defined in [RFC 5280 Section 4.2.1.13].
+<a href=#94 id=94 data-nosnippet>94</a>    ///
+<a href=#95 id=95 data-nosnippet>95</a>    /// ```text
+<a href=#96 id=96 data-nosnippet>96</a>    /// CertPolicyFlags ::= BIT STRING {
+<a href=#97 id=97 data-nosnippet>97</a>    ///     inhibitPolicyMapping    (0),
+<a href=#98 id=98 data-nosnippet>98</a>    ///     requireExplicitPolicy   (1),
+<a href=#99 id=99 data-nosnippet>99</a>    ///     inhibitAnyPolicy        (2)
+<a href=#100 id=100 data-nosnippet>100</a>    /// }
+<a href=#101 id=101 data-nosnippet>101</a>    /// ```
+<a href=#102 id=102 data-nosnippet>102</a>    ///
+<a href=#103 id=103 data-nosnippet>103</a>    /// [RFC 5280 Section 4.2.1.13]: https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.1.13
+<a href=#104 id=104 data-nosnippet>104</a>    </span><span class="attr">#[allow(missing_docs)]
+<a href=#105 id=105 data-nosnippet>105</a>    </span><span class="kw">pub enum </span><a href="../../x509_cert/anchor/enum.CertPolicies.html">CertPolicies</a>: <a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a> {
+<a href=#106 id=106 data-nosnippet>106</a>        InhibitPolicyMapping = <span class="number">1 </span>&lt;&lt; <span class="number">0</span>,
+<a href=#107 id=107 data-nosnippet>107</a>        RequireExplicitPolicy = <span class="number">1 </span>&lt;&lt; <span class="number">1</span>,
+<a href=#108 id=108 data-nosnippet>108</a>        InhibitAnyPolicy = <span class="number">1 </span>&lt;&lt; <span class="number">2</span>,
+<a href=#109 id=109 data-nosnippet>109</a>    }
+<a href=#110 id=110 data-nosnippet>110</a>}</span></span>
+<a href=#111 id=111 data-nosnippet>111</a>
+<a href=#112 id=112 data-nosnippet>112</a><span class="doccomment">/// Certificate policy flags as defined in [RFC 5280 Section 4.2.1.13].
+<a href=#113 id=113 data-nosnippet>113</a>///
+<a href=#114 id=114 data-nosnippet>114</a>/// [RFC 5280 Section 4.2.1.13]: https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.1.13
+<a href=#115 id=115 data-nosnippet>115</a></span><span class="kw">pub type </span><a href="../../x509_cert/anchor/type.CertPolicyFlags.html">CertPolicyFlags</a> = <a href="../../flagset/struct.FlagSet.html">FlagSet</a>&lt;<a href="#92-110">CertPolicies</a>&gt;;
+<a href=#116 id=116 data-nosnippet>116</a>
+<a href=#117 id=117 data-nosnippet>117</a><span class="doccomment">/// ```text
+<a href=#118 id=118 data-nosnippet>118</a>/// TrustAnchorChoice ::= CHOICE {
+<a href=#119 id=119 data-nosnippet>119</a>///   certificate  Certificate,
+<a href=#120 id=120 data-nosnippet>120</a>///   tbsCert      [1] EXPLICIT TBSCertificate,
+<a href=#121 id=121 data-nosnippet>121</a>///   taInfo       [2] EXPLICIT TrustAnchorInfo
+<a href=#122 id=122 data-nosnippet>122</a>/// }
+<a href=#123 id=123 data-nosnippet>123</a>/// ```
+<a href=#124 id=124 data-nosnippet>124</a></span><span class="expansion"><input id=expand-124 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]#[allow(clippy::large_enum_variant)]
+#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>TrustAnchorChoice {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
+        <span class="kw">match </span><span class="self">self </span>{
+            <span class="self">Self</span>::Certificate(__self_0) =&gt;
+                TrustAnchorChoice::Certificate(::core::clone::Clone::clone(__self_0)),
+            <span class="self">Self</span>::TbsCertificate(__self_0) =&gt;
+                TrustAnchorChoice::TbsCertificate(::core::clone::Clone::clone(__self_0)),
+            <span class="self">Self</span>::TaInfo(__self_0) =&gt;
+                TrustAnchorChoice::TaInfo(::core::clone::Clone::clone(__self_0)),
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[automatically_derived]#[allow(clippy::large_enum_variant)]
+#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>TrustAnchorChoice {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        <span class="kw">match </span><span class="self">self </span>{
+            <span class="self">Self</span>::Certificate(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_struct_field1_finish(f,
+                    <span class="string">"Certificate"</span>, <span class="kw-2">&amp;</span>__self_0),
+            <span class="self">Self</span>::TbsCertificate(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_struct_field1_finish(f,
+                    <span class="string">"TbsCertificate"</span>, <span class="kw-2">&amp;</span>__self_0),
+            <span class="self">Self</span>::TaInfo(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_struct_field1_finish(f,
+                    <span class="string">"TaInfo"</span>, <span class="kw-2">&amp;</span>__self_0),
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[automatically_derived]#[allow(clippy::large_enum_variant)]
+#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::marker::StructuralPartialEq <span class="kw">for </span>TrustAnchorChoice { }
+<span class="attr">#[automatically_derived]#[allow(clippy::large_enum_variant)]
+#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::cmp::PartialEq <span class="kw">for </span>TrustAnchorChoice {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; bool {
+        ::core::intrinsics::discriminant_value(<span class="self">self</span>) ==
+                ::core::intrinsics::discriminant_value(other) &amp;&amp;
+            <span class="kw">match </span>(<span class="self">self</span>, other) {
+                (<span class="self">Self</span>::Certificate(__self_0), <span class="self">Self</span>::Certificate(__arg1_0)) =&gt;
+                    __self_0 == __arg1_0,
+                (<span class="self">Self</span>::TbsCertificate(__self_0),
+                    <span class="self">Self</span>::TbsCertificate(__arg1_0)) =&gt; __self_0 == __arg1_0,
+                (<span class="self">Self</span>::TaInfo(__self_0), <span class="self">Self</span>::TaInfo(__arg1_0)) =&gt;
+                    __self_0 == __arg1_0,
+                <span class="kw">_ </span>=&gt; <span class="kw">unsafe </span>{ ::core::intrinsics::unreachable() }
+            }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.PartialEq.html">PartialEq</a></span>, <span class=expanded><span class="attr">#[automatically_derived]#[allow(clippy::large_enum_variant)]
+#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::cmp::Eq <span class="kw">for </span>TrustAnchorChoice {
+    <span class="attr">#[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    </span><span class="kw">fn </span>assert_fields_are_eq(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;Certificate&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;TbsCertificate&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;TrustAnchorInfo&gt;;
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.Eq.html">Eq</a></span>, <span class=expanded><span class="kw">impl</span>&lt;<span class="lifetime">'__der_lifetime</span>&gt; ::der::Choice&lt;<span class="lifetime">'__der_lifetime</span>&gt; <span class="kw">for </span>TrustAnchorChoice&lt;&gt; {
+    <span class="kw">fn </span>can_decode(tag: ::der::Tag) -&gt; bool {
+
+        <span class="attr">#[allow(non_exhaustive_omitted_patterns)]
+        </span><span class="kw">match </span>tag {
+            &lt;Certificate <span class="kw">as </span>::der::FixedTag&gt;::TAG |
+                ::der::Tag::ContextSpecific {
+                constructed: <span class="bool-val">true</span>, number: ::der::TagNumber::N1 } |
+                ::der::Tag::ContextSpecific {
+                constructed: <span class="bool-val">true</span>, number: ::der::TagNumber::N2 } =&gt; <span class="bool-val">true</span>,
+            <span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
+        }
+    }
+}
+<span class="kw">impl</span>&lt;<span class="lifetime">'__der_lifetime</span>&gt; ::der::Decode&lt;<span class="lifetime">'__der_lifetime</span>&gt; <span class="kw">for </span>TrustAnchorChoice&lt;&gt; {
+    <span class="kw">fn </span>decode&lt;R: ::der::Reader&lt;<span class="lifetime">'__der_lifetime</span>&gt;&gt;(reader: <span class="kw-2">&amp;mut </span>R)
+        -&gt; ::der::Result&lt;<span class="self">Self</span>&gt; {
+        <span class="kw">use </span>der::Reader <span class="kw">as _</span>;
+        <span class="kw">match </span>reader.peek_tag()<span class="question-mark">? </span>{
+            &lt;Certificate <span class="kw">as </span>::der::FixedTag&gt;::TAG =&gt;
+                <span class="prelude-val">Ok</span>(<span class="self">Self</span>::Certificate(reader.decode()<span class="question-mark">?</span>)),
+            ::der::Tag::ContextSpecific {
+                constructed: <span class="bool-val">true</span>, number: ::der::TagNumber::N1 } =&gt;
+                <span class="prelude-val">Ok</span>(<span class="self">Self</span>::TbsCertificate(<span class="kw">match </span>::der::asn1::ContextSpecific::&lt;&gt;::decode(reader)<span class="question-mark">?
+                                        </span>{
+                                        field <span class="kw">if </span>field.tag_number == ::der::TagNumber::N1 =&gt;
+                                            <span class="prelude-val">Some</span>(field),
+                                        <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
+                                    }.ok_or_else(||
+                                        {
+                                            der::Tag::ContextSpecific {
+                                                    number: ::der::TagNumber::N1,
+                                                    constructed: <span class="bool-val">true</span>,
+                                                }.value_error()
+                                        })<span class="question-mark">?</span>.value)),
+            ::der::Tag::ContextSpecific {
+                constructed: <span class="bool-val">true</span>, number: ::der::TagNumber::N2 } =&gt;
+                <span class="prelude-val">Ok</span>(<span class="self">Self</span>::TaInfo(<span class="kw">match </span>::der::asn1::ContextSpecific::&lt;&gt;::decode(reader)<span class="question-mark">?
+                                        </span>{
+                                        field <span class="kw">if </span>field.tag_number == ::der::TagNumber::N2 =&gt;
+                                            <span class="prelude-val">Some</span>(field),
+                                        <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
+                                    }.ok_or_else(||
+                                        {
+                                            der::Tag::ContextSpecific {
+                                                    number: ::der::TagNumber::N2,
+                                                    constructed: <span class="bool-val">true</span>,
+                                                }.value_error()
+                                        })<span class="question-mark">?</span>.value)),
+            actual =&gt;
+                <span class="prelude-val">Err</span>(der::ErrorKind::TagUnexpected {
+                            expected: <span class="prelude-val">None</span>,
+                            actual,
+                        }.into()),
+        }
+    }
+}
+<span class="kw">impl </span>::der::EncodeValue <span class="kw">for </span>TrustAnchorChoice&lt;&gt; {
+    <span class="kw">fn </span>encode_value(<span class="kw-2">&amp;</span><span class="self">self</span>, encoder: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>::der::Writer)
+        -&gt; ::der::Result&lt;()&gt; {
+        <span class="kw">match </span><span class="self">self </span>{
+            <span class="self">Self</span>::Certificate(variant) =&gt; variant.encode_value(encoder),
+            <span class="self">Self</span>::TbsCertificate(variant) =&gt;
+                ::der::asn1::ContextSpecificRef {
+                        tag_number: ::der::TagNumber::N1,
+                        tag_mode: ::der::TagMode::Explicit,
+                        value: variant,
+                    }.encode_value(encoder),
+            <span class="self">Self</span>::TaInfo(variant) =&gt;
+                ::der::asn1::ContextSpecificRef {
+                        tag_number: ::der::TagNumber::N2,
+                        tag_mode: ::der::TagMode::Explicit,
+                        value: variant,
+                    }.encode_value(encoder),
+        }
+    }
+    <span class="kw">fn </span>value_len(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ::der::Result&lt;::der::Length&gt; {
+        <span class="kw">match </span><span class="self">self </span>{
+            <span class="self">Self</span>::Certificate(variant) =&gt; variant.value_len(),
+            <span class="self">Self</span>::TbsCertificate(variant) =&gt;
+                ::der::asn1::ContextSpecificRef {
+                        tag_number: ::der::TagNumber::N1,
+                        tag_mode: ::der::TagMode::Explicit,
+                        value: variant,
+                    }.value_len(),
+            <span class="self">Self</span>::TaInfo(variant) =&gt;
+                ::der::asn1::ContextSpecificRef {
+                        tag_number: ::der::TagNumber::N2,
+                        tag_mode: ::der::TagMode::Explicit,
+                        value: variant,
+                    }.value_len(),
+        }
+    }
+}
+<span class="kw">impl </span>::der::Tagged <span class="kw">for </span>TrustAnchorChoice&lt;&gt; {
+    <span class="kw">fn </span>tag(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ::der::Tag {
+        <span class="kw">match </span><span class="self">self </span>{
+            <span class="self">Self</span>::Certificate(<span class="kw">_</span>) =&gt; &lt;Certificate <span class="kw">as </span>::der::FixedTag&gt;::TAG,
+            <span class="self">Self</span>::TbsCertificate(<span class="kw">_</span>) =&gt;
+                ::der::Tag::ContextSpecific {
+                    constructed: <span class="bool-val">true</span>,
+                    number: ::der::TagNumber::N1,
+                },
+            <span class="self">Self</span>::TaInfo(<span class="kw">_</span>) =&gt;
+                ::der::Tag::ContextSpecific {
+                    constructed: <span class="bool-val">true</span>,
+                    number: ::der::TagNumber::N2,
+                },
+        }
+    }
+}</span><span class="original"><a href="../../der_derive/derive.Choice.html">Choice</a></span></span></span><span class="attr">)]
+<a href=#125 id=125 data-nosnippet>125</a>#[allow(clippy::large_enum_variant)]
+<a href=#126 id=126 data-nosnippet>126</a>#[allow(missing_docs)]
+<a href=#127 id=127 data-nosnippet>127</a></span><span class="kw">pub enum </span><a href="../../x509_cert/anchor/enum.TrustAnchorChoice.html">TrustAnchorChoice</a> {
+<a href=#128 id=128 data-nosnippet>128</a>    Certificate(<a href="certificate.rs.html#181">Certificate</a>),
+<a href=#129 id=129 data-nosnippet>129</a>
+<a href=#130 id=130 data-nosnippet>130</a>    <span class="attr">#[asn1(context_specific = <span class="string">"1"</span>, tag_mode = <span class="string">"EXPLICIT"</span>, constructed = <span class="string">"true"</span>)]
+<a href=#131 id=131 data-nosnippet>131</a>    </span>TbsCertificate(<a href="certificate.rs.html#89">TbsCertificate</a>),
+<a href=#132 id=132 data-nosnippet>132</a>
+<a href=#133 id=133 data-nosnippet>133</a>    <span class="attr">#[asn1(context_specific = <span class="string">"2"</span>, tag_mode = <span class="string">"EXPLICIT"</span>, constructed = <span class="string">"true"</span>)]
+<a href=#134 id=134 data-nosnippet>134</a>    </span>TaInfo(<a href="#40-59">TrustAnchorInfo</a>),
+<a href=#135 id=135 data-nosnippet>135</a>}
+</code></pre></div></section></main></body></html>

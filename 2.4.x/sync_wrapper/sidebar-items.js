@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["MIGRATIONS"],"fn":["establish","main","run_migrations","transaction"],"mod":["users"],"struct":["User"],"type":["InnerConnection","InnerDB"]};

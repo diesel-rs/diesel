@@ -1,0 +1,56 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Like `write_all` but writes all data from multiple buffers into this writer."><title>write_all_vectored in tokio_util::io - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="tokio_util" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../static.files/storage-41dd4d93.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc fn"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">write_all_vectored</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../tokio_util/index.html">tokio_<wbr>util</a><span class="version">0.7.20</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">write_<wbr>all_<wbr>vectored</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#cancel-safety" title="Cancel safety">Cancel safety</a></li><li><a href="#examples" title="Examples">Examples</a></li><li><a href="#notes" title="Notes">Notes</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="index.html">In tokio_<wbr>util::<wbr>io</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">tokio_util</a>::<wbr><a href="index.html">io</a></div><h1>Function <span class="fn">write_<wbr>all_<wbr>vectored</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/tokio_util/io/write_all_vectored.rs.html#92-104">Source</a> </span></div><pre class="rust item-decl"><code>pub fn write_all_vectored&lt;'a, 'b, W&gt;(
+    writer: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;'a mut W</a>,
+    bufs: &amp;'a mut [<a class="struct" href="https://doc.rust-lang.org/nightly/core/io/io_slice/struct.IoSlice.html" title="struct core::io::io_slice::IoSlice">IoSlice</a>&lt;'b&gt;],
+) -&gt; <a class="struct" href="struct.WriteAllVectored.html" title="struct tokio_util::io::WriteAllVectored">WriteAllVectored</a>&lt;'a, 'b, W&gt; <span tabindex=0 class="tooltip" data-notable-ty="WriteAllVectored&lt;&#39;a, &#39;b, W&gt;">ⓘ</span><div class="where">where
+    W: <a class="trait" href="../../tokio/io/async_write/trait.AsyncWrite.html" title="trait tokio::io::async_write::AsyncWrite">AsyncWrite</a> + <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Unpin.html" title="trait core::marker::Unpin">Unpin</a> + ?<a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html" title="trait core::marker::Sized">Sized</a>,</div></code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Like <a href="../../tokio/io/util/async_write_ext/trait.AsyncWriteExt.html#method.write_all" title="method tokio::io::util::async_write_ext::AsyncWriteExt::write_all"><code>write_all</code></a> but writes all data from multiple buffers into this writer.</p>
+<p>This function writes multiple (possibly non-contiguous) buffers into the writer,
+using the <code>writev</code> syscall to potentially write in a single system call.</p>
+<p>Interrupted writes are retried. Other errors are returned immediately.</p>
+<p>Equivalent to:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">async fn </span>write_all_vectored&lt;W: AsyncWrite + Unpin + <span class="question-mark">?</span>Sized&gt;(
+    writer: <span class="kw-2">&amp;mut </span>W,
+    <span class="kw-2">mut </span>bufs: <span class="kw-2">&amp;mut </span>[IoSlice&lt;<span class="lifetime">'_</span>&gt;]
+) -&gt; io::Result&lt;()&gt; {
+    <span class="kw">while </span>!bufs.is_empty() {
+        <span class="kw">let </span>n = <span class="kw">match </span>write_vectored(writer, bufs).<span class="kw">await </span>{
+            <span class="prelude-val">Ok</span>(n) =&gt; n,
+            <span class="prelude-val">Err</span>(e) <span class="kw">if </span>e.kind() == io::ErrorKind::Interrupted =&gt; <span class="kw">continue</span>,
+            <span class="prelude-val">Err</span>(e) =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(e),
+        };
+        <span class="kw">if </span>n == <span class="number">0 </span>{
+            <span class="kw">return </span><span class="prelude-val">Err</span>(io::ErrorKind::WriteZero.into());
+        }
+        IoSlice::advance_slices(<span class="kw-2">&amp;mut </span>bufs, n);
+    }
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div><h2 id="cancel-safety"><a class="doc-anchor" href="#cancel-safety">§</a>Cancel safety</h2>
+<p>This method is not cancellation safe. If it is used as the event
+in a <code>tokio::select!</code> statement and some other
+branch completes first, then the provided buffer may have been
+partially written, but future calls to <code>write_all_vectored</code> will
+have lost its place in the buffer.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>tokio_util::io::write_all_vectored;
+<span class="kw">use </span>std::io::IoSlice;
+
+<span class="attr">#[tokio::main(flavor = <span class="string">"current_thread"</span>)]
+</span><span class="kw">async fn </span>main() -&gt; std::io::Result&lt;()&gt; {
+
+    <span class="kw">let </span><span class="kw-2">mut </span>writer = Vec::new();
+    <span class="kw">let </span>bufs = <span class="kw-2">&amp;mut </span>[
+        IoSlice::new(<span class="kw-2">&amp;</span>[<span class="number">1</span>]),
+        IoSlice::new(<span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">3</span>]),
+        IoSlice::new(<span class="kw-2">&amp;</span>[<span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>]),
+    ];
+
+    write_all_vectored(<span class="kw-2">&amp;mut </span>writer, bufs).<span class="kw">await</span><span class="question-mark">?</span>;
+
+    <span class="comment">// Note: `bufs` has been modified by `IoSlice::advance_slices` and should not be reused.
+    </span><span class="macro">assert_eq!</span>(writer, <span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>]);
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div><h2 id="notes"><a class="doc-anchor" href="#notes">§</a>Notes</h2>
+<p>See the documentation for <a href="https://doc.rust-lang.org/nightly/core/io/write/trait.Write.html#method.write_all_vectored" title="method core::io::write::Write::write_all_vectored"><code>Write::write_all_vectored</code></a> from std.
+After calling this function, the buffer slices may have
+been advanced and should not be reused.</p>
+</div></details><script type="text/json" id="notable-traits-data">{"WriteAllVectored<'a, 'b, W>":"<h3>Notable traits for <code><a class=\"struct\" href=\"struct.WriteAllVectored.html\" title=\"struct tokio_util::io::WriteAllVectored\">WriteAllVectored</a>&lt;'_, '_, W&gt;</code></h3><pre><code><div class=\"where\">impl&lt;W&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/future/future/trait.Future.html\" title=\"trait core::future::future::Future\">Future</a> for <a class=\"struct\" href=\"struct.WriteAllVectored.html\" title=\"struct tokio_util::io::WriteAllVectored\">WriteAllVectored</a>&lt;'_, '_, W&gt;<div class=\"where\">where\n    W: <a class=\"trait\" href=\"../../tokio/io/async_write/trait.AsyncWrite.html\" title=\"trait tokio::io::async_write::AsyncWrite\">AsyncWrite</a> + <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/marker/trait.Unpin.html\" title=\"trait core::marker::Unpin\">Unpin</a> + ?<a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html\" title=\"trait core::marker::Sized\">Sized</a>,</div></div><div class=\"where\">    type <a href=\"https://doc.rust-lang.org/nightly/core/future/future/trait.Future.html#associatedtype.Output\" class=\"associatedtype\">Output</a> = <a class=\"enum\" href=\"https://doc.rust-lang.org/nightly/core/result/enum.Result.html\" title=\"enum core::result::Result\">Result</a>&lt;<a class=\"primitive\" href=\"https://doc.rust-lang.org/nightly/std/primitive.unit.html\">()</a>, <a class=\"struct\" href=\"https://doc.rust-lang.org/nightly/core/io/error/struct.Error.html\" title=\"struct core::io::error::Error\">Error</a>&gt;;</div></code></pre>"}</script></section></div></main></body></html>

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["abbrev","broadcast","family","host","hostmask","inet_merge","inet_same_family","masklen","netmask","network","set_masklen"],"type":["abbrev","broadcast","family","host","hostmask","inet_merge","inet_same_family","masklen","netmask","network","set_masklen"]};

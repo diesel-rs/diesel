@@ -1,0 +1,140 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/io/util/shutdown.rs`."><title>shutdown.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="tokio" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../../../static.files/storage-41dd4d93.js"></script><script defer src="../../../../static.files/src-script-813739b1.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">tokio/io/util/</div>shutdown.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-2"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span><a href="../async_write.rs.html#39-177"><span class="kw">crate</span>::io::AsyncWrite</a>;
+<a href=#2 id=2 data-nosnippet>2</a>
+<a href=#3 id=3 data-nosnippet>3</a><span class="kw">use </span><a href="../../../../pin_project_lite/macro.pin_project.html">pin_project_lite::pin_project</a>;
+<a href=#4 id=4 data-nosnippet>4</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/core/future/future/trait.Future.html">std::future::Future</a>;
+<a href=#5 id=5 data-nosnippet>5</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/std/io/index.html">std::io</a>;
+<a href=#6 id=6 data-nosnippet>6</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/core/marker/struct.PhantomPinned.html">std::marker::PhantomPinned</a>;
+<a href=#7 id=7 data-nosnippet>7</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/core/pin/struct.Pin.html">std::pin::Pin</a>;
+<a href=#8 id=8 data-nosnippet>8</a><span class="kw">use </span>std::task::{<a href="https://doc.rust-lang.org/nightly/core/task/wake/struct.Context.html">Context</a>, <a href="https://doc.rust-lang.org/nightly/core/task/poll/enum.Poll.html">Poll</a>};
+<a href=#9 id=9 data-nosnippet>9</a>
+<a href=#10 id=10 data-nosnippet>10</a><span class="expansion"><input id=expand-10 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class=expanded><span class="attr">#[doc = <span class="string">r" A future used to shutdown an I/O object."</span>]
+#[doc = <span class="string">r""</span>]
+#[doc = <span class="string">r" Created by the [`AsyncWriteExt::shutdown`][shutdown] function."</span>]
+#[doc = <span class="string">r" [shutdown]: [`crate::io::AsyncWriteExt::shutdown`]"</span>]
+#[must_use = <span class="string">"futures do nothing unless you `.await` or poll them"</span>]
+</span><span class="kw">pub struct </span>Shutdown&lt;<span class="lifetime">'a</span>, A: <span class="question-mark">?</span>Sized&gt; {
+    a: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>A,
+    _pin: PhantomPinned,
+}
+<span class="attr">#[automatically_derived]</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, A: ::core::fmt::Debug + <span class="question-mark">?</span>Sized&gt;
+    ::core::fmt::Debug <span class="kw">for </span>Shutdown&lt;<span class="lifetime">'a</span>, A&gt; {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::debug_struct_field2_finish(f,
+            <span class="string">"Shutdown a _pin"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.a, &amp;&amp;<span class="self">self</span>._pin)
+    }
+}
+<span class="attr">#[allow(explicit_outlives_requirements, single_use_lifetimes, clippy ::
+unknown_clippy_lints, clippy :: absolute_paths, clippy :: min_ident_chars,
+clippy :: redundant_pub_crate, clippy :: single_char_lifetime_names, clippy ::
+used_underscore_binding)]
+</span><span class="kw">const _</span>: () =
+    {
+        <span class="attr">#[doc(hidden)]
+        #[allow(dead_code, single_use_lifetimes, clippy ::
+        unknown_clippy_lints, clippy :: absolute_paths, clippy ::
+        min_ident_chars, clippy :: mut_mut, clippy :: redundant_pub_crate,
+        clippy :: ref_option_ref, clippy :: single_char_lifetime_names, clippy
+        :: type_repetition_in_bounds)]
+        </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>Projection&lt;<span class="lifetime">'__pin</span>, <span class="lifetime">'a</span>, A: <span class="question-mark">?</span>Sized&gt; <span class="kw">where
+            </span>Shutdown&lt;<span class="lifetime">'a</span>, A&gt;: <span class="lifetime">'__pin </span>{
+            a: <span class="kw-2">&amp;</span><span class="lifetime">'__pin </span><span class="kw-2">mut </span>(<span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>A),
+            _pin: ::pin_project_lite::__private::Pin&lt;<span class="kw-2">&amp;</span><span class="lifetime">'__pin </span><span class="kw-2">mut </span>(PhantomPinned)&gt;,
+        }
+        <span class="attr">#[doc(hidden)]
+        #[allow(dead_code, single_use_lifetimes, clippy ::
+        unknown_clippy_lints, clippy :: absolute_paths, clippy ::
+        min_ident_chars, clippy :: mut_mut, clippy :: redundant_pub_crate,
+        clippy :: ref_option_ref, clippy :: single_char_lifetime_names, clippy
+        :: type_repetition_in_bounds)]
+        </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>ProjectionRef&lt;<span class="lifetime">'__pin</span>, <span class="lifetime">'a</span>, A: <span class="question-mark">?</span>Sized&gt; <span class="kw">where
+            </span>Shutdown&lt;<span class="lifetime">'a</span>, A&gt;: <span class="lifetime">'__pin </span>{
+            a: <span class="kw-2">&amp;</span><span class="lifetime">'__pin </span>(<span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>A),
+            _pin: ::pin_project_lite::__private::Pin&lt;<span class="kw-2">&amp;</span><span class="lifetime">'__pin </span>(PhantomPinned)&gt;,
+        }
+        <span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, A: <span class="question-mark">?</span>Sized&gt; Shutdown&lt;<span class="lifetime">'a</span>, A&gt; {
+            <span class="attr">#[doc(hidden)]
+            #[inline]
+            </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>project&lt;<span class="lifetime">'__pin</span>&gt;(<span class="self">self</span>:
+                    ::pin_project_lite::__private::Pin&lt;<span class="kw-2">&amp;</span><span class="lifetime">'__pin </span><span class="kw-2">mut </span><span class="self">Self</span>&gt;)
+                -&gt; Projection&lt;<span class="lifetime">'__pin</span>, <span class="lifetime">'a</span>, A&gt; {
+                <span class="kw">unsafe </span>{
+                    <span class="kw">let </span><span class="self">Self </span>{ a, _pin } = <span class="self">self</span>.get_unchecked_mut();
+                    Projection {
+                        a: a,
+                        _pin: ::pin_project_lite::__private::Pin::new_unchecked(_pin),
+                    }
+                }
+            }
+            <span class="attr">#[doc(hidden)]
+            #[inline]
+            </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>project_ref&lt;<span class="lifetime">'__pin</span>&gt;(<span class="self">self</span>:
+                    ::pin_project_lite::__private::Pin&lt;<span class="kw-2">&amp;</span><span class="lifetime">'__pin </span><span class="self">Self</span>&gt;)
+                -&gt; ProjectionRef&lt;<span class="lifetime">'__pin</span>, <span class="lifetime">'a</span>, A&gt; {
+                <span class="kw">unsafe </span>{
+                    <span class="kw">let </span><span class="self">Self </span>{ a, _pin } = <span class="self">self</span>.get_ref();
+                    ProjectionRef {
+                        a: a,
+                        _pin: ::pin_project_lite::__private::Pin::new_unchecked(_pin),
+                    }
+                }
+            }
+        }
+        <span class="attr">#[allow(non_snake_case)]
+        </span><span class="kw">pub struct </span>__Origin&lt;<span class="lifetime">'__pin</span>, <span class="lifetime">'a</span>, A: <span class="question-mark">?</span>Sized&gt; {
+            __dummy_lifetime: ::pin_project_lite::__private::PhantomData&lt;<span class="kw-2">&amp;</span><span class="lifetime">'__pin </span>()&gt;,
+            a: ::pin_project_lite::__private::AlwaysUnpin&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>A&gt;,
+            _pin: PhantomPinned,
+        }
+        <span class="kw">impl</span>&lt;<span class="lifetime">'__pin</span>, <span class="lifetime">'a</span>, A: <span class="question-mark">?</span>Sized&gt; ::pin_project_lite::__private::Unpin <span class="kw">for
+            </span>Shutdown&lt;<span class="lifetime">'a</span>, A&gt; <span class="kw">where
+            </span>::pin_project_lite::__private::PinnedFieldsOf&lt;__Origin&lt;<span class="lifetime">'__pin</span>, <span class="lifetime">'a</span>,
+            A&gt;&gt;: ::pin_project_lite::__private::Unpin {}
+        <span class="kw">trait </span>MustNotImplDrop {}
+        <span class="attr">#[allow(clippy :: drop_bounds, drop_bounds)]
+        </span><span class="kw">impl</span>&lt;T: ::pin_project_lite::__private::Drop&gt; MustNotImplDrop <span class="kw">for </span>T { }
+        <span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, A: <span class="question-mark">?</span>Sized&gt; MustNotImplDrop <span class="kw">for </span>Shutdown&lt;<span class="lifetime">'a</span>, A&gt; {}
+        <span class="attr">#[forbid(unaligned_references, safe_packed_borrows)]
+        </span><span class="kw">fn </span>__assert_not_repr_packed&lt;<span class="lifetime">'a</span>, A: <span class="question-mark">?</span>Sized&gt;(this: <span class="kw-2">&amp;</span>Shutdown&lt;<span class="lifetime">'a</span>, A&gt;) {
+            <span class="kw">let _ </span>= <span class="kw-2">&amp;</span>this.a;
+            <span class="kw">let _ </span>= <span class="kw-2">&amp;</span>this._pin;
+        }
+    };</span><span class="original"><a href="../../../../pin_project_lite/macro.pin_project.html">pin_project!</a> {
+<a href=#11 id=11 data-nosnippet>11</a>    <span class="doccomment">/// A future used to shutdown an I/O object.
+<a href=#12 id=12 data-nosnippet>12</a>    ///
+<a href=#13 id=13 data-nosnippet>13</a>    /// Created by the [`AsyncWriteExt::shutdown`][shutdown] function.
+<a href=#14 id=14 data-nosnippet>14</a>    /// [shutdown]: [`crate::io::AsyncWriteExt::shutdown`]
+<a href=#15 id=15 data-nosnippet>15</a>    </span><span class="attr">#[must_use = <span class="string">"futures do nothing unless you `.await` or poll them"</span>]
+<a href=#16 id=16 data-nosnippet>16</a>    #[derive(<a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a>)]
+<a href=#17 id=17 data-nosnippet>17</a>    </span><span class="kw">pub struct </span>Shutdown&lt;<span class="lifetime">'a</span>, A: <span class="question-mark">?</span><a href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html">Sized</a>&gt; {
+<a href=#18 id=18 data-nosnippet>18</a>        a: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>A,
+<a href=#19 id=19 data-nosnippet>19</a>        <span class="comment">// Make this future `!Unpin` for compatibility with async trait methods.
+<a href=#20 id=20 data-nosnippet>20</a>        </span><span class="attr">#[pin]
+<a href=#21 id=21 data-nosnippet>21</a>        </span>_pin: <a href="https://doc.rust-lang.org/nightly/core/marker/struct.PhantomPinned.html">PhantomPinned</a>,
+<a href=#22 id=22 data-nosnippet>22</a>    }
+<a href=#23 id=23 data-nosnippet>23</a>}</span></span>
+<a href=#24 id=24 data-nosnippet>24</a>
+<a href=#25 id=25 data-nosnippet>25</a><span class="doccomment">/// Creates a future which will shutdown an I/O object.
+<a href=#26 id=26 data-nosnippet>26</a></span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>shutdown&lt;A&gt;(a: <span class="kw-2">&amp;mut </span>A) -&gt; <a href="#10-23">Shutdown</a>&lt;<span class="lifetime">'_</span>, A&gt;
+<a href=#27 id=27 data-nosnippet>27</a><span class="kw">where
+<a href=#28 id=28 data-nosnippet>28</a>    </span>A: <a href="../async_write.rs.html#39-177">AsyncWrite</a> + <a href="https://doc.rust-lang.org/nightly/core/marker/trait.Unpin.html">Unpin</a> + <span class="question-mark">?</span><a href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html">Sized</a>,
+<a href=#29 id=29 data-nosnippet>29</a>{
+<a href=#30 id=30 data-nosnippet>30</a>    <a href="#10-23">Shutdown</a> {
+<a href=#31 id=31 data-nosnippet>31</a>        <a href="#26">a</a>,
+<a href=#32 id=32 data-nosnippet>32</a>        _pin: <a href="https://doc.rust-lang.org/nightly/core/marker/struct.PhantomPinned.html">PhantomPinned</a>,
+<a href=#33 id=33 data-nosnippet>33</a>    }
+<a href=#34 id=34 data-nosnippet>34</a>}
+<a href=#35 id=35 data-nosnippet>35</a>
+<a href=#36 id=36 data-nosnippet>36</a><span class="kw">impl</span>&lt;A&gt; <a href="https://doc.rust-lang.org/nightly/core/future/future/trait.Future.html">Future</a> <span class="kw">for </span><a href="#10-23">Shutdown</a>&lt;<span class="lifetime">'_</span>, A&gt;
+<a href=#37 id=37 data-nosnippet>37</a><span class="kw">where
+<a href=#38 id=38 data-nosnippet>38</a>    </span>A: <a href="../async_write.rs.html#39-177">AsyncWrite</a> + <a href="https://doc.rust-lang.org/nightly/core/marker/trait.Unpin.html">Unpin</a> + <span class="question-mark">?</span><a href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html">Sized</a>,
+<a href=#39 id=39 data-nosnippet>39</a>{
+<a href=#40 id=40 data-nosnippet>40</a>    <span class="kw">type </span>Output = io::<a href="https://doc.rust-lang.org/nightly/core/io/error/type.Result.html">Result</a>&lt;()&gt;;
+<a href=#41 id=41 data-nosnippet>41</a>
+<a href=#42 id=42 data-nosnippet>42</a>    <span class="kw">fn </span>poll(<span class="self">self</span>: <a href="https://doc.rust-lang.org/nightly/core/pin/struct.Pin.html">Pin</a>&lt;<span class="kw-2">&amp;mut </span><span class="self">Self</span>&gt;, cx: <span class="kw-2">&amp;mut </span><a href="https://doc.rust-lang.org/nightly/core/task/wake/struct.Context.html">Context</a>&lt;<span class="lifetime">'_</span>&gt;) -&gt; <a href="https://doc.rust-lang.org/nightly/core/task/poll/enum.Poll.html">Poll</a>&lt;<span class="self">Self</span>::Output&gt; {
+<a href=#43 id=43 data-nosnippet>43</a>        <span class="kw">let </span>me = <a class="self" href="#42">self</a>.<a href="#10-23">project</a>();
+<a href=#44 id=44 data-nosnippet>44</a>        <a href="https://doc.rust-lang.org/nightly/core/pin/struct.Pin.html">Pin</a>::<a href="https://doc.rust-lang.org/nightly/core/pin/struct.Pin.html#method.new">new</a>(<a href="#43">me</a>.a).<a href="../async_write.rs.html#127">poll_shutdown</a>(<a href="#42">cx</a>)
+<a href=#45 id=45 data-nosnippet>45</a>    }
+<a href=#46 id=46 data-nosnippet>46</a>}
+</code></pre></div></section></main></body></html>

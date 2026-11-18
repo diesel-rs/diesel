@@ -1,0 +1,239 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rustls-platform-verifier-0.7.1/src/verification/others.rs`."><title>others.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="rustls_platform_verifier" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../../static.files/storage-41dd4d93.js"></script><script defer src="../../../static.files/src-script-813739b1.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">rustls_platform_verifier/verification/</div>others.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">std::fmt::Debug</a>;
+<a href=#2 id=2 data-nosnippet>2</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html">std::sync::Arc</a>;
+<a href=#3 id=3 data-nosnippet>3</a>
+<a href=#4 id=4 data-nosnippet>4</a><span class="kw">use </span>rustls::client::danger::{<a href="../../../rustls/verify/struct.HandshakeSignatureValid.html">HandshakeSignatureValid</a>, <a href="../../../rustls/verify/struct.ServerCertVerified.html">ServerCertVerified</a>, <a href="../../../rustls/verify/trait.ServerCertVerifier.html">ServerCertVerifier</a>};
+<a href=#5 id=5 data-nosnippet>5</a><span class="kw">use </span><a href="../../../rustls/webpki/server_verifier/struct.WebPkiServerVerifier.html">rustls::client::WebPkiServerVerifier</a>;
+<a href=#6 id=6 data-nosnippet>6</a><span class="kw">use </span><a href="../../../rustls/pki_types/index.html">rustls::pki_types</a>;
+<a href=#7 id=7 data-nosnippet>7</a><span class="kw">use </span>rustls::{
+<a href=#8 id=8 data-nosnippet>8</a>    <a href="../../../rustls/crypto/struct.CryptoProvider.html">crypto::CryptoProvider</a>, <a href="../../../rustls/error/enum.CertificateError.html">CertificateError</a>, <a href="../../../rustls/verify/struct.DigitallySignedStruct.html">DigitallySignedStruct</a>, <a href="../../../rustls/error/enum.Error.html">Error</a> <span class="kw">as </span>TlsError, <a href="../../../rustls/error/other_error/struct.OtherError.html">OtherError</a>,
+<a href=#9 id=9 data-nosnippet>9</a>    <a href="../../../rustls/enums/enum.SignatureScheme.html">SignatureScheme</a>,
+<a href=#10 id=10 data-nosnippet>10</a>};
+<a href=#11 id=11 data-nosnippet>11</a>
+<a href=#12 id=12 data-nosnippet>12</a><span class="kw">use </span><a href="mod.rs.html#53-62"><span class="kw">super</span>::log_server_cert</a>;
+<a href=#13 id=13 data-nosnippet>13</a>
+<a href=#14 id=14 data-nosnippet>14</a><span class="doccomment">/// A TLS certificate verifier that uses the system's root store and WebPKI.
+<a href=#15 id=15 data-nosnippet>15</a></span><span class="expansion"><input id=expand-15 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>Verifier {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::debug_struct_field1_finish(f,
+            <span class="string">"Verifier inner"</span>, &amp;&amp;<span class="self">self</span>.inner)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span></span></span><span class="attr">)]
+<a href=#16 id=16 data-nosnippet>16</a></span><span class="kw">pub struct </span><a href="../../../rustls_platform_verifier/struct.Verifier.html">Verifier</a> {
+<a href=#17 id=17 data-nosnippet>17</a>    <span class="comment">// We currently keep one set of certificates per-verifier so that
+<a href=#18 id=18 data-nosnippet>18</a>    // recreating the verifier will pull fresh root certificates from disk,
+<a href=#19 id=19 data-nosnippet>19</a>    // picking up on any changes that might have been made since.
+<a href=#20 id=20 data-nosnippet>20</a>    </span>inner: <a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html">Arc</a>&lt;<a href="../../../rustls/webpki/server_verifier/struct.WebPkiServerVerifier.html">WebPkiServerVerifier</a>&gt;,
+<a href=#21 id=21 data-nosnippet>21</a>}
+<a href=#22 id=22 data-nosnippet>22</a>
+<a href=#23 id=23 data-nosnippet>23</a><span class="kw">impl </span><a href="#16-21">Verifier</a> {
+<a href=#24 id=24 data-nosnippet>24</a>    <span class="doccomment">/// Creates a new verifier whose certificate validation is provided by
+<a href=#25 id=25 data-nosnippet>25</a>    /// WebPKI, using root certificates provided by the platform.
+<a href=#26 id=26 data-nosnippet>26</a>    </span><span class="attr">#[cfg_attr(docsrs, doc(cfg(all())))]
+<a href=#27 id=27 data-nosnippet>27</a>    </span><span class="kw">pub fn </span>new(crypto_provider: <a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html">Arc</a>&lt;<a href="../../../rustls/crypto/struct.CryptoProvider.html">CryptoProvider</a>&gt;) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<span class="self">Self</span>, <a href="../../../rustls/error/enum.Error.html">TlsError</a>&gt; {
+<a href=#28 id=28 data-nosnippet>28</a>        <span class="self">Self</span>::<a href="#55-125">new_inner</a>([], <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>, <a href="#27">crypto_provider</a>)
+<a href=#29 id=29 data-nosnippet>29</a>    }
+<a href=#30 id=30 data-nosnippet>30</a>
+<a href=#31 id=31 data-nosnippet>31</a>    <span class="doccomment">/// Creates a new verifier whose certificate validation is provided by
+<a href=#32 id=32 data-nosnippet>32</a>    /// WebPKI, using root certificates provided by the platform and augmented by
+<a href=#33 id=33 data-nosnippet>33</a>    /// the provided extra root certificates.
+<a href=#34 id=34 data-nosnippet>34</a>    </span><span class="attr">#[cfg_attr(docsrs, doc(cfg(not(target_os = <span class="string">"android"</span>))))]
+<a href=#35 id=35 data-nosnippet>35</a>    </span><span class="kw">pub fn </span>new_with_extra_roots(
+<a href=#36 id=36 data-nosnippet>36</a>        extra_roots: <span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/iter/traits/collect/trait.IntoIterator.html">IntoIterator</a>&lt;Item = pki_types::<a href="../../../rustls_pki_types/struct.CertificateDer.html">CertificateDer</a>&lt;<span class="lifetime">'static</span>&gt;&gt;,
+<a href=#37 id=37 data-nosnippet>37</a>        crypto_provider: <a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html">Arc</a>&lt;<a href="../../../rustls/crypto/struct.CryptoProvider.html">CryptoProvider</a>&gt;,
+<a href=#38 id=38 data-nosnippet>38</a>    ) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<span class="self">Self</span>, <a href="../../../rustls/error/enum.Error.html">TlsError</a>&gt; {
+<a href=#39 id=39 data-nosnippet>39</a>        <span class="self">Self</span>::<a href="#55-125">new_inner</a>(<a href="#36">extra_roots</a>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>, <a href="#37">crypto_provider</a>)
+<a href=#40 id=40 data-nosnippet>40</a>    }
+<a href=#41 id=41 data-nosnippet>41</a>
+<a href=#42 id=42 data-nosnippet>42</a>    <span class="doccomment">/// Creates a test-only TLS certificate verifier which trusts our fake root CA cert.
+<a href=#43 id=43 data-nosnippet>43</a>    </span><span class="attr">#[cfg(any(test, feature = <span class="string">"ffi-testing"</span>, feature = <span class="string">"dbg"</span>))]
+<a href=#44 id=44 data-nosnippet>44</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>new_with_fake_root(
+<a href=#45 id=45 data-nosnippet>45</a>        root: pki_types::CertificateDer&lt;<span class="lifetime">'static</span>&gt;,
+<a href=#46 id=46 data-nosnippet>46</a>        crypto_provider: Arc&lt;CryptoProvider&gt;,
+<a href=#47 id=47 data-nosnippet>47</a>    ) -&gt; <span class="self">Self </span>{
+<a href=#48 id=48 data-nosnippet>48</a>        <span class="self">Self</span>::new_inner([], <span class="prelude-val">Some</span>(root), crypto_provider)
+<a href=#49 id=49 data-nosnippet>49</a>            .expect(<span class="string">"failed to create verifier with fake root"</span>)
+<a href=#50 id=50 data-nosnippet>50</a>    }
+<a href=#51 id=51 data-nosnippet>51</a>
+<a href=#52 id=52 data-nosnippet>52</a>    <span class="doccomment">/// Creates a new verifier whose certificate validation is provided by
+<a href=#53 id=53 data-nosnippet>53</a>    /// WebPKI, using root certificates provided by the platform and augmented by
+<a href=#54 id=54 data-nosnippet>54</a>    /// the provided extra root certificates.
+<a href=#55 id=55 data-nosnippet>55</a>    </span><span class="kw">fn </span>new_inner(
+<a href=#56 id=56 data-nosnippet>56</a>        extra_roots: <span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/iter/traits/collect/trait.IntoIterator.html">IntoIterator</a>&lt;Item = pki_types::<a href="../../../rustls_pki_types/struct.CertificateDer.html">CertificateDer</a>&lt;<span class="lifetime">'static</span>&gt;&gt;,
+<a href=#57 id=57 data-nosnippet>57</a>        <span class="attr">#[allow(unused)] </span><span class="comment">// test_root is only used in tests
+<a href=#58 id=58 data-nosnippet>58</a>        </span>test_root: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;pki_types::<a href="../../../rustls_pki_types/struct.CertificateDer.html">CertificateDer</a>&lt;<span class="lifetime">'static</span>&gt;&gt;,
+<a href=#59 id=59 data-nosnippet>59</a>        crypto_provider: <a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html">Arc</a>&lt;<a href="../../../rustls/crypto/struct.CryptoProvider.html">CryptoProvider</a>&gt;,
+<a href=#60 id=60 data-nosnippet>60</a>    ) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<span class="self">Self</span>, <a href="../../../rustls/error/enum.Error.html">TlsError</a>&gt; {
+<a href=#61 id=61 data-nosnippet>61</a>        <span class="kw">let </span><span class="kw-2">mut </span>root_store = rustls::<a href="../../../rustls/webpki/anchors/struct.RootCertStore.html">RootCertStore</a>::<a href="../../../rustls/webpki/anchors/struct.RootCertStore.html#method.empty">empty</a>();
+<a href=#62 id=62 data-nosnippet>62</a>
+<a href=#63 id=63 data-nosnippet>63</a>        <span class="comment">// For testing only: load fake root cert, instead of native/WebPKI roots
+<a href=#64 id=64 data-nosnippet>64</a>        </span><span class="attr">#[cfg(any(test, feature = <span class="string">"ffi-testing"</span>, feature = <span class="string">"dbg"</span>))]
+<a href=#65 id=65 data-nosnippet>65</a>        </span>{
+<a href=#66 id=66 data-nosnippet>66</a>            <span class="kw">if let </span><span class="prelude-val">Some</span>(test_root) = test_root {
+<a href=#67 id=67 data-nosnippet>67</a>                root_store.add(test_root)<span class="question-mark">?</span>;
+<a href=#68 id=68 data-nosnippet>68</a>                <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="self">Self </span>{
+<a href=#69 id=69 data-nosnippet>69</a>                    inner: WebPkiServerVerifier::builder_with_provider(
+<a href=#70 id=70 data-nosnippet>70</a>                        root_store.into(),
+<a href=#71 id=71 data-nosnippet>71</a>                        crypto_provider.clone(),
+<a href=#72 id=72 data-nosnippet>72</a>                    )
+<a href=#73 id=73 data-nosnippet>73</a>                    .build()
+<a href=#74 id=74 data-nosnippet>74</a>                    .map_err(|e| TlsError::Other(OtherError(Arc::new(e))))<span class="question-mark">?</span>,
+<a href=#75 id=75 data-nosnippet>75</a>                });
+<a href=#76 id=76 data-nosnippet>76</a>            }
+<a href=#77 id=77 data-nosnippet>77</a>        }
+<a href=#78 id=78 data-nosnippet>78</a>
+<a href=#79 id=79 data-nosnippet>79</a>        <span class="comment">// While we ignore invalid certificates from the system, we forward errors from
+<a href=#80 id=80 data-nosnippet>80</a>        // parsing the extra roots to the caller.
+<a href=#81 id=81 data-nosnippet>81</a>        </span><span class="kw">for </span>cert <span class="kw">in </span>extra_roots {
+<a href=#82 id=82 data-nosnippet>82</a>            root_store.add(cert)<span class="question-mark">?</span>;
+<a href=#83 id=83 data-nosnippet>83</a>        }
+<a href=#84 id=84 data-nosnippet>84</a>
+<a href=#85 id=85 data-nosnippet>85</a>        <span class="attr">#[cfg(all(
+<a href=#86 id=86 data-nosnippet>86</a>            unix,
+<a href=#87 id=87 data-nosnippet>87</a>            not(target_os = <span class="string">"android"</span>),
+<a href=#88 id=88 data-nosnippet>88</a>            not(target_vendor = <span class="string">"apple"</span>),
+<a href=#89 id=89 data-nosnippet>89</a>            not(target_arch = <span class="string">"wasm32"</span>),
+<a href=#90 id=90 data-nosnippet>90</a>        ))]
+<a href=#91 id=91 data-nosnippet>91</a>        </span>{
+<a href=#92 id=92 data-nosnippet>92</a>            <span class="kw">let </span>result = rustls_native_certs::<a href="../../../rustls_native_certs/fn.load_native_certs.html">load_native_certs</a>();
+<a href=#93 id=93 data-nosnippet>93</a>            <span class="kw">let </span>(added, ignored) = <a href="#61">root_store</a>.<a href="../../../rustls/webpki/anchors/struct.RootCertStore.html#method.add_parsable_certificates">add_parsable_certificates</a>(<a href="#92">result</a>.certs);
+<a href=#94 id=94 data-nosnippet>94</a>            <span class="kw">if </span><a href="#93">ignored</a> &gt; <span class="number">0 </span>{
+<a href=#95 id=95 data-nosnippet>95</a><span class="expansion"><input id=expand-95 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                <span class=expanded>{
+    {
+        <span class="kw">let </span>lvl = ::log::Level::Warn;
+        <span class="kw">if </span>lvl &lt;= ::log::STATIC_MAX_LEVEL &amp;&amp; lvl &lt;= ::log::max_level() {
+            ::log::__private_api::log({ ::log::__private_api::GlobalLogger },
+                <span class="macro">format_args!</span>(<span class="string">"{0} platform CA root certificates were ignored due to errors"</span>,
+                    ignored), lvl,
+                <span class="kw-2">&amp;</span>(<span class="string">"rustls_platform_verifier::verification::others"</span>,
+                        <span class="string">"rustls_platform_verifier::verification::others"</span>,
+                        ::log::__private_api::loc()), ());
+        }
+    }
+};</span><span class="original"><a href="../../../log/macro.warn.html">log::warn!</a>(<span class="string">"{ignored} platform CA root certificates were ignored due to errors"</span>)</span></span>;
+<a href=#96 id=96 data-nosnippet>96</a>            }
+<a href=#97 id=97 data-nosnippet>97</a>
+<a href=#98 id=98 data-nosnippet>98</a>            <span class="kw">for </span>error <span class="kw">in </span>result.errors {
+<a href=#99 id=99 data-nosnippet>99</a><span class="expansion"><input id=expand-99 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                <span class=expanded>{
+    {
+        <span class="kw">let </span>lvl = ::log::Level::Warn;
+        <span class="kw">if </span>lvl &lt;= ::log::STATIC_MAX_LEVEL &amp;&amp; lvl &lt;= ::log::max_level() {
+            ::log::__private_api::log({ ::log::__private_api::GlobalLogger },
+                <span class="macro">format_args!</span>(<span class="string">"Error loading CA root certificate: {0}"</span>, error),
+                lvl,
+                <span class="kw-2">&amp;</span>(<span class="string">"rustls_platform_verifier::verification::others"</span>,
+                        <span class="string">"rustls_platform_verifier::verification::others"</span>,
+                        ::log::__private_api::loc()), ());
+        }
+    }
+};</span><span class="original"><span class="macro">log::warn!</span>(<span class="string">"Error loading CA root certificate: {error}"</span>)</span></span>;
+<a href=#100 id=100 data-nosnippet>100</a>            }
+<a href=#101 id=101 data-nosnippet>101</a>
+<a href=#102 id=102 data-nosnippet>102</a>            <span class="comment">// Don't return an error if this fails when other roots have already been loaded via
+<a href=#103 id=103 data-nosnippet>103</a>            // `new_with_extra_roots`. It leads to extra failure cases where connections would otherwise still work.
+<a href=#104 id=104 data-nosnippet>104</a>            </span><span class="kw">if </span><a href="#61">root_store</a>.<a href="../../../rustls/webpki/anchors/struct.RootCertStore.html#method.is_empty">is_empty</a>() {
+<a href=#105 id=105 data-nosnippet>105</a>                <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(rustls::Error::<a href="../../../rustls/error/enum.Error.html#variant.General">General</a>(
+<a href=#106 id=106 data-nosnippet>106</a>                    <span class="string">"No CA certificates were loaded from the system"</span>.<a href="https://doc.rust-lang.org/nightly/alloc/borrow/trait.ToOwned.html#tymethod.to_owned">to_owned</a>(),
+<a href=#107 id=107 data-nosnippet>107</a>                ));
+<a href=#108 id=108 data-nosnippet>108</a>            } <span class="kw">else </span>{
+<a href=#109 id=109 data-nosnippet>109</a><span class="expansion"><input id=expand-109 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                <span class=expanded>{
+    {
+        <span class="kw">let </span>lvl = ::log::Level::Debug;
+        <span class="kw">if </span>lvl &lt;= ::log::STATIC_MAX_LEVEL &amp;&amp; lvl &lt;= ::log::max_level() {
+            ::log::__private_api::log({ ::log::__private_api::GlobalLogger },
+                <span class="macro">format_args!</span>(<span class="string">"Loaded {0} CA root certificates from the system"</span>,
+                    added), lvl,
+                <span class="kw-2">&amp;</span>(<span class="string">"rustls_platform_verifier::verification::others"</span>,
+                        <span class="string">"rustls_platform_verifier::verification::others"</span>,
+                        ::log::__private_api::loc()), ());
+        }
+    }
+};</span><span class="original"><a href="../../../log/macro.debug.html">log::debug!</a>(<span class="string">"Loaded {added} CA root certificates from the system"</span>)</span></span>;
+<a href=#110 id=110 data-nosnippet>110</a>            }
+<a href=#111 id=111 data-nosnippet>111</a>        }
+<a href=#112 id=112 data-nosnippet>112</a>
+<a href=#113 id=113 data-nosnippet>113</a>        <span class="attr">#[cfg(target_arch = <span class="string">"wasm32"</span>)]
+<a href=#114 id=114 data-nosnippet>114</a>        </span>{
+<a href=#115 id=115 data-nosnippet>115</a>            root_store.add_parsable_certificates(
+<a href=#116 id=116 data-nosnippet>116</a>                webpki_root_certs::TLS_SERVER_ROOT_CERTS.iter().cloned(),
+<a href=#117 id=117 data-nosnippet>117</a>            );
+<a href=#118 id=118 data-nosnippet>118</a>        };
+<a href=#119 id=119 data-nosnippet>119</a>
+<a href=#120 id=120 data-nosnippet>120</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<span class="self">Self </span>{
+<a href=#121 id=121 data-nosnippet>121</a>            inner: WebPkiServerVerifier::builder_with_provider(root_store.into(), crypto_provider)
+<a href=#122 id=122 data-nosnippet>122</a>                .build()
+<a href=#123 id=123 data-nosnippet>123</a>                .map_err(|e| TlsError::Other(OtherError(Arc::new(e))))<span class="question-mark">?</span>,
+<a href=#124 id=124 data-nosnippet>124</a>        })
+<a href=#125 id=125 data-nosnippet>125</a>    }
+<a href=#126 id=126 data-nosnippet>126</a>}
+<a href=#127 id=127 data-nosnippet>127</a>
+<a href=#128 id=128 data-nosnippet>128</a><span class="attr">#[cfg_attr(docsrs, doc(cfg(all())))]
+<a href=#129 id=129 data-nosnippet>129</a></span><span class="kw">impl </span><a href="../../../rustls/verify/trait.ServerCertVerifier.html">ServerCertVerifier</a> <span class="kw">for </span><a href="#16-21">Verifier</a> {
+<a href=#130 id=130 data-nosnippet>130</a>    <span class="kw">fn </span>verify_server_cert(
+<a href=#131 id=131 data-nosnippet>131</a>        <span class="kw-2">&amp;</span><span class="self">self</span>,
+<a href=#132 id=132 data-nosnippet>132</a>        end_entity: <span class="kw-2">&amp;</span>pki_types::<a href="../../../rustls_pki_types/struct.CertificateDer.html">CertificateDer</a>&lt;<span class="lifetime">'_</span>&gt;,
+<a href=#133 id=133 data-nosnippet>133</a>        intermediates: <span class="kw-2">&amp;</span>[pki_types::<a href="../../../rustls_pki_types/struct.CertificateDer.html">CertificateDer</a>&lt;<span class="lifetime">'_</span>&gt;],
+<a href=#134 id=134 data-nosnippet>134</a>        server_name: <span class="kw-2">&amp;</span>pki_types::<a href="../../../rustls_pki_types/server_name/enum.ServerName.html">ServerName</a>,
+<a href=#135 id=135 data-nosnippet>135</a>        ocsp_response: <span class="kw-2">&amp;</span>[<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>],
+<a href=#136 id=136 data-nosnippet>136</a>        now: pki_types::<a href="../../../rustls_pki_types/struct.UnixTime.html">UnixTime</a>,
+<a href=#137 id=137 data-nosnippet>137</a>    ) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<a href="../../../rustls/verify/struct.ServerCertVerified.html">ServerCertVerified</a>, <a href="../../../rustls/error/enum.Error.html">TlsError</a>&gt; {
+<a href=#138 id=138 data-nosnippet>138</a>        <a href="mod.rs.html#53-62">log_server_cert</a>(<a href="#132">end_entity</a>);
+<a href=#139 id=139 data-nosnippet>139</a>
+<a href=#140 id=140 data-nosnippet>140</a>        <a class="self" href="#131">self</a>.inner
+<a href=#141 id=141 data-nosnippet>141</a>            .<a href="../../../rustls/verify/trait.ServerCertVerifier.html#tymethod.verify_server_cert">verify_server_cert</a>(<a href="#132">end_entity</a>, <a href="#133">intermediates</a>, <a href="#134">server_name</a>, <a href="#135">ocsp_response</a>, <a href="#136">now</a>)
+<a href=#142 id=142 data-nosnippet>142</a>            .<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.map_err">map_err</a>(<a href="#174-184">map_webpki_errors</a>)
+<a href=#143 id=143 data-nosnippet>143</a>            <span class="comment">// This only contains information from the system or other public
+<a href=#144 id=144 data-nosnippet>144</a>            // bits of the TLS handshake, so it can't leak anything.
+<a href=#145 id=145 data-nosnippet>145</a>            </span>.<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.map_err">map_err</a>(|e| {
+<a href=#146 id=146 data-nosnippet>146</a><span class="expansion"><input id=expand-146 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                <span class=expanded>{
+    {
+        <span class="kw">let </span>lvl = ::log::Level::Error;
+        <span class="kw">if </span>lvl &lt;= ::log::STATIC_MAX_LEVEL &amp;&amp; lvl &lt;= ::log::max_level() {
+            ::log::__private_api::log({ ::log::__private_api::GlobalLogger },
+                <span class="macro">format_args!</span>(<span class="string">"failed to verify TLS certificate: {0}"</span>, e), lvl,
+                <span class="kw-2">&amp;</span>(<span class="string">"rustls_platform_verifier::verification::others"</span>,
+                        <span class="string">"rustls_platform_verifier::verification::others"</span>,
+                        ::log::__private_api::loc()), ());
+        }
+    }
+};</span><span class="original"><a href="../../../log/macro.error.html">log::error!</a>(<span class="string">"failed to verify TLS certificate: {}"</span>, e)</span></span>;
+<a href=#147 id=147 data-nosnippet>147</a>                <a href="#145">e</a>
+<a href=#148 id=148 data-nosnippet>148</a>            })
+<a href=#149 id=149 data-nosnippet>149</a>    }
+<a href=#150 id=150 data-nosnippet>150</a>
+<a href=#151 id=151 data-nosnippet>151</a>    <span class="kw">fn </span>verify_tls12_signature(
+<a href=#152 id=152 data-nosnippet>152</a>        <span class="kw-2">&amp;</span><span class="self">self</span>,
+<a href=#153 id=153 data-nosnippet>153</a>        message: <span class="kw-2">&amp;</span>[<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>],
+<a href=#154 id=154 data-nosnippet>154</a>        cert: <span class="kw-2">&amp;</span>pki_types::<a href="../../../rustls_pki_types/struct.CertificateDer.html">CertificateDer</a>&lt;<span class="lifetime">'_</span>&gt;,
+<a href=#155 id=155 data-nosnippet>155</a>        dss: <span class="kw-2">&amp;</span><a href="../../../rustls/verify/struct.DigitallySignedStruct.html">DigitallySignedStruct</a>,
+<a href=#156 id=156 data-nosnippet>156</a>    ) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<a href="../../../rustls/verify/struct.HandshakeSignatureValid.html">HandshakeSignatureValid</a>, <a href="../../../rustls/error/enum.Error.html">TlsError</a>&gt; {
+<a href=#157 id=157 data-nosnippet>157</a>        <a class="self" href="#152">self</a>.inner.<a href="../../../rustls/verify/trait.ServerCertVerifier.html#tymethod.verify_tls12_signature">verify_tls12_signature</a>(<a href="#153">message</a>, <a href="#154">cert</a>, <a href="#155">dss</a>)
+<a href=#158 id=158 data-nosnippet>158</a>    }
+<a href=#159 id=159 data-nosnippet>159</a>
+<a href=#160 id=160 data-nosnippet>160</a>    <span class="kw">fn </span>verify_tls13_signature(
+<a href=#161 id=161 data-nosnippet>161</a>        <span class="kw-2">&amp;</span><span class="self">self</span>,
+<a href=#162 id=162 data-nosnippet>162</a>        message: <span class="kw-2">&amp;</span>[<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>],
+<a href=#163 id=163 data-nosnippet>163</a>        cert: <span class="kw-2">&amp;</span>pki_types::<a href="../../../rustls_pki_types/struct.CertificateDer.html">CertificateDer</a>&lt;<span class="lifetime">'_</span>&gt;,
+<a href=#164 id=164 data-nosnippet>164</a>        dss: <span class="kw-2">&amp;</span><a href="../../../rustls/verify/struct.DigitallySignedStruct.html">DigitallySignedStruct</a>,
+<a href=#165 id=165 data-nosnippet>165</a>    ) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<a href="../../../rustls/verify/struct.HandshakeSignatureValid.html">HandshakeSignatureValid</a>, <a href="../../../rustls/error/enum.Error.html">TlsError</a>&gt; {
+<a href=#166 id=166 data-nosnippet>166</a>        <a class="self" href="#161">self</a>.inner.<a href="../../../rustls/verify/trait.ServerCertVerifier.html#tymethod.verify_tls13_signature">verify_tls13_signature</a>(<a href="#162">message</a>, <a href="#163">cert</a>, <a href="#164">dss</a>)
+<a href=#167 id=167 data-nosnippet>167</a>    }
+<a href=#168 id=168 data-nosnippet>168</a>
+<a href=#169 id=169 data-nosnippet>169</a>    <span class="kw">fn </span>supported_verify_schemes(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="../../../rustls/enums/enum.SignatureScheme.html">SignatureScheme</a>&gt; {
+<a href=#170 id=170 data-nosnippet>170</a>        <a class="self" href="#169">self</a>.inner.<a href="../../../rustls/verify/trait.ServerCertVerifier.html#tymethod.supported_verify_schemes">supported_verify_schemes</a>()
+<a href=#171 id=171 data-nosnippet>171</a>    }
+<a href=#172 id=172 data-nosnippet>172</a>}
+<a href=#173 id=173 data-nosnippet>173</a>
+<a href=#174 id=174 data-nosnippet>174</a><span class="kw">fn </span>map_webpki_errors(err: <a href="../../../rustls/error/enum.Error.html">TlsError</a>) -&gt; <a href="../../../rustls/error/enum.Error.html">TlsError</a> {
+<a href=#175 id=175 data-nosnippet>175</a>    <span class="kw">match </span><span class="kw-2">&amp;</span><a href="#174">err</a> {
+<a href=#176 id=176 data-nosnippet>176</a>        TlsError::<a href="../../../rustls/error/enum.Error.html#variant.InvalidCertificate">InvalidCertificate</a>(CertificateError::<a href="../../../rustls/error/enum.CertificateError.html#variant.InvalidPurpose">InvalidPurpose</a>)
+<a href=#177 id=177 data-nosnippet>177</a>        | TlsError::<a href="../../../rustls/error/enum.Error.html#variant.InvalidCertificate">InvalidCertificate</a>(CertificateError::<a href="../../../rustls/error/enum.CertificateError.html#variant.InvalidPurposeContext">InvalidPurposeContext</a> { .. }) =&gt; {
+<a href=#178 id=178 data-nosnippet>178</a>            TlsError::<a href="../../../rustls/error/enum.Error.html#variant.InvalidCertificate">InvalidCertificate</a>(CertificateError::<a href="../../../rustls/error/enum.CertificateError.html#variant.Other">Other</a>(<a href="../../../rustls/error/other_error/struct.OtherError.html">OtherError</a>(<a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html">Arc</a>::<a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html#method.new">new</a>(
+<a href=#179 id=179 data-nosnippet>179</a>                <span class="kw">super</span>::<a href="mod.rs.html#41">EkuError</a>,
+<a href=#180 id=180 data-nosnippet>180</a>            ))))
+<a href=#181 id=181 data-nosnippet>181</a>        }
+<a href=#182 id=182 data-nosnippet>182</a>        <span class="kw">_ </span>=&gt; <a href="#174">err</a>,
+<a href=#183 id=183 data-nosnippet>183</a>    }
+<a href=#184 id=184 data-nosnippet>184</a>}
+</code></pre></div></section></main></body></html>

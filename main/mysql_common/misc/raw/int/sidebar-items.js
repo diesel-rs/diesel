@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["ConstU32","ConstU8","LeI16","LeI24","LeI32","LeI56","LeI64","LeU16","LeU24","LeU32","LeU32LowerHalf","LeU32UpperHalf","LeU48","LeU56","LeU64","LenEnc","RawInt","VarLen"],"trait":["IntRepr"]};
