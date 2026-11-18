@@ -9,7 +9,6 @@ use heck::ToUpperCamelCase;
 use super::data_structures::*;
 use super::table_data::TableName;
 use crate::infer_schema_internals::information_schema::DefaultSchema;
-use crate::print_schema::ColumnSorting;
 
 #[diesel::declare_sql_function]
 extern "SQL" {
@@ -55,7 +54,7 @@ where
     }
 }
 
-mod column_query {
+pub(super) mod column_query {
     use diesel::helper_types::AsExprOf;
     use diesel::sql_types::{Nullable, Text};
     use diesel::{ExpressionMethods, IntoSql, QueryDsl, dsl};
@@ -64,7 +63,7 @@ mod column_query {
     use super::null_if_text;
 
     #[dsl::auto_type(type_case = "PascalCase")]
-    pub(super) fn query<'a>(table: &'a str, schema: &'a str) -> _ {
+    pub(in crate::infer_schema_internals) fn query<'a>(table: &'a str, schema: &'a str) -> _ {
         let type_schema: AsExprOf<Option<String>, Nullable<Text>> =
             None::<String>.into_sql::<Nullable<Text>>();
         columns
@@ -95,47 +94,6 @@ mod comment_query {
             .filter(table_name.eq(table))
             .filter(table_schema.eq(schema))
     }
-}
-
-pub fn get_table_data<DB>(
-    conn: &mut mysql_like::MysqlLikeConnection<DB>,
-    table: &TableName,
-    column_sorting: &ColumnSorting,
-) -> QueryResult<Vec<ColumnInformation>>
-where
-    DB: mysql_like::MysqlLikeBackend + DefaultSchema,
-    for<'a> diesel::helper_types::Order<
-        column_query::Query<'a>,
-        information_schema::columns::ordinal_position,
-    >: LoadQuery<'a, mysql_like::MysqlLikeConnection<DB>, ColumnInformation>,
-    for<'a> diesel::helper_types::Order<column_query::Query<'a>, information_schema::columns::column_name>:
-        LoadQuery<'a, mysql_like::MysqlLikeConnection<DB>, ColumnInformation>,
-{
-    use information_schema::columns::dsl::*;
-
-    let schema_name = match table.schema {
-        Some(ref name) => Cow::Borrowed(name),
-        None => Cow::Owned(DB::default_schema(conn)?),
-    };
-
-    let query = column_query::query(&table.sql_name, &schema_name);
-    let mut table_columns = match column_sorting {
-        ColumnSorting::OrdinalPosition => query.order(ordinal_position).load(conn),
-        ColumnSorting::Name => query.order(column_name).load(conn),
-    }?;
-    for c in &mut table_columns {
-        if c.max_length.is_some() && !c.type_name.contains('(') {
-            // Mysql returns something in character_maximum_length regardless
-            // of whether it's specified at field creation time
-            // In addition there is typically a shared limitation at row level,
-            // so it's typically not even the real max.
-            // This basically means no max.
-            // https://dev.mysql.com/doc/refman/8.0/en/column-count-limit.html
-            // https://chartio.com/resources/tutorials/understanding-strorage-sizes-for-mysql-text-data-types/
-            c.max_length = None;
-        }
-    }
-    Ok(table_columns)
 }
 
 pub(in crate::infer_schema_internals) mod information_schema {
@@ -189,7 +147,18 @@ pub(in crate::infer_schema_internals) mod information_schema {
         }
     }
 
+    table! {
+        information_schema.check_constraints (constraint_schema, table_name, constraint_name) {
+            constraint_schema -> VarChar,
+            table_name -> VarChar,
+            constraint_name -> VarChar,
+            level -> VarChar,
+            check_clause -> VarChar,
+        }
+    }
+
     allow_tables_to_appear_in_same_query!(table_constraints, key_column_usage);
+    allow_tables_to_appear_in_same_query!(columns, check_constraints);
 }
 
 #[tracing::instrument]

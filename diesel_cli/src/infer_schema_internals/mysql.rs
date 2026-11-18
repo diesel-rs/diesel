@@ -1,9 +1,13 @@
+use std::borrow::Cow;
+
 use diesel::mysql::{Mysql, MysqlConnection};
 use diesel::*;
 
 use super::data_structures::*;
 use super::information_schema::DefaultSchema;
 use super::table_data::TableName;
+use crate::infer_schema_internals::mysql_like::{column_query, information_schema};
+use crate::print_schema::ColumnSorting;
 
 /// Even though this is using `information_schema`, MySQL needs non-ANSI columns
 /// in order to do this.
@@ -44,13 +48,45 @@ pub fn load_foreign_key_constraints(
     ))
 }
 
+pub fn get_table_data(
+    conn: &mut MysqlConnection,
+    table: &TableName,
+    column_sorting: &ColumnSorting,
+) -> QueryResult<Vec<ColumnInformation>> {
+    use information_schema::columns::dsl::*;
+
+    let schema_name = match table.schema {
+        Some(ref name) => Cow::Borrowed(name),
+        None => Cow::Owned(Mysql::default_schema(conn)?),
+    };
+
+    let query = column_query::query(&table.sql_name, &schema_name);
+    let mut table_columns = match column_sorting {
+        ColumnSorting::OrdinalPosition => query
+            .order(ordinal_position)
+            .load::<ColumnInformation>(conn),
+        ColumnSorting::Name => query.order(column_name).load::<ColumnInformation>(conn),
+    }?;
+    for c in &mut table_columns {
+        if c.max_length.is_some() && !c.type_name.contains('(') {
+            // Mysql returns something in character_maximum_length regardless
+            // of whether it's specified at field creation time
+            // In addition there is typically a shared limitation at row level,
+            // so it's typically not even the real max.
+            // This basically means no max.
+            // https://dev.mysql.com/doc/refman/8.0/en/column-count-limit.html
+            // https://chartio.com/resources/tutorials/understanding-strorage-sizes-for-mysql-text-data-types/
+            c.max_length = None;
+        }
+    }
+    Ok(table_columns)
+}
+
 #[cfg(test)]
 use super::mysql_like::{
     determine_column_type, determine_type_name, determine_unsigned, get_enum_variants,
-    get_table_comment, get_table_data,
+    get_table_comment,
 };
-#[cfg(test)]
-use crate::print_schema::ColumnSorting;
 
 #[test]
 fn values_which_already_map_to_type_are_returned_unchanged() {
