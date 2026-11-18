@@ -6,6 +6,7 @@ use sqlite_wasm_rs as ffi;
 use crate::result::Error::DatabaseError;
 use crate::result::*;
 use crate::sqlite::SqliteConnection;
+use crate::sqlite::connection::error_information::SqliteErrorInformation;
 use alloc::boxed::Box;
 use alloc::string::{String, ToString};
 use core::ffi::{c_char, c_int};
@@ -108,9 +109,13 @@ where
     if result == ffi::SQLITE_OK {
         Ok(())
     } else {
+        let error_information = SqliteErrorInformation {
+            message: ffi::code_to_str(result).to_string(),
+            native_code: result,
+        };
         Err(DatabaseError(
             DatabaseErrorKind::Unknown,
-            Box::new(ffi::code_to_str(result).to_string()),
+            Box::new(error_information),
         ))
     }
 }
