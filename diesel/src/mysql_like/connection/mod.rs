@@ -1,9 +1,10 @@
 mod bind;
 mod error_information;
+#[cfg(feature = "mariadb")]
+mod mariadb;
 mod raw;
 mod stmt;
 mod url;
-
 use core::num::NonZeroU64;
 
 use self::raw::RawConnection;
