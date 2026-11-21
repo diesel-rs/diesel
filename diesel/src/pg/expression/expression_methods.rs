@@ -2621,7 +2621,7 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     run_test().unwrap();
     /// # }
     /// #
-    /// # #[cfg(feature = "ipnetwork")]
+    /// # #[cfg(feature = "network-address")]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::hosts::dsl::*;
     /// #     use ipnetwork::IpNetwork;
@@ -2651,7 +2651,7 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// #
-    /// # #[cfg(not(feature = "ipnetwork"))]
+    /// # #[cfg(not(feature = "network-address"))]
     /// # fn run_test() -> QueryResult<()> {
     /// #     Ok(())
     /// # }
@@ -2683,7 +2683,7 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     run_test().unwrap();
     /// # }
     /// #
-    /// # #[cfg(feature = "ipnetwork")]
+    /// # #[cfg(feature = "network-address")]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::hosts::dsl::*;
     /// #     use ipnetwork::IpNetwork;
@@ -2713,7 +2713,7 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// #
-    /// # #[cfg(not(feature = "ipnetwork"))]
+    /// # #[cfg(not(feature = "network-address"))]
     /// # fn run_test() -> QueryResult<()> {
     /// #     Ok(())
     /// # }
@@ -2745,7 +2745,7 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     run_test().unwrap();
     /// # }
     /// #
-    /// # #[cfg(feature = "ipnetwork")]
+    /// # #[cfg(feature = "network-address")]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::hosts::dsl::*;
     /// #     use ipnetwork::IpNetwork;
@@ -2775,7 +2775,7 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// #
-    /// # #[cfg(not(feature = "ipnetwork"))]
+    /// # #[cfg(not(feature = "network-address"))]
     /// # fn run_test() -> QueryResult<()> {
     /// #     Ok(())
     /// # }
@@ -2808,7 +2808,7 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     run_test().unwrap();
     /// # }
     /// #
-    /// # #[cfg(feature = "ipnetwork")]
+    /// # #[cfg(feature = "network-address")]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::hosts::dsl::*;
     /// #     use ipnetwork::IpNetwork;
@@ -2833,7 +2833,7 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// #
-    /// # #[cfg(not(feature = "ipnetwork"))]
+    /// # #[cfg(not(feature = "network-address"))]
     /// # fn run_test() -> QueryResult<()> {
     /// #     Ok(())
     /// # }
@@ -2866,7 +2866,7 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     run_test().unwrap();
     /// # }
     /// #
-    /// # #[cfg(feature = "ipnetwork")]
+    /// # #[cfg(feature = "network-address")]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::hosts::dsl::*;
     /// #     use ipnetwork::IpNetwork;
@@ -2896,7 +2896,7 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// #
-    /// # #[cfg(not(feature = "ipnetwork"))]
+    /// # #[cfg(not(feature = "network-address"))]
     /// # fn run_test() -> QueryResult<()> {
     /// #     Ok(())
     /// # }
@@ -2928,7 +2928,7 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     run_test().unwrap();
     /// # }
     /// #
-    /// # #[cfg(feature = "ipnetwork")]
+    /// # #[cfg(feature = "network-address")]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::hosts::dsl::*;
     /// #     use ipnetwork::IpNetwork;
@@ -2947,7 +2947,7 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// #
-    /// # #[cfg(not(feature = "ipnetwork"))]
+    /// # #[cfg(not(feature = "network-address"))]
     /// # fn run_test() -> QueryResult<()> {
     /// #     Ok(())
     /// # }
@@ -2979,7 +2979,7 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     run_test().unwrap();
     /// # }
     /// #
-    /// # #[cfg(feature = "ipnetwork")]
+    /// # #[cfg(feature = "network-address")]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::hosts::dsl::*;
     /// #     use ipnetwork::IpNetwork;
@@ -2998,7 +2998,7 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// #
-    /// # #[cfg(not(feature = "ipnetwork"))]
+    /// # #[cfg(not(feature = "network-address"))]
     /// # fn run_test() -> QueryResult<()> {
     /// #     Ok(())
     /// # }
@@ -3030,7 +3030,7 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     run_test().unwrap();
     /// # }
     /// #
-    /// # #[cfg(feature = "ipnetwork")]
+    /// # #[cfg(feature = "network-address")]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::hosts::dsl::*;
     /// #     use ipnetwork::IpNetwork;
@@ -3049,7 +3049,7 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// #
-    /// # #[cfg(not(feature = "ipnetwork"))]
+    /// # #[cfg(not(feature = "network-address"))]
     /// # fn run_test() -> QueryResult<()> {
     /// #     Ok(())
     /// # }
