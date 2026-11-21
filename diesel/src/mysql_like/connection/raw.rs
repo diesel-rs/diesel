@@ -247,47 +247,54 @@ impl RawConnection {
     }
 
     fn set_ssl_mode(&self, ssl_mode: mysqlclient_sys::mysql_ssl_mode) {
-        let v = ssl_mode as u32;
-        let v_ptr: *const u32 = &v;
-        let n = ptr::NonNull::new(v_ptr as *mut u32).expect("NonNull::new failed");
-        let activated = 1_u32;
-        let activated_ptr: *const u32 = &activated;
-        let activated_ptr =
-            ptr::NonNull::new(activated_ptr as *mut u32).expect("NonNull::new failed");
         #[cfg(not(feature = "mariadb"))]
-        unsafe {
-            mysqlclient_sys::mysql_options(
-                self.0.as_ptr(),
-                mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_MODE,
-                n.as_ptr() as *const core::ffi::c_void,
-            )
-        };
-        #[cfg(feature = "mariadb")]
-        match ssl_mode {
-            SSL_MODE_PREFERRED => unsafe {
-                mysqlclient_sys::mysql_optionsv(
+        {
+            let v = ssl_mode as u32;
+            let v_ptr: *const u32 = &v;
+            let n = ptr::NonNull::new(v_ptr as *mut u32).expect("NonNull::new failed");
+            unsafe {
+                mysqlclient_sys::mysql_options(
                     self.0.as_ptr(),
-                    mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_ENFORCE,
-                    activated_ptr.as_ptr() as *const core::ffi::c_void,
-                );
-            },
-            SSL_MODE_REQUIRED | SSL_MODE_VERIFY_CA | SSL_MODE_VERIFY_IDENTITY => {
-                unsafe {
-                    mysqlclient_sys::mysql_optionsv(
+                    mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_MODE,
+                    n.as_ptr() as *const core::ffi::c_void,
+                )
+            };
+        }
+        #[cfg(feature = "mariadb")]
+        {
+            use crate::mysql_like::connection::mariadb;
+            let activated = 1_u32;
+            let activated_ptr: *const u32 = &activated;
+            let activated_ptr =
+                ptr::NonNull::new(activated_ptr as *mut u32).expect("NonNull::new failed");
+            match ssl_mode {
+                SSL_MODE_PREFERRED => unsafe {
+                    mariadb::optionsv()(
                         self.0.as_ptr(),
-                        mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_ENFORCE,
+                        mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_ENFORCE as core::ffi::c_int,
                         activated_ptr.as_ptr() as *const core::ffi::c_void,
                     );
+                },
+                SSL_MODE_REQUIRED | SSL_MODE_VERIFY_CA | SSL_MODE_VERIFY_IDENTITY => {
+                    unsafe {
+                        mariadb::optionsv()(
+                            self.0.as_ptr(),
+                            mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_ENFORCE
+                                as core::ffi::c_int,
+                            activated_ptr.as_ptr() as *const core::ffi::c_void,
+                        );
+                    }
+                    unsafe {
+                        mariadb::optionsv()(
+                            self.0.as_ptr(),
+                            mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_VERIFY_SERVER_CERT
+                                as core::ffi::c_int,
+                            activated_ptr.as_ptr() as *const core::ffi::c_void,
+                        );
+                    }
                 }
-                unsafe {
-                    mysqlclient_sys::mysql_optionsv(
-                        self.0.as_ptr(),
-                        mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_VERIFY_SERVER_CERT,
-                        activated_ptr.as_ptr() as *const core::ffi::c_void,
-                    );
-                }
+                _ => (),
             }
-            _ => (),
         }
     }
 
