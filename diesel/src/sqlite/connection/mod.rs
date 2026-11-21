@@ -1747,8 +1747,8 @@ mod tests {
             use std::sync::OnceLock;
             #[allow(unsafe_code, reason = "Test code")]
             fn load_image(conn: &mut BorrowedSqliteConnection) -> QueryResult<()> {
-                // `conn` is a borrowed connection; its `serialized_data` is dropped
-                // when this callback returns, but SQLite keeps using the buffer.
+                // `conn` only borrows the connection and is dropped when this callback
+                // returns, while SQLite keeps reading the deserialized database.
                 unsafe {
                     conn.inner_mut()
                         .deserialize_readonly_database_from_buffer(IMAGE.get().unwrap())

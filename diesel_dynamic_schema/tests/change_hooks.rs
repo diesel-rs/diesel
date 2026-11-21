@@ -2,7 +2,7 @@
 //! tables, where the table type does not implement `StaticQueryFragment`.
 //!
 //! Dynamic schema users have no typed `table!` marker, so they either pass the
-//! dynamic table to `SqliteUpdateRouter::on_dynamic` (which routes by its
+//! dynamic table to `SqliteUpdateRouter::on` (which routes by its
 //! runtime name) or use an `on_any` route that filters on the string
 //! `table_name`, plus a partial op mask for op-level filtering.
 
@@ -123,7 +123,7 @@ fn update_hook_ops_filter_with_dynamic_schema() {
 }
 
 /// Verify that a `diesel_dynamic_schema` table can be passed directly to
-/// `SqliteUpdateRouter::on_dynamic`, routing by its runtime name without a
+/// `SqliteUpdateRouter::on`, routing by its runtime name without a
 /// typed `table!` marker. A change to a different table must not fire it.
 #[test]
 fn on_dynamic_routes_to_a_dynamic_schema_table() {
@@ -158,6 +158,6 @@ fn on_dynamic_routes_to_a_dynamic_schema_table() {
     assert_eq!(
         *events.lock().unwrap(),
         vec![2],
-        "on_dynamic should route only changes on the given dynamic table"
+        "`on` should route only changes on the given dynamic table"
     );
 }

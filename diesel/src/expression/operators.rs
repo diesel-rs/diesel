@@ -177,8 +177,8 @@ macro_rules! __diesel_operator_to_sql {
 /// Typically you would not expose the type that this generates directly. You'd
 /// expose a function (or trait) used to construct the expression, and a helper
 /// type which represents the return type of that function. See the source of
-/// `diesel::expression::expression_methods` and
-/// `diesel::expression::helper_types` for real world examples of this.
+/// [`diesel::expression_methods`](crate::expression_methods) and
+/// [`diesel::expression::helper_types`](crate::expression::helper_types) for real world examples of this.
 ///
 /// # Examples
 ///

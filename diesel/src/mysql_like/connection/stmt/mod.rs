@@ -163,9 +163,9 @@ impl<'a, DB: MysqlLikeBackend> MaybeCached<'a, Statement<DB>> {
         }
     }
 
-    /// This function should be called instead of `results` on queries which
+    /// This function should be called instead of [`execute_statement`](Self::execute_statement) on queries which
     /// have no return value. It should never be called on a statement on
-    /// which `results` has previously been called?
+    /// which [`execute_statement`](Self::execute_statement) has previously been called?
     pub(super) unsafe fn execute(self) -> QueryResult<StatementUse<'a, DB>> {
         unsafe {
             ffi::mysql_stmt_execute(self.stmt.as_ptr());

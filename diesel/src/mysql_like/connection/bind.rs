@@ -244,7 +244,7 @@ impl Clone for BindData {
                 // The length pointer is valid as long as none missuses `bind_for_truncated_data`
                 // as this is the only location that updates the length field before the corresponding data are
                 // written. At the time of writing this comment, the `BindData::bind_for_truncated_data`
-                // function is only called by `Binds::populate_dynamic_buffers` which ensures the corresponding
+                // function is only called by `OutputBinds::populate_dynamic_buffers` which ensures the corresponding
                 // invariant.
                 core::slice::from_raw_parts(ptr.as_ptr(), length)
             };
@@ -519,7 +519,7 @@ impl BindData {
                 // The length pointer is valid as long as none missuses `bind_for_truncated_data`
                 // as this is the only location that updates the length field before the corresponding data are
                 // written. At the time of writing this comment, the `BindData::bind_for_truncated_data`
-                // function is only called by `Binds::populate_dynamic_buffers` which ensures the corresponding
+                // function is only called by `OutputBinds::populate_dynamic_buffers` which ensures the corresponding
                 // invariant.
                 core::slice::from_raw_parts(data.as_ptr(), length)
             };

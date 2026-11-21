@@ -187,10 +187,8 @@ fn create_config_file(
     Ok(())
 }
 
-/// Looks for a migrations directory in the current path and all parent paths,
-/// and creates one in the same directory as the Cargo.toml if it can't find
-/// one. It also sticks a .keep in the directory so git will pick it up.
-/// Returns a `DatabaseError::ProjectRootNotFound` if no Cargo.toml is found.
+/// Creates the migrations directory at `path`. It also sticks a .keep in the
+/// directory so git will pick it up.
 fn create_migrations_directory(path: &Path) -> Result<PathBuf, crate::errors::Error> {
     println!("Creating migrations directory at: {}", path.display());
     fs::create_dir_all(path)
@@ -207,7 +205,7 @@ fn find_project_root() -> Result<PathBuf, crate::errors::Error> {
 }
 
 /// Searches for the directory that holds the project's Cargo.toml, and returns
-/// the path if it found it, or returns a `DatabaseError::ProjectRootNotFound`.
+/// the path if it found it, or returns an [`Error::ProjectRootNotFound`](crate::errors::Error::ProjectRootNotFound).
 fn search_for_directory_containing_file(
     path: &Path,
     file: &str,

@@ -84,7 +84,7 @@ impl<DB: MysqlLikeBackend> Iterator for StatementIterator<'_, DB> {
                     Ok(o) => o,
                     Err(_e) => {
                         return Some(Err(DeserializationError(
-                            "Failed to reborrow row. Try to release any `MysqlField` or `MysqlValue` \
+                            "Failed to reborrow row. Try to release any `MysqlLikeField` or `MysqlValue` \
                              that exists at this point"
                                 .into(),
                         )));

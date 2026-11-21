@@ -394,8 +394,8 @@ fn create_default_migration_if_needed(
 }
 
 /// Creates the `__diesel_schema_migrations` table if it doesn't exist. If the
-/// table didn't exist, it also runs any pending migrations. Returns a
-/// `DatabaseError::ConnectionError` if it can't create the table, and exits
+/// table didn't exist, it also runs any pending migrations. Returns an
+/// [`Error::ConnectionError`](crate::errors::Error::ConnectionError) if it can't create the table, and exits
 /// with a migration error if it can't run migrations.
 fn create_schema_table_and_run_migrations_if_needed(
     database_url: &str,

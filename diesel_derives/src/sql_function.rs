@@ -1567,7 +1567,7 @@ fn parse_attributes(
     attributes_collected
 }
 
-/// Essentially the same as ArgCaptured, but only allowing ident patterns
+/// Essentially the same as [`syn::PatType`], but only allowing ident patterns
 #[derive(Clone)]
 struct StrictFnArg {
     name: Ident,

@@ -8,5 +8,5 @@ Diesel's `Getting Started` guide using SQLite instead of Postgresql
 $ echo "DATABASE_URL=file:test.db" > .env
 $ diesel migration run
 
-$ cargo run --bin show_posts
+$ cargo run --bin show_posts_step_1
 ```

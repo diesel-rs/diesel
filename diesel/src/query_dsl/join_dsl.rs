@@ -4,7 +4,7 @@ use crate::query_source::joins::OnClauseWrapper;
 use crate::query_source::{JoinTo, QueryRelation, QuerySource};
 
 #[doc(hidden)]
-/// `JoinDsl` support trait to emulate associated type constructors
+/// [`QueryDsl`](crate::QueryDsl) join support trait to emulate associated type constructors
 pub trait InternalJoinDsl<Rhs, Kind, On> {
     type Output;
 
@@ -24,7 +24,7 @@ where
 }
 
 #[doc(hidden)]
-/// `JoinDsl` support trait to emulate associated type constructors and grab
+/// [`QueryDsl`](crate::QueryDsl) join support trait to emulate associated type constructors and grab
 /// the known on clause from the associations API
 pub trait JoinWithImplicitOnClause<Rhs, Kind> {
     type Output;

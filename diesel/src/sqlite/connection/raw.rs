@@ -1376,7 +1376,7 @@ extern "C" fn destroy_boxed<F>(data: *mut libc::c_void) {
 ///
 /// # Safety
 ///
-/// `user_data` must point to a live `F` stored in `RawConnection::update_hook`.
+/// `user_data` must point to a live `F` stored in [`Hooks::update_hook`].
 /// This is guaranteed because the box is kept alive there and the hook is
 /// unregistered before the connection is dropped. SQLite forbids the callback
 /// from modifying the connection, so it cannot re-enter this trampoline, and
@@ -1392,7 +1392,7 @@ unsafe extern "C" fn update_hook_trampoline<F>(
     F: FnMut(SqliteChangeEvent<'_>),
 {
     let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
-        // SAFETY: `user_data` points to a live `F` in `RawConnection::update_hook`.
+        // SAFETY: `user_data` points to a live `F` in `Hooks::update_hook`.
         let hook = unsafe { &mut *(user_data as *mut F) };
 
         // SAFETY: SQLite passes valid C strings. Decode lossily so a non-UTF-8
@@ -1417,13 +1417,13 @@ unsafe extern "C" fn update_hook_trampoline<F>(
 ///
 /// # Safety
 ///
-/// `user_data` must point to a live `F` stored in `RawConnection::commit_hook`.
+/// `user_data` must point to a live `F` stored in [`Hooks::commit_hook`].
 unsafe extern "C" fn commit_hook_trampoline<F>(user_data: *mut libc::c_void) -> libc::c_int
 where
     F: FnMut() -> CommitDecision,
 {
     let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
-        // SAFETY: `user_data` points to a live `F` in `RawConnection::commit_hook`.
+        // SAFETY: `user_data` points to a live `F` in `Hooks::commit_hook`.
         let f = unsafe { &mut *(user_data as *mut F) };
         f()
     }));
@@ -1441,13 +1441,13 @@ where
 ///
 /// # Safety
 ///
-/// `user_data` must point to a live `F` stored in `RawConnection::rollback_hook`.
+/// `user_data` must point to a live `F` stored in [`Hooks::rollback_hook`].
 unsafe extern "C" fn rollback_hook_trampoline<F>(user_data: *mut libc::c_void)
 where
     F: FnMut(),
 {
     let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
-        // SAFETY: `user_data` points to a live `F` in `RawConnection::rollback_hook`.
+        // SAFETY: `user_data` points to a live `F` in `Hooks::rollback_hook`.
         let f = unsafe { &mut *(user_data as *mut F) };
         f();
     }));
@@ -1461,13 +1461,13 @@ where
 ///
 /// # Safety
 ///
-/// `user_data` must point to a live `F` stored in `RawConnection::progress_hook`.
+/// `user_data` must point to a live `F` stored in [`Hooks::progress_hook`].
 unsafe extern "C" fn progress_handler_trampoline<F>(user_data: *mut libc::c_void) -> libc::c_int
 where
     F: FnMut() -> ProgressDecision,
 {
     let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
-        // SAFETY: `user_data` points to a live `F` in `RawConnection::progress_hook`.
+        // SAFETY: `user_data` points to a live `F` in `Hooks::progress_hook`.
         let f = unsafe { &mut *(user_data as *mut F) };
         f()
     }));
@@ -1485,7 +1485,7 @@ where
 ///
 /// # Safety
 ///
-/// `user_data` must point to a live `F` in `RawConnection::wal_hook`. `db` is
+/// `user_data` must point to a live `F` in [`Hooks::wal_hook`]. `db` is
 /// the `sqlite3` handle that fired the hook, open and unlocked for the duration
 /// of the call.
 unsafe extern "C" fn wal_hook_trampoline<F>(
@@ -1498,7 +1498,7 @@ where
     F: Fn(&'_ mut BorrowedSqliteConnection, &str, u32),
 {
     let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
-        // SAFETY: `user_data` points to a live `F` in `RawConnection::wal_hook`.
+        // SAFETY: `user_data` points to a live `F` in `Hooks::wal_hook`.
         let f = unsafe { &*(user_data as *const F) };
 
         // SAFETY: `db_name` is null or a valid C string from SQLite, copied because a DETACH in the hook frees it.
@@ -1536,7 +1536,7 @@ where
 ///
 /// # Safety
 ///
-/// `user_data` must point to a live `F` stored in `RawConnection::busy_handler`.
+/// `user_data` must point to a live `F` stored in [`Hooks::busy_handler`].
 unsafe extern "C" fn busy_handler_trampoline<F>(
     user_data: *mut libc::c_void,
     retry_count: libc::c_int,
@@ -1545,7 +1545,7 @@ where
     F: FnMut(i32) -> BusyDecision,
 {
     let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
-        // SAFETY: `user_data` points to a live `F` in `RawConnection::busy_handler`.
+        // SAFETY: `user_data` points to a live `F` in `Hooks::busy_handler`.
         let f = unsafe { &mut *(user_data as *mut F) };
         f(retry_count)
     }));
@@ -1563,7 +1563,7 @@ where
 ///
 /// # Safety
 ///
-/// `user_data` must point to a live `F` stored in `RawConnection::authorizer_hook`.
+/// `user_data` must point to a live `F` stored in [`Hooks::authorizer_hook`].
 unsafe extern "C" fn authorizer_trampoline<F>(
     user_data: *mut libc::c_void,
     action_code: libc::c_int,
@@ -1597,7 +1597,7 @@ where
             return AuthorizerDecision::Deny;
         };
 
-        // SAFETY: `user_data` points to a live `F` in `RawConnection::authorizer_hook`.
+        // SAFETY: `user_data` points to a live `F` in `Hooks::authorizer_hook`.
         let f = unsafe { &mut *(user_data as *mut F) };
 
         f(AuthorizerContext::from_ffi(
@@ -1621,7 +1621,7 @@ where
 ///
 /// # Safety
 ///
-/// `user_data` must point to a live `F` stored in `RawConnection::trace_hook`.
+/// `user_data` must point to a live `F` stored in [`Hooks::trace_hook`].
 unsafe extern "C" fn trace_trampoline<F>(
     event_code: libc::c_uint,
     user_data: *mut libc::c_void,
@@ -1632,7 +1632,7 @@ where
     F: FnMut(SqliteTraceEvent<'_>) + Send + 'static,
 {
     let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
-        // SAFETY: `user_data` points to a live `F` in `RawConnection::trace_hook`.
+        // SAFETY: `user_data` points to a live `F` in `Hooks::trace_hook`.
         let f = unsafe { &mut *(user_data as *mut F) };
 
         // The callback is invoked inside each arm so the lossy `Cow` holding the
@@ -1707,7 +1707,7 @@ where
 /// # Safety
 ///
 /// `user_data` must point to a live `F` in
-/// `RawConnection::collation_needed_hook`. `db` is the connection that fired
+/// [`Hooks::collation_needed_hook`]. `db` is the connection that fired
 /// the callback and is open for the duration of the call.
 unsafe extern "C" fn collation_needed_trampoline<F>(
     user_data: *mut libc::c_void,
@@ -1719,7 +1719,7 @@ unsafe extern "C" fn collation_needed_trampoline<F>(
 {
     let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
         // SAFETY: `user_data` points to a live `F` in
-        // `RawConnection::collation_needed_hook`.
+        // `Hooks::collation_needed_hook`.
         let f = unsafe { &*(user_data as *const F) };
 
         // SAFETY: when non-null, `name` is a valid C string from SQLite. Use a

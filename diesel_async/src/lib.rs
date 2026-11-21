@@ -166,7 +166,7 @@ pub trait SimpleAsyncConnection {
 
 /// Core trait for an async database connection
 pub trait AsyncConnectionCore: SimpleAsyncConnection + Send {
-    /// The future returned by `AsyncConnection::execute`
+    /// The future returned by [`AsyncConnectionCore::execute_returning_count`]
     type ExecuteFuture<'conn, 'query>: Future<Output = QueryResult<usize>> + Send;
     /// The future returned by `AsyncConnection::load`
     type LoadFuture<'conn, 'query>: Future<Output = QueryResult<Self::Stream<'conn, 'query>>> + Send;

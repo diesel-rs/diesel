@@ -326,7 +326,7 @@ where
     #[cfg_attr(
         not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
         doc(hidden)
-    )] // This is used by the `__diesel_column` macro
+    )] // This is used by the column code `table!` generates
     #[cfg_attr(
         diesel_docsrs,
         doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))

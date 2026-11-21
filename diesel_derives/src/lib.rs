@@ -965,7 +965,7 @@ fn derive_queryable_by_name_inner(input: proc_macro2::TokenStream) -> proc_macro
 /// select clause is valid in the current query.
 ///
 /// The derive enables using the `SelectableHelper::as_select` method to construct
-/// select clauses, in order to use LoadDsl, you might also check the
+/// select clauses, in order to use `RunQueryDsl`, you might also check the
 /// `Queryable` trait and derive.
 ///
 /// # Attributes

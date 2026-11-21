@@ -71,7 +71,7 @@ ways that you can set it:
 * Pass it directly by adding the `--database-url` flag
 
 As an alternative to running migrations with the CLI, you can call
-[`diesel::migrations::run_pending_migrations`][pending-migrations] from
+[`MigrationHarness::run_pending_migrations`][pending-migrations] from
 `build.rs`.
 
 Diesel will automatically keep track of which migrations have already been run,
@@ -119,7 +119,7 @@ Runs the `down.sql` and then the `up.sql` for the most recent migration.
 ## `diesel print-schema`
 Prints table definitions for database schema.
 
-[pending-migrations]: https://docs.rs/diesel_migrations/*/diesel_migrations/fn.run_pending_migrations.html
+[pending-migrations]: https://docs.rs/diesel_migrations/*/diesel_migrations/trait.MigrationHarness.html#method.run_pending_migrations
 [rust-dotenv]: https://github.com/dotenv-rs/dotenv#examples
 
 

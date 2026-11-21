@@ -175,7 +175,7 @@ above in with more details and explanations.
 
 ### Common Abbreviations
 
-`ST`: Sql Type. Basically always has the `NativeSqlType` constraint
+`ST`: Sql Type. Basically always has the `SqlType` constraint
 
 `DB`: Database. Basically always has the `Backend` constraint.
 
