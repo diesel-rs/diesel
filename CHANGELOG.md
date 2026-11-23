@@ -76,6 +76,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added the `sqlstate` crate holding `SqlState`, `SqlStateClass`, `InvalidSqlState` and the SQLSTATE constants, which diesel re-exports
 * Added `named_parameters` attribute to the `declare_sql_function` macro to allow passing function parameters using named notation on backends that support it
 * Added support for database views via a new `view!` macro
+* Added a `jiff` feature flag, allowing to (de)serialize date/time values from the database using types provided by `jiff` 1.0. This feature enables using the `jiff` crate as an alternative to `chrono` or `time`. Note that decoding a PostgreSQL `interval` with mixed-sign components into a `jiff::Span` returns an error, as `jiff` requires all units of a span to have the same sign; `jiff::SignedDuration` can decode such values instead.
 
 ### Fixed
 

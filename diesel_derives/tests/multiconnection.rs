@@ -339,6 +339,111 @@ fn type_checks() {
     assert_eq!(numeric, result.13);
 }
 
+#[cfg(feature = "jiff")]
+fn make_jiff_test_table(conn: &mut InferConnection) {
+    match conn {
+        #[cfg(feature = "postgres")]
+        InferConnection::Pg(conn) => {
+            diesel::sql_query(
+                "CREATE TEMPORARY TABLE jiff_type_test( \
+                     integer INTEGER,\
+                     timestamp1 TIMESTAMP,\
+                     date1 DATE,\
+                     time1 TIME
+                 )",
+            )
+            .execute(conn)
+            .unwrap();
+        }
+        #[cfg(feature = "sqlite")]
+        InferConnection::Sqlite(conn) => {
+            diesel::sql_query(
+                "CREATE TEMPORARY TABLE jiff_type_test( \
+                     integer INTEGER,\
+                     timestamp1 TIMESTAMP,\
+                     date1 DATE,\
+                     time1 TIME
+                 )",
+            )
+            .execute(conn)
+            .unwrap();
+        }
+        #[cfg(feature = "mysql")]
+        InferConnection::Mysql(conn) => {
+            diesel::sql_query(
+                "CREATE TEMPORARY TABLE jiff_type_test( \
+                     `integer` INT,\
+                     `timestamp1` DATETIME,
+                     `date1` DATE,\
+                     `time1` TIME
+                 )",
+            )
+            .execute(conn)
+            .unwrap();
+        }
+        #[cfg(feature = "mariadb")]
+        InferConnection::Mariadb(conn) => {
+            diesel::sql_query(
+                "CREATE TEMPORARY TABLE jiff_type_test( \
+                     `integer` INT,\
+                     `timestamp1` DATETIME,
+                     `date1` DATE,\
+                     `time1` TIME
+                 )",
+            )
+            .execute(conn)
+            .unwrap();
+        }
+    }
+}
+
+#[cfg(feature = "jiff")]
+#[test]
+fn jiff_type_checks() {
+    use diesel::internal::derives::multiconnection::jiff;
+
+    table! {
+        jiff_type_test(integer) {
+            integer -> Integer,
+            timestamp1 -> Timestamp,
+            time1 -> Time,
+            date1 -> Date,
+        }
+    }
+
+    let mut conn = establish_connection();
+    make_jiff_test_table(&mut conn);
+    conn.begin_test_transaction().unwrap();
+    let integer = 1_i32;
+    let date1 = jiff::civil::date(2023, 8, 17);
+    let time1 = jiff::civil::time(7, 50, 12, 0);
+    let timestamp1 = date1.at(7, 50, 12, 0);
+
+    diesel::insert_into(jiff_type_test::table)
+        .values((
+            jiff_type_test::integer.eq(integer),
+            jiff_type_test::timestamp1.eq(timestamp1),
+            jiff_type_test::time1.eq(time1),
+            jiff_type_test::date1.eq(date1),
+        ))
+        .execute(&mut conn)
+        .unwrap();
+
+    let result = jiff_type_test::table
+        .get_result::<(
+            i32,
+            jiff::civil::DateTime,
+            jiff::civil::Time,
+            jiff::civil::Date,
+        )>(&mut conn)
+        .unwrap();
+
+    assert_eq!(integer, result.0);
+    assert_eq!(timestamp1, result.1);
+    assert_eq!(time1, result.2);
+    assert_eq!(date1, result.3);
+}
+
 #[cfg(all(feature = "chrono", feature = "time", feature = "numeric"))]
 #[allow(clippy::unnecessary_literal_unwrap)]
 #[test]

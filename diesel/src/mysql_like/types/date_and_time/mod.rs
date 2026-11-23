@@ -11,6 +11,8 @@ use crate::sql_types::{Date, Datetime, Time, Timestamp};
 
 #[cfg(feature = "chrono")]
 mod chrono;
+#[cfg(feature = "jiff")]
+mod jiff;
 #[cfg(feature = "time")]
 mod time;
 

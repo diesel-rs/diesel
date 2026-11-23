@@ -10,7 +10,8 @@ use crate::sqlite::Sqlite;
 
 /// Warning to future editors:
 /// Changes in the following formats need to be kept in sync
-/// with the formats of the ["time"](super::time) module.
+/// with the formats of the ["time"](super::time) and
+/// ["jiff"](super::jiff) modules.
 /// We do not need a distinction between whole second and
 /// subsecond since %.f will only print the dot if needed.
 /// We always print as many subsecond as his given to us,

@@ -264,12 +264,17 @@ impl<DB: MysqlLikeBackend> HasSqlType<Unsigned<BigInt>> for DB {
 /// - [`chrono::NaiveDateTime`] with `feature = "chrono"`
 /// - [`time::PrimitiveDateTime`] with `feature = "time"`
 /// - [`time::OffsetDateTime`] with `feature = "time"`
+/// - [`jiff::civil::DateTime`] with `feature = "jiff"`
+/// - [`jiff::Timestamp`] with `feature = "jiff"`
+/// - [`jiff::ZonedDateTime`] with `feature = "jiff"`
 ///
 /// ### [`FromSql`] impls
 ///
 /// - [`chrono::NaiveDateTime`] with `feature = "chrono"`
 /// - [`time::PrimitiveDateTime`] with `feature = "time"`
 /// - [`time::OffsetDateTime`] with `feature = "time"`
+/// - [`jiff::civil::DateTime`] with `feature = "jiff"`
+/// - [`jiff::Timestamp`] with `feature = "jiff"`
 ///
 /// [`ToSql`]: crate::serialize::ToSql
 /// [`FromSql`]: crate::deserialize::FromSql
@@ -296,6 +301,27 @@ impl<DB: MysqlLikeBackend> HasSqlType<Unsigned<BigInt>> for DB {
 #[cfg_attr(
     not(feature = "time"),
     doc = " [`time::OffsetDateTime`]: https://docs.rs/time/0.3.9/time/struct.OffsetDateTime.html"
+)]
+#[cfg_attr(
+    feature = "jiff",
+    doc = " [`jiff::civil::DateTime`]: jiff::civil::DateTime"
+)]
+#[cfg_attr(
+    not(feature = "jiff"),
+    doc = " [`jiff::civil::DateTime`]: https://docs.rs/jiff/*/jiff/civil/struct.DateTime.html"
+)]
+#[cfg_attr(feature = "jiff", doc = " [`jiff::Timestamp`]: jiff::Timestamp")]
+#[cfg_attr(
+    not(feature = "jiff"),
+    doc = " [`jiff::Timestamp`]: https://docs.rs/jiff/*/jiff/struct.Timestamp.html"
+)]
+#[cfg_attr(
+    feature = "jiff",
+    doc = " [`jiff::ZonedDateTime`]: jiff::ZonedDateTime"
+)]
+#[cfg_attr(
+    not(feature = "jiff"),
+    doc = " [`jiff::ZonedDateTime`]: https://docs.rs/jiff/*/jiff/struct.ZonedDateTime.html"
 )]
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[diesel(mysql_type(name = "DateTime"))]

@@ -283,14 +283,17 @@ pub type Bit = Binary;
 ///
 /// - [`chrono::NaiveDate`][NaiveDate] with `feature = "chrono"`
 /// - [`time::Date`][Date] with `feature = "time"`
+/// - [`jiff::civil::Date`] with `feature = "jiff"`
 ///
 /// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`chrono::NaiveDate`][NaiveDate] with `feature = "chrono"`
 /// - [`time::Date`][Date] with `feature = "time"`
+/// - [`jiff::civil::Date`] with `feature = "jiff"`
 ///
 /// [NaiveDate]: https://docs.rs/chrono/*/chrono/naive/struct.NaiveDate.html
 /// [Date]: https://docs.rs/time/0.3.9/time/struct.Date.html
+/// [`jiff::civil::Date`]: https://docs.rs/jiff/*/jiff/civil/struct.Date.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[diesel(postgres_type(oid = 1082, array_oid = 1182))]
 #[diesel(sqlite_type(name = "Text"))]
@@ -306,6 +309,8 @@ pub struct Date;
 ///
 /// - [`PgInterval`] which can be constructed using [`IntervalDsl`]
 /// - [`chrono::Duration`][Duration] with `feature = "chrono"`
+/// - [`jiff::Span`] with `feature = "jiff"`
+/// - [`jiff::SignedDuration`] with `feature = "jiff"`
 ///
 /// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
@@ -313,10 +318,17 @@ pub struct Date;
 /// - [`chrono::Duration`][Duration] with `feature = "chrono"`
 ///   (There might be some information loss due to special behavior for literal `month` (or longer) intervals;
 ///   Please read official documentation of [PostgreSQL Interval].)
+/// - [`jiff::Span`] with `feature = "jiff"`
+///   (Intervals with mixed sign fields cannot be represented as a span and produce a deserialization error)
+/// - [`jiff::SignedDuration`] with `feature = "jiff"`
+///   (There might be some information loss due to special behavior for literal `month` (or longer) intervals;
+///   Please read official documentation of [PostgreSQL Interval].)
 ///
 /// [`PgInterval`]: ../pg/data_types/struct.PgInterval.html
 /// [`IntervalDsl`]: ../pg/expression/extensions/trait.IntervalDsl.html
 /// [Duration]: https://docs.rs/chrono/*/chrono/type.Duration.html
+/// [`jiff::Span`]: https://docs.rs/jiff/*/jiff/struct.Span.html
+/// [`jiff::SignedDuration`]: https://docs.rs/jiff/*/jiff/struct.SignedDuration.html
 /// [PostgreSQL Interval]: https://www.postgresql.org/docs/current/datatype-datetime.html#DATATYPE-INTERVAL-INPUT
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[diesel(postgres_type(oid = 1186, array_oid = 1187))]
@@ -328,14 +340,17 @@ pub struct Interval;
 ///
 /// - [`chrono::NaiveTime`][NaiveTime] with `feature = "chrono"`
 /// - [`time::Time`][Time] with `feature = "time"`
+/// - [`jiff::civil::Time`] with `feature = "jiff"`
 ///
 /// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`chrono::NaiveTime`][NaiveTime] with `feature = "chrono"`
 /// - [`time::Time`][Time] with `feature = "time"`
+/// - [`jiff::civil::Time`] with `feature = "jiff"`
 ///
 /// [NaiveTime]: /chrono/naive/time/struct.NaiveTime.html
 /// [Time]: /time/struct.Time.html
+/// [`jiff::civil::Time`]: https://docs.rs/jiff/*/jiff/civil/struct.Time.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[diesel(postgres_type(oid = 1083, array_oid = 1183))]
 #[diesel(sqlite_type(name = "Text"))]
@@ -352,6 +367,8 @@ pub struct Time;
 /// - [`chrono::NaiveDateTime`][NaiveDateTime] with `feature = "chrono"`
 /// - [`time::PrimitiveDateTime`] with `feature = "time"`
 /// - [`time::OffsetDateTime`] with `feature = "time"` (MySQL only)
+/// - [`jiff::civil::DateTime`] with `feature = "jiff"`
+/// - [`jiff::Timestamp`] with `feature = "jiff"` (MySQL only)
 ///
 /// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
@@ -359,6 +376,8 @@ pub struct Time;
 /// - [`chrono::NaiveDateTime`][NaiveDateTime] with `feature = "chrono"`
 /// - [`time::PrimitiveDateTime`] with `feature = "time"`
 /// - [`time::OffsetDateTime`] with `feature = "time"` (MySQL only)
+/// - [`jiff::civil::DateTime`] with `feature = "jiff"`
+/// - [`jiff::Timestamp`] with `feature = "jiff"` (MySQL only)
 ///
 /// [SystemTime]: std::time::SystemTime
 #[cfg_attr(
@@ -384,6 +403,19 @@ pub struct Time;
 #[cfg_attr(
     not(feature = "time"),
     doc = " [`time::OffsetDateTime`]: https://docs.rs/time/0.3.9/time/struct.OffsetDateTime.html"
+)]
+#[cfg_attr(
+    feature = "jiff",
+    doc = " [`jiff::civil::DateTime`]: jiff::civil::DateTime"
+)]
+#[cfg_attr(
+    not(feature = "jiff"),
+    doc = " [`jiff::civil::DateTime`]: https://docs.rs/jiff/*/jiff/civil/struct.DateTime.html"
+)]
+#[cfg_attr(feature = "jiff", doc = " [`jiff::Timestamp`]: jiff::Timestamp")]
+#[cfg_attr(
+    not(feature = "jiff"),
+    doc = " [`jiff::Timestamp`]: https://docs.rs/jiff/*/jiff/struct.Timestamp.html"
 )]
 /// [Timespec]: /time/struct.Timespec.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]

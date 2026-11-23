@@ -105,3 +105,77 @@ mod time {
     #[cfg_attr(any(feature = "mysql_backend", feature = "mariadb_backend"), diesel(sql_type = crate::sql_types::Datetime))]
     struct DateTimeProxy(OffsetDateTime);
 }
+
+#[cfg(feature = "jiff")]
+mod jiff {
+    use jiff::civil;
+
+    use crate::deserialize::FromSqlRow;
+    use crate::expression::AsExpression;
+    use crate::sql_types::{Date, Interval, Time, Timestamp};
+
+    #[derive(AsExpression, FromSqlRow)]
+    #[diesel(foreign_derive)]
+    #[diesel(sql_type = Date)]
+    struct DateProxy(civil::Date);
+
+    #[derive(AsExpression, FromSqlRow)]
+    #[diesel(foreign_derive)]
+    #[diesel(sql_type = Time)]
+    struct TimeProxy(civil::Time);
+
+    #[derive(AsExpression, FromSqlRow)]
+    #[diesel(foreign_derive)]
+    #[diesel(sql_type = Timestamp)]
+    #[cfg_attr(
+        feature = "postgres_backend",
+        diesel(sql_type = crate::sql_types::Timestamptz)
+    )]
+    #[cfg_attr(any(feature = "mysql_backend", feature = "mariadb_backend"), diesel(sql_type = crate::sql_types::Datetime))]
+    struct DateTimeProxy(civil::DateTime);
+
+    #[derive(FromSqlRow)]
+    #[diesel(foreign_derive)]
+    #[cfg_attr(
+        any(
+            feature = "postgres_backend",
+            feature = "__sqlite-shared",
+            feature = "mysql_backend",
+            feature = "mariadb_backend"
+        ),
+        derive(AsExpression)
+    )]
+    #[cfg_attr(
+        feature = "postgres_backend",
+        diesel(sql_type = crate::sql_types::Timestamptz)
+    )]
+    #[cfg_attr(feature = "__sqlite-shared", diesel(sql_type = crate::sql_types::TimestamptzSqlite))]
+    #[cfg_attr(any(feature = "mysql_backend", feature = "mariadb_backend"), diesel(sql_type = crate::sql_types::Datetime))]
+    struct TimestampProxy(jiff::Timestamp);
+
+    #[cfg(any(
+        feature = "postgres_backend",
+        feature = "__sqlite-shared",
+        feature = "mysql_backend",
+        feature = "mariadb_backend"
+    ))]
+    #[derive(AsExpression)]
+    #[diesel(foreign_derive)]
+    #[cfg_attr(
+        feature = "postgres_backend",
+        diesel(sql_type = crate::sql_types::Timestamptz)
+    )]
+    #[cfg_attr(feature = "__sqlite-shared", diesel(sql_type = crate::sql_types::TimestamptzSqlite))]
+    #[cfg_attr(any(feature = "mysql_backend", feature = "mariadb_backend"), diesel(sql_type = crate::sql_types::Datetime))]
+    struct ZonedDateTimeProxy(jiff::ZonedDateTime);
+
+    #[derive(AsExpression, FromSqlRow)]
+    #[diesel(foreign_derive)]
+    #[diesel(sql_type = Interval)]
+    struct SpanProxy(jiff::Span);
+
+    #[derive(AsExpression, FromSqlRow)]
+    #[diesel(foreign_derive)]
+    #[diesel(sql_type = Interval)]
+    struct SignedDurationProxy(jiff::SignedDuration);
+}

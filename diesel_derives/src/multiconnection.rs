@@ -972,6 +972,25 @@ fn generate_bind_collector(
     .map(|p| quote::quote! {diesel::internal::derives::multiconnection::expand_time!{#p}});
     to_sql_impls.extend(time_impls);
 
+    let jiff_impls = [
+        (
+            quote::quote!(diesel::sql_types::Timestamp),
+            quote::quote!(diesel::internal::derives::multiconnection::jiff::civil::DateTime),
+        ),
+        (
+            quote::quote!(diesel::sql_types::Time),
+            quote::quote!(diesel::internal::derives::multiconnection::jiff::civil::Time),
+        ),
+        (
+            quote::quote!(diesel::sql_types::Date),
+            quote::quote!(diesel::internal::derives::multiconnection::jiff::civil::Date),
+        ),
+    ]
+    .into_iter()
+    .map(|t| generate_to_sql_impls(t, connection_types))
+    .map(|p| quote::quote! {diesel::internal::derives::multiconnection::expand_jiff!{#p}});
+    to_sql_impls.extend(jiff_impls);
+
     let mut from_sql_impls = [
         (
             quote::quote!(diesel::sql_types::SmallInt),
@@ -1048,6 +1067,29 @@ fn generate_bind_collector(
         }
     });
     from_sql_impls.extend(time_impls);
+
+    let jiff_impls = [
+        (
+            quote::quote!(diesel::sql_types::Timestamp),
+            quote::quote!(diesel::internal::derives::multiconnection::jiff::civil::DateTime),
+        ),
+        (
+            quote::quote!(diesel::sql_types::Time),
+            quote::quote!(diesel::internal::derives::multiconnection::jiff::civil::Time),
+        ),
+        (
+            quote::quote!(diesel::sql_types::Date),
+            quote::quote!(diesel::internal::derives::multiconnection::jiff::civil::Date),
+        ),
+    ]
+    .into_iter()
+    .map(generate_from_sql_impls)
+    .map(|p| {
+        quote::quote! {
+            diesel::internal::derives::multiconnection::expand_jiff!{ #p }
+        }
+    });
+    from_sql_impls.extend(jiff_impls);
 
     let into_bind_value_bounds = connection_types.iter().map(|c| {
         let ty = c.ty;

@@ -19,7 +19,8 @@ use crate::sqlite::Sqlite;
 
 /// Warning to future editors:
 /// Changes in the following formats need to be kept in sync
-/// with the formats of the ["chrono"](super::chrono) module.
+/// with the formats of the ["chrono"](super::chrono) and
+/// ["jiff"](super::jiff) modules.
 /// We need a distinction between whole second and subsecond
 /// since there is no format option to forgo the dot.
 /// We always print as many subsecond as his given to us,

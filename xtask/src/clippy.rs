@@ -83,6 +83,8 @@ impl ClippyArgs {
                 "diesel_derives/time",
                 "-F",
                 "diesel-async/migrations",
+                "-F",
+                "diesel_derives/jiff",
             ])
             .args(&self.flags)
             .current_dir(&metadata.workspace_root);

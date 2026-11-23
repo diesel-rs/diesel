@@ -221,6 +221,10 @@
 //!   types provided by `serde_json`.
 //! - `chrono`: This feature flags enables support for (de)serializing date/time values from the database using
 //!   types provided by `chrono`
+//! - `time`: This feature flag enables support for (de)serializing date/time values from the database using
+//!   types provided by `time`
+//! - `jiff`: This feature flag enables support for (de)serializing date/time values from the database using
+//!   types provided by `jiff`
 //! - `uuid`: This feature flag enables support for (de)serializing uuid values from the database using types
 //!   provided by `uuid`
 //! - `network-address`: This feature flag enables support for (de)serializing
@@ -231,7 +235,7 @@
 //!   provided by `bigdecimal`
 //! - `r2d2`: This feature flag enables support for the `r2d2` connection pool implementation.
 //! - `extras`: This feature enables the feature flagged support for any third party crate. This implies the
-//!   following feature flags: `serde_json`, `chrono`, `uuid`, `network-address`, `numeric`, `r2d2`
+//!   following feature flags: `serde_json`, `chrono`, `time`, `jiff`, `uuid`, `network-address`, `numeric`, `r2d2`
 //! - `with-deprecated`: This feature enables items marked as `#[deprecated]`. It is enabled by default.
 //!   disabling this feature explicitly opts out diesels stability guarantee.
 //! - `without-deprecated`: This feature disables any item marked as `#[deprecated]`. Enabling this feature

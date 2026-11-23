@@ -7,6 +7,8 @@ use alloc::string::String;
 
 #[cfg(feature = "chrono")]
 mod chrono;
+#[cfg(feature = "jiff")]
+mod jiff;
 #[cfg(feature = "time")]
 mod time;
 
@@ -410,5 +412,317 @@ mod tests {
             .unwrap();
 
         assert!(eq_datetime_utc(original, translated))
+    }
+}
+
+// These tests read strings allocated by native SQLite, whose memory
+// provenance Miri cannot track with `-Zmiri-native-lib`.
+#[cfg(all(
+    test,
+    feature = "chrono",
+    feature = "jiff",
+    not(miri),
+    not(all(target_family = "wasm", target_os = "unknown"))
+))]
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)] // it's a test
+mod jiff_tests {
+    extern crate chrono;
+
+    use chrono::{
+        DateTime, Datelike, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, Timelike, Utc,
+    };
+    use jiff::civil::{self, date, datetime, time};
+    use jiff::tz::{Offset, TimeZone};
+
+    use crate::insert_into;
+    use crate::prelude::*;
+    use crate::test_helpers::connection;
+
+    crate::table! {
+        table_timestamp_tz(id) {
+            id -> Integer,
+            timestamp_with_tz -> TimestamptzSqlite,
+        }
+    }
+    crate::table! {
+      table_timestamp(id) {
+          id -> Integer,
+          timestamp -> Timestamp
+      }
+    }
+    crate::table! {
+        table_date(id) {
+            id -> Integer,
+            date -> Date
+        }
+    }
+    crate::table! {
+        table_time(id) {
+            id -> Integer,
+            time -> Time
+        }
+    }
+
+    fn eq_date(left: civil::Date, right: NaiveDate) -> bool {
+        i32::from(left.year()) == right.year()
+            && left.month() as u32 == right.month()
+            && left.day() as u32 == right.day()
+    }
+
+    fn eq_time(left: civil::Time, right: NaiveTime) -> bool {
+        left.hour() as u32 == right.hour()
+            && left.minute() as u32 == right.minute()
+            && left.second() as u32 == right.second()
+            && left.subsec_nanosecond() as u32 == right.nanosecond()
+    }
+
+    fn eq_datetime(left: civil::DateTime, right: NaiveDateTime) -> bool {
+        eq_date(left.date(), right.date()) && eq_time(left.time(), right.time())
+    }
+
+    fn eq_datetime_utc(left: jiff::Timestamp, right: DateTime<Utc>) -> bool {
+        left.as_nanosecond() == i128::from(right.timestamp_nanos_opt().unwrap())
+    }
+
+    fn create_tables(conn: &mut SqliteConnection) {
+        crate::sql_query(
+            "CREATE TABLE table_timestamp_tz(id INTEGER PRIMARY KEY, timestamp_with_tz TEXT);",
+        )
+        .execute(conn)
+        .unwrap();
+
+        crate::sql_query("CREATE TABLE table_timestamp(id INTEGER PRIMARY KEY, timestamp TEXT);")
+            .execute(conn)
+            .unwrap();
+
+        crate::sql_query("CREATE TABLE table_date(id INTEGER PRIMARY KEY, date TEXT);")
+            .execute(conn)
+            .unwrap();
+
+        crate::sql_query("CREATE TABLE table_time(id INTEGER PRIMARY KEY, time TEXT);")
+            .execute(conn)
+            .unwrap();
+    }
+
+    #[diesel_test_helper::test]
+    fn jiff_to_chrono_date() {
+        let conn = &mut connection();
+        create_tables(conn);
+
+        let original = date(2000, 1, 1);
+
+        insert_into(table_date::table)
+            .values(vec![(table_date::id.eq(1), table_date::date.eq(original))])
+            .execute(conn)
+            .unwrap();
+
+        let translated = table_date::table
+            .select(table_date::date)
+            .get_result::<NaiveDate>(conn)
+            .unwrap();
+
+        assert!(eq_date(original, translated))
+    }
+
+    #[diesel_test_helper::test]
+    fn chrono_to_jiff_date() {
+        let conn = &mut connection();
+        create_tables(conn);
+
+        let original = NaiveDate::from_ymd_opt(2000, 1, 1).unwrap();
+
+        insert_into(table_date::table)
+            .values(vec![(table_date::id.eq(1), table_date::date.eq(original))])
+            .execute(conn)
+            .unwrap();
+
+        let translated = table_date::table
+            .select(table_date::date)
+            .get_result::<civil::Date>(conn)
+            .unwrap();
+
+        assert!(eq_date(translated, original))
+    }
+
+    #[diesel_test_helper::test]
+    fn jiff_to_chrono_time() {
+        let conn = &mut connection();
+        create_tables(conn);
+
+        let original = time(1, 1, 1, 1_000_000);
+
+        insert_into(table_time::table)
+            .values(vec![(table_time::id.eq(1), table_time::time.eq(original))])
+            .execute(conn)
+            .unwrap();
+
+        let translated = table_time::table
+            .select(table_time::time)
+            .get_result::<NaiveTime>(conn)
+            .unwrap();
+
+        assert!(eq_time(original, translated))
+    }
+
+    #[diesel_test_helper::test]
+    fn chrono_to_jiff_time() {
+        let conn = &mut connection();
+        create_tables(conn);
+
+        let original = NaiveTime::from_hms_milli_opt(1, 1, 1, 1).unwrap();
+
+        insert_into(table_time::table)
+            .values(vec![(table_time::id.eq(1), table_time::time.eq(original))])
+            .execute(conn)
+            .unwrap();
+
+        let translated = table_time::table
+            .select(table_time::time)
+            .get_result::<civil::Time>(conn)
+            .unwrap();
+
+        assert!(eq_time(translated, original))
+    }
+
+    #[diesel_test_helper::test]
+    fn jiff_to_chrono_datetime() {
+        let conn = &mut connection();
+        create_tables(conn);
+
+        let original = datetime(2000, 1, 1, 1, 1, 1, 1_000_000);
+
+        insert_into(table_timestamp::table)
+            .values(vec![(
+                table_timestamp::id.eq(1),
+                table_timestamp::timestamp.eq(original),
+            )])
+            .execute(conn)
+            .unwrap();
+
+        let translated = table_timestamp::table
+            .select(table_timestamp::timestamp)
+            .get_result::<NaiveDateTime>(conn)
+            .unwrap();
+
+        assert!(eq_datetime(original, translated))
+    }
+
+    #[diesel_test_helper::test]
+    fn chrono_to_jiff_datetime() {
+        let conn = &mut connection();
+        create_tables(conn);
+
+        let original = NaiveDate::from_ymd_opt(2000, 1, 1)
+            .unwrap()
+            .and_hms_milli_opt(1, 1, 1, 1)
+            .unwrap();
+
+        insert_into(table_timestamp::table)
+            .values(vec![(
+                table_timestamp::id.eq(1),
+                table_timestamp::timestamp.eq(original),
+            )])
+            .execute(conn)
+            .unwrap();
+
+        let translated = table_timestamp::table
+            .select(table_timestamp::timestamp)
+            .get_result::<civil::DateTime>(conn)
+            .unwrap();
+
+        assert!(eq_datetime(translated, original))
+    }
+
+    #[diesel_test_helper::test]
+    fn chrono_to_jiff_datetime_utc() {
+        let conn = &mut connection();
+        create_tables(conn);
+
+        let original = Utc::now();
+
+        insert_into(table_timestamp_tz::table)
+            .values(vec![(
+                table_timestamp_tz::id.eq(1),
+                table_timestamp_tz::timestamp_with_tz.eq(original),
+            )])
+            .execute(conn)
+            .unwrap();
+
+        let translated = table_timestamp_tz::table
+            .select(table_timestamp_tz::timestamp_with_tz)
+            .get_result::<jiff::Timestamp>(conn)
+            .unwrap();
+
+        assert!(eq_datetime_utc(translated, original))
+    }
+
+    #[diesel_test_helper::test]
+    fn jiff_to_chrono_datetime_utc() {
+        let conn = &mut connection();
+        create_tables(conn);
+
+        let original = jiff::Timestamp::now();
+
+        insert_into(table_timestamp_tz::table)
+            .values(vec![(
+                table_timestamp_tz::id.eq(1),
+                table_timestamp_tz::timestamp_with_tz.eq(original),
+            )])
+            .execute(conn)
+            .unwrap();
+
+        let translated = table_timestamp_tz::table
+            .select(table_timestamp_tz::timestamp_with_tz)
+            .get_result::<DateTime<Utc>>(conn)
+            .unwrap();
+
+        assert!(eq_datetime_utc(original, translated))
+    }
+
+    #[diesel_test_helper::test]
+    fn chrono_to_jiff_datetime_timezone() {
+        let conn = &mut connection();
+        create_tables(conn);
+
+        let original = Utc::now().with_timezone(&FixedOffset::east_opt(5 * 3600).unwrap());
+
+        insert_into(table_timestamp_tz::table)
+            .values(vec![(
+                table_timestamp_tz::id.eq(1),
+                table_timestamp_tz::timestamp_with_tz.eq(original),
+            )])
+            .execute(conn)
+            .unwrap();
+
+        let translated = table_timestamp_tz::table
+            .select(table_timestamp_tz::timestamp_with_tz)
+            .get_result::<jiff::Timestamp>(conn)
+            .unwrap();
+
+        assert!(eq_datetime_utc(translated, original.with_timezone(&Utc)))
+    }
+
+    #[diesel_test_helper::test]
+    fn jiff_zoned_to_chrono_datetime() {
+        let conn = &mut connection();
+        create_tables(conn);
+
+        let original =
+            jiff::Timestamp::now().to_zoned_datetime(TimeZone::fixed(Offset::constant(5)));
+
+        insert_into(table_timestamp_tz::table)
+            .values(vec![(
+                table_timestamp_tz::id.eq(1),
+                table_timestamp_tz::timestamp_with_tz.eq(original.clone()),
+            )])
+            .execute(conn)
+            .unwrap();
+
+        let translated = table_timestamp_tz::table
+            .select(table_timestamp_tz::timestamp_with_tz)
+            .get_result::<DateTime<Utc>>(conn)
+            .unwrap();
+
+        assert!(eq_datetime_utc(original.timestamp(), translated))
     }
 }

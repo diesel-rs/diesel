@@ -147,6 +147,10 @@ impl syn::visit_mut::VisitMut for FixupVisitor {
                     let item = syn::parse2(m.mac.tokens.clone()).unwrap();
                     *i = syn::Stmt::Item(item);
                 }
+                Some("expand_jiff") if cfg!(feature = "jiff") => {
+                    let item = syn::parse2(m.mac.tokens.clone()).unwrap();
+                    *i = syn::Stmt::Item(item);
+                }
                 Some("expand_numeric") if cfg!(feature = "numeric") => {
                     let item = syn::parse2(m.mac.tokens.clone()).unwrap();
                     *i = syn::Stmt::Item(item);
@@ -154,7 +158,8 @@ impl syn::visit_mut::VisitMut for FixupVisitor {
 
                 Some(
                     "expand_sqlite" | "expand_pg" | "expand_mysql" | "expand_mariadb"
-                    | "expand_r2d2" | "expand_chrono" | "expand_time" | "expand_numeric",
+                    | "expand_r2d2" | "expand_chrono" | "expand_time" | "expand_jiff"
+                    | "expand_numeric",
                 ) => {
                     *i = syn::Stmt::Item(syn::Item::Verbatim(proc_macro2::TokenStream::new()));
                 }
@@ -189,6 +194,9 @@ impl syn::visit_mut::VisitMut for FixupVisitor {
                 Some("expand_time") if cfg!(feature = "time") => {
                     *i = syn::parse2(m.mac.tokens.clone()).unwrap();
                 }
+                Some("expand_jiff") if cfg!(feature = "jiff") => {
+                    *i = syn::parse2(m.mac.tokens.clone()).unwrap();
+                }
                 Some("expand_sqlite_function") if cfg!(feature = "sqlite") => {
                     let tokens = m.mac.tokens.clone().into_iter().skip(2).collect();
                     *i = syn::parse2(tokens).unwrap();
@@ -204,6 +212,7 @@ impl syn::visit_mut::VisitMut for FixupVisitor {
                     | "expand_r2d2"
                     | "expand_time"
                     | "expand_chrono"
+                    | "expand_jiff"
                     | "expand_sqlite_function"
                     | "expand_numeric",
                 ) => {

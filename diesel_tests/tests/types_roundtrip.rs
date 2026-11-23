@@ -173,6 +173,18 @@ mod sqlite_types {
         (i64, u32),
         mk_naive_datetime
     );
+    test_round_trip!(jiff_time_roundtrips, Time, (u32, u32), mk_jiff_time);
+    test_round_trip!(jiff_date_roundtrips, Date, u32, mk_jiff_date);
+    test_round_trip!(
+        jiff_datetime_roundtrips,
+        Timestamp,
+        (i64, u32),
+        mk_jiff_datetime
+    );
+
+    pub fn mk_jiff_datetime(data: (i64, u32)) -> jiff::civil::DateTime {
+        jiff::tz::Offset::UTC.to_datetime(mk_jiff_timestamp(data))
+    }
 }
 
 #[cfg(feature = "postgres")]
@@ -203,6 +215,40 @@ mod pg_types {
         (i64, u32),
         mk_pg_naive_datetime
     );
+    test_round_trip!(
+        jiff_datetime_roundtrips,
+        Timestamp,
+        (i64, u32),
+        mk_jiff_pg_datetime
+    );
+    test_round_trip!(
+        jiff_datetime_roundtrips_tz,
+        Timestamptz,
+        (i64, u32),
+        mk_jiff_pg_datetime
+    );
+    test_round_trip!(
+        jiff_timestamp_roundtrips,
+        Timestamptz,
+        (i64, u32),
+        mk_jiff_pg_timestamp
+    );
+    test_round_trip!(jiff_time_roundtrips, Time, (u32, u32), mk_jiff_time);
+    test_round_trip!(jiff_date_roundtrips, Date, u32, mk_jiff_date);
+    test_round_trip!(
+        jiff_span_roundtrips,
+        Interval,
+        (i32, i32, i64),
+        mk_jiff_span,
+        jiff_span_ne
+    );
+    test_round_trip!(
+        jiff_signed_duration_roundtrips,
+        Interval,
+        (i32, i64),
+        mk_jiff_signed_duration
+    );
+
     test_round_trip!(array_of_int_roundtrips, Array<Integer>, Vec<i32>);
     test_round_trip!(array_of_bigint_roundtrips, Array<BigInt>, Vec<i64>);
     test_round_trip!(array_of_dynamic_size_roundtrips, Array<Text>, Vec<String>);
@@ -499,6 +545,49 @@ mod pg_types {
         Utc.from_utc_datetime(&mk_pg_naive_datetime(data))
     }
 
+    pub fn mk_jiff_pg_timestamp((secs, nanos): (i64, u32)) -> jiff::Timestamp {
+        // https://www.postgresql.org/docs/current/datatype-datetime.html
+        let earliest_pg_timestamp = jiff::tz::Offset::UTC
+            .to_timestamp(jiff::civil::datetime(-4713, 11, 24, 0, 0, 1, 0))
+            .unwrap();
+        let min = earliest_pg_timestamp.as_second();
+        let max = jiff::Timestamp::MAX.as_second();
+        let secs = min + secs.rem_euclid(max - min);
+        // strip to microsecond precision as postgres
+        // does not accurately handle nanoseconds
+        let nanos = (nanos % 1_000_000_000) / 1000 * 1000;
+        jiff::Timestamp::new(secs, nanos as i32).unwrap()
+    }
+
+    pub fn mk_jiff_pg_datetime(data: (i64, u32)) -> jiff::civil::DateTime {
+        jiff::tz::Offset::UTC.to_datetime(mk_jiff_pg_timestamp(data))
+    }
+
+    pub fn mk_jiff_span((months, days, micros): (i32, i32, i64)) -> jiff::Span {
+        // jiff spans require a uniform sign for all units, so clamp
+        // every unit into its non-negative range and negate afterwards
+        let negative = months < 0;
+        let months = i64::from(months).rem_euclid(239_977);
+        let days = i64::from(days).rem_euclid(7_304_485);
+        let micros = micros.rem_euclid(631_107_417_600_000_001);
+        let span = jiff::Span::new()
+            .try_months(months)
+            .and_then(|s| s.try_days(days))
+            .and_then(|s| s.try_microseconds(micros))
+            .unwrap();
+        if negative { -span } else { span }
+    }
+
+    pub fn jiff_span_ne(a: &jiff::Span, b: &jiff::Span) -> bool {
+        a.fieldwise() != b.fieldwise()
+    }
+
+    pub fn mk_jiff_signed_duration((days, micros): (i32, i64)) -> jiff::SignedDuration {
+        const MICROS_PER_DAY: i64 = 86_400 * 1_000_000;
+        jiff::SignedDuration::from_secs(i64::from(days) * 86_400)
+            + jiff::SignedDuration::from_micros(micros % MICROS_PER_DAY)
+    }
+
     pub fn mk_pg_lsn(data: u64) -> PgLsn {
         PgLsn(data)
     }
@@ -544,6 +633,26 @@ mod mysql_types {
     );
     test_round_trip!(naive_time_roundtrips, Time, (u32, u32), mk_mysql_naive_time);
     test_round_trip!(naive_date_roundtrips, Date, u32, mk_naive_date);
+    test_round_trip!(
+        jiff_datetime_roundtrips,
+        Timestamp,
+        (i64, u32),
+        mk_jiff_timestamp_datetime
+    );
+    test_round_trip!(
+        jiff_datetime_roundtrips_to_datetime,
+        Datetime,
+        (i64, u32),
+        mk_jiff_datetime
+    );
+    test_round_trip!(
+        jiff_timestamp_roundtrips_to_datetime,
+        Datetime,
+        (i64, u32),
+        mk_jiff_utc_timestamp
+    );
+    test_round_trip!(jiff_time_roundtrips, Time, (u32, u32), mk_mysql_jiff_time);
+    test_round_trip!(jiff_date_roundtrips, Date, u32, mk_jiff_date);
     test_round_trip!(
         mysql_time_time_roundtrips,
         Time,
@@ -648,6 +757,69 @@ mod mysql_types {
         // Strip of nano second precision as mysql
         // does not handle them at all
         time.with_nanosecond(0).unwrap()
+    }
+
+    fn to_jiff_datetime(dt: NaiveDateTime) -> jiff::civil::DateTime {
+        jiff::civil::datetime(
+            dt.year() as i16,
+            dt.month() as i8,
+            dt.day() as i8,
+            dt.hour() as i8,
+            dt.minute() as i8,
+            dt.second() as i8,
+            (dt.nanosecond() % 1_000_000_000) as i32,
+        )
+    }
+
+    pub fn mk_jiff_datetime(data: (i64, u32)) -> jiff::civil::DateTime {
+        to_jiff_datetime(mk_mysql_naive_datetime(data))
+    }
+
+    pub fn mk_jiff_timestamp_datetime(data: (i64, u32)) -> jiff::civil::DateTime {
+        to_jiff_datetime(mk_naive_timestamp(data))
+    }
+
+    pub fn mk_jiff_utc_timestamp(data: (i64, u32)) -> jiff::Timestamp {
+        let datetime = mk_jiff_datetime(data);
+        // MySQL DATETIME includes the end of year 9999, but Jiff reserves
+        // room for time zone offsets and has a smaller timestamp range.
+        let latest = jiff::tz::Offset::UTC.to_datetime(jiff::Timestamp::MAX);
+        let timestamp = jiff::tz::Offset::UTC
+            .to_timestamp(datetime.min(latest))
+            .unwrap();
+        // Keep the clamped value at MySQL's microsecond precision too.
+        jiff::Timestamp::from_duration(jiff::SignedDuration::from_micros(
+            timestamp.as_microsecond(),
+        ))
+        .unwrap()
+    }
+
+    #[test]
+    fn jiff_timestamp_generator_handles_extreme_inputs() {
+        for seconds in [
+            -7_952_724_597_481_768_743,
+            -8_543_842_967_718_856_743,
+            i64::MIN,
+            i64::MAX,
+            0,
+        ] {
+            for nanos in [0, 999_999_999, u32::MAX] {
+                let timestamp = mk_jiff_utc_timestamp((seconds, nanos));
+                let datetime = jiff::tz::Offset::UTC.to_datetime(timestamp);
+                assert!(datetime.year() >= 1000);
+                assert_eq!(datetime.subsec_nanosecond() % 1000, 0);
+            }
+        }
+    }
+
+    pub fn mk_mysql_jiff_time(data: (u32, u32)) -> jiff::civil::Time {
+        let time = mk_mysql_naive_time(data);
+        jiff::civil::time(
+            time.hour() as i8,
+            time.minute() as i8,
+            time.second() as i8,
+            0,
+        )
     }
 
     pub fn mk_naive_timestamp((mut seconds, nanos): (i64, u32)) -> NaiveDateTime {
@@ -824,6 +996,57 @@ pub fn mk_naive_date(days: u32) -> NaiveDate {
         .signed_duration_since(earliest_sqlite_date)
         .num_days();
     earliest_sqlite_date + Duration::try_days(days as i64 % num_days_representable).unwrap()
+}
+
+#[cfg(feature = "sqlite")]
+pub fn mk_jiff_timestamp((secs, nanos): (i64, u32)) -> jiff::Timestamp {
+    let min = jiff::Timestamp::MIN.as_second();
+    let max = jiff::Timestamp::MAX.as_second();
+    let secs = min + secs.rem_euclid(max - min);
+    // strip to microsecond precision as neither backend handles nanoseconds
+    let nanos = (nanos % 1_000_000_000) / 1000 * 1000;
+    jiff::Timestamp::new(secs, nanos as i32).unwrap()
+}
+
+#[cfg(any(feature = "postgres", feature = "sqlite"))]
+pub fn mk_jiff_time((secs, nanos): (u32, u32)) -> jiff::civil::Time {
+    let secs = i64::from(secs % 86_400);
+    let nanos = ((nanos % 1_000_000_000) / 1000 * 1000) as i32;
+    jiff::civil::Time::midnight().wrapping_add(jiff::SignedDuration::new(secs, nanos))
+}
+
+#[cfg(feature = "postgres")]
+pub fn mk_jiff_date(days: u32) -> jiff::civil::Date {
+    let earliest_pg_date = jiff::civil::date(-4713, 11, 24);
+    let latest_jiff_date = jiff::civil::Date::MAX;
+    let num_days_representable =
+        i64::from(earliest_pg_date.until(latest_jiff_date).unwrap().get_days());
+    earliest_pg_date
+        + jiff::Span::new()
+            .try_days(i64::from(days) % num_days_representable)
+            .unwrap()
+}
+
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+pub fn mk_jiff_date(days: u32) -> jiff::civil::Date {
+    let date = mk_naive_date(days);
+    jiff::civil::date(date.year() as i16, date.month() as i8, date.day() as i8)
+}
+
+#[cfg(feature = "sqlite")]
+pub fn mk_jiff_date(days: u32) -> jiff::civil::Date {
+    let earliest_jiff_date = jiff::civil::Date::MIN;
+    let latest_jiff_date = jiff::civil::Date::MAX;
+    let num_days_representable = i64::from(
+        earliest_jiff_date
+            .until(latest_jiff_date)
+            .unwrap()
+            .get_days(),
+    );
+    earliest_jiff_date
+        + jiff::Span::new()
+            .try_days(i64::from(days) % num_days_representable)
+            .unwrap()
 }
 
 #[derive(Debug, Clone, Copy)]
