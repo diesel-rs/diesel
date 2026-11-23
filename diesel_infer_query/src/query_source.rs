@@ -120,13 +120,15 @@ impl<'a> QuerySource<'a> {
                 partitions,
                 json_path: None,
                 sample: None,
-                index_hints,
+                index_directives,
+                inheritance,
             }
             // we try to be conservative with what we support here
             // so disallow almost everything for now
             if with_hints.is_empty()
                 && partitions.is_empty()
-                && index_hints.is_empty()
+                && index_directives.is_empty()
+                && inheritance.is_none()
                 && name.0.len() <= 2
                 && name
                     .0

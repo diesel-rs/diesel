@@ -6,9 +6,10 @@ include.workspace = true
 edition = "2024"
 license = "MPL-2.0"
 autotests = false
+description = "Nullability inference engine for SQL queries"
 
 [dependencies]
-sqlparser = { version = "0.63.0", features = ["visitor"] }
+sqlparser = { version = "0.64.0", features = ["visitor"] }
 thiserror = "2"
 
 [dev-dependencies]
@@ -17,3 +18,6 @@ insta = "1.43"
 [[test]]
 path = "tests/lib.rs"
 name = "integration_tests"
+
+[lints]
+workspace = true

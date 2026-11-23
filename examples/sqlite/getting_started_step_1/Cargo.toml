@@ -23,3 +23,6 @@ doc = false
 
 [lib]
 doc = false
+
+[lints]
+workspace = true

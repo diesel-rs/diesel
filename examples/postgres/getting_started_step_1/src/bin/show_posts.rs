@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout, reason = "Example code")]
 use self::models::*;
 use diesel::prelude::*;
 use getting_started_step_1_pg::*;

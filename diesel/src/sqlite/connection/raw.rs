@@ -8,6 +8,7 @@ use sqlite_wasm_rs as ffi;
 use super::SqliteConnection;
 use super::authorizer::{AuthorizerContext, AuthorizerDecision};
 use super::collation_needed::{CollationNeededContext, SqliteTextRep};
+use super::error_information::SqliteErrorInformation;
 use super::functions::{build_sql_function_args, process_sql_function_result};
 use super::limits::SqliteLimit;
 use super::serialized_database::SerializedDatabase;
@@ -21,7 +22,7 @@ use crate::result::Error::DatabaseError;
 use crate::result::*;
 use crate::serialize::ToSql;
 use crate::sql_types::HasSqlType;
-use crate::sqlite::SqliteFunctionBehavior;
+use crate::sqlite::{BorrowedSqliteConnection, SqliteFunctionBehavior};
 use alloc::borrow::{Cow, ToOwned};
 use alloc::boxed::Box;
 use alloc::ffi::{CString, NulError};
@@ -69,9 +70,14 @@ macro_rules! assert_fail {
     };
 }
 
-#[allow(missing_debug_implementations, missing_copy_implementations)]
-pub(super) struct RawConnection {
-    pub(super) internal_connection: NonNull<ffi::sqlite3>,
+// That's in its own struct to make it
+// easier to move them out in the destructor to
+// only drop them after freeing the underlying connection
+//
+// Otherwise a panic in any of the hook destructors would
+// leak the connection
+#[derive(Default)]
+pub(super) struct Hooks {
     /// Boxed closure kept alive while the update hook is registered.
     update_hook: Option<Box<dyn FnMut(SqliteChangeEvent<'_>) + Send>>,
     /// Boxed closure kept alive while the commit hook is registered.
@@ -81,7 +87,7 @@ pub(super) struct RawConnection {
     /// Boxed closure kept alive while the progress handler is registered.
     progress_hook: Option<Box<dyn FnMut() -> ProgressDecision + Send>>,
     /// Boxed closure kept alive while the WAL hook is registered.
-    wal_hook: Option<Box<dyn Fn(&mut SqliteConnection, &str, u32) + Send>>,
+    wal_hook: Option<Box<dyn Fn(&'_ mut BorrowedSqliteConnection, &str, u32) + Send>>,
     /// Boxed closure kept alive while the busy handler is registered.
     busy_handler: Option<Box<dyn FnMut(i32) -> BusyDecision + Send>>,
     /// Boxed closure kept alive while the authorizer is registered.
@@ -93,6 +99,12 @@ pub(super) struct RawConnection {
         Option<Box<dyn Fn(CollationNeededContext<'_>) -> Option<Collation> + Send>>,
 }
 
+#[allow(missing_debug_implementations, missing_copy_implementations)]
+pub(super) struct RawConnection {
+    pub(super) internal_connection: NonNull<ffi::sqlite3>,
+    hooks: Hooks,
+}
+
 type Collation = Box<dyn Fn(&str, &str) -> core::cmp::Ordering + Send + core::panic::UnwindSafe>;
 
 impl RawConnection {
@@ -101,15 +113,7 @@ impl RawConnection {
     pub(super) fn from_ptr(conn: NonNull<ffi::sqlite3>) -> Self {
         RawConnection {
             internal_connection: conn,
-            update_hook: None,
-            commit_hook: None,
-            rollback_hook: None,
-            progress_hook: None,
-            wal_hook: None,
-            busy_handler: None,
-            authorizer_hook: None,
-            trace_hook: None,
-            collation_needed_hook: None,
+            hooks: Hooks::default(),
         }
     }
 
@@ -131,15 +135,7 @@ impl RawConnection {
                 let conn_pointer = unsafe { NonNull::new_unchecked(conn_pointer) };
                 Ok(RawConnection {
                     internal_connection: conn_pointer,
-                    update_hook: None,
-                    commit_hook: None,
-                    rollback_hook: None,
-                    progress_hook: None,
-                    wal_hook: None,
-                    busy_handler: None,
-                    authorizer_hook: None,
-                    trace_hook: None,
-                    collation_needed_hook: None,
+                    hooks: Hooks::default(),
                 })
             }
             err_code => {
@@ -375,15 +371,20 @@ impl RawConnection {
         }
     }
 
-    pub(super) fn set_limit(&self, limit: SqliteLimit, value: i32) -> i32 {
-        unsafe { ffi::sqlite3_limit(self.internal_connection.as_ptr(), limit.to_ffi(), value) }
+    pub(super) fn set_limit(&self, limit: SqliteLimit, value: u32) -> u32 {
+        let value = i32::try_from(value).unwrap_or(i32::MAX);
+        let previous =
+            unsafe { ffi::sqlite3_limit(self.internal_connection.as_ptr(), limit.to_ffi(), value) };
+        // SQLite returns a negative value only for an unknown limit id, which `SqliteLimit` rules out.
+        u32::try_from(previous).unwrap_or(0)
     }
 
-    pub(super) fn get_limit(&self, limit: SqliteLimit) -> i32 {
-        unsafe {
+    pub(super) fn get_limit(&self, limit: SqliteLimit) -> u32 {
+        let current = unsafe {
             // Passing -1 queries the current value without changing it
             ffi::sqlite3_limit(self.internal_connection.as_ptr(), limit.to_ffi(), -1)
-        }
+        };
+        u32::try_from(current).unwrap_or(0)
     }
 
     /// Set a boolean db_config option.
@@ -428,10 +429,13 @@ impl RawConnection {
         if result == ffi::SQLITE_OK {
             Ok(())
         } else {
-            let error_message = super::error_message(result);
+            let error_information = SqliteErrorInformation {
+                message: super::error_message(result).to_string(),
+                native_code: result,
+            };
             Err(DatabaseError(
                 DatabaseErrorKind::Unknown,
-                Box::new(error_message.to_string()),
+                Box::new(error_information),
             ))
         }
     }
@@ -513,7 +517,7 @@ impl RawConnection {
 
         // The old box (if any) is dropped here after SQLite has already
         // switched to the new pointer, preventing use-after-free.
-        self.update_hook = Some(boxed);
+        self.hooks.update_hook = Some(boxed);
     }
 
     /// Removes the update hook.
@@ -528,7 +532,7 @@ impl RawConnection {
         unsafe {
             ffi::sqlite3_update_hook(self.internal_connection.as_ptr(), None, ptr::null_mut());
         }
-        self.update_hook = None;
+        self.hooks.update_hook = None;
     }
 
     /// Sets the commit hook, replacing any previous one.
@@ -557,7 +561,7 @@ impl RawConnection {
 
         // The old Box (if any) is dropped here after SQLite has already
         // switched to the new callback, preventing use-after-free.
-        self.commit_hook = Some(boxed);
+        self.hooks.commit_hook = Some(boxed);
     }
 
     /// Removes the commit hook.
@@ -573,7 +577,7 @@ impl RawConnection {
         unsafe {
             ffi::sqlite3_commit_hook(self.internal_connection.as_ptr(), None, ptr::null_mut());
         }
-        self.commit_hook = None;
+        self.hooks.commit_hook = None;
     }
 
     /// Sets the rollback hook, replacing any previous one.
@@ -602,7 +606,7 @@ impl RawConnection {
 
         // The old Box (if any) is dropped here after SQLite has already
         // switched to the new callback, preventing use-after-free.
-        self.rollback_hook = Some(boxed);
+        self.hooks.rollback_hook = Some(boxed);
     }
 
     /// Removes the rollback hook.
@@ -618,7 +622,7 @@ impl RawConnection {
         unsafe {
             ffi::sqlite3_rollback_hook(self.internal_connection.as_ptr(), None, ptr::null_mut());
         }
-        self.rollback_hook = None;
+        self.hooks.rollback_hook = None;
     }
 
     /// Sets the progress handler, replacing any previous one.
@@ -655,7 +659,7 @@ impl RawConnection {
 
         // The old Box (if any) is dropped here after SQLite has already
         // switched to the new callback, preventing use-after-free.
-        self.progress_hook = Some(boxed);
+        self.hooks.progress_hook = Some(boxed);
     }
 
     /// Removes the progress handler.
@@ -676,7 +680,7 @@ impl RawConnection {
                 ptr::null_mut(),
             );
         }
-        self.progress_hook = None;
+        self.hooks.progress_hook = None;
     }
 
     /// Sets the WAL hook, replacing any previous one.
@@ -693,9 +697,9 @@ impl RawConnection {
     /// the lifetime of this `RawConnection`.
     pub(super) fn set_wal_hook<F>(&mut self, hook: F)
     where
-        F: Fn(&mut SqliteConnection, &str, u32) + Send + 'static,
+        F: Fn(&'_ mut BorrowedSqliteConnection, &str, u32) + Send + 'static,
     {
-        let boxed: Box<dyn Fn(&mut SqliteConnection, &str, u32) + Send> = Box::new(hook);
+        let boxed: Box<dyn Fn(&'_ mut BorrowedSqliteConnection, &str, u32) + Send> = Box::new(hook);
         let ptr = &raw const *boxed as *mut libc::c_void;
 
         unsafe {
@@ -708,7 +712,7 @@ impl RawConnection {
 
         // The old Box (if any) is dropped here after SQLite has already
         // switched to the new callback, preventing use-after-free.
-        self.wal_hook = Some(boxed);
+        self.hooks.wal_hook = Some(boxed);
     }
 
     /// Removes the WAL hook.
@@ -724,7 +728,7 @@ impl RawConnection {
         unsafe {
             ffi::sqlite3_wal_hook(self.internal_connection.as_ptr(), None, ptr::null_mut());
         }
-        self.wal_hook = None;
+        self.hooks.wal_hook = None;
     }
 
     /// Sets the busy handler, replacing any previous one.
@@ -756,7 +760,7 @@ impl RawConnection {
 
         // The old Box (if any) is dropped here after SQLite has already
         // switched to the new callback, preventing use-after-free.
-        self.busy_handler = Some(boxed);
+        self.hooks.busy_handler = Some(boxed);
     }
 
     /// Removes the busy handler.
@@ -772,7 +776,7 @@ impl RawConnection {
         unsafe {
             ffi::sqlite3_busy_handler(self.internal_connection.as_ptr(), None, ptr::null_mut());
         }
-        self.busy_handler = None;
+        self.hooks.busy_handler = None;
     }
 
     /// Sets a simple timeout-based busy handler.
@@ -786,11 +790,13 @@ impl RawConnection {
     /// connection. `sqlite3_busy_timeout` installs its own internal busy
     /// handler, so the stored `busy_handler` is dropped afterwards to release
     /// the now-unused closure.
-    pub(super) fn set_busy_timeout(&mut self, ms: i32) {
+    pub(super) fn set_busy_timeout(&mut self, timeout: core::time::Duration) {
+        // Round up so a positive sub-millisecond timeout does not become 0, which disables the handler.
+        let ms = i32::try_from(timeout.as_nanos().div_ceil(1_000_000)).unwrap_or(i32::MAX);
         unsafe {
             ffi::sqlite3_busy_timeout(self.internal_connection.as_ptr(), ms);
         }
-        self.busy_handler = None;
+        self.hooks.busy_handler = None;
     }
 
     /// Sets the authorizer callback, replacing any previous one. Only one
@@ -821,7 +827,7 @@ impl RawConnection {
 
         // The old Box (if any) is dropped here after SQLite has already
         // switched to the new callback, preventing use-after-free.
-        self.authorizer_hook = Some(boxed);
+        self.hooks.authorizer_hook = Some(boxed);
     }
 
     /// Removes the authorizer callback.
@@ -837,7 +843,7 @@ impl RawConnection {
         unsafe {
             ffi::sqlite3_set_authorizer(self.internal_connection.as_ptr(), None, ptr::null_mut());
         }
-        self.authorizer_hook = None;
+        self.hooks.authorizer_hook = None;
     }
 
     /// Sets a trace callback, replacing any previous one.
@@ -871,7 +877,7 @@ impl RawConnection {
 
         // The old Box (if any) is dropped here after SQLite has already
         // switched to the new callback, preventing use-after-free.
-        self.trace_hook = Some(boxed);
+        self.hooks.trace_hook = Some(boxed);
     }
 
     /// Removes the trace callback.
@@ -887,7 +893,7 @@ impl RawConnection {
         unsafe {
             ffi::sqlite3_trace_v2(self.internal_connection.as_ptr(), 0, None, ptr::null_mut());
         }
-        self.trace_hook = None;
+        self.hooks.trace_hook = None;
     }
 
     /// Sets the collation-needed callback, replacing any previous one.
@@ -915,7 +921,7 @@ impl RawConnection {
 
         // The old Box (if any) is dropped here after SQLite has already
         // switched to the new callback, preventing use-after-free.
-        self.collation_needed_hook = Some(boxed);
+        self.hooks.collation_needed_hook = Some(boxed);
     }
 
     /// Removes the collation-needed callback.
@@ -929,7 +935,52 @@ impl RawConnection {
         unsafe {
             ffi::sqlite3_collation_needed(self.internal_connection.as_ptr(), ptr::null_mut(), None);
         }
-        self.collation_needed_hook = None;
+        self.hooks.collation_needed_hook = None;
+    }
+
+    pub(crate) fn reset_registered_hooks(&mut self) -> Hooks {
+        // explicit destruct to make sure we don't miss a future field
+        let Self {
+            internal_connection,
+            hooks,
+        } = self;
+        let db = internal_connection.as_ptr();
+        let hooks = core::mem::take(hooks);
+
+        // specifically make sure to first deregister all the hooks
+        // and only then drop them
+
+        // SAFETY: db is a valid database, clearing hooks is otherwise always safe
+        unsafe {
+            if hooks.update_hook.is_some() {
+                ffi::sqlite3_update_hook(db, None, ptr::null_mut());
+            }
+            if hooks.commit_hook.is_some() {
+                ffi::sqlite3_commit_hook(db, None, ptr::null_mut());
+            }
+            if hooks.rollback_hook.is_some() {
+                ffi::sqlite3_rollback_hook(db, None, ptr::null_mut());
+            }
+            if hooks.progress_hook.is_some() {
+                ffi::sqlite3_progress_handler(db, 0, None, ptr::null_mut());
+            }
+            if hooks.wal_hook.is_some() {
+                ffi::sqlite3_wal_hook(db, None, ptr::null_mut());
+            }
+            if hooks.busy_handler.is_some() {
+                ffi::sqlite3_busy_handler(db, None, ptr::null_mut());
+            }
+            if hooks.authorizer_hook.is_some() {
+                ffi::sqlite3_set_authorizer(db, None, ptr::null_mut());
+            }
+            if hooks.trace_hook.is_some() {
+                ffi::sqlite3_trace_v2(db, 0, None, ptr::null_mut());
+            }
+            if hooks.collation_needed_hook.is_some() {
+                ffi::sqlite3_collation_needed(db, ptr::null_mut(), None);
+            }
+        }
+        hooks
     }
 }
 
@@ -937,16 +988,9 @@ impl Drop for RawConnection {
     fn drop(&mut self) {
         use crate::util::std_compat::panicking;
 
-        // Unregister before close so the boxed closures drop before sqlite3_close.
-        self.remove_update_hook();
-        self.remove_commit_hook();
-        self.remove_rollback_hook();
-        self.remove_progress_handler();
-        self.remove_wal_hook();
-        self.remove_busy_handler();
-        self.remove_authorizer();
-        self.remove_trace();
-        self.remove_collation_needed_hook();
+        // we bind the hooks to the scope here to only drop them after
+        // freeing the connection handle as any of these destructors might panic
+        let _hooks = self.reset_registered_hooks();
 
         let close_result = unsafe { ffi::sqlite3_close(self.internal_connection.as_ptr()) };
         if close_result != ffi::SQLITE_OK {
@@ -1135,7 +1179,7 @@ where
             *inner = obj;
         }
         // at this point the inner value is never null
-        // as we initialised in in the null branch above,
+        // as we initialised in the null branch above,
         // therefore it's sound to dereference the pointer here
         &mut **inner
     };
@@ -1451,7 +1495,7 @@ unsafe extern "C" fn wal_hook_trampoline<F>(
     n_pages: libc::c_int,
 ) -> libc::c_int
 where
-    F: Fn(&mut SqliteConnection, &str, u32),
+    F: Fn(&'_ mut BorrowedSqliteConnection, &str, u32),
 {
     let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
         // SAFETY: `user_data` points to a live `F` in `RawConnection::wal_hook`.
@@ -1531,33 +1575,38 @@ unsafe extern "C" fn authorizer_trampoline<F>(
 where
     F: FnMut(AuthorizerContext<'_>) -> AuthorizerDecision,
 {
-    // Convert a nullable C string argument to `Option<&str>`. A null pointer or
-    // a non-UTF-8 string both map to `None`. The borrow is tied to this call via
-    // the generic lifetime, and the resulting `&str` only lives inside the
-    // `AuthorizerContext` passed to the callback, which cannot escape the call.
-    fn to_str<'a>(ptr: *const libc::c_char) -> Option<&'a str> {
+    // A null pointer is `None`, and the borrow only lives inside the `AuthorizerContext` passed to the callback.
+    fn to_str<'a>(ptr: *const libc::c_char) -> Result<Option<&'a str>, core::str::Utf8Error> {
         if ptr.is_null() {
-            None
+            Ok(None)
         } else {
             // SAFETY: per the `sqlite3_set_authorizer` contract a non-null
             // pointer is a valid C string for the duration of the call.
-            unsafe { CStr::from_ptr(ptr) }.to_str().ok()
+            unsafe { CStr::from_ptr(ptr) }.to_str().map(Some)
         }
     }
 
     let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
-        // SAFETY: `user_data` points to a live `F` in `RawConnection::authorizer_hook`.
-        let f = unsafe { &mut *(user_data as *mut F) };
-
-        let ctx = AuthorizerContext::from_ffi(
-            action_code,
+        // A name that is not UTF-8 is denied, since mapping it to `None` would read as top-level SQL.
+        let (Ok(arg1), Ok(arg2), Ok(db_name), Ok(accessor)) = (
             to_str(arg1),
             to_str(arg2),
             to_str(db_name),
             to_str(accessor),
-        );
+        ) else {
+            return AuthorizerDecision::Deny;
+        };
 
-        f(ctx)
+        // SAFETY: `user_data` points to a live `F` in `RawConnection::authorizer_hook`.
+        let f = unsafe { &mut *(user_data as *mut F) };
+
+        f(AuthorizerContext::from_ffi(
+            action_code,
+            arg1,
+            arg2,
+            db_name,
+            accessor,
+        ))
     }));
 
     match result {
@@ -1697,7 +1746,7 @@ unsafe extern "C" fn collation_needed_trampoline<F>(
             SqliteConnection::with_borrowed_connection(db, |conn| {
                 if let Some(collation) = f(ctx) {
                     // A failed registration leaves the collation missing, so the statement fails to prepare.
-                    let _ = conn.register_collation(ctx.name, collation);
+                    let _ = conn.inner_mut().register_collation(ctx.name, collation);
                 }
             });
         }

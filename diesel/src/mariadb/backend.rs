@@ -98,6 +98,7 @@ impl MapErrorNumber for Mariadb {
             1048 | 1364 => DatabaseErrorKind::NotNullViolation,
             4025 => DatabaseErrorKind::CheckViolation,
             1213 => DatabaseErrorKind::SerializationFailure,
+            1390 => DatabaseErrorKind::UnableToSendCommand,
             _ => DatabaseErrorKind::Unknown,
         }
     }

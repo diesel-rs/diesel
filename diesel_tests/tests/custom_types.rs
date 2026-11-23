@@ -205,10 +205,6 @@ fn custom_type_schema_inference() {
     let other_ty = <Pg as HasSqlType<OtherTy>>::metadata(conn);
     let public_ty = <Pg as HasSqlType<PublicTy>>::metadata(conn);
     let inferred_ty = <Pg as HasSqlType<InferredTy>>::metadata(conn);
-    let _ = dbg!(other_ty.oid());
-    let _ = dbg!(public_ty.oid());
-    let _ = dbg!(inferred_ty.oid());
-
     assert_eq!(other_ty.oid().unwrap(), inferred_ty.oid().unwrap());
     assert_ne!(public_ty.oid().unwrap(), other_ty.oid().unwrap());
 }

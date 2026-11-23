@@ -1,5 +1,6 @@
 #![allow(unsafe_code)] // fii code
 use super::bind_collector::{SqliteBindCollector, SqliteBindValueRef};
+use super::error_information::SqliteErrorInformation;
 use super::raw::RawConnection;
 use super::sqlite_value::OwnedSqliteValue;
 use crate::connection::Instrumentation;
@@ -209,6 +210,7 @@ impl Statement {
     }
 
     /// Steps the statement once for its side effects.
+    #[cfg(not(miri))]
     pub(super) fn run(&mut self) -> QueryResult<()> {
         // SAFETY: `inner_statement` stays a live prepared statement until `Drop`.
         match unsafe { ffi::sqlite3_step(self.inner_statement.as_ptr()) } {
@@ -262,7 +264,10 @@ fn last_error(raw_connection: *mut ffi::sqlite3) -> Error {
         ffi::SQLITE_CONSTRAINT_CHECK => DatabaseErrorKind::CheckViolation,
         _ => DatabaseErrorKind::Unknown,
     };
-    let error_information = Box::new(error_message);
+    let error_information = Box::new(SqliteErrorInformation {
+        message: error_message,
+        native_code: error_code,
+    });
     DatabaseError(error_kind, error_information)
 }
 

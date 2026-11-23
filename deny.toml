@@ -9,10 +9,12 @@ allow = [
     "PostgreSQL",
     "Apache-2.0 WITH LLVM-exception",
     "Unicode-3.0",
-    "BSD-3-Clause",
     "GPL-2.0-only",
     "Zlib",
     "MPL-2.0",
+    "ISC",
+    "BSD-3-Clause",
+    "CDLA-Permissive-2.0",
 ]
 # ignore private packages
 private = { ignore = true }
@@ -22,7 +24,10 @@ multiple-versions = "deny"
 skip-tree = [
     "windows-targets",
     "windows-sys",
-    "rand",
+    "r2d2",
+    "syn",
+    "const-oid",
+    "wasi",
 ]
 
 [bans.build]

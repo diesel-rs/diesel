@@ -32,8 +32,9 @@ help: the trait `QueryFragment<Sqlite, NotSpecialized>` is not implemented for `
 note: required by a bound in `load`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-     |        ---- required by a bound in this associated function
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
@@ -70,8 +71,9 @@ help: the trait `QueryFragment<Sqlite, NotSpecialized>` is not implemented for `
 note: required by a bound in `load`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-     |        ---- required by a bound in this associated function
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
@@ -105,8 +107,9 @@ help: the trait `QueryFragment<Sqlite, NotSpecialized>` is not implemented for `
 note: required by a bound in `load`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-     |        ---- required by a bound in this associated function
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
@@ -115,18 +118,16 @@ LL |         Self: LoadQuery<'query, Conn, U>,
 error[E0599]: the method `execute` exists for struct `IncompleteOnConflict<InsertStatement<table, _>, _>`, but its trait bounds were not satisfied
    --> tests/fail/pg_specific_expressions_cant_be_used_in_a_sqlite_query.rs:47:10
     |
- LL | /     insert_into(users)
- LL | |         .values(&NewUser("Sean"))
- LL | |         .on_conflict(on_constraint("name"))
- LL | |         .execute(&mut connection);
-    | |         -^^^^^^^ method cannot be called on `IncompleteOnConflict<InsertStatement<table, _>, _>` due to unsatisfied trait bounds
-    | |_________|
-    |
+ LL |     insert_into(users)
+ LL |         .values(&NewUser("Sean"))
+ LL |         .on_conflict(on_constraint("name"))
+ LL |         .execute(&mut connection);
+    |          ^^^^^^^ method cannot be called on `IncompleteOnConflict<InsertStatement<table, _>, _>` due to unsatisfied trait bounds
     |
    ::: ROOT/diesel/src/upsert/on_conflict_extension.rs
     |
-LL |   pub struct IncompleteOnConflict<Stmt, Target> {
-    |   --------------------------------------------- doesn't satisfy `_: RunQueryDsl<_>` or `_: RunQueryDslSupport`
+LL | pub struct IncompleteOnConflict<Stmt, Target> {
+    | --------------------------------------------- doesn't satisfy `_: RunQueryDsl<_>` or `_: RunQueryDslSupport`
     |
     = note: the following trait bounds were not satisfied:
             `IncompleteOnConflict<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(diesel::insertable::DefaultableColumnInsertValue<diesel::insertable::ColumnInsertValue<columns::name, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::ConflictTarget<diesel::upsert::OnConstraint<'_>>>: RunQueryDslSupport`

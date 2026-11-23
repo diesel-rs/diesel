@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout, reason = "Example code")]
 #[cfg(test)]
 mod parallel_service_tests;
 

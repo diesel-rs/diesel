@@ -24,7 +24,6 @@ note: required by a bound in `diesel::select`
    --> ROOT/diesel/src/query_builder/functions.rs
     |
 LL | pub fn select<T>(expression: T) -> crate::dsl::select<T>
-    |        ------ required by a bound in this function
 ...
 LL |     crate::dsl::select<T>: AsQuery,
     |                            ^^^^^^^ required by this bound in `select`
@@ -57,7 +56,6 @@ note: required by a bound in `diesel::select`
    --> ROOT/diesel/src/query_builder/functions.rs
     |
 LL | pub fn select<T>(expression: T) -> crate::dsl::select<T>
-    |        ------ required by a bound in this function
 ...
 LL |     crate::dsl::select<T>: AsQuery,
     |                            ^^^^^^^ required by this bound in `select`
@@ -88,8 +86,9 @@ help: the trait `SelectableExpression<diesel::internal::table_macro::NoFromClaus
 note: required by a bound in `get_result`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
-     |        ---------- required by a bound in this associated function
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
@@ -121,8 +120,9 @@ error[E0277]: the trait bound `f64: ValidGrouping<()>` is not satisfied
 note: required by a bound in `get_result`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
-     |        ---------- required by a bound in this associated function
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
@@ -153,8 +153,9 @@ error[E0277]: the trait bound `f64: QueryId` is not satisfied
 note: required by a bound in `get_result`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
-     |        ---------- required by a bound in this associated function
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
@@ -187,8 +188,9 @@ error[E0277]: `f64` is no valid SQL fragment for the `Pg` backend
 note: required by a bound in `get_result`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
-     |        ---------- required by a bound in this associated function
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
@@ -214,7 +216,6 @@ note: required by a bound in `diesel::dsl::array`
    --> ROOT/diesel/src/pg/expression/array.rs
     |
  LL | pub fn array<ST, T>(elements: T) -> dsl::array<ST, T>
-    |        ----- required by a bound in this function
  LL | where
  LL |     T: IntoArrayExpression<ST>,
     |        ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `array`

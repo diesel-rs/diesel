@@ -13,3 +13,6 @@ libsqlite3-sys = { workspace = true, features = ["bundled"] }
 
 [lib]
 doc = false
+
+[lints]
+workspace = true

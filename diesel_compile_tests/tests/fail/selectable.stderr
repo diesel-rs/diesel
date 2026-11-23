@@ -1,31 +1,37 @@
 error[E0425]: cannot find type `titel` in module `posts`
-  --> tests/fail/selectable.rs:55:5
+  --> tests/fail/selectable.rs:53:5
+   |
+LL |     titel: String,
+   |     ^^^^^ not found in `posts`
+   |
+note: similarly named struct `title` defined here
+  --> tests/fail/selectable.rs:15:9
    |
 LL |         title -> Text,
-   |         ----- similarly named struct `title` defined here
-...
-LL |     titel: String,
-   |     ^^^^^
-   |
+   |         ^^^^^
+   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 help: a struct with a similar name exists
    |
-55 -     titel: String,
-55 +     title: String,
+53 -     titel: String,
+53 +     title: String,
    |
 
 error[E0425]: cannot find value `titel` in module `posts`
-  --> tests/fail/selectable.rs:55:5
+  --> tests/fail/selectable.rs:53:5
+   |
+LL |     titel: String,
+   |     ^^^^^ not found in `posts`
+   |
+note: similarly named unit struct `title` defined here
+  --> tests/fail/selectable.rs:15:9
    |
 LL |         title -> Text,
-   |         ----- similarly named unit struct `title` defined here
-...
-LL |     titel: String,
-   |     ^^^^^
-   |
+   |         ^^^^^
+   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 help: a unit struct with a similar name exists
    |
-55 -     titel: String,
-55 +     title: String,
+53 -     titel: String,
+53 +     title: String,
    |
 
 error[E0433]: cannot find module or crate `post` in this scope
@@ -173,8 +179,9 @@ note: required for `posts::columns::id` to implement `SelectableExpression<Join<
 note: required by a bound in `load`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-     |        ---- required by a bound in this associated function
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
@@ -217,8 +224,9 @@ note: required for `posts::columns::id` to implement `SelectableExpression<Join<
 note: required by a bound in `load`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-     |        ---- required by a bound in this associated function
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
@@ -261,8 +269,9 @@ note: required for `posts::columns::title` to implement `SelectableExpression<Jo
 note: required by a bound in `load`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-     |        ---- required by a bound in this associated function
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
@@ -391,8 +400,9 @@ help: the trait `SelectableExpression<diesel::internal::table_macro::returning::
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
    --> ROOT/diesel/src/query_builder/insert_statement/mod.rs
     |
+LL | impl<T: QuerySource, U, Op> InsertStatement<T, U, Op> {
+...
 LL |     pub fn returning<E>(self, returns: E) -> InsertStatement<T, U, Op, ReturningClause<E>>
-    |            --------- required by a bound in this associated function
 LL |     where
 LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
     |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
@@ -429,8 +439,9 @@ help: the trait `SelectableExpression<diesel::internal::table_macro::returning::
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
    --> ROOT/diesel/src/query_builder/insert_statement/mod.rs
     |
+LL | impl<T: QuerySource, U, Op> InsertStatement<T, U, Op> {
+...
 LL |     pub fn returning<E>(self, returns: E) -> InsertStatement<T, U, Op, ReturningClause<E>>
-    |            --------- required by a bound in this associated function
 LL |     where
 LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
     |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
@@ -460,8 +471,9 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQu
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
    --> ROOT/diesel/src/query_builder/insert_statement/mod.rs
     |
+LL | impl<T: QuerySource, U, Op> InsertStatement<T, U, Op> {
+...
 LL |     pub fn returning<E>(self, returns: E) -> InsertStatement<T, U, Op, ReturningClause<E>>
-    |            --------- required by a bound in this associated function
 LL |     where
 LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
     |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
@@ -499,8 +511,9 @@ help: the trait `SelectableExpression<diesel::internal::table_macro::returning::
 note: required by a bound in `load`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-     |        ---- required by a bound in this associated function
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
@@ -538,8 +551,9 @@ help: the trait `SelectableExpression<diesel::internal::table_macro::returning::
 note: required by a bound in `load`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-     |        ---- required by a bound in this associated function
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
@@ -570,8 +584,9 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQu
 note: required by a bound in `load`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-     |        ---- required by a bound in this associated function
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
@@ -608,8 +623,9 @@ help: the trait `SelectableExpression<diesel::internal::table_macro::returning::
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`
    --> ROOT/diesel/src/query_builder/update_statement/mod.rs
     |
+LL | impl<T: QuerySource, U, V> UpdateStatement<T, U, V, NoReturningClause> {
+...
 LL |     pub fn returning<E>(self, returns: E) -> UpdateStatement<T, U, V, ReturningClause<E>>
-    |            --------- required by a bound in this associated function
 ...
 LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
     |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
@@ -646,8 +662,9 @@ help: the trait `SelectableExpression<diesel::internal::table_macro::returning::
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`
    --> ROOT/diesel/src/query_builder/update_statement/mod.rs
     |
+LL | impl<T: QuerySource, U, V> UpdateStatement<T, U, V, NoReturningClause> {
+...
 LL |     pub fn returning<E>(self, returns: E) -> UpdateStatement<T, U, V, ReturningClause<E>>
-    |            --------- required by a bound in this associated function
 ...
 LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
     |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
@@ -677,8 +694,9 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQu
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`
    --> ROOT/diesel/src/query_builder/update_statement/mod.rs
     |
+LL | impl<T: QuerySource, U, V> UpdateStatement<T, U, V, NoReturningClause> {
+...
 LL |     pub fn returning<E>(self, returns: E) -> UpdateStatement<T, U, V, ReturningClause<E>>
-    |            --------- required by a bound in this associated function
 ...
 LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
     |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
@@ -716,8 +734,9 @@ help: the trait `SelectableExpression<diesel::internal::table_macro::returning::
 note: required by a bound in `load`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-     |        ---- required by a bound in this associated function
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
@@ -755,8 +774,9 @@ help: the trait `SelectableExpression<diesel::internal::table_macro::returning::
 note: required by a bound in `load`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-     |        ---- required by a bound in this associated function
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
@@ -787,8 +807,9 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQu
 note: required by a bound in `load`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-     |        ---- required by a bound in this associated function
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
@@ -825,8 +846,9 @@ help: the trait `SelectableExpression<diesel::internal::table_macro::returning::
 note: required by a bound in `DeleteStatement::<T, U>::returning`
    --> ROOT/diesel/src/query_builder/delete_statement/mod.rs
     |
+LL | impl<T: QuerySource, U> DeleteStatement<T, U, NoReturningClause> {
+...
 LL |     pub fn returning<E>(self, returns: E) -> DeleteStatement<T, U, ReturningClause<E>>
-    |            --------- required by a bound in this associated function
 LL |     where
 LL |         DeleteStatement<T, U, ReturningClause<E>>: Query,
     |                                                    ^^^^^ required by this bound in `DeleteStatement::<T, U>::returning`
@@ -863,8 +885,9 @@ help: the trait `SelectableExpression<diesel::internal::table_macro::returning::
 note: required by a bound in `DeleteStatement::<T, U>::returning`
    --> ROOT/diesel/src/query_builder/delete_statement/mod.rs
     |
+LL | impl<T: QuerySource, U> DeleteStatement<T, U, NoReturningClause> {
+...
 LL |     pub fn returning<E>(self, returns: E) -> DeleteStatement<T, U, ReturningClause<E>>
-    |            --------- required by a bound in this associated function
 LL |     where
 LL |         DeleteStatement<T, U, ReturningClause<E>>: Query,
     |                                                    ^^^^^ required by this bound in `DeleteStatement::<T, U>::returning`
@@ -894,8 +917,9 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQu
 note: required by a bound in `DeleteStatement::<T, U>::returning`
    --> ROOT/diesel/src/query_builder/delete_statement/mod.rs
     |
+LL | impl<T: QuerySource, U> DeleteStatement<T, U, NoReturningClause> {
+...
 LL |     pub fn returning<E>(self, returns: E) -> DeleteStatement<T, U, ReturningClause<E>>
-    |            --------- required by a bound in this associated function
 LL |     where
 LL |         DeleteStatement<T, U, ReturningClause<E>>: Query,
     |                                                    ^^^^^ required by this bound in `DeleteStatement::<T, U>::returning`
@@ -933,8 +957,9 @@ help: the trait `SelectableExpression<diesel::internal::table_macro::returning::
 note: required by a bound in `load`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-     |        ---- required by a bound in this associated function
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
@@ -972,8 +997,9 @@ help: the trait `SelectableExpression<diesel::internal::table_macro::returning::
 note: required by a bound in `load`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-     |        ---- required by a bound in this associated function
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
@@ -1004,8 +1030,9 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQu
 note: required by a bound in `load`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-     |        ---- required by a bound in this associated function
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
@@ -1060,8 +1087,9 @@ error[E0277]: the trait bound `diesel::expression::select_by::SelectBy<Post, _>:
 note: required by a bound in `load`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-     |        ---- required by a bound in this associated function
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
@@ -1092,8 +1120,9 @@ error[E0277]: the trait bound `(i32, String): Queryable<SelectBy<Post, _>, _>` i
 note: required by a bound in `load`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-     |        ---- required by a bound in this associated function
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
@@ -1122,8 +1151,9 @@ error[E0277]: the trait bound `diesel::expression::select_by::SelectBy<Post, _>:
 note: required by a bound in `load`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-     |        ---- required by a bound in this associated function
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
@@ -1154,8 +1184,9 @@ error[E0277]: the trait bound `(i32, String): Queryable<SelectBy<Post, _>, _>` i
 note: required by a bound in `load`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-     |        ---- required by a bound in this associated function
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
@@ -1188,8 +1219,9 @@ error[E0277]: the trait bound `(SelectBy<Post, _>, Text): CompatibleType<_, _>` 
 note: required by a bound in `load`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-     |        ---- required by a bound in this associated function
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
@@ -1218,8 +1250,9 @@ error[E0277]: the trait bound `diesel::expression::select_by::SelectBy<Post, _>:
 note: required by a bound in `load`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-     |        ---- required by a bound in this associated function
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
@@ -1250,8 +1283,9 @@ error[E0277]: the trait bound `(i32, String, i32): Queryable<_, _>` is not satis
 note: required by a bound in `load`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-     |        ---- required by a bound in this associated function
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
@@ -1269,8 +1303,9 @@ error[E0271]: type mismatch resolving `<SqliteConnection as Connection>::Backend
 note: required by a bound in `load`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-     |        ---- required by a bound in this associated function
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`

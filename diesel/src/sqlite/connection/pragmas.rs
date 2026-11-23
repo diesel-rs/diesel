@@ -294,6 +294,7 @@ mod tests {
     #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     use crate::dsl::sql;
     use crate::prelude::*;
+    #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     use crate::result::Error;
     #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     use crate::sql_types::Integer;

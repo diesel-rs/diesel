@@ -10,7 +10,7 @@ use super::bind::{OutputBinds, PreparedStatementBinds};
 use super::error_information::{MysqlLikeErrorInformation, sqlstate_from_ptr};
 use crate::connection::statement_cache::{MaybeCached, PreparedStatement};
 use crate::mysql_like::{MysqlLikeBackend, MysqlType};
-use crate::result::{DatabaseErrorKind, Error, QueryResult, SqlState};
+use crate::result::{Error, QueryResult, SqlState};
 
 pub(super) mod iterator;
 mod metadata;
@@ -125,20 +125,21 @@ impl<DB: MysqlLikeBackend> Statement<DB> {
         if error_message.is_empty() {
             Ok(())
         } else {
+            let error_number = self.last_error_number();
             Err(DatabaseError(
-                self.last_error_type(),
+                DB::map_error_number(error_number),
                 Box::new(MysqlLikeErrorInformation {
                     message: error_message,
                     sqlstate: self.last_error_sqlstate(),
+                    native_code: i32::try_from(error_number).ok().filter(|&code| code != 0),
                 }),
             ))
         }
     }
 
-    fn last_error_type(&self) -> DatabaseErrorKind {
-        let last_error_number = unsafe { ffi::mysql_stmt_errno(self.stmt.as_ptr()) };
-
-        DB::map_error_number(last_error_number)
+    fn last_error_number(&self) -> u32 {
+        // SAFETY: `self.stmt` is the live statement handle owned by `self`.
+        unsafe { ffi::mysql_stmt_errno(self.stmt.as_ptr()) }
     }
 
     /// If the pointers referenced by the `MYSQL_BIND` structures are invalidated,

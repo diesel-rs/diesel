@@ -66,6 +66,14 @@ table! {
     }
 }
 
+table! {
+    pg_matviews(schemaname, matviewname) {
+        schemaname -> Text,
+        matviewname -> Text,
+        definition -> Text,
+    }
+}
+
 allow_tables_to_appear_in_same_query!(pg_type, pg_enum);
 
 #[tracing::instrument]
@@ -142,25 +150,34 @@ fn regnamespace(schema: &str) -> RegNamespace<quote_ident<AsExprOf<&str, sql_typ
     RegNamespace::new(quote_ident(schema))
 }
 
+#[derive(Queryable, QueryableByName)]
+struct ColumnRow {
+    #[diesel(sql_type = sql_types::Text)]
+    column_name: String,
+    #[diesel(sql_type = sql_types::Text)]
+    type_name: String,
+    #[diesel(sql_type = sql_types::Nullable<sql_types::Text>)]
+    type_schema: Option<String>,
+    #[diesel(sql_type = sql_types::Nullable<sql_types::Text>)]
+    domain_name: Option<String>,
+    #[diesel(sql_type = sql_types::Nullable<sql_types::Text>)]
+    domain_schema: Option<String>,
+    #[diesel(sql_type = sql_types::Text)]
+    nullable: String,
+    #[diesel(sql_type = sql_types::Nullable<sql_types::Integer>)]
+    max_length: Option<i32>,
+    #[diesel(sql_type = sql_types::Nullable<sql_types::Text>)]
+    comment: Option<String>,
+}
+
 pub fn get_table_data(
     conn: &mut PgConnection,
     table: &TableName,
     column_sorting: &ColumnSorting,
     domains_as_custom_types: &[&regex::Regex],
+    kind: SupportedQueryRelationStructures,
 ) -> QueryResult<Vec<ColumnInformation>> {
     use self::information_schema::columns::dsl::*;
-
-    #[derive(Queryable)]
-    struct Row {
-        column_name: String,
-        type_name: String,
-        type_schema: Option<String>,
-        domain_name: Option<String>,
-        domain_schema: Option<String>,
-        nullable: String,
-        max_length: Option<i32>,
-        comment: Option<String>,
-    }
 
     let schema_name = match table.schema {
         Some(ref name) => Cow::Borrowed(name),
@@ -179,11 +196,19 @@ pub fn get_table_data(
             col_description(regclass(table), ordinal_position),
         ))
         .filter(table_name.eq(&table.sql_name))
-        .filter(table_schema.eq(schema_name));
+        .filter(table_schema.eq(&*schema_name));
 
-    let rows: Vec<Row> = match column_sorting {
-        ColumnSorting::OrdinalPosition => query.order(ordinal_position).load(conn),
-        ColumnSorting::Name => query.order(column_name).load(conn),
+    let rows: Vec<ColumnRow> = match (kind, column_sorting) {
+        // `information_schema.columns` does not list materialized views
+        (SupportedQueryRelationStructures::MaterializedView, _) => {
+            diesel::sql_query(include_str!("load_materialized_view_columns.sql"))
+                .bind::<sql_types::Text, _>(&table.sql_name)
+                .bind::<sql_types::Text, _>(&*schema_name)
+                .bind::<sql_types::Bool, _>(matches!(column_sorting, ColumnSorting::Name))
+                .load(conn)
+        }
+        (_, ColumnSorting::OrdinalPosition) => query.order(ordinal_position).load(conn),
+        (_, ColumnSorting::Name) => query.order(column_name).load(conn),
     }?;
 
     rows.into_iter()
@@ -221,6 +246,54 @@ pub fn get_table_data(
             ))
         })
         .collect()
+}
+
+pub fn load_table_names(
+    conn: &mut PgConnection,
+    schema_name: Option<&str>,
+) -> Result<Vec<(SupportedQueryRelationStructures, TableName)>, crate::errors::Error> {
+    let mut tables = super::information_schema::load_table_names(conn, schema_name)?;
+    tables.extend(load_materialized_view_names(conn, schema_name)?);
+    tables.sort_by(|(_, a), (_, b)| a.sql_name.cmp(&b.sql_name));
+    Ok(tables)
+}
+
+fn load_materialized_view_names(
+    conn: &mut PgConnection,
+    schema_name: Option<&str>,
+) -> QueryResult<Vec<(SupportedQueryRelationStructures, TableName)>> {
+    let default_schema = Pg::default_schema(conn)?;
+    let schema_name = schema_name.unwrap_or(&default_schema);
+
+    let names = pg_matviews::table
+        .select(pg_matviews::matviewname)
+        .filter(pg_matviews::schemaname.eq(schema_name))
+        .load::<String>(conn)?;
+
+    Ok(names
+        .into_iter()
+        .map(|name| {
+            let mut table = TableName::new(name, schema_name);
+            table.strip_schema_if_matches(&default_schema);
+            (SupportedQueryRelationStructures::MaterializedView, table)
+        })
+        .collect())
+}
+
+pub fn load_materialized_view_sql_definition(
+    conn: &mut PgConnection,
+    view: &TableName,
+) -> QueryResult<String> {
+    let schema_name = match view.schema {
+        Some(ref name) => Cow::Borrowed(name),
+        None => Cow::Owned(Pg::default_schema(conn)?),
+    };
+
+    pg_matviews::table
+        .select(pg_matviews::definition)
+        .filter(pg_matviews::matviewname.eq(&view.sql_name))
+        .filter(pg_matviews::schemaname.eq(schema_name))
+        .get_result(conn)
 }
 
 pub fn get_table_comment(
@@ -408,7 +481,8 @@ mod test {
                 &mut connection,
                 &table_1,
                 &ColumnSorting::OrdinalPosition,
-                &[]
+                &[],
+                SupportedQueryRelationStructures::Table,
             )
         );
         assert_eq!(
@@ -417,7 +491,8 @@ mod test {
                 &mut connection,
                 &table_2,
                 &ColumnSorting::OrdinalPosition,
-                &[]
+                &[],
+                SupportedQueryRelationStructures::Table,
             )
         );
     }
@@ -583,6 +658,51 @@ mod test {
     }
 
     #[test]
+    fn get_table_data_for_materialized_view_matches_view() {
+        let mut connection = connection();
+
+        for statement in [
+            "CREATE SCHEMA test_schema",
+            "CREATE DOMAIN test_schema.posinteger AS integer NOT NULL CHECK (VALUE > 0)",
+            "CREATE TABLE test_schema.source (id test_schema.posinteger, name VARCHAR, tags TEXT[])",
+            "CREATE VIEW test_schema.v AS SELECT * FROM test_schema.source",
+            "CREATE MATERIALIZED VIEW test_schema.mv AS SELECT * FROM test_schema.source",
+            "COMMENT ON COLUMN test_schema.v.name IS 'the name'",
+            "COMMENT ON COLUMN test_schema.mv.name IS 'the name'",
+        ] {
+            diesel::sql_query(statement)
+                .execute(&mut connection)
+                .unwrap();
+        }
+
+        let view = TableName::new("v", "test_schema");
+        let materialized_view = TableName::new("mv", "test_schema");
+        let domain_regex = "posinteger".try_into().unwrap();
+
+        for sorting in [ColumnSorting::OrdinalPosition, ColumnSorting::Name] {
+            for domains in [&[][..], &[&domain_regex]] {
+                let expected = get_table_data(
+                    &mut connection,
+                    &view,
+                    &sorting,
+                    domains,
+                    SupportedQueryRelationStructures::View,
+                )
+                .unwrap();
+                let actual = get_table_data(
+                    &mut connection,
+                    &materialized_view,
+                    &sorting,
+                    domains,
+                    SupportedQueryRelationStructures::MaterializedView,
+                )
+                .unwrap();
+                assert_eq!(expected, actual);
+            }
+        }
+    }
+
+    #[test]
     fn get_table_data_considers_domain_types() {
         let mut connection = connection();
 
@@ -625,7 +745,8 @@ mod test {
                 &mut connection,
                 &table_1,
                 &ColumnSorting::OrdinalPosition,
-                &[]
+                &[],
+                SupportedQueryRelationStructures::Table,
             )
         );
 
@@ -635,7 +756,8 @@ mod test {
                 &mut connection,
                 &table_1,
                 &ColumnSorting::OrdinalPosition,
-                &[&"non-matching-regex".try_into().unwrap()]
+                &[&"non-matching-regex".try_into().unwrap()],
+                SupportedQueryRelationStructures::Table,
             )
         );
 
@@ -645,7 +767,8 @@ mod test {
                 &mut connection,
                 &table_1,
                 &ColumnSorting::OrdinalPosition,
-                &[&"int".try_into().unwrap()]
+                &[&"int".try_into().unwrap()],
+                SupportedQueryRelationStructures::Table,
             )
         );
     }

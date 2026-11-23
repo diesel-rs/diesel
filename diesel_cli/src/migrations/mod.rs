@@ -99,7 +99,7 @@ pub enum MigrationCommand {
     /// Generate a new migration with the given name, and the current timestamp as the version.
     Generate {
         /// The name of the migration to create.
-        #[arg(required = true, index = 1, required = true, num_args = 1)]
+        #[arg(required = true, index = 1, num_args = 1)]
         migration_name: String,
 
         /// The version number to use when generating the migration.

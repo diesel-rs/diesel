@@ -214,7 +214,7 @@ fn count_test_table(connection: &mut TestConnection, table_name: &str) -> i64 {
 fn regression_test_for_2123() {
     let conn = &mut connection_without_transaction();
     // fail once
-    let ret = conn.transaction(|conn| {
+    let _ret = conn.transaction(|conn| {
         let _ = conn.transaction(|conn| {
             // handling error
             match diesel::sql_query("SELECT foo").execute(conn) {
@@ -232,13 +232,11 @@ fn regression_test_for_2123() {
             Ok::<_, Error>(())
         })
     });
-    println!("{ret:?}");
     // other transaction
     let ret = conn
         .build_transaction()
         .serializable()
         .run(|conn| diesel::sql_query("SELECT 1").execute(conn));
     // must be Ok(1), but get Err(AlreadyInTransaction)
-    println!("{ret:?}");
     assert_eq!(Ok(1), ret);
 }
