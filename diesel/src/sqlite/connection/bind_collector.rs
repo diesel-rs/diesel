@@ -288,7 +288,7 @@ impl<'a> BindCollector<'a, Sqlite> for SqliteBindCollector<'a> {
 #[diesel_derives::__diesel_public_if(
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 )]
-enum OwnedSqliteBindValue {
+pub(in crate::sqlite) enum OwnedSqliteBindValue {
     /// A `TEXT` value.
     String(Box<str>),
     /// A `BLOB` value.
@@ -301,6 +301,19 @@ enum OwnedSqliteBindValue {
     F64(f64),
     /// A `NULL` value.
     Null,
+}
+
+impl OwnedSqliteBindValue {
+    pub(in crate::sqlite) fn as_value_ref(&self) -> SqliteBindValueRef<'_> {
+        match self {
+            Self::String(s) => SqliteBindValueRef::BorrowedString(s),
+            Self::Binary(b) => SqliteBindValueRef::BorrowedBinary(b),
+            Self::I32(val) => SqliteBindValueRef::I32(*val),
+            Self::I64(val) => SqliteBindValueRef::I64(*val),
+            Self::F64(val) => SqliteBindValueRef::F64(*val),
+            Self::Null => SqliteBindValueRef::Null,
+        }
+    }
 }
 
 impl<'a> core::convert::From<&SqliteBindValueRef<'a>> for OwnedSqliteBindValue {

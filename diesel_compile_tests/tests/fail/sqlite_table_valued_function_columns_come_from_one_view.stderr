@@ -1,0 +1,85 @@
+error[E0271]: type mismatch resolving `<role as QueryRelationField>::QueryRelation == view`
+   --> tests/fail/sqlite_table_valued_function_columns_come_from_one_view.rs:31:9
+    |
+ LL |     connection.register_table_valued_function(
+    |                ------------------------------ required by a bound introduced by this call
+ LL |         (grantees::name,),
+ LL |         (owners::role,),
+    |         ^^^^^^^^^^^^^^^ type mismatch resolving `<role as QueryRelationField>::QueryRelation == view`
+    |
+note: expected this to be `grantees::view`
+   --> tests/fail/sqlite_table_valued_function_columns_come_from_one_view.rs:20:1
+    |
+ LL | / view! {
+ LL | |     owners {
+ LL | |         role -> Text,
+ LL | |     }
+ LL | | }
+    | |_^
+    = note: `owners::view` and `grantees::view` have similar names, but are actually distinct types
+note: `owners::view` is defined in module `crate::owners` of the current crate
+   --> tests/fail/sqlite_table_valued_function_columns_come_from_one_view.rs:20:1
+    |
+ LL | / view! {
+ LL | |     owners {
+    | |__________^
+note: `grantees::view` is defined in module `crate::grantees` of the current crate
+   --> tests/fail/sqlite_table_valued_function_columns_come_from_one_view.rs:13:1
+    |
+ LL | / view! {
+ LL | |     grantees {
+    | |____________^
+    = note: required for `(owners::columns::role,)` to implement `SqliteTableFunctionParameters<grantees::view, _>`
+note: required by a bound in `sqlite::connection::table_function::<impl diesel::SqliteConnection>::register_table_valued_function`
+   --> ROOT/diesel/src/sqlite/connection/table_function.rs
+    |
+LL | impl SqliteConnection {
+...
+LL |     pub fn register_table_valued_function<V, Columns, Parameters, Args, Rows, F>(
+...
+LL |             SqliteTableFunctionParameters<V, Args> + Send + core::panic::UnwindSafe + 'static,
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `sqlite::connection::table_function::<impl SqliteConnection>::register_table_valued_function`
+    = note: this error originates in the macro `view` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `grants::table: View` is not satisfied
+   --> tests/fail/sqlite_table_valued_function_columns_come_from_one_view.rs:38:9
+    |
+ LL |     connection.register_table_valued_function(
+    |                ------------------------------ required by a bound introduced by this call
+ LL |         (grants::role,),
+    |         ^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `View` is not implemented for `grants::table`
+   --> tests/fail/sqlite_table_valued_function_columns_come_from_one_view.rs:6:1
+    |
+  LL | / table! {
+  LL | |     grants (id) {
+    | |__________^
+help: the following other types implement trait `View`
+   --> tests/fail/sqlite_table_valued_function_columns_come_from_one_view.rs:13:1
+    |
+ LL | / view! {
+ LL | |     grantees {
+ LL | |         name -> Text,
+ LL | |         role -> Text,
+ LL | |     }
+ LL | | }
+    | |_^ `grantees::view`
+ LL |
+ LL | / view! {
+ LL | |     owners {
+ LL | |         role -> Text,
+ LL | |     }
+ LL | | }
+    | |_^ `owners::view`
+    = note: required for `(grants::columns::role,)` to implement `SqliteTableFunctionColumns<grants::table>`
+note: required by a bound in `sqlite::connection::table_function::<impl diesel::SqliteConnection>::register_table_valued_function`
+   --> ROOT/diesel/src/sqlite/connection/table_function.rs
+    |
+LL | impl SqliteConnection {
+...
+LL |     pub fn register_table_valued_function<V, Columns, Parameters, Args, Rows, F>(
+...
+LL |         Columns: SqliteTableFunctionColumns<V>,
+    |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `sqlite::connection::table_function::<impl SqliteConnection>::register_table_valued_function`
+    = note: this error originates in the macro `table` which comes from the expansion of the macro `view` (in Nightly builds, run with -Z macro-backtrace for more info)
