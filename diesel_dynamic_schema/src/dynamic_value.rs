@@ -209,6 +209,116 @@ impl diesel::expression::QueryMetadata<Any> for diesel::mariadb::Mariadb {
         out.push(None)
     }
 }
+
+/// An owned SQLite value of any storage class.
+///
+/// It reads every value with its storage class and writes it back unchanged, so
+/// a `BLOB` stays a `BLOB`. A table-valued function registered through
+/// `diesel_dynamic_schema` receives its arguments and returns its rows as
+/// [`DynamicRow`]s of it.
+#[cfg(any(feature = "sqlite", feature = "sqlite-no-std"))]
+#[derive(Debug, Clone, PartialEq)]
+pub enum SqliteAnyValue {
+    /// SQL `NULL`
+    Null,
+    /// A signed integer
+    Integer(i64),
+    /// A floating point number
+    Real(f64),
+    /// A string
+    Text(String),
+    /// Binary data
+    Blob(Vec<u8>),
+}
+
+#[cfg(any(feature = "sqlite", feature = "sqlite-no-std"))]
+impl SqliteAnyValue {
+    /// Binds the value to the next placeholder of `query` with the SQL type of
+    /// its storage class.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # #[cfg(feature = "sqlite")]
+    /// # fn main() -> diesel::QueryResult<()> {
+    /// use diesel::prelude::*;
+    /// use diesel::sqlite::Sqlite;
+    /// use diesel_dynamic_schema::dynamic_value::{DynamicRow, SqliteAnyValue};
+    ///
+    /// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// let blob = SqliteAnyValue::Blob(vec![0, 1]);
+    /// let row = blob
+    ///     .bind_to(diesel::sql_query("SELECT typeof(?1), ?1").into_boxed::<Sqlite>())
+    ///     .get_result::<DynamicRow<SqliteAnyValue>>(conn)?;
+    /// assert_eq!(row[0], SqliteAnyValue::Text("blob".into()));
+    /// assert_eq!(row[1], blob);
+    /// # Ok(())
+    /// # }
+    /// # #[cfg(not(feature = "sqlite"))]
+    /// # fn main() {}
+    /// ```
+    pub fn bind_to<'f, Query>(
+        &'f self,
+        query: diesel::query_builder::BoxedSqlQuery<'f, diesel::sqlite::Sqlite, Query>,
+    ) -> diesel::query_builder::BoxedSqlQuery<'f, diesel::sqlite::Sqlite, Query> {
+        use diesel::sql_types::{BigInt, Binary, Double, Nullable, Text};
+        match self {
+            Self::Null => query.bind::<Nullable<BigInt>, _>(None::<i64>),
+            Self::Integer(value) => query.bind::<BigInt, _>(value),
+            Self::Real(value) => query.bind::<Double, _>(value),
+            Self::Text(value) => query.bind::<Text, _>(value),
+            Self::Blob(value) => query.bind::<Binary, _>(value),
+        }
+    }
+}
+
+#[cfg(any(feature = "sqlite", feature = "sqlite-no-std"))]
+impl FromSql<Any, diesel::sqlite::Sqlite> for SqliteAnyValue {
+    fn from_sql(value: diesel::sqlite::SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
+        use diesel::sql_types::{BigInt, Binary, Double, Text};
+        use diesel::sqlite::{Sqlite, SqliteType};
+        match value.value_type() {
+            Some(SqliteType::Long) => {
+                <i64 as FromSql<BigInt, Sqlite>>::from_sql(value).map(Self::Integer)
+            }
+            Some(SqliteType::Double) => {
+                <f64 as FromSql<Double, Sqlite>>::from_sql(value).map(Self::Real)
+            }
+            Some(SqliteType::Text) => {
+                <String as FromSql<Text, Sqlite>>::from_sql(value).map(Self::Text)
+            }
+            Some(SqliteType::Binary) => {
+                <Vec<u8> as FromSql<Binary, Sqlite>>::from_sql(value).map(Self::Blob)
+            }
+            None => Ok(Self::Null),
+            Some(other) => Err(alloc::format!("SQLite has no storage class {other:?}").into()),
+        }
+    }
+
+    fn from_nullable_sql(
+        value: Option<diesel::sqlite::SqliteValue<'_, '_, '_>>,
+    ) -> deserialize::Result<Self> {
+        value.map_or(Ok(Self::Null), Self::from_sql)
+    }
+}
+
+#[cfg(any(feature = "sqlite", feature = "sqlite-no-std"))]
+impl diesel::serialize::ToSql<Any, diesel::sqlite::Sqlite> for SqliteAnyValue {
+    fn to_sql<'b>(
+        &'b self,
+        out: &mut diesel::serialize::Output<'b, '_, diesel::sqlite::Sqlite>,
+    ) -> diesel::serialize::Result {
+        match self {
+            Self::Null => return Ok(diesel::serialize::IsNull::Yes),
+            Self::Integer(value) => out.set_value(*value),
+            Self::Real(value) => out.set_value(*value),
+            Self::Text(value) => out.set_value(value.as_str()),
+            Self::Blob(value) => out.set_value(value.as_slice()),
+        }
+        Ok(diesel::serialize::IsNull::No)
+    }
+}
+
 /// A dynamically sized container that allows to receive
 /// a not at compile time known number of columns from the database
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
