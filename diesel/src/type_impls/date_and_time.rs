@@ -58,6 +58,37 @@ mod chrono {
     struct DurationProxy(Duration);
 }
 
+#[cfg(feature = "jiff")]
+mod jiff {
+    use jiff::civil;
+
+    use crate::deserialize::FromSqlRow;
+    use crate::expression::AsExpression;
+    use crate::sql_types::{Date, Time, Timestamp};
+
+    #[derive(AsExpression, FromSqlRow)]
+    #[diesel(foreign_derive)]
+    #[diesel(sql_type = Date)]
+    struct DateProxy(civil::Date);
+
+    #[derive(AsExpression, FromSqlRow)]
+    #[diesel(foreign_derive)]
+    #[diesel(sql_type = Time)]
+    struct TimeProxy(civil::Time);
+
+    #[derive(AsExpression, FromSqlRow)]
+    #[diesel(foreign_derive)]
+    #[diesel(sql_type = Timestamp)]
+    #[cfg_attr(any(feature = "mysql_backend", feature = "mariadb_backend"), diesel(sql_type = crate::sql_types::Datetime))]
+    struct DateTimeProxy(civil::DateTime);
+
+    #[cfg(feature = "postgres_backend")]
+    #[derive(AsExpression, FromSqlRow)]
+    #[diesel(foreign_derive)]
+    #[diesel(sql_type = crate::sql_types::Timestamptz)]
+    struct TimestampProxy(jiff::Timestamp);
+}
+
 #[cfg(feature = "time")]
 mod time {
     use time::{Date as NaiveDate, OffsetDateTime, PrimitiveDateTime, Time as NaiveTime};

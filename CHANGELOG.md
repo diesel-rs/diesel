@@ -14,6 +14,9 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ### Added
 
+* `diesel print-schema` now generates `diesel::view!` definitions for PostgreSQL materialized views when `include_views` is enabled
+* Added support for the `jiff` crate behind a new `jiff` feature, which is also part of `extras`. `jiff::civil::Date`, `jiff::civil::Time` and `jiff::civil::DateTime` map to the `Date`, `Time` and `Timestamp` SQL types on all backends (and `jiff::civil::DateTime` additionally to `Datetime` on MySQL and MariaDB), `jiff::Timestamp` maps to `Timestamptz` on PostgreSQL, and `#[derive(MultiConnection)]` supports the civil types
+
 ### Fixed
 
 * `#[derive(QueryableByName)]` now respects `#[sql_name]` on table columns

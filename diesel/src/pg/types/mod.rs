@@ -64,6 +64,7 @@ pub mod sql_types {
     /// - [`chrono::DateTime`] with `feature = "chrono"`
     /// - [`time::PrimitiveDateTime`] with `feature = "time"`
     /// - [`time::OffsetDateTime`] with `feature = "time"`
+    /// - [`jiff::Timestamp`] with `feature = "jiff"`
     ///
     /// ### [`FromSql`] impls
     ///
@@ -72,11 +73,17 @@ pub mod sql_types {
     /// - [`chrono::DateTime`] with `feature = "chrono"`
     /// - [`time::PrimitiveDateTime`] with `feature = "time"`
     /// - [`time::OffsetDateTime`] with `feature = "time"`
+    /// - [`jiff::Timestamp`] with `feature = "jiff"`
     ///
     /// [`ToSql`]: crate::serialize::ToSql
     /// [`FromSql`]: crate::deserialize::FromSql
     /// [`PgTimestamp`]: super::super::data_types::PgTimestamp
     /// [tz]: https://www.postgresql.org/docs/current/datatype-datetime.html
+    #[cfg_attr(feature = "jiff", doc = " [`jiff::Timestamp`]: jiff::Timestamp")]
+    #[cfg_attr(
+        not(feature = "jiff"),
+        doc = " [`jiff::Timestamp`]: https://docs.rs/jiff/1/jiff/struct.Timestamp.html"
+    )]
     #[cfg_attr(
         feature = "chrono",
         doc = " [`chrono::NaiveDateTime`]: chrono::naive::NaiveDateTime"
