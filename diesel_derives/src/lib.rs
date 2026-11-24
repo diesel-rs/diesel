@@ -2251,6 +2251,9 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// - `#[named_parameters = true/false]`
 ///   - Allows overriding the block-level `named_parameters` setting. Useful to opt individual
 ///     functions in or out of passing parameters to the SQL function by name.
+/// - `#[query_source(relation)]` or `#[query_source(relation, base_type)]`
+///   - Indicates that the function returns a set of rows and is called in the
+///     `FROM` clause. See [Functions in the `FROM` clause](#functions-in-the-from-clause).
 ///
 /// Functions can also be generic. Take the definition of `sum`, for example:
 ///
@@ -2297,6 +2300,75 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// # use self::crates::dsl::*;
 /// crates.order(random());
 /// # }
+/// ```
+///
+/// # Functions in the `FROM` clause
+///
+/// A function returning a set of rows, such as SQLite's `json_each` or
+/// PostgreSQL's `generate_series`, is a `FROM` item. The `#[query_source(relation)]`
+/// attribute names a [`view!`](../diesel/macro.view.html) describing its result
+/// columns, and the declared return type must be that view's `SqlType`. Calling
+/// the function returns a [`FunctionCall`](../diesel/query_source/struct.FunctionCall.html),
+/// which can be queried and joined like a table. The call is named after the
+/// relation in SQL, and `FunctionCall::aliased` gives it another name, so that
+/// one query can call the same function twice.
+///
+/// A function returning a single base type, such as `generate_series`, takes
+/// `#[query_source(relation, base_type)]` with a relation of exactly one column.
+/// On PostgreSQL the call then renders that column's name as a column alias,
+/// `generate_series($1, $2) AS "series"("value")`.
+///
+/// The arguments of a call must not read columns of other tables or aggregate
+/// rows. Joining a call to a table requires listing its view in
+/// [`allow_tables_to_appear_in_same_query!`](../diesel/macro.allow_tables_to_appear_in_same_query.html).
+/// Diesel renders calls on PostgreSQL and SQLite, and rejects them at compile
+/// time on MySQL, MariaDB and `#[derive(MultiConnection)]` connections.
+///
+/// The macro generates no `pub type` alias named after such a function, since
+/// the name usually belongs to the view module. The type of a call is
+/// `return_type_helpers::<function>`, which `#[auto_type]` needs as an explicit
+/// type annotation.
+///
+/// ```rust
+/// # extern crate diesel;
+/// # use diesel::*;
+/// # use diesel::expression::functions::declare_sql_function;
+/// #
+/// # #[cfg(feature = "sqlite")]
+/// # fn main() {
+/// #   run().unwrap();
+/// # }
+/// #
+/// # #[cfg(not(feature = "sqlite"))]
+/// # fn main() {
+/// # }
+/// use diesel::sql_types::{Integer, Text};
+///
+/// diesel::view! {
+///     json_each {
+///         key -> Integer,
+///         value -> Text,
+///     }
+/// }
+///
+/// #[declare_sql_function]
+/// extern "SQL" {
+///     #[query_source(json_each)]
+///     fn json_each(json: Text) -> json_each::SqlType;
+/// }
+///
+/// # #[cfg(feature = "sqlite")]
+/// fn run() -> QueryResult<()> {
+///     let connection = &mut SqliteConnection::establish(":memory:").unwrap();
+///
+///     // SELECT `json_each`.`value` FROM json_each(?) AS `json_each`
+///     let values = json_each(r#"["a", "b"]"#)
+///         .select(json_each::value)
+///         .load::<String>(connection)?;
+///
+///     assert_eq!(values, ["a", "b"]);
+///     Ok(())
+/// }
 /// ```
 ///
 /// # Use with SQLite

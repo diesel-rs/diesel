@@ -739,6 +739,11 @@ pub mod view {
             type QueryRelation = super::view;
             const NAME: &'static str = "id";
         }
+        impl<
+            __DieselFunction,
+        > diesel::SelectableExpression<
+            diesel::query_source::FunctionCall<super::view, __DieselFunction>,
+        > for id {}
         #[allow(non_camel_case_types, dead_code)]
         #[derive(
             Debug,
@@ -930,6 +935,11 @@ pub mod view {
             type QueryRelation = super::view;
             const NAME: &'static str = "name";
         }
+        impl<
+            __DieselFunction,
+        > diesel::SelectableExpression<
+            diesel::query_source::FunctionCall<super::view, __DieselFunction>,
+        > for name {}
         impl diesel::expression::IsContainedInGroupBy<id> for name {
             type Output = diesel::expression::is_contained_in_group_by::No;
         }

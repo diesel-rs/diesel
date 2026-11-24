@@ -77,6 +77,13 @@ struct ExpandedSqlFunction {
     return_type_helper_module_path: Option<Path>,
 }
 
+/// `#[query_source(relation)]` or `#[query_source(relation, base_type)]`
+struct QuerySourceDecl {
+    span: Span,
+    relation: Path,
+    base_type: Option<Ident>,
+}
+
 fn expand_one(
     mut input: SqlFunctionDecl,
     legacy_helper_type_and_module: bool,
@@ -97,6 +104,17 @@ fn expand_one(
             None
         }
     });
+
+    if variadic_argument_count.is_some()
+        && let Some(query_source) = attributes
+            .iter()
+            .find(|attr| matches!(attr.item, SqlFunctionAttribute::QuerySource { .. }))
+    {
+        return Err(syn::Error::new(
+            query_source.ident_span,
+            "`#[query_source]` cannot be combined with `#[variadic]`",
+        ));
+    }
 
     let Some((variadic_argument_count, variadic_span, non_zero_variadic)) = variadic_argument_count
     else {
@@ -417,6 +435,33 @@ fn expand_nonvariadic(
         .cloned()
         .collect::<Vec<_>>();
 
+    let query_source = attributes.iter().find_map(|attr| match &attr.item {
+        SqlFunctionAttribute::QuerySource {
+            ident,
+            relation,
+            base_type,
+        } => Some(QuerySourceDecl {
+            span: ident.span(),
+            relation: relation.clone(),
+            base_type: base_type.clone(),
+        }),
+        _ => None,
+    });
+    if let Some(query_source) = &query_source {
+        if is_aggregate || !window_attrs.is_empty() {
+            return Err(syn::Error::new(
+                query_source.span,
+                "`#[query_source]` cannot be combined with `#[aggregate]` or `#[window]`",
+            ));
+        }
+        if legacy_helper_type_and_module {
+            return Err(syn::Error::new(
+                query_source.span,
+                "`#[query_source]` is only supported by `#[declare_sql_function]` and `define_sql_function!`",
+            ));
+        }
+    }
+
     let restrictions = attributes
         .iter()
         .find_map(|a| match a.item {
@@ -453,6 +498,8 @@ fn expand_nonvariadic(
         .map(|type_param| type_param.ident.clone())
         .collect::<Vec<_>>();
 
+    let declared_generics = generics.clone();
+
     for StrictFnArg { name, .. } in &args {
         generics.params.push(parse_quote!(#name));
     }
@@ -479,8 +526,24 @@ fn expand_nonvariadic(
         numeric_derive = None;
     } else {
         sql_type = Some(quote!((#(#arg_name),*): Expression,));
-        numeric_derive = Some(quote!(#[derive(diesel::sql_types::DieselNumericOps)]));
+        // A function called in `FROM` is never an operand
+        numeric_derive = query_source
+            .is_none()
+            .then(|| quote!(#[derive(diesel::sql_types::DieselNumericOps)]));
     }
+
+    // The return type of a `#[query_source]` function names the relation's module, which
+    // the function struct of the same name shadows inside the internals module
+    let inner_expression_impl = query_source.is_none().then(|| {
+        quote! {
+            impl #impl_generics Expression for #fn_name #ty_generics
+            #where_clause
+                #sql_type
+            {
+                type SqlType = #return_type;
+            }
+        }
+    });
 
     let helper_type_doc = format!("The return type of [`{fn_name}()`](fn@{fn_name})");
     let query_fragment_impl =
@@ -536,12 +599,7 @@ fn expand_nonvariadic(
             #(<#arg_name as AsExpression<#arg_type>>::Expression,)*
         >;
 
-        impl #impl_generics Expression for #fn_name #ty_generics
-        #where_clause
-            #sql_type
-        {
-            type SqlType = #return_type;
-        }
+        #inner_expression_impl
 
         // __DieselInternal is what we call QS normally
         impl #impl_generics_internal SelectableExpression<__DieselInternal>
@@ -621,37 +679,59 @@ fn expand_nonvariadic(
             &sql_name,
         );
     } else if window_attrs.is_empty() {
-        tokens = generate_tokens_for_non_aggregate_functions(
+        tokens = generate_valid_grouping_for_non_aggregate_functions(
             tokens,
             &impl_generics_internal,
             &fn_name,
             &ty_generics,
             arg_name,
-            arg_type,
-            &return_type,
-            &sql_name,
         );
+        if query_source.is_none() {
+            tokens = generate_sqlite_registration_for_non_aggregate_functions(
+                tokens,
+                arg_name,
+                arg_type,
+                &return_type,
+                &sql_name,
+            );
+        }
     }
 
     let args_iter = args.iter();
 
     let (outside_of_module_helper_type, return_type_path, internals_module_name) =
         if legacy_helper_type_and_module {
-            (None, quote! { #fn_name::HelperType }, fn_name.clone())
+            (
+                None,
+                quote! { #fn_name::HelperType #ty_generics },
+                fn_name.clone(),
+            )
         } else {
             let internals_module_name = Ident::new(&format!("{fn_name}_utils"), fn_name.span());
-            (
-                Some(quote! {
-                    #[allow(non_camel_case_types, non_snake_case)]
-                    #[doc = #helper_type_doc]
-                    pub type #fn_name #ty_generics = #internals_module_name::#fn_name <
-                        #(#type_args,)*
-                        #(<#arg_name as diesel::expression::AsExpression<#arg_type>>::Expression,)*
-                    >;
-                }),
-                quote! { #fn_name },
-                internals_module_name,
-            )
+            let call_type = quote! {
+                #internals_module_name::#fn_name <
+                    #(#type_args,)*
+                    #(<#arg_name as diesel::expression::AsExpression<#arg_type>>::Expression,)*
+                >
+            };
+            match &query_source {
+                // A `pub type` named after the function would clash with the relation's
+                // module when both share a name
+                Some(QuerySourceDecl { relation, .. }) => (
+                    None,
+                    quote! { diesel::query_source::FunctionCall<#relation::view, #call_type> },
+                    internals_module_name,
+                ),
+                None => (
+                    Some(quote! {
+                        #[allow(non_camel_case_types, non_snake_case)]
+                        #[doc = #helper_type_doc]
+                        pub type #fn_name #ty_generics = #call_type;
+                    }),
+                    quote! { #fn_name #ty_generics },
+                    internals_module_name,
+                ),
+            }
         };
 
     let (return_type_helper_module, return_type_helper_module_path) =
@@ -689,6 +769,27 @@ fn expand_nonvariadic(
 
             let doc =
                 format!("Return type of the [`{fn_name}()`](fn@super::{fn_name}) SQL function.");
+            let return_type_helper = if query_source.is_some() {
+                quote! {
+                    diesel::query_source::FunctionCall<
+                        <super::#internals_module_name::HelperType<
+                            #( <#auto_derived_types as diesel::expression::Expression>::SqlType, )*
+                            #(#arg_names_iter,)*
+                        > as diesel::internal::table_functions::TableFunction>::Relation,
+                        super::#internals_module_name::HelperType<
+                            #( <#auto_derived_types as diesel::expression::Expression>::SqlType, )*
+                            #(#arg_names_iter,)*
+                        >,
+                    >
+                }
+            } else {
+                quote! {
+                    super::#fn_name<
+                        #( <#auto_derived_types as diesel::expression::Expression>::SqlType, )*
+                        #(#arg_names_iter,)*
+                    >
+                }
+            };
             let return_type_helper_module = quote! {
                 #[allow(non_camel_case_types, non_snake_case, unused_imports)]
                 #[doc(inline)]
@@ -696,10 +797,7 @@ fn expand_nonvariadic(
                     #[doc = #doc]
                     pub type #fn_name<
                         #(#arg_names_iter,)*
-                    > = super::#fn_name<
-                        #( <#auto_derived_types as diesel::expression::Expression>::SqlType, )*
-                        #(#arg_names_iter,)*
-                    >;
+                    > = #return_type_helper;
                 }
             };
 
@@ -710,24 +808,90 @@ fn expand_nonvariadic(
             (Some(return_type_helper_module), Some(module_path))
         };
 
+    let call = quote! {
+        #internals_module_name::#fn_name {
+            #(#arg_struct_assign,)*
+            #(#type_args: ::core::marker::PhantomData,)*
+            #(#function_param_assign,)*
+        }
+    };
+    let call = if query_source.is_some() {
+        quote! { diesel::query_source::FunctionCall::new(#call) }
+    } else {
+        call
+    };
+
+    let query_source_impls = query_source.as_ref().map(|query_source| {
+        let QuerySourceDecl {
+            relation,
+            base_type,
+            ..
+        } = query_source;
+        let column_aliases = match base_type {
+            Some(base_type) => quote::quote_spanned! {base_type.span()=>
+                type ColumnAliases = diesel::internal::table_functions::BaseTypeColumnAlias;
+            },
+            None => quote! {
+                type ColumnAliases = diesel::internal::table_functions::NoColumnAliases;
+            },
+        };
+        let relation_type = quote::quote_spanned! {relation.span()=>
+            type Relation = #relation::view;
+        };
+        let arguments_are_expressions = (!arg_name.is_empty())
+            .then(|| quote! { (#(#arg_name),*): diesel::expression::Expression, });
+        let (declared_impl_generics, _, declared_where_clause) = declared_generics.split_for_impl();
+        let return_type_check = quote::quote_spanned! {return_type.span()=>
+            const _: () = {
+                #[allow(dead_code)]
+                fn __diesel_the_return_type_is_the_sql_type_of_the_relation #declared_impl_generics ()
+                #declared_where_clause
+                {
+                    let _: ::core::marker::PhantomData<
+                        <#relation::view as diesel::query_builder::AsQuery>::SqlType,
+                    > = ::core::marker::PhantomData::<#return_type>;
+                }
+            };
+        };
+        quote! {
+            #[allow(non_camel_case_types)]
+            impl #impl_generics diesel::expression::Expression
+                for #internals_module_name::#fn_name #ty_generics
+            #where_clause
+                #arguments_are_expressions
+            {
+                type SqlType = #return_type;
+            }
+
+            #[allow(non_camel_case_types)]
+            impl #impl_generics diesel::internal::table_functions::TableFunction
+                for #internals_module_name::#fn_name #ty_generics
+            #where_clause
+            {
+                #relation_type
+                #column_aliases
+            }
+
+            #return_type_check
+        }
+    });
+
     let tokens = quote! {
         #(#attributes)*
         #[allow(non_camel_case_types)]
         pub #fn_token #fn_name #impl_generics (#(#args_iter,)*)
-            -> #return_type_path #ty_generics
+            -> #return_type_path
         #where_clause
             #(#arg_name: diesel::expression::AsExpression<#arg_type>,)*
         {
-            #internals_module_name::#fn_name {
-                #(#arg_struct_assign,)*
-                #(#type_args: ::core::marker::PhantomData,)*
-                #(#function_param_assign,)*
-            }
+            #call
         }
 
         #outside_of_module_helper_type
 
         #return_type_helper_module
+
+        #query_source_impls
 
         #[doc(hidden)]
         #[allow(non_camel_case_types, non_snake_case, unused_imports)]
@@ -766,18 +930,14 @@ fn generate_window_function_tokens(
     )
 }
 
-#[allow(clippy::too_many_arguments)]
-fn generate_tokens_for_non_aggregate_functions(
-    mut tokens: TokenStream,
+fn generate_valid_grouping_for_non_aggregate_functions(
+    tokens: TokenStream,
     impl_generics_internal: &syn::ImplGenerics<'_>,
     fn_name: &syn::Ident,
     ty_generics: &syn::TypeGenerics<'_>,
     arg_name: &[&syn::Ident],
-    arg_type: &[&syn::Type],
-    return_type: &syn::Type,
-    sql_name: &str,
 ) -> TokenStream {
-    tokens = quote! {
+    quote! {
         #tokens
 
         #[derive(ValidGrouping)]
@@ -790,7 +950,16 @@ fn generate_tokens_for_non_aggregate_functions(
         {
             type IsAggregate = <__Derived<#(#arg_name,)*> as ValidGrouping<__DieselInternal>>::IsAggregate;
         }
-    };
+    }
+}
+
+fn generate_sqlite_registration_for_non_aggregate_functions(
+    mut tokens: TokenStream,
+    arg_name: &[&syn::Ident],
+    arg_type: &[&syn::Type],
+    return_type: &syn::Type,
+    sql_name: &str,
+) -> TokenStream {
     let (contains_none, types_for_sqlite_impl) =
         collect_types_for_sqlite_impl(arg_type, return_type);
 
@@ -1951,6 +2120,11 @@ enum SqlFunctionAttribute {
         ident: Ident,
         value: LitBool,
     },
+    QuerySource {
+        ident: Ident,
+        relation: Path,
+        base_type: Option<Ident>,
+    },
     Other(Attribute),
 }
 
@@ -1974,6 +2148,7 @@ impl MySpanned for SqlFunctionAttribute {
             | SqlFunctionAttribute::Variadic { ident, .. }
             | SqlFunctionAttribute::SkipReturnTypeHelper { ident, .. }
             | SqlFunctionAttribute::NamedParameters { ident, .. }
+            | SqlFunctionAttribute::QuerySource { ident, .. }
             | SqlFunctionAttribute::SqlName { ident, .. } => ident.span(),
             SqlFunctionAttribute::Restriction {
                 restriction: BackendRestriction::None,
@@ -2088,6 +2263,27 @@ impl SqlFunctionAttribute {
                     ident: name,
                     value: v,
                 })?,
+                "query_source" => {
+                    let relation = input.parse::<Path>()?;
+                    let base_type = if input.is_empty() {
+                        None
+                    } else {
+                        let _ = input.parse::<Token![,]>()?;
+                        let key = input.parse::<Ident>()?;
+                        if key != "base_type" || !input.is_empty() {
+                            return Err(syn::Error::new(
+                                key.span(),
+                                "the correct format is `#[query_source(relation)]` or `#[query_source(relation, base_type)]`",
+                            ));
+                        }
+                        Some(key)
+                    };
+                    Self::QuerySource {
+                        ident: name,
+                        relation,
+                        base_type,
+                    }
+                }
                 "backends" => BackendRestriction::parse_backends(input, name)
                     .map(|r| Self::Restriction { restriction: r })?,
                 "dialect" => BackendRestriction::parse_sql_dialect(input, name)

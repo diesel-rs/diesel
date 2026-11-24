@@ -1,0 +1,50 @@
+error[E0277]: `FunctionCall<view, json_each<Bound<Text, &str>>>` is no valid SQL fragment for the `Mysql` backend
+    --> tests/fail/table_function_not_supported_on_mysql.rs:23:25
+     |
+  LL |         .load::<String>(conn)
+     |          ----           ^^^^ unsatisfied trait bound
+     |          |
+     |          required by a bound introduced by this call
+     |
+     = help: the trait `QueryFragment<Mysql, diesel::internal::derives::multiconnection::sql_dialect::table_function_syntax::DoesNotSupportTableFunctions>` is not implemented for `FunctionCall<view, json_each<Bound<Text, &str>>>`
+     = note: this usually means that the `Mysql` database system does not support 
+             this SQL syntax
+help: `FunctionCall<R, F>` implements trait `QueryFragment<DB, SP>`
+    --> ROOT/diesel/src/query_source/function_call.rs
+     |
+ LL | / impl<R, F, DB> QueryFragment<DB> for FunctionCall<R, F>
+ LL | | where
+ LL | |     DB: Backend,
+ LL | |     Self: QueryFragment<DB, DB::TableFunctionSyntax>,
+     | |_____________________________________________________^ `QueryFragment<DB>`
+...
+ LL | / impl<R, F, DB> QueryFragment<DB, sql_dialect::table_function_syntax::PgLikeTableFunctions>
+ LL | |     for FunctionCall<R, F>
+ LL | | where
+ LL | |     DB: Backend,
+ LL | |     R: private::TableFunctionRelation,
+ LL | |     F: QueryFragment<DB> + TableFunction,
+     | |_________________________________________^ `QueryFragment<DB, PgLikeTableFunctions>`
+...
+ LL | / impl<R, F, DB> QueryFragment<DB, sql_dialect::table_function_syntax::SqliteLikeTableFunc...
+ LL | |     for FunctionCall<R, F>
+ LL | | where
+ LL | |     DB: Backend,
+ LL | |     R: private::TableFunctionRelation,
+ LL | |     F: QueryFragment<DB>,
+     | |_________________________^ `QueryFragment<DB, SqliteLikeTableFunctions>`
+     = note: required for `FunctionCall<view, json_each<Bound<Text, &str>>>` to implement `QueryFragment<Mysql>`
+     = note: 3 redundant requirements hidden
+     = note: required for `SelectStatement<FromClause<_>, _>` to implement `QueryFragment<Mysql>`
+     = note: required for `SelectStatement<FromClause<_>, _>` to implement `LoadQuery<'_, MysqlLikeConnection<Mysql>, std::string::String>`
+note: required by a bound in `load`
+    --> ROOT/diesel/src/query_dsl/mod.rs
+     |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
+LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+  
+     For more information about this error, try `rustc --explain E0277`.

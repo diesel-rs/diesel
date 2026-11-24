@@ -366,6 +366,14 @@ pub trait SqlDialect: self::private::TrustedBackend {
         doc = "See [`sql_dialect::sql_function_parameter_notation`] for provided default implementations"
     )]
     type SqlFunctionParameterNotation;
+
+    /// Configures how this backend renders a [`FunctionCall`](crate::query_source::FunctionCall)
+    /// in `FROM`, or that it rejects one
+    #[cfg_attr(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        doc = "Pick one of the markers in [`sql_dialect::table_function_syntax`]"
+    )]
+    type TableFunctionSyntax;
 }
 
 /// This module contains all options provided by diesel to configure the [`SqlDialect`] trait.
@@ -674,6 +682,26 @@ pub(crate) mod sql_dialect {
         /// position or by name.
         #[derive(Debug, Copy, Clone)]
         pub struct PositionalOrNamedNotation;
+    }
+
+    /// This module contains all reusable options to configure [`SqlDialect::TableFunctionSyntax`]
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    pub mod table_function_syntax {
+        /// Indicates that this backend renders function calls in `FROM` the way PostgreSQL
+        /// does, with a column alias list for functions returning a base type
+        #[derive(Debug, Copy, Clone)]
+        pub struct PgLikeTableFunctions;
+
+        /// Indicates that this backend renders function calls in `FROM` the way SQLite does,
+        /// without column alias lists
+        #[derive(Debug, Copy, Clone)]
+        pub struct SqliteLikeTableFunctions;
+
+        /// Indicates that this backend does not support function calls in `FROM`
+        #[derive(Debug, Copy, Clone)]
+        pub struct DoesNotSupportTableFunctions;
     }
 }
 

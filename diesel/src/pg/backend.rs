@@ -156,6 +156,7 @@ impl SqlDialect for Pg {
 
     type SqlFunctionParameterNotation =
         sql_dialect::sql_function_parameter_notation::PositionalOrNamedNotation;
+    type TableFunctionSyntax = sql_dialect::table_function_syntax::PgLikeTableFunctions;
 }
 
 impl DieselReserveSpecialization for Pg {}

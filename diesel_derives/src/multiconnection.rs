@@ -2186,6 +2186,7 @@ fn generate_backend(connection_types: &[ConnectionVariant], helper: &MultiHelper
             type AggregateFunctionExpressions = MultiAggregateFunctionExpressions;
             type BuiltInWindowFunctionRequireOrder = MultiBuiltInWindowFunctionRequireOrder;
             type SqlFunctionParameterNotation = diesel::internal::derives::multiconnection::sql_dialect::sql_function_parameter_notation::PositionalNotationOnly;
+            type TableFunctionSyntax = diesel::internal::derives::multiconnection::sql_dialect::table_function_syntax::DoesNotSupportTableFunctions;
         }
 
         impl diesel::internal::derives::multiconnection::TrustedBackend for MultiBackend {}

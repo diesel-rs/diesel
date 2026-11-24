@@ -10,6 +10,13 @@ pub mod operators_macro;
 pub mod sql_functions;
 pub mod table_macro;
 
+/// Used by `declare_sql_function` for functions declared with `#[query_source]`
+pub mod table_functions {
+    pub use crate::query_source::function_call::{
+        BaseTypeColumnAlias, NoColumnAliases, TableFunction,
+    };
+}
+
 mod helper_macros {
     #[doc(hidden)]
     #[macro_export]
