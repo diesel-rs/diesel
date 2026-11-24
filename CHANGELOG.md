@@ -21,6 +21,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 ### Fixed
 
 * `#[derive(QueryableByName)]` now respects `#[sql_name]` on table columns
+* `AsyncPgConnection` now maps the PostgreSQL connection exception codes that `PgConnection` reports as `DatabaseErrorKind::ClosedConnection` to the same kind
 
 ### Changed
 

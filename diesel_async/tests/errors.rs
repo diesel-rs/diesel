@@ -1,4 +1,4 @@
-use crate::connection;
+use crate::{connection, connection_without_transaction};
 use assert_matches::assert_matches;
 use diesel::dsl::{delete, insert_into, sql};
 use diesel::pg::sql_state;
@@ -250,4 +250,26 @@ async fn sqlstate_reports_a_custom_code_raised_by_plpgsql() {
     };
     assert_eq!(info.sqlstate().unwrap().as_str(), "P1001");
     assert_eq!(info.details(), Some("kept"));
+}
+
+#[tokio::test]
+async fn connection_exception_error_kind() {
+    // Outside a transaction, so each failed statement leaves the connection usable for the next.
+    let connection = &mut connection_without_transaction().await;
+
+    for code in ["08000", "08006", "08001", "08004"] {
+        // Raising an error with a given code needs PL/pgSQL, which the DSL cannot express.
+        let error = connection
+            .batch_execute(&format!(
+                "DO $$ BEGIN RAISE EXCEPTION USING ERRCODE = '{code}'; END $$"
+            ))
+            .await
+            .unwrap_err();
+
+        assert_matches!(
+            error,
+            Error::DatabaseError(DatabaseErrorKind::ClosedConnection, _),
+            "{code}"
+        );
+    }
 }
