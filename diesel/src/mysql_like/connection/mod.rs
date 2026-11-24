@@ -1,7 +1,5 @@
 mod bind;
 mod error_information;
-#[cfg(feature = "mariadb")]
-mod mariadb;
 mod raw;
 mod stmt;
 mod url;

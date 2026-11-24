@@ -4,9 +4,10 @@ use core::ffi as libc;
 use core::ffi::CStr;
 use core::ptr::{self, NonNull};
 use mysqlclient_sys as ffi;
-#[cfg(feature = "mariadb")]
+#[cfg(mariadbbuild)]
 use mysqlclient_sys::mysql_ssl_mode::{
-    SSL_MODE_PREFERRED, SSL_MODE_REQUIRED, SSL_MODE_VERIFY_CA, SSL_MODE_VERIFY_IDENTITY,
+    SSL_MODE_DISABLED, SSL_MODE_PREFERRED, SSL_MODE_REQUIRED, SSL_MODE_VERIFY_CA,
+    SSL_MODE_VERIFY_IDENTITY,
 };
 use std::sync::Once;
 
@@ -247,7 +248,7 @@ impl RawConnection {
     }
 
     fn set_ssl_mode(&self, ssl_mode: mysqlclient_sys::mysql_ssl_mode) {
-        #[cfg(not(feature = "mariadb"))]
+        #[cfg(not(all(mariadbbuild, feature = "mariadb")))]
         {
             let v = ssl_mode as u32;
             let v_ptr: *const u32 = &v;
@@ -260,35 +261,46 @@ impl RawConnection {
                 )
             };
         }
-        #[cfg(feature = "mariadb")]
+        #[cfg(all(mariadbbuild, not(feature = "mariadb")))]
+        match ssl_mode {
+            mysqlclient_sys::mysql_ssl_mode::SSL_MODE_DISABLED => (),
+            _ => {
+                panic!("Mariadb is compiled without MariaDB feature activated and SSL mode is set.")
+            }
+        };
+        #[cfg(all(not(mariadbbuild), feature = "mariadb"))]
+        match ssl_mode {
+            mysqlclient_sys::mysql_ssl_mode::SSL_MODE_DISABLED => (),
+            _ => {
+                panic!("Mariadb is compiled without MariaDB feature activated and SSL mode is set.")
+            }
+        };
+        #[cfg(all(mariadbbuild, feature = "mariadb"))]
         {
-            use crate::mysql_like::connection::mariadb;
             let activated = 1_u32;
             let activated_ptr: *const u32 = &activated;
             let activated_ptr =
                 ptr::NonNull::new(activated_ptr as *mut u32).expect("NonNull::new failed");
             match ssl_mode {
                 SSL_MODE_PREFERRED => unsafe {
-                    mariadb::optionsv()(
+                    mysqlclient_sys::mysql_optionsv(
                         self.0.as_ptr(),
-                        mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_ENFORCE as core::ffi::c_int,
+                        mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_ENFORCE,
                         activated_ptr.as_ptr() as *const core::ffi::c_void,
                     );
                 },
                 SSL_MODE_REQUIRED | SSL_MODE_VERIFY_CA | SSL_MODE_VERIFY_IDENTITY => {
                     unsafe {
-                        mariadb::optionsv()(
+                        mysqlclient_sys::mysql_optionsv(
                             self.0.as_ptr(),
-                            mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_ENFORCE
-                                as core::ffi::c_int,
+                            mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_ENFORCE,
                             activated_ptr.as_ptr() as *const core::ffi::c_void,
                         );
                     }
                     unsafe {
-                        mariadb::optionsv()(
+                        mysqlclient_sys::mysql_optionsv(
                             self.0.as_ptr(),
-                            mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_VERIFY_SERVER_CERT
-                                as core::ffi::c_int,
+                            mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_VERIFY_SERVER_CERT,
                             activated_ptr.as_ptr() as *const core::ffi::c_void,
                         );
                     }
