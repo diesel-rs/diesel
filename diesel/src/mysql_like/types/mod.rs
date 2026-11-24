@@ -264,15 +264,25 @@ impl<DB: MysqlLikeBackend> HasSqlType<Unsigned<BigInt>> for DB {
 /// - [`chrono::NaiveDateTime`] with `feature = "chrono"`
 /// - [`time::PrimitiveDateTime`] with `feature = "time"`
 /// - [`time::OffsetDateTime`] with `feature = "time"`
+/// - [`jiff::civil::DateTime`] with `feature = "jiff"`
 ///
 /// ### [`FromSql`] impls
 ///
 /// - [`chrono::NaiveDateTime`] with `feature = "chrono"`
 /// - [`time::PrimitiveDateTime`] with `feature = "time"`
 /// - [`time::OffsetDateTime`] with `feature = "time"`
+/// - [`jiff::civil::DateTime`] with `feature = "jiff"`
 ///
 /// [`ToSql`]: crate::serialize::ToSql
 /// [`FromSql`]: crate::deserialize::FromSql
+#[cfg_attr(
+    feature = "jiff",
+    doc = " [`jiff::civil::DateTime`]: jiff::civil::DateTime"
+)]
+#[cfg_attr(
+    not(feature = "jiff"),
+    doc = " [`jiff::civil::DateTime`]: https://docs.rs/jiff/1/jiff/civil/struct.DateTime.html"
+)]
 #[cfg_attr(
     feature = "chrono",
     doc = " [`chrono::NaiveDateTime`]: chrono::naive::NaiveDateTime"
