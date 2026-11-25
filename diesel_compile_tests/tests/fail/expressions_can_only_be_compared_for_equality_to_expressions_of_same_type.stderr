@@ -6,6 +6,7 @@ LL |     let pred = id.eq("string");
    |
    = help: `&str` implements trait `AsExpression<T>`:
              AsExpression<Citext>
+             AsExpression<Jsonpath>
              AsExpression<diesel::sql_types::Bpchar>
              AsExpression<diesel::sql_types::Date>
              AsExpression<diesel::sql_types::Text>

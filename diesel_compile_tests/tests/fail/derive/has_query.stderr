@@ -111,6 +111,7 @@ LL |     id: String,
            You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
    = help: `std::string::String` implements trait `FromSql<A, DB>`:
              FromSql<Citext, Pg>
+             FromSql<Jsonpath, Pg>
              FromSql<TimestamptzSqlite, Sqlite>
              FromSql<diesel::sql_types::Date, Sqlite>
              FromSql<diesel::sql_types::Time, Sqlite>
@@ -164,6 +165,7 @@ LL |     id: String,
            You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
    = help: `std::string::String` implements trait `FromSql<A, DB>`:
              FromSql<Citext, Pg>
+             FromSql<Jsonpath, Pg>
              FromSql<TimestamptzSqlite, Sqlite>
              FromSql<diesel::sql_types::Date, Sqlite>
              FromSql<diesel::sql_types::Time, Sqlite>
@@ -218,6 +220,7 @@ LL |     id: String,
            You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
    = help: `std::string::String` implements trait `FromSql<A, DB>`:
              FromSql<Citext, Pg>
+             FromSql<Jsonpath, Pg>
              FromSql<TimestamptzSqlite, Sqlite>
              FromSql<diesel::sql_types::Date, Sqlite>
              FromSql<diesel::sql_types::Time, Sqlite>
@@ -272,6 +275,7 @@ LL |     id: String,
            You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
    = help: `std::string::String` implements trait `FromSql<A, DB>`:
              FromSql<Citext, Pg>
+             FromSql<Jsonpath, Pg>
              FromSql<TimestamptzSqlite, Sqlite>
              FromSql<diesel::sql_types::Date, Sqlite>
              FromSql<diesel::sql_types::Time, Sqlite>

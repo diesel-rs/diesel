@@ -102,6 +102,33 @@ impl FromSql<sql_types::Citext, Pg> for String {
 }
 
 #[cfg(feature = "postgres_backend")]
+impl ToSql<sql_types::Jsonpath, Pg> for String {
+    fn to_sql<'b>(&'b self, output: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        <str as ToSql<sql_types::Jsonpath, Pg>>::to_sql(self, output)
+    }
+}
+
+#[cfg(feature = "postgres_backend")]
+impl ToSql<sql_types::Jsonpath, Pg> for str {
+    fn to_sql<'b>(&'b self, output: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        output.write_all(&[1])?;
+        output.write_all(self.as_bytes())?;
+        Ok(IsNull::No)
+    }
+}
+
+#[cfg(feature = "postgres_backend")]
+impl FromSql<sql_types::Jsonpath, Pg> for String {
+    fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
+        match value.as_bytes().split_first() {
+            Some((&1, expression)) => Ok(String::from_utf8(expression.to_vec())?),
+            Some(_) => Err("Unsupported jsonpath encoding version".into()),
+            None => Err("Received an empty jsonpath value".into()),
+        }
+    }
+}
+
+#[cfg(feature = "postgres_backend")]
 impl ToSql<crate::pg::sql_types::Bpchar, Pg> for str {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         <str as ToSql<sql_types::Text, Pg>>::to_sql(self, out)
@@ -153,6 +180,16 @@ impl Queryable<sql_types::Binary, Pg> for *const [u8] {
 mod tests {
     use super::*;
     use crate::test_helpers::format_error;
+
+    #[diesel_test_helper::test]
+    fn jsonpath_rejects_invalid_binary_values() {
+        for bytes in [&b""[..], &b"\x02$"[..], &b"\x01\xff"[..]] {
+            assert!(
+                <String as FromSql<sql_types::Jsonpath, Pg>>::from_sql(PgValue::for_test(bytes))
+                    .is_err()
+            );
+        }
+    }
 
     #[diesel_test_helper::test]
     fn cchar_to_sql() {
