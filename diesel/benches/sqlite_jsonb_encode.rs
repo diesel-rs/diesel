@@ -20,11 +20,10 @@ use serde_json::{Value, json};
 /// Encode `value` to JSONB using Diesel's `ToSql` implementation.
 ///
 /// Panics on serialization error (should never happen with well-formed JSON).
-fn encode_jsonb(value: &Value) -> SqliteBindValue<'static> {
-    let null_buf: SqliteBindValue<'static> = SqliteBindValue::from(None::<Vec<u8>>);
+fn encode_jsonb(value: &Value) -> SqliteBindValue<'_> {
+    let null_buf: SqliteBindValue<'_> = SqliteBindValue::from(None::<Vec<u8>>);
     let mut out = Output::test(null_buf);
-    <Value as ToSql<Jsonb, Sqlite>>::to_sql(value, &mut out)
-        .expect("JSONB serialization failed");
+    <Value as ToSql<Jsonb, Sqlite>>::to_sql(value, &mut out).expect("JSONB serialization failed");
     // `out` owns the result; we move it out via `Output::into_bind_value`.
     // The encoded bytes are now stored inside the `SqliteBindValue`.
     // We return it so criterion can black-box the result and prevent
@@ -39,7 +38,7 @@ fn bench_jsonb_encode(c: &mut Criterion) {
     let scalar_str: Value = json!("hello world");
     let scalar_bool: Value = json!(true);
     let scalar_null: Value = json!(null);
-    let scalar_textj: Value = json!("line1\nline2\ttab");  // needs TEXTJ encoding
+    let scalar_textj: Value = json!("line1\nline2\ttab"); // needs TEXTJ encoding
 
     let flat_obj: Value = json!({
         "name": "Alice",
@@ -91,29 +90,43 @@ fn bench_jsonb_encode(c: &mut Criterion) {
     // ── Scalar benchmarks ─────────────────────────────────────────────────────
     {
         let mut g = c.benchmark_group("jsonb_encode/scalar");
-        g.bench_function("int",    |b| b.iter(|| encode_jsonb(black_box(&scalar_int))));
-        g.bench_function("str",    |b| b.iter(|| encode_jsonb(black_box(&scalar_str))));
-        g.bench_function("textj",  |b| b.iter(|| encode_jsonb(black_box(&scalar_textj))));
-        g.bench_function("bool",   |b| b.iter(|| encode_jsonb(black_box(&scalar_bool))));
-        g.bench_function("null",   |b| b.iter(|| encode_jsonb(black_box(&scalar_null))));
+        g.bench_function("int", |b| b.iter(|| encode_jsonb(black_box(&scalar_int))));
+        g.bench_function("str", |b| b.iter(|| encode_jsonb(black_box(&scalar_str))));
+        g.bench_function("textj", |b| {
+            b.iter(|| encode_jsonb(black_box(&scalar_textj)))
+        });
+        g.bench_function("bool", |b| b.iter(|| encode_jsonb(black_box(&scalar_bool))));
+        g.bench_function("null", |b| b.iter(|| encode_jsonb(black_box(&scalar_null))));
         g.finish();
     }
 
     // ── Object benchmarks ─────────────────────────────────────────────────────
     {
         let mut g = c.benchmark_group("jsonb_encode/object");
-        g.bench_function("flat_4keys",      |b| b.iter(|| encode_jsonb(black_box(&flat_obj))));
-        g.bench_function("wide_50keys",     |b| b.iter(|| encode_jsonb(black_box(&wide_obj))));
-        g.bench_function("nested_10levels", |b| b.iter(|| encode_jsonb(black_box(&nested))));
-        g.bench_function("mixed_users",     |b| b.iter(|| encode_jsonb(black_box(&mixed))));
+        g.bench_function("flat_4keys", |b| {
+            b.iter(|| encode_jsonb(black_box(&flat_obj)))
+        });
+        g.bench_function("wide_50keys", |b| {
+            b.iter(|| encode_jsonb(black_box(&wide_obj)))
+        });
+        g.bench_function("nested_10levels", |b| {
+            b.iter(|| encode_jsonb(black_box(&nested)))
+        });
+        g.bench_function("mixed_users", |b| {
+            b.iter(|| encode_jsonb(black_box(&mixed)))
+        });
         g.finish();
     }
 
     // ── Array benchmarks ──────────────────────────────────────────────────────
     {
         let mut g = c.benchmark_group("jsonb_encode/array");
-        g.bench_with_input(BenchmarkId::new("flat_int", 10),  &flat_arr_10,  |b, v| b.iter(|| encode_jsonb(black_box(v))));
-        g.bench_with_input(BenchmarkId::new("flat_int", 100), &flat_arr_100, |b, v| b.iter(|| encode_jsonb(black_box(v))));
+        g.bench_with_input(BenchmarkId::new("flat_int", 10), &flat_arr_10, |b, v| {
+            b.iter(|| encode_jsonb(black_box(v)))
+        });
+        g.bench_with_input(BenchmarkId::new("flat_int", 100), &flat_arr_100, |b, v| {
+            b.iter(|| encode_jsonb(black_box(v)))
+        });
         g.finish();
     }
 }

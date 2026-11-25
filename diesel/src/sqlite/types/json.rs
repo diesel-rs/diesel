@@ -548,7 +548,7 @@ mod jsonb {
     fn finalize_container_size(
         container_idx: usize,
         payload_size: usize,
-        sizes: &mut Vec<usize>,
+        sizes: &mut [usize],
         parent_stack: &mut Vec<SizeCalcFrame<'_>>,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
         sizes[container_idx] = payload_size;
