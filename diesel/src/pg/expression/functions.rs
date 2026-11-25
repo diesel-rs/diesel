@@ -2874,6 +2874,7 @@ extern "SQL" {
         insert_after: Bool,
     ) -> Arr::Out;
 
+    /// Checks whether the JSON path returns any item for the specified JSON value.
     /// Builds a possibly-heterogeneously-typed JSON array out of a variadic argument list. Each argument is converted as per to_json.
     ///
     ///
@@ -2889,6 +2890,31 @@ extern "SQL" {
     /// #
     /// # #[cfg(feature = "serde_json")]
     /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_path_exists;
+    /// #     use diesel::sql_types::{Jsonb, Nullable};
+    /// #     use serde_json::{json, Value};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_path_exists::<Jsonb, _>(
+    ///     json!({"a": [1, 2, 3, 4, 5]}),
+    ///     "$.a[*] ? (@ > 2)"
+    /// ))
+    /// .get_result::<bool>(connection)?;
+    /// assert_eq!(true, result);
+    ///
+    /// let result = diesel::select(jsonb_path_exists::<Jsonb, _>(
+    ///     json!({"a": [1, 2, 3]}),
+    ///     "$.b"
+    /// ))
+    /// .get_result::<bool>(connection)?;
+    /// assert_eq!(false, result);
+    ///
+    /// let result = diesel::select(jsonb_path_exists::<Nullable<Jsonb>, _>(
+    ///     None::<Value>,
+    ///     "$.a"
+    /// ))
+    /// .get_result::<Option<bool>>(connection)?;
+    /// assert_eq!(None, result);
     /// #     use diesel::dsl::{json_build_array_1, json_build_array_2, json_build_array_0};
     /// #     use diesel::sql_types::{Jsonb, Array, Json, Nullable, Text, Integer, Record, Double};
     /// #     use serde_json::{json,Value};
@@ -2936,6 +2962,14 @@ extern "SQL" {
     /// #     Ok(())
     /// # }
     /// ```
+    fn jsonb_path_exists<E: JsonbOrNullableJsonb + SingleValue + MaybeNullableValue<Bool>>(
+        target: E,
+        path: Text,
+    ) -> E::Out;
+
+    /// Returns the result of a JSON path predicate check for the specified JSON value.
+    /// Only the first item of the result is taken into account.
+    /// If the result is not Boolean, then NULL is returned.
     #[cfg(feature = "postgres_backend")]
     #[sql_name = "json_build_array"]
     #[variadic(1)]
@@ -2956,6 +2990,42 @@ extern "SQL" {
     /// #
     /// # #[cfg(feature = "serde_json")]
     /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_path_match;
+    /// #     use diesel::sql_types::{Jsonb, Nullable};
+    /// #     use serde_json::{json, Value};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// // Returns true because the predicate evaluates to true
+    /// let result = diesel::select(jsonb_path_match::<Jsonb, _>(
+    ///     json!({"a": [1, 2, 3, 4, 5]}),
+    ///     "$.a[*] > 2"
+    /// ))
+    /// .get_result::<Option<bool>>(connection)?;
+    /// assert_eq!(Some(true), result);
+    ///
+    /// // Returns false because first element (1) is not > 2
+    /// let result = diesel::select(jsonb_path_match::<Jsonb, _>(
+    ///     json!({"a": [1, 2, 3]}),
+    ///     "$.a[0] > 2"
+    /// ))
+    /// .get_result::<Option<bool>>(connection)?;
+    /// assert_eq!(Some(false), result);
+    ///
+    /// // Returns NULL because path doesn't return a boolean
+    /// let result = diesel::select(jsonb_path_match::<Jsonb, _>(
+    ///     json!({"a": 123}),
+    ///     "$.a"
+    /// ))
+    /// .get_result::<Option<bool>>(connection)?;
+    /// assert_eq!(None, result);
+    ///
+    /// // Nullable input returns NULL
+    /// let result = diesel::select(jsonb_path_match::<Nullable<Jsonb>, _>(
+    ///     None::<Value>,
+    ///     "$.a > 1"
+    /// ))
+    /// .get_result::<Option<bool>>(connection)?;
+    /// assert_eq!(None, result);
     /// #     use diesel::dsl::{jsonb_build_array_1, jsonb_build_array_2, jsonb_build_array_0};
     /// #     use diesel::sql_types::{Jsonb, Array, Json, Nullable, Text, Integer, Record, Double};
     /// #     use serde_json::{json,Value};
@@ -3004,6 +3074,10 @@ extern "SQL" {
     /// # }
     /// ```
     #[cfg(feature = "postgres_backend")]
+    fn jsonb_path_match<E: JsonbOrNullableJsonb + SingleValue>(
+        target: E,
+        path: Text,
+    ) -> Nullable<Bool>;
     #[sql_name = "jsonb_build_array"]
     #[variadic(1)]
     fn jsonb_build_array<V: SingleValue>(value: V) -> Jsonb;
