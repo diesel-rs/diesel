@@ -498,6 +498,22 @@ fn expand_nonvariadic(
         .map(|type_param| type_param.ident.clone())
         .collect::<Vec<_>>();
 
+    let generic_relation = query_source.as_ref().and_then(|source| {
+        source
+            .relation
+            .get_ident()
+            .filter(|relation| type_args.contains(relation))
+            .cloned()
+    });
+    let relation_type = query_source.as_ref().map(|source| {
+        let relation = &source.relation;
+        if generic_relation.is_some() {
+            quote!(#relation)
+        } else {
+            quote::quote_spanned!(relation.span()=> #relation::view)
+        }
+    });
+
     let declared_generics = generics.clone();
 
     for StrictFnArg { name, .. } in &args {
@@ -717,9 +733,9 @@ fn expand_nonvariadic(
             match &query_source {
                 // A `pub type` named after the function would clash with the relation's
                 // module when both share a name
-                Some(QuerySourceDecl { relation, .. }) => (
+                Some(_) => (
                     None,
-                    quote! { diesel::query_source::FunctionCall<#relation::view, #call_type> },
+                    quote! { diesel::query_source::FunctionCall<#relation_type, #call_type> },
                     internals_module_name,
                 ),
                 None => (
@@ -741,6 +757,9 @@ fn expand_nonvariadic(
             let auto_derived_types = type_args
                 .iter()
                 .map(|type_arg| {
+                    if generic_relation.as_ref() == Some(type_arg) {
+                        return Ok(quote!(#type_arg));
+                    }
                     for arg in &args {
                         let Type::Path(path) = &arg.ty else {
                             continue;
@@ -751,7 +770,10 @@ fn expand_nonvariadic(
                         };
 
                         if path_ident == type_arg {
-                            return Ok(arg.name.clone());
+                            let argument = &arg.name;
+                            return Ok(
+                                quote!(<#argument as diesel::expression::Expression>::SqlType),
+                            );
                         }
                     }
 
@@ -769,15 +791,16 @@ fn expand_nonvariadic(
 
             let doc =
                 format!("Return type of the [`{fn_name}()`](fn@super::{fn_name}) SQL function.");
+            let relation_generics = generic_relation.iter();
             let return_type_helper = if query_source.is_some() {
                 quote! {
                     diesel::query_source::FunctionCall<
                         <super::#internals_module_name::HelperType<
-                            #( <#auto_derived_types as diesel::expression::Expression>::SqlType, )*
+                            #(#auto_derived_types,)*
                             #(#arg_names_iter,)*
                         > as diesel::internal::table_functions::TableFunction>::Relation,
                         super::#internals_module_name::HelperType<
-                            #( <#auto_derived_types as diesel::expression::Expression>::SqlType, )*
+                            #(#auto_derived_types,)*
                             #(#arg_names_iter,)*
                         >,
                     >
@@ -785,7 +808,7 @@ fn expand_nonvariadic(
             } else {
                 quote! {
                     super::#fn_name<
-                        #( <#auto_derived_types as diesel::expression::Expression>::SqlType, )*
+                        #(#auto_derived_types,)*
                         #(#arg_names_iter,)*
                     >
                 }
@@ -796,6 +819,7 @@ fn expand_nonvariadic(
                 mod #return_type_module_name {
                     #[doc = #doc]
                     pub type #fn_name<
+                        #(#relation_generics,)*
                         #(#arg_names_iter,)*
                     > = #return_type_helper;
                 }
@@ -835,11 +859,14 @@ fn expand_nonvariadic(
                 type ColumnAliases = diesel::internal::table_functions::NoColumnAliases;
             },
         };
-        let relation_type = quote::quote_spanned! {relation.span()=>
-            type Relation = #relation::view;
+        let relation_definition = quote::quote_spanned! {relation.span()=>
+            type Relation = #relation_type;
         };
         let arguments_are_expressions = (!arg_name.is_empty())
             .then(|| quote! { (#(#arg_name),*): diesel::expression::Expression, });
+        let typed_return = generic_relation.as_ref().map(|_| {
+            quote!(#return_type: diesel::expression::TypedExpressionType,)
+        });
         let (declared_impl_generics, _, declared_where_clause) = declared_generics.split_for_impl();
         let return_type_check = quote::quote_spanned! {return_type.span()=>
             const _: () = {
@@ -848,7 +875,7 @@ fn expand_nonvariadic(
                 #declared_where_clause
                 {
                     let _: ::core::marker::PhantomData<
-                        <#relation::view as diesel::query_builder::AsQuery>::SqlType,
+                        <#relation_type as diesel::query_builder::AsQuery>::SqlType,
                     > = ::core::marker::PhantomData::<#return_type>;
                 }
             };
@@ -859,6 +886,7 @@ fn expand_nonvariadic(
                 for #internals_module_name::#fn_name #ty_generics
             #where_clause
                 #arguments_are_expressions
+                #typed_return
             {
                 type SqlType = #return_type;
             }
@@ -868,7 +896,7 @@ fn expand_nonvariadic(
                 for #internals_module_name::#fn_name #ty_generics
             #where_clause
             {
-                #relation_type
+                #relation_definition
                 #column_aliases
             }
 

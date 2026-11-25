@@ -61,3 +61,29 @@ pub(crate) fn declare_sql_function_query_source() {
         "declare_sql_function_query_source",
     );
 }
+
+#[test]
+pub(crate) fn declare_sql_function_generic_query_source() {
+    let input = quote::quote! {
+        extern "SQL" {
+            #[query_source(R, base_type)]
+            fn generate_series<R: diesel::query_source::SingleColumnRelation<ColumnSqlType = ST>, ST: SqlType + TypedExpressionType>(
+                start: ST,
+                stop: ST,
+            ) -> R::SqlType;
+
+            #[query_source(R, base_type)]
+            fn series_relation_last<ST: SqlType + TypedExpressionType, R: diesel::query_source::SingleColumnRelation<ColumnSqlType = ST>>(
+                start: ST,
+                stop: ST,
+            ) -> R::SqlType;
+        }
+    };
+    let attr = quote::quote! { generate_return_type_helpers = true };
+    expand_with(
+        &crate::declare_sql_function_inner as &dyn Fn(_, _) -> _,
+        (attr, input),
+        AttributeMacro(syn::parse_quote!(diesel::declare_sql_function)),
+        "declare_sql_function_generic_query_source",
+    );
+}

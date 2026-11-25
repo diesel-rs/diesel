@@ -1,0 +1,478 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+info:
+  input: "#[diesel::declare_sql_function(generate_return_type_helpers = true)]\nextern \"SQL\" {\n    #[query_source(R, base_type)]\n    fn generate_series<\n        R: diesel::query_source::SingleColumnRelation<ColumnSqlType = ST>,\n        ST: SqlType + TypedExpressionType,\n    >(start: ST, stop: ST) -> R::SqlType;\n    #[query_source(R, base_type)]\n    fn series_relation_last<\n        ST: SqlType + TypedExpressionType,\n        R: diesel::query_source::SingleColumnRelation<ColumnSqlType = ST>,\n    >(start: ST, stop: ST) -> R::SqlType;\n}\n"
+---
+#[allow(non_camel_case_types)]
+pub fn generate_series<
+    R: diesel::query_source::SingleColumnRelation<ColumnSqlType = ST>,
+    ST: SqlType + TypedExpressionType,
+    start,
+    stop,
+>(
+    start: start,
+    stop: stop,
+) -> diesel::query_source::FunctionCall<
+    R,
+    generate_series_utils::generate_series<
+        R,
+        ST,
+        <start as diesel::expression::AsExpression<ST>>::Expression,
+        <stop as diesel::expression::AsExpression<ST>>::Expression,
+    >,
+>
+where
+    start: diesel::expression::AsExpression<ST>,
+    stop: diesel::expression::AsExpression<ST>,
+{
+    diesel::query_source::FunctionCall::new(generate_series_utils::generate_series {
+        start: start.as_expression(),
+        stop: stop.as_expression(),
+        R: ::core::marker::PhantomData,
+        ST: ::core::marker::PhantomData,
+        param_start: diesel::internal::sql_functions::FunctionParameter {
+            name: stringify!(start),
+        },
+        param_stop: diesel::internal::sql_functions::FunctionParameter {
+            name: stringify!(stop),
+        },
+    })
+}
+#[allow(non_camel_case_types, non_snake_case, unused_imports)]
+#[doc(inline)]
+mod __generate_series_return_type {
+    ///Return type of the [`generate_series()`](fn@super::generate_series) SQL function.
+    pub type generate_series<R, start, stop> = diesel::query_source::FunctionCall<
+        <super::generate_series_utils::HelperType<
+            R,
+            <start as diesel::expression::Expression>::SqlType,
+            start,
+            stop,
+        > as diesel::internal::table_functions::TableFunction>::Relation,
+        super::generate_series_utils::HelperType<
+            R,
+            <start as diesel::expression::Expression>::SqlType,
+            start,
+            stop,
+        >,
+    >;
+}
+#[allow(non_camel_case_types)]
+impl<
+    R: diesel::query_source::SingleColumnRelation<ColumnSqlType = ST>,
+    ST: SqlType + TypedExpressionType,
+    start,
+    stop,
+> diesel::expression::Expression
+for generate_series_utils::generate_series<R, ST, start, stop>
+where
+    (start, stop): diesel::expression::Expression,
+    R::SqlType: diesel::expression::TypedExpressionType,
+{
+    type SqlType = R::SqlType;
+}
+#[allow(non_camel_case_types)]
+impl<
+    R: diesel::query_source::SingleColumnRelation<ColumnSqlType = ST>,
+    ST: SqlType + TypedExpressionType,
+    start,
+    stop,
+> diesel::internal::table_functions::TableFunction
+for generate_series_utils::generate_series<R, ST, start, stop> {
+    type Relation = R;
+    type ColumnAliases = diesel::internal::table_functions::BaseTypeColumnAlias;
+}
+const _: () = {
+    #[allow(dead_code)]
+    fn __diesel_the_return_type_is_the_sql_type_of_the_relation<
+        R: diesel::query_source::SingleColumnRelation<ColumnSqlType = ST>,
+        ST: SqlType + TypedExpressionType,
+    >() {
+        let _: ::core::marker::PhantomData<
+            <R as diesel::query_builder::AsQuery>::SqlType,
+        > = ::core::marker::PhantomData::<R::SqlType>;
+    }
+};
+#[doc(hidden)]
+#[allow(non_camel_case_types, non_snake_case, unused_imports)]
+pub(crate) mod generate_series_utils {
+    use diesel::{self, QueryResult};
+    use diesel::expression::{
+        AsExpression, Expression, SelectableExpression, AppearsOnTable, ValidGrouping,
+    };
+    use diesel::query_builder::{QueryFragment, AstPass};
+    use diesel::sql_types::*;
+    use diesel::internal::sql_functions::*;
+    use super::*;
+    #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId)]
+    pub struct generate_series<R, ST, start, stop> {
+        pub(super) start: start,
+        pub(super) stop: stop,
+        pub(super) R: ::core::marker::PhantomData<R>,
+        pub(super) ST: ::core::marker::PhantomData<ST>,
+        pub(super) param_start: FunctionParameter<false>,
+        pub(super) param_stop: FunctionParameter<false>,
+    }
+    ///The return type of [`generate_series()`](fn@generate_series)
+    pub type HelperType<R, ST, start, stop> = generate_series<
+        R,
+        ST,
+        <start as AsExpression<ST>>::Expression,
+        <stop as AsExpression<ST>>::Expression,
+    >;
+    impl<
+        R: diesel::query_source::SingleColumnRelation<ColumnSqlType = ST>,
+        ST: SqlType + TypedExpressionType,
+        start,
+        stop,
+        __DieselInternal,
+    > SelectableExpression<__DieselInternal> for generate_series<R, ST, start, stop>
+    where
+        start: SelectableExpression<__DieselInternal>,
+        stop: SelectableExpression<__DieselInternal>,
+        Self: AppearsOnTable<__DieselInternal>,
+    {}
+    impl<
+        R: diesel::query_source::SingleColumnRelation<ColumnSqlType = ST>,
+        ST: SqlType + TypedExpressionType,
+        start,
+        stop,
+        __DieselInternal,
+    > AppearsOnTable<__DieselInternal> for generate_series<R, ST, start, stop>
+    where
+        start: AppearsOnTable<__DieselInternal>,
+        stop: AppearsOnTable<__DieselInternal>,
+        Self: Expression,
+    {}
+    impl<
+        R: diesel::query_source::SingleColumnRelation<ColumnSqlType = ST>,
+        ST: SqlType + TypedExpressionType,
+        start,
+        stop,
+        __DieselInternal,
+    > FunctionFragment<__DieselInternal> for generate_series<R, ST, start, stop>
+    where
+        __DieselInternal: diesel::backend::Backend,
+        FunctionParameter<
+            false,
+        >: QueryFragment<
+            __DieselInternal,
+            <__DieselInternal as diesel::backend::SqlDialect>::SqlFunctionParameterNotation,
+        >,
+        start: QueryFragment<__DieselInternal>,
+        stop: QueryFragment<__DieselInternal>,
+    {
+        const FUNCTION_NAME: &'static str = "generate_series";
+        #[allow(unused_assignments)]
+        fn walk_arguments<'__b>(
+            &'__b self,
+            mut out: AstPass<'_, '__b, __DieselInternal>,
+        ) -> QueryResult<()> {
+            let mut needs_comma = false;
+            if !self.start.is_noop(out.backend())? {
+                if needs_comma {
+                    out.push_sql(", ");
+                }
+                self.param_start.walk_ast(out.reborrow())?;
+                self.start.walk_ast(out.reborrow())?;
+                needs_comma = true;
+            }
+            if !self.stop.is_noop(out.backend())? {
+                if needs_comma {
+                    out.push_sql(", ");
+                }
+                self.param_stop.walk_ast(out.reborrow())?;
+                self.stop.walk_ast(out.reborrow())?;
+                needs_comma = true;
+            }
+            Ok(())
+        }
+    }
+    impl<
+        R: diesel::query_source::SingleColumnRelation<ColumnSqlType = ST>,
+        ST: SqlType + TypedExpressionType,
+        start,
+        stop,
+        __DieselInternal,
+    > QueryFragment<__DieselInternal> for generate_series<R, ST, start, stop>
+    where
+        __DieselInternal: diesel::backend::Backend,
+        FunctionParameter<
+            false,
+        >: QueryFragment<
+            __DieselInternal,
+            <__DieselInternal as diesel::backend::SqlDialect>::SqlFunctionParameterNotation,
+        >,
+        start: QueryFragment<__DieselInternal>,
+        stop: QueryFragment<__DieselInternal>,
+    {
+        fn walk_ast<'__b>(
+            &'__b self,
+            mut out: AstPass<'_, '__b, __DieselInternal>,
+        ) -> QueryResult<()> {
+            out.push_sql(<Self as FunctionFragment<__DieselInternal>>::FUNCTION_NAME);
+            out.push_sql("(");
+            self.walk_arguments(out.reborrow())?;
+            out.push_sql(")");
+            Ok(())
+        }
+    }
+    #[derive(ValidGrouping)]
+    pub struct __Derived<start, stop>(start, stop);
+    impl<
+        R: diesel::query_source::SingleColumnRelation<ColumnSqlType = ST>,
+        ST: SqlType + TypedExpressionType,
+        start,
+        stop,
+        __DieselInternal,
+    > ValidGrouping<__DieselInternal> for generate_series<R, ST, start, stop>
+    where
+        __Derived<start, stop>: ValidGrouping<__DieselInternal>,
+    {
+        type IsAggregate = <__Derived<
+            start,
+            stop,
+        > as ValidGrouping<__DieselInternal>>::IsAggregate;
+    }
+}
+#[allow(non_camel_case_types)]
+pub fn series_relation_last<
+    ST: SqlType + TypedExpressionType,
+    R: diesel::query_source::SingleColumnRelation<ColumnSqlType = ST>,
+    start,
+    stop,
+>(
+    start: start,
+    stop: stop,
+) -> diesel::query_source::FunctionCall<
+    R,
+    series_relation_last_utils::series_relation_last<
+        ST,
+        R,
+        <start as diesel::expression::AsExpression<ST>>::Expression,
+        <stop as diesel::expression::AsExpression<ST>>::Expression,
+    >,
+>
+where
+    start: diesel::expression::AsExpression<ST>,
+    stop: diesel::expression::AsExpression<ST>,
+{
+    diesel::query_source::FunctionCall::new(series_relation_last_utils::series_relation_last {
+        start: start.as_expression(),
+        stop: stop.as_expression(),
+        ST: ::core::marker::PhantomData,
+        R: ::core::marker::PhantomData,
+        param_start: diesel::internal::sql_functions::FunctionParameter {
+            name: stringify!(start),
+        },
+        param_stop: diesel::internal::sql_functions::FunctionParameter {
+            name: stringify!(stop),
+        },
+    })
+}
+#[allow(non_camel_case_types, non_snake_case, unused_imports)]
+#[doc(inline)]
+mod __series_relation_last_return_type {
+    ///Return type of the [`series_relation_last()`](fn@super::series_relation_last) SQL function.
+    pub type series_relation_last<R, start, stop> = diesel::query_source::FunctionCall<
+        <super::series_relation_last_utils::HelperType<
+            <start as diesel::expression::Expression>::SqlType,
+            R,
+            start,
+            stop,
+        > as diesel::internal::table_functions::TableFunction>::Relation,
+        super::series_relation_last_utils::HelperType<
+            <start as diesel::expression::Expression>::SqlType,
+            R,
+            start,
+            stop,
+        >,
+    >;
+}
+#[allow(non_camel_case_types)]
+impl<
+    ST: SqlType + TypedExpressionType,
+    R: diesel::query_source::SingleColumnRelation<ColumnSqlType = ST>,
+    start,
+    stop,
+> diesel::expression::Expression
+for series_relation_last_utils::series_relation_last<ST, R, start, stop>
+where
+    (start, stop): diesel::expression::Expression,
+    R::SqlType: diesel::expression::TypedExpressionType,
+{
+    type SqlType = R::SqlType;
+}
+#[allow(non_camel_case_types)]
+impl<
+    ST: SqlType + TypedExpressionType,
+    R: diesel::query_source::SingleColumnRelation<ColumnSqlType = ST>,
+    start,
+    stop,
+> diesel::internal::table_functions::TableFunction
+for series_relation_last_utils::series_relation_last<ST, R, start, stop> {
+    type Relation = R;
+    type ColumnAliases = diesel::internal::table_functions::BaseTypeColumnAlias;
+}
+const _: () = {
+    #[allow(dead_code)]
+    fn __diesel_the_return_type_is_the_sql_type_of_the_relation<
+        ST: SqlType + TypedExpressionType,
+        R: diesel::query_source::SingleColumnRelation<ColumnSqlType = ST>,
+    >() {
+        let _: ::core::marker::PhantomData<
+            <R as diesel::query_builder::AsQuery>::SqlType,
+        > = ::core::marker::PhantomData::<R::SqlType>;
+    }
+};
+#[doc(hidden)]
+#[allow(non_camel_case_types, non_snake_case, unused_imports)]
+pub(crate) mod series_relation_last_utils {
+    use diesel::{self, QueryResult};
+    use diesel::expression::{
+        AsExpression, Expression, SelectableExpression, AppearsOnTable, ValidGrouping,
+    };
+    use diesel::query_builder::{QueryFragment, AstPass};
+    use diesel::sql_types::*;
+    use diesel::internal::sql_functions::*;
+    use super::*;
+    #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId)]
+    pub struct series_relation_last<ST, R, start, stop> {
+        pub(super) start: start,
+        pub(super) stop: stop,
+        pub(super) ST: ::core::marker::PhantomData<ST>,
+        pub(super) R: ::core::marker::PhantomData<R>,
+        pub(super) param_start: FunctionParameter<false>,
+        pub(super) param_stop: FunctionParameter<false>,
+    }
+    ///The return type of [`series_relation_last()`](fn@series_relation_last)
+    pub type HelperType<ST, R, start, stop> = series_relation_last<
+        ST,
+        R,
+        <start as AsExpression<ST>>::Expression,
+        <stop as AsExpression<ST>>::Expression,
+    >;
+    impl<
+        ST: SqlType + TypedExpressionType,
+        R: diesel::query_source::SingleColumnRelation<ColumnSqlType = ST>,
+        start,
+        stop,
+        __DieselInternal,
+    > SelectableExpression<__DieselInternal> for series_relation_last<ST, R, start, stop>
+    where
+        start: SelectableExpression<__DieselInternal>,
+        stop: SelectableExpression<__DieselInternal>,
+        Self: AppearsOnTable<__DieselInternal>,
+    {}
+    impl<
+        ST: SqlType + TypedExpressionType,
+        R: diesel::query_source::SingleColumnRelation<ColumnSqlType = ST>,
+        start,
+        stop,
+        __DieselInternal,
+    > AppearsOnTable<__DieselInternal> for series_relation_last<ST, R, start, stop>
+    where
+        start: AppearsOnTable<__DieselInternal>,
+        stop: AppearsOnTable<__DieselInternal>,
+        Self: Expression,
+    {}
+    impl<
+        ST: SqlType + TypedExpressionType,
+        R: diesel::query_source::SingleColumnRelation<ColumnSqlType = ST>,
+        start,
+        stop,
+        __DieselInternal,
+    > FunctionFragment<__DieselInternal> for series_relation_last<ST, R, start, stop>
+    where
+        __DieselInternal: diesel::backend::Backend,
+        FunctionParameter<
+            false,
+        >: QueryFragment<
+            __DieselInternal,
+            <__DieselInternal as diesel::backend::SqlDialect>::SqlFunctionParameterNotation,
+        >,
+        start: QueryFragment<__DieselInternal>,
+        stop: QueryFragment<__DieselInternal>,
+    {
+        const FUNCTION_NAME: &'static str = "series_relation_last";
+        #[allow(unused_assignments)]
+        fn walk_arguments<'__b>(
+            &'__b self,
+            mut out: AstPass<'_, '__b, __DieselInternal>,
+        ) -> QueryResult<()> {
+            let mut needs_comma = false;
+            if !self.start.is_noop(out.backend())? {
+                if needs_comma {
+                    out.push_sql(", ");
+                }
+                self.param_start.walk_ast(out.reborrow())?;
+                self.start.walk_ast(out.reborrow())?;
+                needs_comma = true;
+            }
+            if !self.stop.is_noop(out.backend())? {
+                if needs_comma {
+                    out.push_sql(", ");
+                }
+                self.param_stop.walk_ast(out.reborrow())?;
+                self.stop.walk_ast(out.reborrow())?;
+                needs_comma = true;
+            }
+            Ok(())
+        }
+    }
+    impl<
+        ST: SqlType + TypedExpressionType,
+        R: diesel::query_source::SingleColumnRelation<ColumnSqlType = ST>,
+        start,
+        stop,
+        __DieselInternal,
+    > QueryFragment<__DieselInternal> for series_relation_last<ST, R, start, stop>
+    where
+        __DieselInternal: diesel::backend::Backend,
+        FunctionParameter<
+            false,
+        >: QueryFragment<
+            __DieselInternal,
+            <__DieselInternal as diesel::backend::SqlDialect>::SqlFunctionParameterNotation,
+        >,
+        start: QueryFragment<__DieselInternal>,
+        stop: QueryFragment<__DieselInternal>,
+    {
+        fn walk_ast<'__b>(
+            &'__b self,
+            mut out: AstPass<'_, '__b, __DieselInternal>,
+        ) -> QueryResult<()> {
+            out.push_sql(<Self as FunctionFragment<__DieselInternal>>::FUNCTION_NAME);
+            out.push_sql("(");
+            self.walk_arguments(out.reborrow())?;
+            out.push_sql(")");
+            Ok(())
+        }
+    }
+    #[derive(ValidGrouping)]
+    pub struct __Derived<start, stop>(start, stop);
+    impl<
+        ST: SqlType + TypedExpressionType,
+        R: diesel::query_source::SingleColumnRelation<ColumnSqlType = ST>,
+        start,
+        stop,
+        __DieselInternal,
+    > ValidGrouping<__DieselInternal> for series_relation_last<ST, R, start, stop>
+    where
+        __Derived<start, stop>: ValidGrouping<__DieselInternal>,
+    {
+        type IsAggregate = <__Derived<
+            start,
+            stop,
+        > as ValidGrouping<__DieselInternal>>::IsAggregate;
+    }
+}
+#[allow(unused_imports)]
+#[doc(hidden)]
+mod return_type_helpers {
+    #[doc(inline)]
+    pub use super::__generate_series_return_type::*;
+    #[doc(inline)]
+    pub use super::__series_relation_last_return_type::*;
+}
