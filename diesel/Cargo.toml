@@ -86,6 +86,8 @@ serde_json = { version = "1.0.54", features = ["float_roundtrip"] }
 tempfile = "3.10.1"
 diesel_test_helper = { path = "../diesel_test_helper" }
 quickcheck = "1.0.3"
+
+[target.'cfg(not(target_family = "wasm"))'.dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports"] }
 
 [features]
