@@ -1,0 +1,63 @@
+error[E0277]: cannot select `users::columns::name` from `FunctionCall<view, json_each<Bound<Text, &str>>>`
+  --> tests/fail/table_function_columns_of_another_relation_are_not_selectable.rs:31:10
+   |
+LL |         .select(users::name)
+   |          ^^^^^^ unsatisfied trait bound
+   |
+help: the trait `SelectableExpression<FunctionCall<json_each::view, json_each_utils::json_each<diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &str>>>>` is not implemented for `users::columns::name`
+  --> tests/fail/table_function_columns_of_another_relation_are_not_selectable.rs:9:9
+   |
+ LL |         name -> Text,
+   |         ^^^^
+   = note: `users::columns::name` is no valid selection for `FunctionCall<view, json_each<Bound<Text, &str>>>`
+   = help: `users::columns::name` implements trait `SelectableExpression<QS>`:
+             SelectableExpression<Only<users::table>>
+             SelectableExpression<Tablesample<users::table, TSM>>
+             SelectableExpression<Join<Left, Right, Inner>>
+             SelectableExpression<Join<Left, Right, LeftOuter>>
+             SelectableExpression<JoinOn<Join, On>>
+             SelectableExpression<SelectStatement<_>>
+             SelectableExpression<ReturningQuerySource<__StmtKind, table>>
+             SelectableExpression<users::table>
+   = note: required for `SelectStatement<FromClause<FunctionCall<view, _>>>` to implement `SelectDsl<users::columns::name>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: cannot select `users::columns::name` from `FunctionCall<view, json_each<Bound<Text, &str>>>`
+    --> tests/fail/table_function_columns_of_another_relation_are_not_selectable.rs:33:25
+     |
+  LL |         .load::<String>(conn)
+     |          ----           ^^^^ unsatisfied trait bound
+     |          |
+     |          required by a bound introduced by this call
+     |
+help: the trait `SelectableExpression<FunctionCall<json_each::view, json_each_utils::json_each<diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &str>>>>` is not implemented for `users::columns::name`
+    --> tests/fail/table_function_columns_of_another_relation_are_not_selectable.rs:9:9
+     |
+   LL |         name -> Text,
+     |         ^^^^
+     = note: `users::columns::name` is no valid selection for `FunctionCall<view, json_each<Bound<Text, &str>>>`
+     = help: `users::columns::name` implements trait `SelectableExpression<QS>`:
+               SelectableExpression<Only<users::table>>
+               SelectableExpression<Tablesample<users::table, TSM>>
+               SelectableExpression<Join<Left, Right, Inner>>
+               SelectableExpression<Join<Left, Right, LeftOuter>>
+               SelectableExpression<JoinOn<Join, On>>
+               SelectableExpression<SelectStatement<_>>
+               SelectableExpression<ReturningQuerySource<__StmtKind, table>>
+               SelectableExpression<users::table>
+     = note: required for `SelectClause<name>` to implement `SelectClauseExpression<FromClause<_>>`
+     = note: required for `SelectStatement<FromClause<_>, _>` to implement `Query`
+     = note: required for `SelectStatement<FromClause<_>, _>` to implement `LoadQuery<'_, _, std::string::String>`
+note: required by a bound in `load`
+    --> ROOT/diesel/src/query_dsl/mod.rs
+     |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
+LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+  
+          = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+For more information about this error, try `rustc --explain E0277`.

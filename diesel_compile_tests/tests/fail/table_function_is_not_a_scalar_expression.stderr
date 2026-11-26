@@ -1,0 +1,113 @@
+error[E0277]: cannot select `FunctionCall<view, json_each<Bound<Text, &str>>>` from `users::table`
+  --> tests/fail/table_function_is_not_a_scalar_expression.rs:29:10
+   |
+LL |         .select(json_each("[]"))
+   |          ^^^^^^ unsatisfied trait bound
+   |
+   = help: the trait `SelectableExpression<users::table>` is not implemented for `FunctionCall<view, json_each<Bound<Text, &str>>>`
+   = note: `FunctionCall<view, json_each<Bound<Text, &str>>>` is no valid selection for `users::table`
+help: the following other types implement trait `SelectableExpression<QS>`
+  --> tests/fail/table_function_is_not_a_scalar_expression.rs:6:1
+   |
+ LL | / table! {
+ LL | |     users {
+ LL | |         id -> Integer,
+   | |         ^^ `users::columns::id`
+ LL | |         name -> Text,
+   | |         ^^^^ `users::columns::name`
+LL | |     }
+LL | | }
+   | |_^ `users::columns::star`
+   = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<FunctionCall<view, json_each<_>>>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `FunctionCall<view, _>: ValidGrouping<()>` is not satisfied
+  --> tests/fail/table_function_is_not_a_scalar_expression.rs:29:10
+   |
+LL |         .select(json_each("[]"))
+   |          ^^^^^^ unsatisfied trait bound
+   |
+   = help: the trait `ValidGrouping<()>` is not implemented for `FunctionCall<view, json_each<Bound<Text, &str>>>`
+   = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
+             AliasedField<S, C>
+             diesel::mariadb::returning::old_impl::OldValue<C>
+             diesel::pg::returning::old_impl::Old<C>
+             json_each::columns::value
+             pg::metadata_lookup::pg_namespace::columns::nspname
+             pg::metadata_lookup::pg_namespace::columns::oid
+             pg::metadata_lookup::pg_type::columns::oid
+             pg::metadata_lookup::pg_type::columns::typarray
+           and N others
+   = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<FunctionCall<view, json_each<_>>>`
+
+   
+error[E0277]: cannot select `FunctionCall<view, json_each<Bound<Text, &str>>>` from `users::table`
+    --> tests/fail/table_function_is_not_a_scalar_expression.rs:32:25
+     |
+  LL |         .load::<String>(conn)
+     |          ----           ^^^^ unsatisfied trait bound
+     |          |
+     |          required by a bound introduced by this call
+     |
+     = help: the trait `SelectableExpression<users::table>` is not implemented for `FunctionCall<view, json_each<Bound<Text, &str>>>`
+     = note: `FunctionCall<view, json_each<Bound<Text, &str>>>` is no valid selection for `users::table`
+help: the following other types implement trait `SelectableExpression<QS>`
+    --> tests/fail/table_function_is_not_a_scalar_expression.rs:6:1
+     |
+   LL | / table! {
+   LL | |     users {
+   LL | |         id -> Integer,
+     | |         ^^ `users::columns::id`
+   LL | |         name -> Text,
+     | |         ^^^^ `users::columns::name`
+  LL | |     }
+  LL | | }
+     | |_^ `users::columns::star`
+     = note: required for `SelectClause<FunctionCall<view, json_each<_>>>` to implement `SelectClauseExpression<FromClause<table>>`
+     = note: required for `SelectStatement<FromClause<table>, _>` to implement `Query`
+     = note: required for `SelectStatement<FromClause<table>, _>` to implement `LoadQuery<'_, _, std::string::String>`
+note: required by a bound in `load`
+    --> ROOT/diesel/src/query_dsl/mod.rs
+     |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
+LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+  
+          = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `FunctionCall<view, _>: ValidGrouping<()>` is not satisfied
+    --> tests/fail/table_function_is_not_a_scalar_expression.rs:32:25
+     |
+  LL |         .load::<String>(conn)
+     |          ----           ^^^^ unsatisfied trait bound
+     |          |
+     |          required by a bound introduced by this call
+     |
+     = help: the trait `ValidGrouping<()>` is not implemented for `FunctionCall<view, json_each<Bound<Text, &str>>>`
+     = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
+               AliasedField<S, C>
+               diesel::mariadb::returning::old_impl::OldValue<C>
+               diesel::pg::returning::old_impl::Old<C>
+               json_each::columns::value
+               pg::metadata_lookup::pg_namespace::columns::nspname
+               pg::metadata_lookup::pg_namespace::columns::oid
+               pg::metadata_lookup::pg_type::columns::oid
+               pg::metadata_lookup::pg_type::columns::typarray
+             and N others
+     = note: required for `SelectStatement<FromClause<table>, _>` to implement `Query`
+     = note: required for `SelectStatement<FromClause<table>, _>` to implement `LoadQuery<'_, _, std::string::String>`
+note: required by a bound in `load`
+    --> ROOT/diesel/src/query_dsl/mod.rs
+     |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
+LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+  
+     For more information about this error, try `rustc --explain E0277`.

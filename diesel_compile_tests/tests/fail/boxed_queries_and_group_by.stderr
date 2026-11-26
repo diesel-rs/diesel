@@ -193,8 +193,19 @@ error[E0277]: the trait bound `BoxedSelectStatement<'_, _, _, _>: QueryRelation`
  LL |         .group_by(users::id)
     |          ^^^^^^^^ the trait `GroupByDsl<_>` is not implemented for `BoxedSelectStatement<'_, (Integer, Text), _, _>`
     |
-help: the trait `GroupByDsl<Expr>` is implemented for `Alias<S>`
-   --> ROOT/diesel/src/query_source/aliasing/dsl_impls.rs
+help: the following other types implement trait `GroupByDsl<Expr>`
+   --> ROOT/diesel/src/query_source/function_call.rs
+    |
+LL | / impl<R, F, Expr> GroupByDsl<Expr> for FunctionCall<R, F>
+LL | | where
+LL | |     Expr: Expression,
+LL | |     Self: QuerySource + AsQuery<Query = SelectStatement<FromClause<Self>>>,
+...   |
+LL | |     <Self as AsQuery>::SqlType: TypedExpressionType,
+LL | |     <Self as AsQuery>::Query: GroupByDsl<Expr>,
+    | |_______________________________________________^ `FunctionCall<R, F>`
+    |
+   ::: ROOT/diesel/src/query_source/aliasing/dsl_impls.rs
     |
 LL | / impl<S, Expr> GroupByDsl<Expr> for Alias<S>
 LL | | where
@@ -203,4 +214,4 @@ LL | |     Self: QuerySource + AsQuery<Query = SelectStatement<FromClause<Self>>
 ...   |
 LL | |     <Self as AsQuery>::SqlType: TypedExpressionType,
 LL | |     <Self as AsQuery>::Query: GroupByDsl<Expr>,
-    | |_______________________________________________^
+    | |_______________________________________________^ `Alias<S>`

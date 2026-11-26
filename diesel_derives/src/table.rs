@@ -1135,6 +1135,12 @@ fn expand_column_def(
 
                 const NAME: &'static str = #sql_name;
             }
+
+            #(#cfg_attrs)*
+            impl<__DieselFunction> diesel::SelectableExpression<diesel::query_source::FunctionCall<super::view, __DieselFunction>>
+                for #column_name
+            {
+            }
         }
     };
 

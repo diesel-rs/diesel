@@ -63,6 +63,7 @@ impl SqlDialect for Mysql {
 
     type SqlFunctionParameterNotation =
         sql_dialect::sql_function_parameter_notation::PositionalNotationOnly;
+    type TableFunctionSyntax = sql_dialect::table_function_syntax::DoesNotSupportTableFunctions;
 }
 
 impl DieselReserveSpecialization for Mysql {}

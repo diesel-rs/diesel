@@ -44,3 +44,20 @@ pub(crate) fn declare_sql_function_with_named_parameters() {
         name,
     );
 }
+
+#[test]
+pub(crate) fn declare_sql_function_query_source() {
+    let input = quote::quote! {
+        extern "SQL" {
+            #[query_source(series, base_type)]
+            fn generate_series(start: Integer, stop: Integer) -> series::SqlType;
+        }
+    };
+    let attr = quote::quote! { generate_return_type_helpers = true };
+    expand_with(
+        &crate::declare_sql_function_inner as &dyn Fn(_, _) -> _,
+        (attr, input),
+        AttributeMacro(syn::parse_quote!(diesel::declare_sql_function)),
+        "declare_sql_function_query_source",
+    );
+}

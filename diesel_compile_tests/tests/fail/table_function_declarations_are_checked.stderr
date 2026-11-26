@@ -1,0 +1,91 @@
+error: the correct format is `#[query_source(relation)]` or `#[query_source(relation, base_type)]`
+  --> tests/fail/table_function_declarations_are_checked.rs:49:28
+   |
+LL |     #[query_source(series, ordinality)]
+   |                            ^^^^^^^^^^
+
+error: `#[query_source]` cannot be combined with `#[aggregate]` or `#[window]`
+  --> tests/fail/table_function_declarations_are_checked.rs:58:7
+   |
+LL |     #[query_source(series)]
+   |       ^^^^^^^^^^^^
+
+error: `#[query_source]` cannot be combined with `#[variadic]`
+  --> tests/fail/table_function_declarations_are_checked.rs:66:7
+   |
+LL |     #[query_source(series)]
+   |       ^^^^^^^^^^^^
+
+error: cannot find attribute `query_source` in this scope
+  --> tests/fail/table_function_declarations_are_checked.rs:49:7
+   |
+LL |     #[query_source(series, ordinality)]
+   |       ^^^^^^^^^^^^
+
+error[E0703]: invalid ABI: found `SQL`
+  --> tests/fail/table_function_declarations_are_checked.rs:47:8
+   |
+LL | extern "SQL" {
+   |        ^^^^^ invalid ABI
+   |
+   = note: invoke `rustc --print=calling-conventions` for a full list of supported calling conventions
+
+error[E0277]: the relation of a `base_type` function must declare exactly one column, found `(pairs::columns::key, pairs::columns::value)`
+   --> tests/fail/table_function_declarations_are_checked.rs:34:27
+    |
+ LL |     #[query_source(pairs, base_type)]
+    |                           ^^^^^^^^^ unsatisfied trait bound
+    |
+    = help: the trait `query_source::function_call::private::SingleColumn` is not implemented for `(pairs::columns::key, pairs::columns::value)`
+help: the trait `query_source::function_call::private::SingleColumn` is implemented for `(C,)`
+   --> ROOT/diesel/src/query_source/function_call.rs
+    |
+LL | /     impl<C> SingleColumn for (C,)
+LL | |     where
+LL | |         C: QueryRelationField,
+    | |______________________________^
+    = note: required for `pairs::view` to implement `query_source::function_call::private::SingleColumnRelation`
+    = note: required for `diesel::internal::table_functions::BaseTypeColumnAlias` to implement `query_source::function_call::ColumnAliases<pairs::view>`
+note: required by a bound in `diesel::internal::table_functions::TableFunction::ColumnAliases`
+   --> ROOT/diesel/src/query_source/function_call.rs
+    |
+ LL | pub trait TableFunction {
+...
+ LL |     type ColumnAliases: ColumnAliases<Self::Relation>;
+    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `TableFunction::ColumnAliases`
+
+error[E0277]: a function call in `FROM` must be named after a `view!` without a schema
+   --> tests/fail/table_function_declarations_are_checked.rs:41:20
+    |
+ LL |     #[query_source(listed)]
+    |                    ^^^^^^ unsatisfied trait bound
+    |
+    = help: the trait `query_source::function_call::private::UnqualifiedName` is not implemented for `InfixNode<Identifier<'static>, _, _>`
+    = note: remove the schema from the `view!` declaration
+help: the trait `query_source::function_call::private::TableFunctionRelation` is implemented for `Alias<S>`
+   --> ROOT/diesel/src/query_source/function_call.rs
+    |
+LL | /     impl<S> TableFunctionRelation for crate::query_source::Alias<S>
+LL | |     where
+LL | |         S: AliasSource,
+LL | |         S::Target: View + StaticQueryFragment,
+LL | |         <S::Target as StaticQueryFragment>::Component: UnqualifiedName,
+    | |_______________________________________________________________________^
+    = note: required for `listed::view` to implement `query_source::function_call::private::TableFunctionRelation`
+note: required by a bound in `diesel::internal::table_functions::TableFunction::Relation`
+   --> ROOT/diesel/src/query_source/function_call.rs
+    |
+ LL | pub trait TableFunction {
+ LL |     /// The `view!` listing the result columns
+ LL |     type Relation: View + Default + private::TableFunctionRelation;
+    |                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `TableFunction::Relation`
+ 
+    
+error[E0308]: mismatched types
+  --> tests/fail/table_function_declarations_are_checked.rs:28:58
+   |
+LL |     fn generate_series(start: Integer, stop: Integer) -> Integer;
+   |                                                          ^^^^^^^ expected `PhantomData<(Integer,)>`, found `PhantomData<Integer>`
+   |
+   = note: expected struct `PhantomData<(diesel::sql_types::Integer,)>`
+              found struct `PhantomData<diesel::sql_types::Integer>`

@@ -64,6 +64,7 @@ impl SqlDialect for Mariadb {
     //  could be changed to `PositionalOrNamedNotation`. See: <https://jira.mariadb.org/browse/MDEV-38329>
     type SqlFunctionParameterNotation =
         sql_dialect::sql_function_parameter_notation::PositionalNotationOnly;
+    type TableFunctionSyntax = sql_dialect::table_function_syntax::DoesNotSupportTableFunctions;
 }
 
 impl DieselReserveSpecialization for Mariadb {}

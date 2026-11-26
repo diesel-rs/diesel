@@ -70,6 +70,8 @@ mod serialize_as;
 mod sqlite_pragma;
 #[cfg(feature = "sqlite")]
 mod table_cfg_columns;
+#[cfg(any(feature = "postgres", feature = "sqlite"))]
+mod table_functions;
 mod transactions;
 mod types;
 mod types_roundtrip;

@@ -1,0 +1,36 @@
+error[E0599]: the method `on` exists for struct `FunctionCall<view, json_each<name>>`, but its trait bounds were not satisfied
+  --> tests/fail/table_function_arguments_cannot_read_other_relations.rs:31:44
+   |
+LL |         .inner_join(json_each(users::name).on(json_each::value.eq(users::name)))
+   |                                            ^^ method cannot be called on `FunctionCall<view, json_each<name>>` due to unsatisfied trait bounds
+   |
+  ::: ROOT/diesel/src/query_source/function_call.rs
+   |
+LL | pub struct FunctionCall<R, F> {
+   | ----------------------------- doesn't satisfy `_: JoinOnDsl` or `_: QuerySource`
+   |
+   = note: the following trait bounds were not satisfied:
+           `FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>: QuerySource`
+           which is required by `FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>: diesel::JoinOnDsl`
+           `&FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>: QuerySource`
+           which is required by `&FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>: diesel::JoinOnDsl`
+           `&mut FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>: QuerySource`
+           which is required by `&mut FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>: diesel::JoinOnDsl`
+
+   
+error[E0277]: the trait bound `FunctionCall<view, json_each<name>>: SelectDsl<_>` is not satisfied
+   --> tests/fail/table_function_arguments_cannot_read_other_relations.rs:38:10
+    |
+ LL |         .select(json_each::value)
+    |          ^^^^^^ the trait `SelectDsl<_>` is not implemented for `FunctionCall<view, json_each<name>>`
+    |
+help: the trait `SelectDsl<Selection>` is conditionally implemented for `FunctionCall<R, F>`
+   --> ROOT/diesel/src/query_source/function_call.rs
+    |
+LL | / impl<R, F, Selection> SelectDsl<Selection> for FunctionCall<R, F>
+LL | | where
+LL | |     Selection: Expression,
+LL | |     Self: AsQuery,
+    | |           ------- unsatisfied requirement introduced here: `FunctionCall<view, json_each<name>>: AsQuery`
+LL | |     <Self as AsQuery>::Query: SelectDsl<Selection>,
+    | |___________________________________________________^

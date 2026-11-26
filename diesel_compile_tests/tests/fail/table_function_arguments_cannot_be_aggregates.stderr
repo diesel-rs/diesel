@@ -1,0 +1,18 @@
+error[E0277]: the trait bound `FunctionCall<view, json_each<_>>: SelectDsl<_>` is not satisfied
+   --> tests/fail/table_function_arguments_cannot_be_aggregates.rs:25:10
+    |
+ LL |         .select(json_each::value)
+    |          ^^^^^^ the trait `SelectDsl<_>` is not implemented for `FunctionCall<view, json_each<group_concat<_>>>`
+    |
+help: the trait `SelectDsl<Selection>` is conditionally implemented for `FunctionCall<R, F>`
+   --> ROOT/diesel/src/query_source/function_call.rs
+    |
+LL | / impl<R, F, Selection> SelectDsl<Selection> for FunctionCall<R, F>
+LL | | where
+LL | |     Selection: Expression,
+LL | |     Self: AsQuery,
+    | |           ------- unsatisfied requirement introduced here: `FunctionCall<view, json_each<_>>: AsQuery`
+LL | |     <Self as AsQuery>::Query: SelectDsl<Selection>,
+    | |___________________________________________________^
+ 
+    For more information about this error, try `rustc --explain E0277`.
