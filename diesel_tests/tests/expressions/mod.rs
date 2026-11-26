@@ -138,6 +138,10 @@ fn test_min_max_of_array() {
     assert_eq!(Ok(None::<Vec<i32>>), min_query.first(connection));
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn max_returns_same_type_as_expression_being_maximized() {
     let connection = &mut connection();
@@ -235,6 +239,10 @@ fn test_min() {
     assert_eq!(Ok(None::<i32>), source.first(connection));
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn function_with_multiple_arguments() {
     use crate::schema::users::dsl::*;

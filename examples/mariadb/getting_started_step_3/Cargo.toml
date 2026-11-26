@@ -1,0 +1,39 @@
+[package]
+name = "getting_started_step_3_mariadb"
+version = "0.1.0"
+edition.workspace = true
+publish = false
+
+[dependencies]
+diesel = { version = "2.4.0", path = "../../../diesel", features = ["mariadb"] }
+mysqlclient-sys = { workspace = true, features = ["bundled"] }
+openssl-sys = { workspace = true, features = ["vendored"] }
+dotenvy = "0.15"
+
+[dev-dependencies]
+assert_cmd = "2.1"
+url = "2.2.2"
+diesel_migrations = { version = "2.4.0", path = "../../../diesel_migrations" }
+
+[[bin]]
+name = "show_posts"
+doc = false
+
+[[bin]]
+name = "write_post"
+doc = false
+
+[[bin]]
+name = "delete_post"
+doc = false
+
+[[bin]]
+name = "publish_post"
+doc = false
+
+[[bin]]
+name = "get_post"
+doc = false
+
+[lib]
+doc = false

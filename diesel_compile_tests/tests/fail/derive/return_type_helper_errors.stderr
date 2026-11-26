@@ -10,7 +10,7 @@ error: cannot find argument corresponding to the generic
 LL |         fn g<A: SingleValue>(a: <A as TypeWrapper>::Type);
    |              ^
 
-error: expected `=`, the correct format is `generate_return_type_helpers = true/false`
+error: expected `=`, the correct format is `generate_return_type_helpers = true/false, named_parameters = true/false`
   --> tests/fail/derive/return_type_helper_errors.rs:16:5
    |
 LL |     #[declare_sql_function(generate_return_type_helpers)]

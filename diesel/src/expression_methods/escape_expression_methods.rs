@@ -16,6 +16,11 @@ use alloc::string::ToString;
 /// ```rust
 /// # include!("../doctest_setup.rs");
 /// #
+/// # // Reading the query result requires reading memory allocated by the
+/// # // native sqlite library, which miri cannot track provenance for.
+/// # #[cfg(miri)]
+/// # fn main() {}
+/// # #[cfg(not(miri))]
 /// # fn main() {
 /// #     use schema::users::dsl::*;
 /// #     use diesel::insert_into;

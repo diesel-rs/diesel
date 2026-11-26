@@ -219,6 +219,12 @@ fn print_schema_custom_enum_derives() {
 }
 
 #[test]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
+fn print_schema_with_unmappable_enum_names() {
+    test_print_schema("print_schema_with_unmappable_enum_names", vec![]);
+}
+
+#[test]
 fn print_schema_with_unmappable_names() {
     test_print_schema("print_schema_with_unmappable_names", vec!["--with-docs"]);
 }
@@ -634,6 +640,24 @@ fn print_schema_view_infer_nullable_mixed_schema() {
         "print_schema_view_infer_nullable_mixed_schema",
         vec!["--include-views", "--experimental-infer-nullable-for-views"],
     )
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn print_schema_with_materialized_view() {
+    test_print_schema(
+        "print_schema_with_materialized_view",
+        vec!["--include-views", "--with-docs"],
+    );
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn print_schema_materialized_view_infer_nullable() {
+    test_print_schema(
+        "print_schema_materialized_view_infer_nullable",
+        vec!["--include-views", "--experimental-infer-nullable-for-views"],
+    );
 }
 
 #[test]

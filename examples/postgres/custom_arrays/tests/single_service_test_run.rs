@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout, reason = "Example code")]
 use custom_arrays::Connection;
 use custom_arrays::model::endpoint_type::Endpoint;
 use custom_arrays::model::protocol_type::ProtocolType;

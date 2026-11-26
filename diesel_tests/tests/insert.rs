@@ -1,10 +1,15 @@
 use super::schema::*;
+use diesel::sql_types::Text;
 use diesel::*;
 #[cfg(any(feature = "mysql", feature = "mariadb"))]
 use std::num::NonZeroU64;
 use std::rc::Rc;
 use std::sync::Arc;
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn insert_records() {
     use crate::schema::users::{id, table as users};
@@ -35,6 +40,10 @@ fn insert_records() {
     assert_eq!(expected_users, actual_users);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn insert_rc_string_records() {
     use crate::schema::users::table as users;
@@ -71,6 +80,10 @@ fn insert_rc_string_records() {
     assert_eq!(expected_users, actual_users);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn insert_rc_str_records() {
     use crate::schema::users::table as users;
@@ -107,6 +120,10 @@ fn insert_rc_str_records() {
     assert_eq!(expected_users, actual_users);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn insert_arc_str_records() {
     use crate::schema::users::table as users;
@@ -143,6 +160,10 @@ fn insert_arc_str_records() {
     assert_eq!(expected_users, actual_users);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn insert_arc_string_records() {
     use crate::schema::users::table as users;
@@ -179,6 +200,10 @@ fn insert_arc_string_records() {
     assert_eq!(expected_users, actual_users);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn insert_records_as_vec() {
     use crate::schema::users::{id, table as users};
@@ -209,6 +234,10 @@ fn insert_records_as_vec() {
     assert_eq!(expected_users, actual_users);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn insert_records_as_static_array() {
     use crate::schema::users::{id, table as users};
@@ -239,6 +268,10 @@ fn insert_records_as_static_array() {
     assert_eq!(expected_users, actual_users);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn insert_records_as_static_array_ref() {
     use crate::schema::users::{id, table as users};
@@ -269,6 +302,10 @@ fn insert_records_as_static_array_ref() {
     assert_eq!(expected_users, actual_users);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn insert_records_as_boxed_static_array() {
     use crate::schema::users::{id, table as users};
@@ -299,6 +336,10 @@ fn insert_records_as_boxed_static_array() {
     assert_eq!(expected_users, actual_users);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn insert_records_as_rc_static_array() {
     use crate::schema::users::{id, table as users};
@@ -329,6 +370,10 @@ fn insert_records_as_rc_static_array() {
     assert_eq!(expected_users, actual_users);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn insert_records_as_arc_static_array() {
     use crate::schema::users::{id, table as users};
@@ -527,6 +572,10 @@ fn batch_insert_with_returning_id_sqlite() {
     assert_eq!(inserted_ids.len(), 3);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn batch_insert_with_defaults() {
     use crate::schema::users::table as users;
@@ -570,6 +619,10 @@ fn batch_insert_with_defaults() {
     assert_eq!(expected_users, actual_users);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn insert_with_defaults() {
     use crate::schema::users::table as users;
@@ -601,6 +654,10 @@ fn insert_with_defaults() {
     assert_eq!(expected_users, actual_users);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn insert_in_nullable_with_non_null_default() {
     use crate::schema::users::table as users;
@@ -732,6 +789,10 @@ struct BorrowedUser<'a> {
     name: &'a str,
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn insert_borrowed_content() {
     use crate::schema::users::{id, table as users};
@@ -819,6 +880,10 @@ fn insert_only_default_values_with_returning() {
     assert_eq!(Ok(expected_users), users.load(connection));
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn insert_single_bare_value() {
     use crate::schema::users::dsl::*;
@@ -834,6 +899,10 @@ fn insert_single_bare_value() {
     assert_eq!(Ok(expected_names), actual_names);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn insert_single_bare_value_reference() {
     use crate::schema::users::dsl::*;
@@ -849,6 +918,10 @@ fn insert_single_bare_value_reference() {
     assert_eq!(Ok(expected_names), actual_names);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn insert_multiple_bare_values() {
     use crate::schema::users::dsl::*;
@@ -866,6 +939,10 @@ fn insert_multiple_bare_values() {
     assert_eq!(Ok(expected_names), actual_names);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn insert_single_tuple() {
     use crate::schema::users::dsl::*;
@@ -881,6 +958,10 @@ fn insert_single_tuple() {
     assert_eq!(Ok(expected_data), actual_data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn insert_single_tuple_reference() {
     use crate::schema::users::dsl::*;
@@ -896,6 +977,10 @@ fn insert_single_tuple_reference() {
     assert_eq!(Ok(expected_data), actual_data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn insert_nested_tuples() {
     use crate::schema::users::dsl::*;
@@ -911,6 +996,10 @@ fn insert_nested_tuples() {
     assert_eq!(Ok(expected_data), actual_data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn insert_mixed_tuple_and_insertable_struct() {
     use crate::schema::users::dsl::*;
@@ -927,6 +1016,10 @@ fn insert_mixed_tuple_and_insertable_struct() {
     assert_eq!(Ok(expected_data), actual_data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn insert_multiple_tuples() {
     use crate::schema::users::dsl::*;
@@ -949,6 +1042,10 @@ fn insert_multiple_tuples() {
     assert_eq!(Ok(expected_data), actual_data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn insert_optional_field_with_null() {
     use crate::schema::users::dsl::*;
@@ -971,6 +1068,10 @@ fn insert_optional_field_with_null() {
     assert_eq!(Ok(expected_data), actual_data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn insert_optional_field_with_default() {
     use crate::schema::users::dsl::*;
@@ -1004,6 +1105,10 @@ fn insert_optional_field_with_default() {
     assert_eq!(Ok(expected_data), actual_data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn insert_all_default_fields() {
     use crate::schema::users::dsl::*;
@@ -1037,6 +1142,10 @@ fn insert_all_default_fields() {
     assert_eq!(Ok(expected_data), actual_data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 #[cfg(feature = "sqlite")]
 fn batch_insert_is_atomic_on_sqlite() {
@@ -1097,6 +1206,10 @@ fn batch_upsert_with_defaultables_and_returning_is_atomic_on_sqlite() {
 }
 
 // regression test for https://github.com/diesel-rs/diesel/issues/2898
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn mixed_defaultable_insert() {
     use crate::schema::users;
@@ -1134,6 +1247,10 @@ fn mixed_defaultable_insert() {
 }
 
 // regression test for https://github.com/diesel-rs/diesel/issues/3872
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn upsert_with_composite_primary_key_do_nothing() {
     table! {
@@ -1162,6 +1279,10 @@ fn upsert_with_composite_primary_key_do_nothing() {
 }
 
 // regression test for https://github.com/diesel-rs/diesel/issues/3872
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn upsert_with_composite_primary_key_do_update() {
     table! {
@@ -1201,6 +1322,10 @@ fn upsert_with_composite_primary_key_do_update() {
     assert_eq!(users[1], "Tess");
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn batch_upsert_non_default_values() {
     use crate::schema::users;
@@ -1547,4 +1672,43 @@ fn execute_returning_id_with_default_values() {
     assert_eq!(stored.len(), 1);
     assert_eq!(generated.get(), u64::try_from(stored[0].0).unwrap());
     assert_eq!(stored[0].1, 7);
+}
+
+#[diesel_test_helper::test]
+#[cfg(not(miri))] // loads strings via ffi
+fn array_batch_insert_does_reuse_the_right_statement() {
+    let conn = &mut connection();
+
+    #[declare_sql_function]
+    extern "SQL" {
+        fn upper(t: Text) -> Text;
+    }
+
+    diesel::insert_into(users::table)
+        .values([
+            users::name
+                .eq(Box::new("a".into_sql::<Text>())
+                    as Box<dyn BoxableExpression<_, _, SqlType = _>>),
+            users::name
+                .eq(Box::new("b".into_sql::<Text>())
+                    as Box<dyn BoxableExpression<_, _, SqlType = _>>),
+        ])
+        .execute(conn)
+        .unwrap();
+
+    diesel::insert_into(users::table)
+        .values([
+            users::name.eq(Box::new(upper("c")) as Box<dyn BoxableExpression<_, _, SqlType = _>>),
+            users::name.eq(Box::new(upper("d")) as Box<dyn BoxableExpression<_, _, SqlType = _>>),
+        ])
+        .execute(conn)
+        .unwrap();
+
+    let names: Vec<String> = users::table
+        .order(users::id)
+        .select(users::name)
+        .load(conn)
+        .unwrap();
+
+    assert_eq!(names, ["a", "b", "C", "D"]);
 }

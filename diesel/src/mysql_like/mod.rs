@@ -18,6 +18,8 @@ use crate::sql_types::TypeMetadata;
 #[cfg(any(feature = "mysql", feature = "mariadb"))]
 pub use self::connection::MysqlLikeConnection;
 pub use self::value::{MysqlValue, NumericRepresentation};
+#[doc(inline)]
+pub use sqlstate::mysql_like as sql_state;
 
 /// Data structures for MySQL types which have no corresponding Rust type
 ///
@@ -66,6 +68,7 @@ where
 #[diesel_derives::__diesel_public_if(
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 )]
+/// A helper trait to map error numbers to database error kinds for mysql like backends
 pub(crate) trait MapErrorNumber {
     /// Resolve the returned error number to a `DatabaseErrorKind`
     // Bound on `MysqlLikeBackend` everywhere, called only by the connections.

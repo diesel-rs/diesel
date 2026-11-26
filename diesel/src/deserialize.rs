@@ -60,6 +60,11 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 ///     name: String,
 /// }
 ///
+/// # // Reading the query result requires reading memory allocated by the
+/// # // native sqlite library, which miri cannot track provenance for.
+/// # #[cfg(miri)]
+/// # fn main() {}
+/// # #[cfg(not(miri))]
 /// # fn main() {
 /// #     run_test();
 /// # }
@@ -99,6 +104,11 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 ///     name: Option<String>,
 /// }
 ///
+/// # // Reading the query result requires reading memory allocated by the
+/// # // native sqlite library, which miri cannot track provenance for.
+/// # #[cfg(miri)]
+/// # fn main() {}
+/// # #[cfg(not(miri))]
 /// # fn main() {
 /// #     run_test();
 /// # }
@@ -134,6 +144,11 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 ///     title: String,
 /// }
 ///
+/// # // Reading the query result requires reading memory allocated by the
+/// # // native sqlite library, which miri cannot track provenance for.
+/// # #[cfg(miri)]
+/// # fn main() {}
+/// # #[cfg(not(miri))]
 /// # fn main() {
 /// #     run_test();
 /// # }
@@ -218,6 +233,11 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 ///     name: String,
 /// }
 ///
+/// # // Reading the query result requires reading memory allocated by the
+/// # // native sqlite library, which miri cannot track provenance for.
+/// # #[cfg(miri)]
+/// # fn main() {}
+/// # #[cfg(not(miri))]
 /// # fn main() {
 /// #     run_test();
 /// # }
@@ -265,6 +285,11 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 ///     }
 /// }
 ///
+/// # // Reading the query result requires reading memory allocated by the
+/// # // native sqlite library, which miri cannot track provenance for.
+/// # #[cfg(miri)]
+/// # fn main() {}
+/// # #[cfg(not(miri))]
 /// # fn main() {
 /// #     run_test();
 /// # }
@@ -318,6 +343,11 @@ pub use diesel_derives::Queryable;
 ///     name: String,
 /// }
 ///
+/// # // Reading the query result requires reading memory allocated by the
+/// # // native sqlite library, which miri cannot track provenance for.
+/// # #[cfg(miri)]
+/// # fn main() {}
+/// # #[cfg(not(miri))]
 /// # fn main() {
 /// #     run_test();
 /// # }
@@ -369,6 +399,11 @@ pub use diesel_derives::Queryable;
 ///     name: String,
 /// }
 ///
+/// # // Reading the query result requires reading memory allocated by the
+/// # // native sqlite library, which miri cannot track provenance for.
+/// # #[cfg(miri)]
+/// # fn main() {}
+/// # #[cfg(not(miri))]
 /// # fn main() {
 /// #     run_test();
 /// # }

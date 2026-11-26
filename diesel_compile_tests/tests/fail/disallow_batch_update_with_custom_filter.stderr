@@ -23,8 +23,9 @@ error[E0277]: cannot apply a `WHERE` clause to batch updates
 note: required by a bound in `diesel::RunQueryDsl::execute`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
-     |        ------- required by a bound in this associated function
 ...
 LL |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
@@ -55,8 +56,9 @@ error[E0277]: cannot apply a `WHERE` clause to batch updates
 note: required by a bound in `diesel::RunQueryDsl::execute`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
-     |        ------- required by a bound in this associated function
 ...
 LL |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
@@ -87,8 +89,9 @@ error[E0277]: cannot apply a `WHERE` clause to batch updates
 note: required by a bound in `diesel::RunQueryDsl::execute`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
-     |        ------- required by a bound in this associated function
 ...
 LL |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
@@ -119,8 +122,9 @@ error[E0277]: cannot apply a `WHERE` clause to batch updates
 note: required by a bound in `diesel::RunQueryDsl::execute`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
-     |        ------- required by a bound in this associated function
 ...
 LL |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`

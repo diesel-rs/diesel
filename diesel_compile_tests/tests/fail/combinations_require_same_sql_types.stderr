@@ -21,8 +21,9 @@ LL | | }
 note: required by a bound in `union`
   --> ROOT/diesel/src/query_dsl/combine_dsl.rs
    |
+LL | pub trait CombineDsl {
+...
 LL |     fn union<Rhs>(self, rhs: Rhs) -> dsl::Union<Self, Rhs>
-   |        ----- required by a bound in this associated function
 LL |     where
 LL |         Rhs: AsQuery<SqlType = <Self::Query as Query>::SqlType>;
    |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `CombineDsl::union`
@@ -51,8 +52,9 @@ LL | | }
 note: required by a bound in `union`
   --> ROOT/diesel/src/query_dsl/combine_dsl.rs
    |
+LL | pub trait CombineDsl {
+...
 LL |     fn union<Rhs>(self, rhs: Rhs) -> dsl::Union<Self, Rhs>
-   |        ----- required by a bound in this associated function
 LL |     where
 LL |         Rhs: AsQuery<SqlType = <Self::Query as Query>::SqlType>;
    |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `CombineDsl::union`

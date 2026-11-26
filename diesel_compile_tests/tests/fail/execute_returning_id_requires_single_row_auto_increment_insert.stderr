@@ -23,8 +23,9 @@ LL | |     V: SingleRowInsertValues<Tab>,
 note: required by a bound in `mysql_like::query_builder::insert_returning_id::<impl InsertStatement<T, U, Op, Ret>>::execute_returning_id`
    --> ROOT/diesel/src/mysql_like/query_builder/insert_returning_id.rs
     |
+ LL | impl<T: QuerySource, U, Op, Ret> InsertStatement<T, U, Op, Ret> {
+...
  LL |     pub fn execute_returning_id<DB>(
-    |            -------------------- required by a bound in this associated function
 ...
  LL |         U: SingleRowInsertValues<T>,
     |            ^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `mysql_like::query_builder::insert_returning_id::<impl InsertStatement<T, U, Op, Ret>>::execute_returning_id`
@@ -56,8 +57,9 @@ help: the trait `AutoIncrementTable` is implemented for `users::table`
 note: required by a bound in `mysql_like::query_builder::insert_returning_id::<impl InsertStatement<T, U, Op, Ret>>::execute_returning_id`
   --> ROOT/diesel/src/mysql_like/query_builder/insert_returning_id.rs
    |
+LL | impl<T: QuerySource, U, Op, Ret> InsertStatement<T, U, Op, Ret> {
+...
 LL |     pub fn execute_returning_id<DB>(
-   |            -------------------- required by a bound in this associated function
 ...
 LL |         T: AutoIncrementTable,
    |            ^^^^^^^^^^^^^^^^^^ required by this bound in `mysql_like::query_builder::insert_returning_id::<impl InsertStatement<T, U, Op, Ret>>::execute_returning_id`
@@ -88,8 +90,9 @@ LL | |     V: SingleRowInsertValues<Tab>,
 note: required by a bound in `mysql_like::query_builder::insert_returning_id::<impl InsertStatement<T, U, Op, Ret>>::execute_returning_id`
    --> ROOT/diesel/src/mysql_like/query_builder/insert_returning_id.rs
     |
+ LL | impl<T: QuerySource, U, Op, Ret> InsertStatement<T, U, Op, Ret> {
+...
  LL |     pub fn execute_returning_id<DB>(
-    |            -------------------- required by a bound in this associated function
 ...
  LL |         U: SingleRowInsertValues<T>,
     |            ^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `mysql_like::query_builder::insert_returning_id::<impl InsertStatement<T, U, Op, Ret>>::execute_returning_id`

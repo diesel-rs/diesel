@@ -34,8 +34,9 @@ note: `users::table` is defined in module `crate::users` of the current crate
 note: required by a bound in `IncompleteInsertStatement::<T, Op>::values`
    --> ROOT/diesel/src/query_builder/insert_statement/mod.rs
     |
+ LL | impl<T, Op> IncompleteInsertStatement<T, Op>
+...
 LL |     pub fn values<U>(self, records: U) -> InsertStatement<T, U::Values, Op>
-    |            ------ required by a bound in this associated function
 LL |     where
 LL |         U: Insertable<T>,
     |            ^^^^^^^^^^^^^ required by this bound in `IncompleteInsertStatement::<T, Op>::values`
@@ -92,8 +93,9 @@ note: `users::table` is defined in module `crate::users` of the current crate
 note: required by a bound in `IncompleteInsertStatement::<T, Op>::values`
    --> ROOT/diesel/src/query_builder/insert_statement/mod.rs
     |
+ LL | impl<T, Op> IncompleteInsertStatement<T, Op>
+...
 LL |     pub fn values<U>(self, records: U) -> InsertStatement<T, U::Values, Op>
-    |            ------ required by a bound in this associated function
 LL |     where
 LL |         U: Insertable<T>,
     |            ^^^^^^^^^^^^^ required by this bound in `IncompleteInsertStatement::<T, Op>::values`
@@ -136,8 +138,9 @@ note: `users::table` is defined in module `crate::users` of the current crate
 note: required by a bound in `IncompleteInsertStatement::<T, Op>::values`
    --> ROOT/diesel/src/query_builder/insert_statement/mod.rs
     |
+ LL | impl<T, Op> IncompleteInsertStatement<T, Op>
+...
 LL |     pub fn values<U>(self, records: U) -> InsertStatement<T, U::Values, Op>
-    |            ------ required by a bound in this associated function
 LL |     where
 LL |         U: Insertable<T>,
     |            ^^^^^^^^^^^^^ required by this bound in `IncompleteInsertStatement::<T, Op>::values`

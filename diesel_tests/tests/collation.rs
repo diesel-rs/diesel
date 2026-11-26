@@ -1,6 +1,10 @@
 use crate::schema::*;
 use diesel::*;
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 #[cfg(feature = "sqlite")]
 fn no_case_collation() {
@@ -30,6 +34,10 @@ fn no_case_collation() {
     assert_eq!(Ok(User::new(1, "Sean")), sean_no_space);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 #[cfg(feature = "sqlite")]
 fn binary_collation() {
@@ -53,6 +61,10 @@ fn binary_collation() {
     assert_eq!(0, sean.unwrap().len());
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn custom_collation() {
     use crate::schema::users::dsl::*;

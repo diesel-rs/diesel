@@ -319,7 +319,7 @@ We would like to thank all of the sponsors supporting the work on Diesel. Notabl
   <tr>
     <td align="center" width="33%">
       <a href="https://rustfoundation.org/">
-        <img src="https://diesel.rs/assets/images/rf-logo-white-2.svg" />
+        <img src="https://diesel.rs/assets/images/rf-logo-primary-black.svg" />
         <br/>
         <sub><b>Rust Foundation</b></sub>
       </a>

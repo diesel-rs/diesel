@@ -11,3 +11,6 @@ openssl-sys = { workspace = true, features = ["vendored"] }
 
 [lib]
 doc = false
+
+[lints]
+workspace = true

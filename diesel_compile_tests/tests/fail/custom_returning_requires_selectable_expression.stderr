@@ -25,8 +25,9 @@ help: the trait `SelectableExpression<diesel::internal::table_macro::returning::
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`
    --> ROOT/diesel/src/query_builder/update_statement/mod.rs
     |
+LL | impl<T: QuerySource, U, V> UpdateStatement<T, U, V, NoReturningClause> {
+...
 LL |     pub fn returning<E>(self, returns: E) -> UpdateStatement<T, U, V, ReturningClause<E>>
-    |            --------- required by a bound in this associated function
 ...
 LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
     |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
@@ -61,8 +62,9 @@ help: the trait `SelectableExpression<diesel::internal::table_macro::returning::
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
    --> ROOT/diesel/src/query_builder/insert_statement/mod.rs
     |
+LL | impl<T: QuerySource, U, Op> InsertStatement<T, U, Op> {
+...
 LL |     pub fn returning<E>(self, returns: E) -> InsertStatement<T, U, Op, ReturningClause<E>>
-    |            --------- required by a bound in this associated function
 LL |     where
 LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
     |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
@@ -90,8 +92,9 @@ note: required for `bad::columns::age` to implement `AppearsOnTable<ReturningQue
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
    --> ROOT/diesel/src/query_builder/insert_statement/mod.rs
     |
+LL | impl<T: QuerySource, U, Op> InsertStatement<T, U, Op> {
+...
 LL |     pub fn returning<E>(self, returns: E) -> InsertStatement<T, U, Op, ReturningClause<E>>
-    |            --------- required by a bound in this associated function
 LL |     where
 LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
     |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`

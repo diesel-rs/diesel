@@ -1,9 +1,10 @@
 #![allow(unsafe_code)] // fii code
 use super::bind_collector::{SqliteBindCollector, SqliteBindValueRef};
+use super::error_information::SqliteErrorInformation;
 use super::raw::RawConnection;
 use super::sqlite_value::OwnedSqliteValue;
 use crate::connection::Instrumentation;
-use crate::connection::statement_cache::{MaybeCached, PrepareForCache};
+use crate::connection::statement_cache::{MaybeCached, PrepareForCache, PreparedStatement};
 use crate::query_builder::{QueryFragment, QueryId};
 use crate::result::Error::DatabaseError;
 use crate::result::*;
@@ -30,6 +31,17 @@ pub(super) struct Statement {
 // would not be thread safe.
 #[allow(unsafe_code)]
 unsafe impl Send for Statement {}
+
+impl PreparedStatement for Statement {
+    fn parameter_count(&self) -> u64 {
+        // SAFETY: inner_statement is a valid sqlite3_stmt pointer to a non-deallocated statement
+        unsafe {
+            ffi::sqlite3_bind_parameter_count(self.inner_statement.as_ptr())
+                .try_into()
+                .unwrap_or(0)
+        }
+    }
+}
 
 impl Statement {
     pub(super) fn prepare(
@@ -197,6 +209,25 @@ impl Statement {
         unsafe { ffi::sqlite3_reset(self.inner_statement.as_ptr()) };
     }
 
+    /// Steps the statement once for its side effects.
+    #[cfg(not(miri))]
+    pub(super) fn run(&mut self) -> QueryResult<()> {
+        // SAFETY: `inner_statement` stays a live prepared statement until `Drop`.
+        match unsafe { ffi::sqlite3_step(self.inner_statement.as_ptr()) } {
+            ffi::SQLITE_DONE | ffi::SQLITE_ROW => Ok(()),
+            _ => {
+                let error = last_error(self.raw_connection());
+                // Clears the step error so that `Drop` finalizes successfully.
+                self.reset();
+                Err(error)
+            }
+        }
+    }
+
+    fn clear_bindings(&mut self) {
+        unsafe { ffi::sqlite3_clear_bindings(self.inner_statement.as_ptr()) };
+    }
+
     fn raw_connection(&self) -> *mut ffi::sqlite3 {
         unsafe { ffi::sqlite3_db_handle(self.inner_statement.as_ptr()) }
     }
@@ -233,7 +264,10 @@ fn last_error(raw_connection: *mut ffi::sqlite3) -> Error {
         ffi::SQLITE_CONSTRAINT_CHECK => DatabaseErrorKind::CheckViolation,
         _ => DatabaseErrorKind::Unknown,
     };
-    let error_information = Box::new(error_message);
+    let error_information = Box::new(SqliteErrorInformation {
+        message: error_message,
+        native_code: error_code,
+    });
     DatabaseError(error_kind, error_information)
 }
 
@@ -248,18 +282,8 @@ fn last_error_code(conn: *mut ffi::sqlite3) -> libc::c_int {
 
 impl Drop for Statement {
     fn drop(&mut self) {
-        use crate::util::std_compat::panicking;
-
-        let raw_connection = self.raw_connection();
-        let finalize_result = unsafe { ffi::sqlite3_finalize(self.inner_statement.as_ptr()) };
-        if let Err(e) = ensure_sqlite_ok(finalize_result, raw_connection) {
-            if panicking() {
-                #[cfg(feature = "std")]
-                eprintln!("Error finalizing SQLite prepared statement: {e:?}");
-            } else {
-                panic!("Error finalizing SQLite prepared statement: {e:?}");
-            }
-        }
+        // An error only repeats the last failed step, which already returned it.
+        unsafe { ffi::sqlite3_finalize(self.inner_statement.as_ptr()) };
     }
 }
 
@@ -290,7 +314,7 @@ struct BoundStatement<'stmt, 'query> {
 
 impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
     fn bind<T>(
-        statement: MaybeCached<'stmt, Statement>,
+        mut statement: MaybeCached<'stmt, Statement>,
         query: T,
         instrumentation: &'stmt mut dyn Instrumentation,
     ) -> QueryResult<BoundStatement<'stmt, 'query>>
@@ -302,10 +326,22 @@ impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
         // Query is boxed here to make sure it won't move in memory anymore, so any bind
         // it could output would stay valid.
         let query = Box::new(query);
+        // make sure to reset any previously left bindings
+        statement.reset();
+        statement.clear_bindings();
 
         let mut bind_collector = SqliteBindCollector::new();
         query.collect_binds(&mut bind_collector, &mut (), &Sqlite)?;
+
         let SqliteBindCollector { binds } = bind_collector;
+        if statement.parameter_count() != binds.len() as u64 {
+            return Err(
+                crate::connection::statement_cache::invalid_prepared_statement_parameter_count(
+                    statement.parameter_count().try_into().unwrap_or(usize::MAX),
+                    binds.len(),
+                ),
+            );
+        }
 
         let mut ret = BoundStatement {
             statement,
@@ -618,11 +654,9 @@ mod tests {
 
         assert!(e.is_err());
         let e = e.unwrap_err();
-        if let crate::result::Error::DatabaseError(crate::result::DatabaseErrorKind::Unknown, m) = e
-        {
-            assert_eq!(m.message(), "column index out of range");
-        } else {
-            panic!("Wrong error returned");
-        }
+        assert_eq!(
+            e.to_string(),
+            "prepared statement expected a different number of parameters than provided: Expected 0, provided: 1"
+        );
     }
 }

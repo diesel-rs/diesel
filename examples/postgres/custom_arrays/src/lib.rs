@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout, reason = "Example code")]
 use diesel::PgConnection;
 use diesel::r2d2::R2D2Connection;
 use diesel_migrations::{EmbeddedMigrations, MigrationHarness, embed_migrations};

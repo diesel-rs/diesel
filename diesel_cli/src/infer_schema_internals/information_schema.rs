@@ -207,11 +207,15 @@ where
                 .filter(|&schema| schema != default_schema)
                 .map(|schema| schema.to_owned());
             let data = TableName {
-                rust_name: inference::rust_name_for_sql_name(&name, None),
+                rust_name: inference::rust_name_for_sql_name(
+                    &name,
+                    inference::IdentifierKind::Table,
+                    None,
+                ),
                 sql_name: name,
-                rust_schema: schema_name
-                    .as_deref()
-                    .map(|s| inference::rust_name_for_sql_name(s, None)),
+                rust_schema: schema_name.as_deref().map(|s| {
+                    inference::rust_name_for_sql_name(s, inference::IdentifierKind::Schema, None)
+                }),
                 schema: schema_name,
             };
             (tpy, data)

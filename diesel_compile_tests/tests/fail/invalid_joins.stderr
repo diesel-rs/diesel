@@ -24,8 +24,9 @@ note: required for `users::columns::id` to implement `AppearsOnTable<Join<table,
 note: required by a bound in `inner_join`
    --> ROOT/diesel/src/query_dsl/mod.rs
     |
+ LL | pub trait QueryDsl: Sized {
+...
 LL |     fn inner_join<Rhs>(self, rhs: Rhs) -> InnerJoin<Self, Rhs>
-    |        ---------- required by a bound in this associated function
 LL |     where
 LL |         Self: JoinWithImplicitOnClause<Rhs, joins::Inner>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::inner_join`
@@ -77,8 +78,9 @@ note: required for `users::columns::id` to implement `AppearsOnTable<Join<table,
 note: required by a bound in `inner_join`
    --> ROOT/diesel/src/query_dsl/mod.rs
     |
+ LL | pub trait QueryDsl: Sized {
+...
 LL |     fn inner_join<Rhs>(self, rhs: Rhs) -> InnerJoin<Self, Rhs>
-    |        ---------- required by a bound in this associated function
 LL |     where
 LL |         Self: JoinWithImplicitOnClause<Rhs, joins::Inner>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::inner_join`
@@ -133,8 +135,9 @@ note: required for `users::columns::id` to implement `AppearsOnTable<Join<table,
 note: required by a bound in `inner_join`
    --> ROOT/diesel/src/query_dsl/mod.rs
     |
+ LL | pub trait QueryDsl: Sized {
+...
 LL |     fn inner_join<Rhs>(self, rhs: Rhs) -> InnerJoin<Self, Rhs>
-    |        ---------- required by a bound in this associated function
 LL |     where
 LL |         Self: JoinWithImplicitOnClause<Rhs, joins::Inner>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::inner_join`
@@ -207,8 +210,9 @@ note: required for `users::columns::id` to implement `AppearsOnTable<Join<table,
 note: required by a bound in `left_join`
    --> ROOT/diesel/src/query_dsl/mod.rs
     |
+ LL | pub trait QueryDsl: Sized {
+...
 LL |     fn left_join<Rhs>(self, rhs: Rhs) -> LeftJoin<Self, Rhs>
-    |        --------- required by a bound in this associated function
 LL |     where
 LL |         Self: JoinWithImplicitOnClause<Rhs, joins::LeftOuter>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::left_join`
@@ -260,8 +264,9 @@ note: required for `users::columns::id` to implement `AppearsOnTable<Join<table,
 note: required by a bound in `left_join`
    --> ROOT/diesel/src/query_dsl/mod.rs
     |
+ LL | pub trait QueryDsl: Sized {
+...
 LL |     fn left_join<Rhs>(self, rhs: Rhs) -> LeftJoin<Self, Rhs>
-    |        --------- required by a bound in this associated function
 LL |     where
 LL |         Self: JoinWithImplicitOnClause<Rhs, joins::LeftOuter>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::left_join`
@@ -316,8 +321,9 @@ note: required for `users::columns::id` to implement `AppearsOnTable<Join<table,
 note: required by a bound in `left_join`
    --> ROOT/diesel/src/query_dsl/mod.rs
     |
+ LL | pub trait QueryDsl: Sized {
+...
 LL |     fn left_join<Rhs>(self, rhs: Rhs) -> LeftJoin<Self, Rhs>
-    |        --------- required by a bound in this associated function
 LL |     where
 LL |         Self: JoinWithImplicitOnClause<Rhs, joins::LeftOuter>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::left_join`

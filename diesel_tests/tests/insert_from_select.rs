@@ -1,6 +1,10 @@
 use crate::schema::*;
 use diesel::*;
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn insert_from_table() {
     use crate::schema::posts::dsl::*;
@@ -22,6 +26,10 @@ fn insert_from_table() {
     assert_eq!(Ok(expected), data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn insert_from_table_reference() {
     use crate::schema::posts::dsl::*;
@@ -43,6 +51,10 @@ fn insert_from_table_reference() {
     assert_eq!(Ok(expected), data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn insert_from_select() {
     use crate::schema::posts::dsl::*;
@@ -65,6 +77,10 @@ fn insert_from_select() {
     assert_eq!(expected, data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn insert_from_select_reference() {
     use crate::schema::posts::dsl::*;
@@ -87,6 +103,10 @@ fn insert_from_select_reference() {
     assert_eq!(expected, data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn insert_from_boxed() {
     use crate::schema::posts::dsl::*;
@@ -110,6 +130,10 @@ fn insert_from_boxed() {
     assert_eq!(expected, data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn insert_from_boxed_reference() {
     use crate::schema::posts::dsl::*;
@@ -132,6 +156,10 @@ fn insert_from_boxed_reference() {
     assert_eq!(expected, data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 #[cfg(feature = "sqlite")]
 fn insert_or_ignore_with_select() {
@@ -159,6 +187,10 @@ fn insert_or_ignore_with_select() {
     assert_eq!(expected, data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 #[cfg(feature = "sqlite")]
 fn insert_or_replace_with_select() {
@@ -228,6 +260,10 @@ fn insert_or_replace_with_select() {
     assert_eq!(expected, data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn on_conflict_do_nothing_with_select() {
     use crate::schema::posts::dsl::*;
@@ -286,6 +322,10 @@ fn on_conflict_do_nothing_with_select() {
     assert_eq!(expected, data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn on_conflict_do_update_with_select() {
     use crate::schema::posts::dsl::*;
@@ -355,6 +395,10 @@ fn on_conflict_do_update_with_select() {
     assert_eq!(expected, data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn on_conflict_do_update_with_boxed_select() {
     use crate::schema::posts::dsl::*;

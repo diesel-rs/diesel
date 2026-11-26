@@ -13,3 +13,6 @@ doc = false
 proc-macro2 = "1.0.92"
 quote = "1.0.38"
 syn = "3.0.0"
+
+[lints]
+workspace = true

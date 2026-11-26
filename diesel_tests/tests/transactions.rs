@@ -72,6 +72,10 @@ fn transaction_is_rolled_back_when_returned_an_error() {
 // The same trick seems to work for MySQL as well based on the
 // test result, but I cannot find a document support yet. Hence
 // this test is marked for "sqlite" only as this moment. FIXME.
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 #[cfg(feature = "sqlite")]
 fn transaction_rollback_returns_error() {
@@ -210,7 +214,7 @@ fn count_test_table(connection: &mut TestConnection, table_name: &str) -> i64 {
 fn regression_test_for_2123() {
     let conn = &mut connection_without_transaction();
     // fail once
-    let ret = conn.transaction(|conn| {
+    let _ret = conn.transaction(|conn| {
         let _ = conn.transaction(|conn| {
             // handling error
             match diesel::sql_query("SELECT foo").execute(conn) {
@@ -228,13 +232,11 @@ fn regression_test_for_2123() {
             Ok::<_, Error>(())
         })
     });
-    println!("{ret:?}");
     // other transaction
     let ret = conn
         .build_transaction()
         .serializable()
         .run(|conn| diesel::sql_query("SELECT 1").execute(conn));
     // must be Ok(1), but get Err(AlreadyInTransaction)
-    println!("{ret:?}");
     assert_eq!(Ok(1), ret);
 }

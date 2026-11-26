@@ -40,6 +40,10 @@ struct ChangeUser {
     name: String,
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn insert_serialization_can_be_customized() {
     use crate::schema::users::dsl::*;
@@ -60,6 +64,10 @@ fn insert_serialization_can_be_customized() {
     );
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn update_serialization_can_be_customized() {
     use crate::schema::users::dsl::*;

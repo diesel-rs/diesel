@@ -18,7 +18,7 @@ bigdecimal = "0.4"
 ipnet = "2.5.0"
 ipnetwork = "0.21"
 uuid = "1"
-libsqlite3-sys = { version = "0.38", features = ["bundled"] }
+libsqlite3-sys = { version = "0.39", features = ["bundled"] }
 
 [dependencies.diesel]
 path = "../diesel"

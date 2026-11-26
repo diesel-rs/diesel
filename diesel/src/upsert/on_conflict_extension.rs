@@ -133,6 +133,11 @@ where
     /// #     name: &'a str,
     /// # }
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #    run_test().unwrap()
     /// # }
@@ -552,7 +557,12 @@ impl<T: QuerySource, U, Op, Ret, Target>
     /// ```rust
     /// # include!("on_conflict_docs_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
     /// # #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(all(not(miri), not(any(feature = "mysql", feature = "mariadb"))))]
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// #     let conn = &mut establish_connection();
@@ -644,7 +654,12 @@ impl<T: QuerySource, U, Op, Ret, Target>
     /// ```rust
     /// # include!("on_conflict_docs_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
     /// # #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(all(not(miri), not(any(feature = "mysql", feature = "mariadb"))))]
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// #     let conn = &mut establish_connection();
@@ -780,7 +795,12 @@ impl<T: QuerySource, U, Op, Ret, Target>
     /// ```rust
     /// # include!("on_conflict_docs_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
     /// # #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(all(not(miri), not(any(feature = "mysql", feature = "mariadb"))))]
     /// # fn main() {
     /// #     use diesel::QueryDsl;
     /// #     use diesel::query_dsl::methods::FilterDsl;

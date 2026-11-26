@@ -54,6 +54,10 @@ impl ClippyArgs {
             format!("diesel_tests/{backend}"),
             "-F".into(),
             format!("diesel-dynamic-schema/{backend}"),
+            "-F".into(),
+            format!("diesel_migrations/{backend}"),
+            "-F".into(),
+            format!("diesel-async/{backend}"),
         ];
         let mut command = Command::new("cargo");
 
@@ -77,6 +81,10 @@ impl ClippyArgs {
                 "diesel_derives/chrono",
                 "-F",
                 "diesel_derives/time",
+                "-F",
+                "diesel_derives/jiff",
+                "-F",
+                "diesel-async/migrations",
             ])
             .args(&self.flags)
             .current_dir(&metadata.workspace_root);

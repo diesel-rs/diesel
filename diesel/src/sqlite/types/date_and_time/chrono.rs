@@ -229,11 +229,17 @@ mod tests {
     extern crate dotenvy;
 
     use self::chrono::{
-        DateTime, Duration, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Timelike,
-        Utc,
+        DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Timelike, Utc,
     };
+    // `Duration` and `now` are only used by the tests that compare against the
+    // current time, which Miri cannot read from the host while isolation is
+    // enabled.
+    #[cfg(not(miri))]
+    use self::chrono::Duration;
 
-    use crate::dsl::{now, sql};
+    #[cfg(not(miri))]
+    use crate::dsl::now;
+    use crate::dsl::sql;
     use crate::prelude::*;
     use crate::select;
     use crate::sql_types::{Text, Time, Timestamp, TimestamptzSqlite};
@@ -257,6 +263,10 @@ mod tests {
         assert_eq!(Ok(true), query.get_result(connection));
     }
 
+    // This test decodes query results, which requires reading memory
+    // allocated by the native sqlite library. Miri cannot track the
+    // provenance of that memory when using `-Zmiri-native-lib`.
+    #[cfg(not(miri))]
     #[diesel_test_helper::test]
     fn unix_epoch_decodes_correctly_in_all_possible_formats() {
         let connection = &mut connection();
@@ -314,6 +324,9 @@ mod tests {
         }
     }
 
+    // This test compares against the current time, which Miri cannot read
+    // from the host while isolation is enabled.
+    #[cfg(not(miri))]
     #[diesel_test_helper::test]
     fn times_relative_to_now_encode_correctly() {
         let connection = &mut connection();
@@ -343,6 +356,10 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
+    // This test decodes query results, which requires reading memory
+    // allocated by the native sqlite library. Miri cannot track the
+    // provenance of that memory when using `-Zmiri-native-lib`.
+    #[cfg(not(miri))]
     #[diesel_test_helper::test]
     fn times_of_day_decode_correctly() {
         let connection = &mut connection();
@@ -410,6 +427,10 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
+    // This test decodes query results, which requires reading memory
+    // allocated by the native sqlite library. Miri cannot track the
+    // provenance of that memory when using `-Zmiri-native-lib`.
+    #[cfg(not(miri))]
     #[diesel_test_helper::test]
     fn dates_decode_correctly() {
         let connection = &mut connection();
@@ -439,6 +460,10 @@ mod tests {
         );
     }
 
+    // This test decodes query results, which requires reading memory
+    // allocated by the native sqlite library. Miri cannot track the
+    // provenance of that memory when using `-Zmiri-native-lib`.
+    #[cfg(not(miri))]
     #[diesel_test_helper::test]
     fn datetimes_decode_correctly() {
         let connection = &mut connection();
@@ -516,6 +541,10 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
+    // This test decodes query results, which requires reading memory
+    // allocated by the native sqlite library. Miri cannot track the
+    // provenance of that memory when using `-Zmiri-native-lib`.
+    #[cfg(not(miri))]
     #[diesel_test_helper::test]
     fn insert_timestamptz_into_table_as_text() {
         crate::table! {
@@ -657,6 +686,10 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
+    // This test decodes query results, which requires reading memory
+    // allocated by the native sqlite library. Miri cannot track the
+    // provenance of that memory when using `-Zmiri-native-lib`.
+    #[cfg(not(miri))]
     #[diesel_test_helper::test]
     fn unix_epoch_decodes_correctly_with_utc_timezone_in_all_possible_formats() {
         let connection = &mut connection();

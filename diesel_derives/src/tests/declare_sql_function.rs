@@ -22,3 +22,25 @@ pub(crate) fn declare_sql_function_1() {
         name,
     );
 }
+
+#[test]
+pub(crate) fn declare_sql_function_with_named_parameters() {
+    let input = quote::quote! {
+        extern "SQL" {
+            #[named_parameters = true]
+            fn lower(input: Text) -> Text;
+        }
+    };
+    let name = if cfg!(feature = "sqlite") {
+        "declare_sql_function_with_named_parameters (sqlite)"
+    } else {
+        "declare_sql_function_with_named_parameters"
+    };
+    let attr = Default::default();
+    expand_with(
+        &crate::declare_sql_function_inner as &dyn Fn(_, _) -> _,
+        (attr, input),
+        AttributeMacro(syn::parse_quote!(diesel::declare_sql_function)),
+        name,
+    );
+}

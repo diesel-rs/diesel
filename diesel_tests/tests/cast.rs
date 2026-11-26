@@ -84,8 +84,16 @@ mod fallible_cast {
     test_fallible_cast!(text_to_time, "10:14:42" => &str, Text => Time, chrono::NaiveTime::from_hms_opt(10, 14, 42).unwrap() => chrono::NaiveTime);
     #[cfg(feature = "postgres")]
     test_fallible_cast!(text_to_decimal, "3.1" => &str, Text => Decimal, "3.1".parse().unwrap() => bigdecimal::BigDecimal);
-    #[cfg(feature = "postgres")]
+    #[cfg(any(feature = "postgres", feature = "mariadb"))]
     test_fallible_cast!(text_to_uuid, "9d755438-5ad5-42b8-bc6a-a15ace143975" => &str, Text => Uuid, "9d755438-5ad5-42b8-bc6a-a15ace143975".parse().unwrap() => uuid::Uuid);
+    #[cfg(feature = "mariadb")]
+    test_fallible_cast!(binary_to_uuid, [
+            0xFF_u8, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x4F, 0xFF, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66,
+            0x31, 0x32,
+        ] => [u8;16], Binary => Uuid, uuid::Uuid::from_bytes([
+            0xFF_u8, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x4F, 0xFF, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66,
+            0x31, 0x32,
+        ]) => uuid::Uuid);
     #[cfg(any(feature = "mysql", feature = "mariadb"))]
     test_fallible_cast!(text_to_datetime, "2025-09-19 10:21:42" => &str, Text => Datetime, chrono::NaiveDateTime::from_str("2025-09-19T10:21:42").unwrap() => chrono::NaiveDateTime);
 
@@ -157,13 +165,29 @@ mod infallible_cast {
     #[cfg(feature = "postgres")]
     test_infallible_cast!(float4_to_text, 3.1 => f32, Float4 => Text, String::from("3.1") => String);
     #[cfg(any(feature = "postgres", feature = "sqlite"))]
+    // This test reads query results, which requires reading memory
+    // allocated by the native sqlite library. Miri cannot track the
+    // provenance of that memory when using `-Zmiri-native-lib`.
+    #[cfg(not(miri))]
     test_infallible_cast!(float8_to_text, 3.1 => f64, Float8 => Text, String::from("3.1") => String);
     #[cfg(any(feature = "postgres", feature = "sqlite"))]
+    // This test reads query results, which requires reading memory
+    // allocated by the native sqlite library. Miri cannot track the
+    // provenance of that memory when using `-Zmiri-native-lib`.
+    #[cfg(not(miri))]
     test_infallible_cast!(int4_to_text, 3 => i32, Integer => Text, String::from("3") => String);
+    // This test reads query results, which requires reading memory
+    // allocated by the native sqlite library. Miri cannot track the
+    // provenance of that memory when using `-Zmiri-native-lib`.
+    #[cfg(not(miri))]
     test_infallible_cast!(int8_to_text, 3 => i64, BigInt => Text, String::from("3") => String);
     #[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
     test_infallible_cast!(date_to_text, chrono::NaiveDate::from_ymd_opt(2025, 9, 19).unwrap() => chrono::NaiveDate, Date => Text, String::from("2025-09-19") => String);
     #[cfg(any(feature = "postgres", feature = "sqlite"))]
+    // This test reads query results, which requires reading memory
+    // allocated by the native sqlite library. Miri cannot track the
+    // provenance of that memory when using `-Zmiri-native-lib`.
+    #[cfg(not(miri))]
     test_infallible_cast!(json_to_text, serde_json::json!([1,2,3]) => serde_json::Value, Json => Text, String::from("[1,2,3]") => String);
     #[cfg(feature = "postgres")]
     test_infallible_cast!(jsonb_to_text, serde_json::json!([1,2,3]) => serde_json::Value, Jsonb => Text, String::from("[1, 2, 3]") => String);
@@ -174,7 +198,7 @@ mod infallible_cast {
     #[cfg(feature = "postgres")]
     test_infallible_cast!(jsonb_to_json, serde_json::json!([1,2,3]) => serde_json::Value, Jsonb => Json, serde_json::json!([1,2,3]) => serde_json::Value);
 
-    #[cfg(feature = "postgres")]
+    #[cfg(any(feature = "postgres", feature = "mariadb"))]
     test_infallible_cast!(text_to_uuid, "9d755438-5ad5-42b8-bc6a-a15ace143975".parse().unwrap() => uuid::Uuid, Uuid => Text, "9d755438-5ad5-42b8-bc6a-a15ace143975".into() => String);
     #[cfg(any(feature = "mysql", feature = "mariadb"))]
     test_infallible_cast!(text_to_datetime, chrono::NaiveDateTime::from_str("2025-09-19T10:21:42").unwrap() => chrono::NaiveDateTime, Datetime => Text, "2025-09-19 10:21:42".into() => String);

@@ -1,6 +1,10 @@
 use crate::schema::*;
 use diesel::*;
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn one_to_many_returns_query_source_for_association() {
     let (mut connection, sean, tess, _) = conn_with_test_data();
@@ -21,6 +25,10 @@ fn one_to_many_returns_query_source_for_association() {
     assert_eq!(tess_posts, found_posts);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn eager_loading_associations_for_multiple_records() {
     let (mut connection, sean, tess, _) = conn_with_test_data();
@@ -38,6 +46,10 @@ fn eager_loading_associations_for_multiple_records() {
     assert_eq!(expected_data, users_and_posts);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn eager_loading_associations_for_multiple_ref_records() {
     let (mut connection, sean, tess, _) = conn_with_test_data();
@@ -76,6 +88,10 @@ mod eager_loading_with_string_keys {
         user_id: String,
     }
 
+    // This test reads query results, which requires reading memory
+    // allocated by the native sqlite library. Miri cannot track the
+    // provenance of that memory when using `-Zmiri-native-lib`.
+    #[cfg(not(miri))]
     #[diesel_test_helper::test]
     fn eager_loading_associations_for_multiple_records() {
         let connection = &mut connection();
@@ -106,6 +122,10 @@ mod eager_loading_with_string_keys {
     }
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn grouping_associations_maintains_ordering() {
     let (mut connection, sean, tess, _) = conn_with_test_data();
@@ -275,6 +295,10 @@ fn conn_with_test_data() -> (TestConnection, User, User, User) {
 
 #[diesel_test_helper::test]
 // https://github.com/rust-lang/rust/issues/124396
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[allow(unknown_lints, non_local_definitions)]
 fn custom_foreign_key() {
     use diesel::connection::SimpleConnection;

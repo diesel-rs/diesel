@@ -298,8 +298,6 @@ where
         U::SelectExpression: AppearsOnTable<T::Table> + CopyTarget<Table = T::Table>,
         C: ExecuteCopyToConnection,
     {
-        let io_result_mapper = |e| crate::result::Error::DeserializationError(Box::new(e));
-
         let command = CopyToCommand {
             p: PhantomData::<U::SelectExpression>,
             options: CopyToOptions {
@@ -310,87 +308,134 @@ where
                 },
             },
         };
-        // see https://www.postgresql.org/docs/current/sql-copy.html for
-        // a description of the binary format
-        //
-        // We don't write oids
+        let out = ExecuteCopyToConnection::execute(conn, command)?;
+        decode_data::<U, C>(out)
+    }
+}
 
-        let mut out = ExecuteCopyToConnection::execute(conn, command)?;
-        let buffer = out.fill_buf().map_err(io_result_mapper)?;
-        if buffer[..super::COPY_MAGIC_HEADER.len()] != super::COPY_MAGIC_HEADER {
-            return Err(crate::result::Error::DeserializationError(
-                "Unexpected protocol header".into(),
-            ));
+fn decode_data<'a, U, C>(
+    mut out: C::CopyToBuffer<'a>,
+) -> QueryResult<impl Iterator<Item = QueryResult<U>> + 'a>
+where
+    U: FromSqlRow<<U::SelectExpression as Expression>::SqlType, Pg> + Selectable<Pg>,
+    C: ExecuteCopyToConnection + 'a,
+{
+    let io_result_mapper = |e| crate::result::Error::DeserializationError(Box::new(e));
+    // see https://www.postgresql.org/docs/current/sql-copy.html for
+    // a description of the binary format
+    //
+    // We don't write oids
+
+    let buffer = out.fill_buf().map_err(io_result_mapper)?;
+    expect_buffer_len(buffer, super::COPY_MAGIC_HEADER.len() + 8)?;
+    if buffer[..super::COPY_MAGIC_HEADER.len()] != super::COPY_MAGIC_HEADER {
+        return Err(crate::result::Error::DeserializationError(
+            "Unexpected protocol header".into(),
+        ));
+    }
+    // we care only about bit 16-31 here, so we can just skip the bytes in between
+    let flags_backward_incompatible = i16::from_be_bytes(
+        (&buffer[super::COPY_MAGIC_HEADER.len() + 2..super::COPY_MAGIC_HEADER.len() + 4])
+            .try_into()
+            .expect("Exactly 2 byte"),
+    );
+    if flags_backward_incompatible != 0 {
+        return Err(crate::result::Error::DeserializationError(
+            format!("Unexpected flag value: {flags_backward_incompatible:x}").into(),
+        ));
+    }
+    let header_size = usize::try_from(i32::from_be_bytes(
+        (&buffer[super::COPY_MAGIC_HEADER.len() + 4..super::COPY_MAGIC_HEADER.len() + 8])
+            .try_into()
+            .expect("Exactly 4 byte"),
+    ))
+    .map_err(|e| crate::result::Error::DeserializationError(Box::new(e)))?;
+    out.consume(super::COPY_MAGIC_HEADER.len() + 8 + header_size);
+    let mut len = None;
+    let mut finished = false;
+    Ok(core::iter::from_fn(move || {
+        if finished {
+            return None;
         }
-        // we care only about bit 16-31 here, so we can just skip the bytes in between
-        let flags_backward_incompatible = i16::from_be_bytes(
-            (&buffer[super::COPY_MAGIC_HEADER.len() + 2..super::COPY_MAGIC_HEADER.len() + 4])
-                .try_into()
-                .expect("Exactly 2 byte"),
-        );
-        if flags_backward_incompatible != 0 {
-            return Err(crate::result::Error::DeserializationError(
-                format!("Unexpected flag value: {flags_backward_incompatible:x}").into(),
-            ));
+        if let Some(len) = len {
+            out.consume(len);
+            if let Err(e) = out.fill_buf().map_err(io_result_mapper) {
+                finished = true;
+                return Some(Err(e));
+            }
         }
-        let header_size = usize::try_from(i32::from_be_bytes(
-            (&buffer[super::COPY_MAGIC_HEADER.len() + 4..super::COPY_MAGIC_HEADER.len() + 8])
-                .try_into()
-                .expect("Exactly 4 byte"),
-        ))
-        .map_err(|e| crate::result::Error::DeserializationError(Box::new(e)))?;
-        out.consume(super::COPY_MAGIC_HEADER.len() + 8 + header_size);
-        let mut len = None;
-        Ok(core::iter::from_fn(move || {
-            if let Some(len) = len {
-                out.consume(len);
-                if let Err(e) = out.fill_buf().map_err(io_result_mapper) {
+        let buffer = C::get_buffer(&out);
+        len = Some(buffer.len());
+        if let Err(e) = expect_buffer_len(buffer, 2) {
+            finished = true;
+            return Some(Err(e));
+        }
+        let tuple_count = i16::from_be_bytes((&buffer[..2]).try_into().expect("Exactly 2 bytes"));
+        if tuple_count > 0 {
+            let tuple_count = match usize::try_from(tuple_count) {
+                Ok(o) => o,
+                Err(e) => {
+                    return Some(Err(crate::result::Error::DeserializationError(Box::new(e))));
+                }
+            };
+            let mut buffers = Vec::with_capacity(tuple_count);
+            let mut offset = 2;
+            for _t in 0..tuple_count {
+                if let Err(e) = expect_buffer_len(buffer, offset + 4) {
+                    finished = true;
                     return Some(Err(e));
                 }
-            }
-            let buffer = C::get_buffer(&out);
-            len = Some(buffer.len());
-            let tuple_count =
-                i16::from_be_bytes((&buffer[..2]).try_into().expect("Exactly 2 bytes"));
-            if tuple_count > 0 {
-                let tuple_count = match usize::try_from(tuple_count) {
-                    Ok(o) => o,
-                    Err(e) => {
-                        return Some(Err(crate::result::Error::DeserializationError(Box::new(e))));
-                    }
-                };
-                let mut buffers = Vec::with_capacity(tuple_count);
-                let mut offset = 2;
-                for _t in 0..tuple_count {
-                    let data_size = i32::from_be_bytes(
-                        (&buffer[offset..offset + 4])
-                            .try_into()
-                            .expect("Exactly 4 bytes"),
-                    );
-
-                    if data_size < 0 {
-                        buffers.push(None);
-                    } else {
-                        match usize::try_from(data_size) {
-                            Ok(data_size) => {
-                                buffers.push(Some(&buffer[offset + 4..offset + 4 + data_size]));
-                                offset = offset + 4 + data_size;
+                let data_size = i32::from_be_bytes(
+                    (&buffer[offset..offset + 4])
+                        .try_into()
+                        .expect("Exactly 4 bytes"),
+                );
+                if data_size < 0 {
+                    offset += 4;
+                    buffers.push(None);
+                } else {
+                    match usize::try_from(data_size) {
+                        Ok(data_size) => {
+                            if let Err(e) = expect_buffer_len(buffer, offset + 4 + data_size) {
+                                finished = true;
+                                return Some(Err(e));
                             }
-                            Err(e) => {
-                                return Some(Err(crate::result::Error::DeserializationError(
-                                    Box::new(e),
-                                )));
-                            }
+                            buffers.push(Some(&buffer[offset + 4..offset + 4 + data_size]));
+                            offset += data_size + 4;
+                        }
+                        Err(e) => {
+                            return Some(Err(crate::result::Error::DeserializationError(
+                                Box::new(e),
+                            )));
                         }
                     }
                 }
-
-                let row = C::make_row(&out, buffers);
-                Some(U::build_from_row(&row).map_err(crate::result::Error::DeserializationError))
-            } else {
-                None
             }
-        }))
+
+            let row = C::make_row(&out, buffers);
+            Some(U::build_from_row(&row).map_err(crate::result::Error::DeserializationError))
+        } else {
+            out.consume(len.expect("It's always set here"));
+            finished = true;
+            if let Err(e) = out.fill_buf().map_err(io_result_mapper) {
+                return Some(Err(e));
+            }
+            None
+        }
+    }))
+}
+
+fn expect_buffer_len(buffer: &[u8], expected: usize) -> QueryResult<()> {
+    if buffer.len() < expected {
+        Err(crate::result::Error::DeserializationError(
+            format!(
+                "Expected at least {expected} bytes but got {} bytes",
+                buffer.len()
+            )
+            .into(),
+        ))
+    } else {
+        Ok(())
     }
 }
 
@@ -608,5 +653,309 @@ where
     CopyToQuery {
         target,
         options: NotSet,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+    use crate::connection::Instrumentation;
+    use crate::connection::{AnsiTransactionManager, TransactionManager};
+    use crate::pg::query_builder::copy::COPY_MAGIC_HEADER;
+    use std::collections::VecDeque;
+    use std::io::Read;
+
+    struct Wrapper;
+
+    /// Mimics `CopyToBuffer`: hands out one `CopyData` message at a time
+    /// and only moves on to the next one once the current one is consumed
+    struct Messages {
+        messages: VecDeque<Vec<u8>>,
+        offset: usize,
+    }
+
+    impl Messages {
+        fn new(messages: Vec<Vec<u8>>) -> Self {
+            Self {
+                messages: messages.into(),
+                offset: 0,
+            }
+        }
+
+        fn data_slice(&self) -> &[u8] {
+            self.messages
+                .front()
+                .map(|m| &m[self.offset..])
+                .unwrap_or_default()
+        }
+    }
+
+    impl Read for Messages {
+        fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+            let data = self.fill_buf()?;
+            let len = usize::min(buf.len(), data.len());
+            buf[..len].copy_from_slice(&data[..len]);
+            self.consume(len);
+            Ok(len)
+        }
+    }
+
+    impl BufRead for Messages {
+        fn fill_buf(&mut self) -> std::io::Result<&[u8]> {
+            if self.data_slice().is_empty() && self.messages.pop_front().is_some() {
+                self.offset = 0;
+            }
+            Ok(self.data_slice())
+        }
+
+        fn consume(&mut self, amt: usize) {
+            let len = self.messages.front().map_or(0, Vec::len);
+            self.offset = usize::min(len, self.offset + amt);
+        }
+    }
+
+    impl crate::connection::SimpleConnection for Wrapper {
+        fn batch_execute(&mut self, _query: &str) -> QueryResult<()> {
+            unreachable!()
+        }
+    }
+
+    impl crate::connection::ConnectionSealed for Wrapper {}
+
+    impl crate::connection::Connection for Wrapper {
+        type Backend = crate::pg::Pg;
+
+        type TransactionManager = crate::connection::AnsiTransactionManager;
+
+        fn establish(_database_url: &str) -> crate::prelude::ConnectionResult<Self> {
+            unreachable!()
+        }
+
+        fn execute_returning_count<T>(&mut self, _source: &T) -> QueryResult<usize>
+        where
+            T: QueryFragment<Self::Backend> + QueryId,
+        {
+            unreachable!()
+        }
+
+        fn transaction_state(
+            &mut self,
+        ) -> &mut <AnsiTransactionManager as TransactionManager<Self>>::TransactionStateData
+        {
+            unreachable!()
+        }
+
+        fn instrumentation(&mut self) -> &mut dyn Instrumentation {
+            unreachable!()
+        }
+
+        fn set_instrumentation(
+            &mut self,
+            _instrumentation: impl crate::connection::Instrumentation,
+        ) {
+            unreachable!()
+        }
+
+        fn set_prepared_statement_cache_size(&mut self, _size: crate::connection::CacheSize) {
+            unreachable!()
+        }
+    }
+
+    impl ExecuteCopyToConnection for Wrapper {
+        type CopyToBuffer<'a> = Messages;
+
+        fn make_row<'a, 'b>(
+            _out: &'a Self::CopyToBuffer<'_>,
+            _buffers: Vec<Option<&'a [u8]>>,
+        ) -> impl Row<'b, Pg> + 'a {
+            // the tests below never decode a complete row
+            unreachable!() as CopyRow<'a>
+        }
+
+        fn get_buffer<'a>(out: &'a Self::CopyToBuffer<'_>) -> &'a [u8] {
+            out.data_slice()
+        }
+
+        fn execute<T>(&mut self, _command: CopyToCommand<T>) -> QueryResult<Self::CopyToBuffer<'_>>
+        where
+            T: CopyTarget,
+        {
+            unreachable!()
+        }
+    }
+
+    crate::table! {
+        users {
+            id -> Integer,
+            name -> Text,
+            hair_color -> Nullable<Text>,
+            age -> Nullable<Integer>,
+        }
+    }
+
+    #[derive(diesel::Queryable, diesel::Selectable, Debug)]
+    #[diesel(table_name = users)]
+    #[allow(dead_code, reason = "Only used as structure for the test")]
+    struct Dummy {
+        id: i32,
+        name: String,
+        hair_color: Option<String>,
+        age: Option<i32>,
+    }
+
+    fn decode(messages: Vec<Vec<u8>>) -> QueryResult<impl Iterator<Item = QueryResult<Dummy>>> {
+        decode_data::<Dummy, Wrapper>(Messages::new(messages))
+    }
+
+    fn tuple_count(n: i16) -> [u8; 2] {
+        n.to_be_bytes()
+    }
+
+    fn field_len(n: i32) -> [u8; 4] {
+        n.to_be_bytes()
+    }
+
+    #[track_caller]
+    fn first_row_error(first_message: &[&[u8]]) -> String {
+        let first_message = [
+            COPY_MAGIC_HEADER.as_slice(),
+            [0; 8].as_slice(),
+            &first_message.concat(),
+        ]
+        .concat();
+        let mut rows = decode(vec![first_message]).unwrap();
+        let error = match rows.next() {
+            Some(Err(e)) => e.to_string(),
+            Some(Ok(row)) => panic!("expected an error, got {row:?}"),
+            None => panic!("expected an error, got the end of the data"),
+        };
+        assert!(
+            rows.next().is_none(),
+            "the iterator must end after an error"
+        );
+        error
+    }
+
+    #[track_caller]
+    fn check_decode_error(input: Vec<Vec<u8>>, error: &str) {
+        let r = decode(input);
+        assert!(r.is_err());
+        let Err(e) = r else { unreachable!() };
+        assert_eq!(e.to_string(), error);
+    }
+
+    #[test]
+    fn check_empty_buffer_returns_error() {
+        check_decode_error(
+            vec![Vec::new()],
+            "Expected at least 19 bytes but got 0 bytes",
+        );
+    }
+
+    #[test]
+    fn check_header_without_flags_returns_error() {
+        check_decode_error(
+            vec![COPY_MAGIC_HEADER.to_vec()],
+            "Expected at least 19 bytes but got 11 bytes",
+        );
+    }
+
+    #[test]
+    fn check_header_without_extension_length_returns_error() {
+        check_decode_error(
+            vec![[COPY_MAGIC_HEADER.as_slice(), &[0; 7]].concat().to_vec()],
+            "Expected at least 19 bytes but got 18 bytes",
+        );
+    }
+
+    #[test]
+    fn check_missing_trailer_returns_error() {
+        // the data ends right after the header
+        assert_eq!(
+            first_row_error(&[]),
+            "Expected at least 2 bytes but got 0 bytes",
+        );
+    }
+
+    #[test]
+    fn check_truncated_tuple_count_returns_error() {
+        assert_eq!(
+            first_row_error(&[&[0]]),
+            "Expected at least 2 bytes but got 1 bytes"
+        );
+    }
+
+    #[test]
+    fn check_missing_field_length_returns_error() {
+        assert_eq!(
+            first_row_error(&[&tuple_count(4)]),
+            "Expected at least 6 bytes but got 2 bytes"
+        );
+    }
+
+    #[test]
+    fn check_truncated_field_length_returns_error() {
+        assert_eq!(
+            first_row_error(&[&tuple_count(4), &[0, 0]]),
+            "Expected at least 6 bytes but got 4 bytes"
+        );
+    }
+
+    #[test]
+    fn check_missing_field_length_after_value_returns_error() {
+        assert_eq!(
+            first_row_error(&[&tuple_count(4), &field_len(4), &1_i32.to_be_bytes()]),
+            "Expected at least 14 bytes but got 10 bytes"
+        );
+    }
+
+    #[test]
+    fn check_missing_field_length_after_null_returns_error() {
+        assert_eq!(
+            first_row_error(&[&tuple_count(4), &field_len(-1)]),
+            "Expected at least 10 bytes but got 6 bytes"
+        );
+    }
+
+    #[test]
+    fn check_missing_field_data_returns_error() {
+        assert_eq!(
+            first_row_error(&[&tuple_count(4), &field_len(4)]),
+            "Expected at least 10 bytes but got 6 bytes"
+        );
+    }
+
+    #[test]
+    fn check_truncated_field_data_returns_error() {
+        assert_eq!(
+            first_row_error(&[&tuple_count(4), &field_len(100), b"abc"]),
+            "Expected at least 106 bytes but got 9 bytes"
+        );
+    }
+
+    #[test]
+    fn check_truncated_later_field_data_returns_error() {
+        assert_eq!(
+            first_row_error(&[
+                &tuple_count(4),
+                &field_len(4),
+                &1_i32.to_be_bytes(),
+                &field_len(5),
+                b"Sean",
+            ]),
+            "Expected at least 19 bytes but got 18 bytes"
+        );
+    }
+
+    #[test]
+    fn check_field_length_i32_max_returns_error() {
+        assert_eq!(
+            first_row_error(&[&tuple_count(4), &field_len(i32::MAX), b"abc"]),
+            format!(
+                "Expected at least {} bytes but got 9 bytes",
+                6 + i32::MAX as usize
+            )
+        );
     }
 }

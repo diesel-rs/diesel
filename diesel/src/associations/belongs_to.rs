@@ -89,6 +89,11 @@ pub trait BelongsTo<Parent> {
 /// #     title: String,
 /// # }
 /// #
+/// # // Reading the query result requires reading memory allocated by the
+/// # // native sqlite library, which miri cannot track provenance for.
+/// # #[cfg(miri)]
+/// # fn main() {}
+/// # #[cfg(not(miri))]
 /// # fn main() {
 /// #     run_test();
 /// # }
@@ -184,6 +189,11 @@ pub trait GroupedBy<'a, Parent>: IntoIterator + Sized {
     /// #     title: String,
     /// # }
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     run_test();
     /// # }

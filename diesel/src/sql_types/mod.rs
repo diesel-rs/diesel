@@ -291,14 +291,21 @@ pub type Bit = Binary;
 ///
 /// - [`chrono::NaiveDate`][NaiveDate] with `feature = "chrono"`
 /// - [`time::Date`][Date] with `feature = "time"`
+/// - [`jiff::civil::Date`] with `feature = "jiff"`
 ///
 /// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`chrono::NaiveDate`][NaiveDate] with `feature = "chrono"`
 /// - [`time::Date`][Date] with `feature = "time"`
+/// - [`jiff::civil::Date`] with `feature = "jiff"`
 ///
 /// [NaiveDate]: https://docs.rs/chrono/*/chrono/naive/struct.NaiveDate.html
 /// [Date]: https://docs.rs/time/0.3.9/time/struct.Date.html
+#[cfg_attr(feature = "jiff", doc = " [`jiff::civil::Date`]: jiff::civil::Date")]
+#[cfg_attr(
+    not(feature = "jiff"),
+    doc = " [`jiff::civil::Date`]: https://docs.rs/jiff/1/jiff/civil/struct.Date.html"
+)]
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[diesel(postgres_type(oid = 1082, array_oid = 1182))]
 #[diesel(sqlite_type(name = "Text"))]
@@ -336,14 +343,21 @@ pub struct Interval;
 ///
 /// - [`chrono::NaiveTime`][NaiveTime] with `feature = "chrono"`
 /// - [`time::Time`][Time] with `feature = "time"`
+/// - [`jiff::civil::Time`] with `feature = "jiff"`
 ///
 /// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`chrono::NaiveTime`][NaiveTime] with `feature = "chrono"`
 /// - [`time::Time`][Time] with `feature = "time"`
+/// - [`jiff::civil::Time`] with `feature = "jiff"`
 ///
 /// [NaiveTime]: /chrono/naive/time/struct.NaiveTime.html
 /// [Time]: /time/struct.Time.html
+#[cfg_attr(feature = "jiff", doc = " [`jiff::civil::Time`]: jiff::civil::Time")]
+#[cfg_attr(
+    not(feature = "jiff"),
+    doc = " [`jiff::civil::Time`]: https://docs.rs/jiff/1/jiff/civil/struct.Time.html"
+)]
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[diesel(postgres_type(oid = 1083, array_oid = 1183))]
 #[diesel(sqlite_type(name = "Text"))]
@@ -360,6 +374,7 @@ pub struct Time;
 /// - [`chrono::NaiveDateTime`][NaiveDateTime] with `feature = "chrono"`
 /// - [`time::PrimitiveDateTime`] with `feature = "time"`
 /// - [`time::OffsetDateTime`] with `feature = "time"` (MySQL only)
+/// - [`jiff::civil::DateTime`] with `feature = "jiff"`
 ///
 /// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
@@ -367,6 +382,7 @@ pub struct Time;
 /// - [`chrono::NaiveDateTime`][NaiveDateTime] with `feature = "chrono"`
 /// - [`time::PrimitiveDateTime`] with `feature = "time"`
 /// - [`time::OffsetDateTime`] with `feature = "time"` (MySQL only)
+/// - [`jiff::civil::DateTime`] with `feature = "jiff"`
 ///
 /// [SystemTime]: std::time::SystemTime
 #[cfg_attr(
@@ -392,6 +408,14 @@ pub struct Time;
 #[cfg_attr(
     not(feature = "time"),
     doc = " [`time::OffsetDateTime`]: https://docs.rs/time/0.3.9/time/struct.OffsetDateTime.html"
+)]
+#[cfg_attr(
+    feature = "jiff",
+    doc = " [`jiff::civil::DateTime`]: jiff::civil::DateTime"
+)]
+#[cfg_attr(
+    not(feature = "jiff"),
+    doc = " [`jiff::civil::DateTime`]: https://docs.rs/jiff/1/jiff/civil/struct.DateTime.html"
 )]
 /// [Timespec]: /time/struct.Timespec.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
@@ -584,6 +608,24 @@ where
 {
     type IsNull = is_nullable::IsNullable;
 }
+
+/// The `UUID` SQL type ([PostgreSQL](https://www.postgresql.org/docs/current/datatype-uuid.html), [MariaDB](https://mariadb.com/docs/server/reference/data-types/string-data-types/uuid-data-type)). This type can only be used with `feature = "uuid"`
+///
+/// ### [`ToSql`] impls
+///
+/// - [`uuid::Uuid`][Uuid]
+///
+/// ### [`FromSql`] impls
+///
+/// - [`uuid::Uuid`][Uuid]
+///
+/// [`ToSql`]: crate::serialize::ToSql
+/// [`FromSql`]: crate::deserialize::FromSql
+/// [Uuid]: https://docs.rs/uuid/*/uuid/struct.Uuid.html
+#[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+#[diesel(postgres_type(oid = 2950, array_oid = 2951))]
+#[diesel(mariadb_type(name = "String"))]
+pub struct Uuid;
 
 #[doc(inline)]
 #[cfg(feature = "postgres_backend")]

@@ -24,6 +24,11 @@
 //!     title: String,
 //! }
 //!
+//! # // Reading the query result requires reading memory allocated by the
+//! # // native sqlite library, which miri cannot track provenance for.
+//! # #[cfg(miri)]
+//! # fn main() {}
+//! # #[cfg(not(miri))]
 //! # fn main() {
 //! #     run_test().unwrap();
 //! # }
@@ -116,6 +121,11 @@
 //! #     title: String,
 //! # }
 //! #
+//! # // Reading the query result requires reading memory allocated by the
+//! # // native sqlite library, which miri cannot track provenance for.
+//! # #[cfg(miri)]
+//! # fn main() {}
+//! # #[cfg(not(miri))]
 //! # fn main() {
 //! #   use self::users::dsl::*;
 //! #   let connection = &mut establish_connection();
@@ -212,6 +222,11 @@
 //! #     body: String,
 //! # }
 //! #
+//! # // Reading the query result requires reading memory allocated by the
+//! # // native sqlite library, which miri cannot track provenance for.
+//! # #[cfg(miri)]
+//! # fn main() {}
+//! # #[cfg(not(miri))]
 //! # fn main() {
 //! #   let connection = &mut establish_connection();
 //! #

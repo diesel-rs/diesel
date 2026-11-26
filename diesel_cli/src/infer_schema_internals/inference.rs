@@ -14,7 +14,7 @@ use crate::print_schema::{ColumnSorting, DocConfig};
 
 static RESERVED_NAMES: &[&str] = &["table", "columns", "is_nullable"];
 
-pub(super) fn is_reserved_name(name: &str) -> bool {
+fn is_reserved_name(name: &str) -> bool {
     syn::parse_str::<syn::Ident>(name).is_err()
         || RESERVED_NAMES.contains(&name)
         || (
@@ -29,18 +29,13 @@ fn unmappable_char(c: char) -> bool {
     !(c.is_ascii_alphanumeric() || c == '_')
 }
 
-fn replace_unmappable_chars(name: &str) -> Cow<'_, str> {
+pub fn replace_unmappable_chars(name: &str) -> Cow<'_, str> {
     for (idx, c) in name.char_indices() {
         if unmappable_char(c) {
             let mut s = name[..idx].to_string();
             let tail = &name[idx..];
             replace_chars(&mut s, tail, false);
             return Cow::Owned(s);
-            // rust identifier don't start with digits
-        } else if idx == 0 && c.is_ascii_digit() {
-            let mut out = String::from("_");
-            replace_chars(&mut out, &name[idx..], true);
-            return Cow::Owned(out);
         }
     }
     Cow::Borrowed(name)
@@ -60,9 +55,57 @@ fn replace_chars(s: &mut String, tail: &str, mut last_was_underscore: bool) {
     }
 }
 
-pub fn rust_name_for_sql_name(sql_name: &str, table_name: Option<&TableName>) -> String {
-    let name = replace_unmappable_chars(sql_name);
-    if is_reserved_name(&name) || Some(&name as &str) == table_name.map(|t| t.rust_name.as_str()) {
+/// The kind of item a Rust name is derived for, which sets the prefix put before a name that
+/// starts with a digit
+#[derive(Debug, Clone, Copy)]
+pub enum IdentifierKind {
+    /// A schema, whose Rust name `table!` also uses as its SQL name, so the only prefix that
+    /// keeps it valid is `_`
+    Schema,
+    Table,
+    Column,
+    /// A custom type, and the Rust enum generated for it
+    #[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
+    Type,
+    EnumVariant,
+}
+
+impl IdentifierKind {
+    fn leading_digit_prefix(self) -> &'static str {
+        match self {
+            IdentifierKind::Schema => "_",
+            IdentifierKind::Table => "table_",
+            IdentifierKind::Column => "column_",
+            #[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
+            IdentifierKind::Type => "Type",
+            IdentifierKind::EnumVariant => "Variant",
+        }
+    }
+}
+
+/// Makes `name` a valid Rust identifier by prefixing it according to its `kind` if it starts with
+/// a digit, and appending `_` if it is reserved.
+///
+/// Names built from SQL names must go through this function after any case conversion as case
+/// conversions strip trailing `_`
+pub fn make_valid_identifier(name: Cow<'_, str>, kind: IdentifierKind) -> Cow<'_, str> {
+    if name.starts_with(|c: char| c.is_ascii_digit()) {
+        // Rust identifiers cannot start with a digit
+        Cow::Owned(format!("{}{name}", kind.leading_digit_prefix()))
+    } else if is_reserved_name(&name) {
+        Cow::Owned(format!("{name}_"))
+    } else {
+        name
+    }
+}
+
+pub fn rust_name_for_sql_name(
+    sql_name: &str,
+    kind: IdentifierKind,
+    table_name: Option<&TableName>,
+) -> String {
+    let name = make_valid_identifier(replace_unmappable_chars(sql_name), kind);
+    if Some(&name as &str) == table_name.map(|t| t.rust_name.as_str()) {
         format!("{name}_")
     } else {
         name.into_owned()
@@ -78,7 +121,7 @@ pub fn load_table_names(
         #[cfg(feature = "sqlite")]
         InferConnection::Sqlite(c) => super::sqlite::load_table_names(c, schema_name),
         #[cfg(feature = "postgres")]
-        InferConnection::Pg(c) => super::information_schema::load_table_names(c, schema_name),
+        InferConnection::Pg(c) => super::pg::load_table_names(c, schema_name),
         #[cfg(feature = "mysql")]
         InferConnection::Mysql(c) => super::information_schema::load_table_names(c, schema_name),
         #[cfg(feature = "mariadb")]
@@ -156,7 +199,7 @@ fn get_column_information(
         }
         #[cfg(feature = "postgres")]
         InferConnection::Pg(ref mut c) => {
-            super::pg::get_table_data(c, table, column_sorting, pg_domains_as_custom_types)
+            super::pg::get_table_data(c, table, column_sorting, pg_domains_as_custom_types, kind)
         }
         #[cfg(feature = "mysql")]
         InferConnection::Mysql(ref mut c) => {
@@ -171,7 +214,7 @@ fn get_column_information(
         Err(crate::errors::Error::NoTableFound(table.clone()))
     } else {
         let mut column_info = column_info?;
-        if matches!(kind, SupportedQueryRelationStructures::View) {
+        if kind != SupportedQueryRelationStructures::Table {
             // we don't support max_length for views yet
             column_info
                 .iter_mut()
@@ -265,13 +308,6 @@ pub fn load_foreign_key_constraints(
 
     constraints.map(|mut ct| {
         ct.sort();
-        ct.iter_mut().for_each(|foreign_key_constraint| {
-            for name in &mut foreign_key_constraint.foreign_key_columns_rust {
-                if is_reserved_name(name) {
-                    *name = format!("{name}_");
-                }
-            }
-        });
         tracing::info!(?ct, "Loaded foreign key constraints");
         ct
     })
@@ -328,7 +364,7 @@ fn load_column_structure_data(
             auto_increment,
             ..
         } = c;
-        let rust_name = rust_name_for_sql_name(&column_name, Some(name));
+        let rust_name = rust_name_for_sql_name(&column_name, IdentifierKind::Column, Some(name));
 
         Ok(ColumnDefinition {
             sql_name: column_name,
@@ -347,17 +383,18 @@ pub fn load_table_data(
     connection: &mut InferConnection,
     name: TableName,
     config: &PrintSchema,
-    tpe: SupportedQueryRelationStructures,
+    kind: SupportedQueryRelationStructures,
 ) -> Result<TableData, crate::errors::Error> {
-    let primary_key = match tpe {
+    let primary_key = match kind {
         SupportedQueryRelationStructures::Table => get_primary_keys(connection, &name)?,
-        SupportedQueryRelationStructures::View => Vec::new(),
+        SupportedQueryRelationStructures::View
+        | SupportedQueryRelationStructures::MaterializedView => Vec::new(),
     };
     let (table_comment, column_data) =
-        load_column_structure_data(connection, &name, config, Some(&primary_key), tpe)?;
+        load_column_structure_data(connection, &name, config, Some(&primary_key), kind)?;
     let primary_key = primary_key
         .iter()
-        .map(|k| rust_name_for_sql_name(k, Some(&name)))
+        .map(|k| rust_name_for_sql_name(k, IdentifierKind::Column, Some(&name)))
         .collect::<Vec<_>>();
     Ok(TableData {
         name,
@@ -371,15 +408,11 @@ pub fn load_table_data(
 pub fn load_view_data(
     resolver: &mut SchemaResolverImpl,
     name: TableName,
+    kind: SupportedQueryRelationStructures,
 ) -> Result<ViewData, crate::errors::Error> {
-    let (table_comment, mut column_data) = load_column_structure_data(
-        resolver.connection,
-        &name,
-        resolver.config,
-        None,
-        SupportedQueryRelationStructures::View,
-    )?;
-    let sql_definition = load_view_sql_definition(resolver.connection, &name)?;
+    let (table_comment, mut column_data) =
+        load_column_structure_data(resolver.connection, &name, resolver.config, None, kind)?;
+    let sql_definition = load_view_sql_definition(resolver.connection, &name, kind)?;
     if resolver.config.experimental_infer_nullable_for_views {
         tracing::debug!("Infer nullability for view fields");
         match diesel_infer_query::parse_view_def(&sql_definition) {
@@ -432,12 +465,19 @@ pub fn load_view_data(
 fn load_view_sql_definition(
     connection: &mut InferConnection,
     name: &TableName,
+    kind: SupportedQueryRelationStructures,
 ) -> Result<String, crate::errors::Error> {
+    #[cfg(not(feature = "postgres"))]
+    let _ = kind;
+
     match connection {
         #[cfg(feature = "postgres")]
-        InferConnection::Pg(pg_connection) => Ok(
-            super::information_schema::load_view_sql_definition(pg_connection, name)?,
-        ),
+        InferConnection::Pg(pg_connection) => Ok(match kind {
+            SupportedQueryRelationStructures::MaterializedView => {
+                super::pg::load_materialized_view_sql_definition(pg_connection, name)?
+            }
+            _ => super::information_schema::load_view_sql_definition(pg_connection, name)?,
+        }),
         #[cfg(feature = "sqlite")]
         InferConnection::Sqlite(sqlite_connection) => {
             super::sqlite::load_view_sql_definition(sqlite_connection, name)

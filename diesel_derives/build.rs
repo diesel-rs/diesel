@@ -209,11 +209,14 @@ fn main() {
         ),
         (
             "declare_sql_function",
-            vec![Example::new(if has_sqlite {
-                "diesel_derives__tests__declare_sql_function_1 (sqlite).snap"
-            } else {
-                "diesel_derives__tests__declare_sql_function_1.snap"
-            })],
+            vec![Example::with_heading(
+                if has_sqlite {
+                    "diesel_derives__tests__declare_sql_function_1 (sqlite).snap"
+                } else {
+                    "diesel_derives__tests__declare_sql_function_1.snap"
+                },
+                "Normal usage",
+            )],
         ),
         (
             "define_sql_function",
@@ -349,12 +352,14 @@ fn main() {
     ];
 
     if has_sqlite {
+        assert_eq!(mapping[mapping.len() - 2].0, "sql_type");
         mapping[mapping.len() - 2].1.push(Example::with_heading(
             "diesel_derives__tests__sql_type_1 (sqlite).snap",
             "SQLite",
         ));
     }
     if has_postgres {
+        assert_eq!(mapping[mapping.len() - 2].0, "sql_type");
         mapping[mapping.len() - 2].1.push(Example::with_heading(
             "diesel_derives__tests__sql_type_1 (postgres).snap",
             "PostgreSQL",
@@ -365,6 +370,7 @@ fn main() {
         ));
     }
     if has_mysql {
+        assert_eq!(mapping[mapping.len() - 2].0, "sql_type");
         mapping[mapping.len() - 2].1.push(Example::with_heading(
             "diesel_derives__tests__sql_type_1 (mysql).snap",
             "MySQL",
@@ -376,6 +382,7 @@ fn main() {
     }
 
     if has_sqlite {
+        assert_eq!(mapping[mapping.len() - 1].0, "has_query");
         mapping[mapping.len() - 1].1.push(Example::with_heading(
             "diesel_derives__tests__has_query_1 (sqlite).snap",
             "SQLite",
@@ -386,6 +393,7 @@ fn main() {
         ));
     }
     if has_postgres {
+        assert_eq!(mapping[mapping.len() - 1].0, "has_query");
         mapping[mapping.len() - 1].1.push(Example::with_heading(
             "diesel_derives__tests__has_query_1 (postgres).snap",
             "PostgreSQL",
@@ -396,6 +404,7 @@ fn main() {
         ));
     }
     if has_mysql {
+        assert_eq!(mapping[mapping.len() - 1].0, "has_query");
         mapping[mapping.len() - 1].1.push(Example::with_heading(
             "diesel_derives__tests__has_query_1 (mysql).snap",
             "MySQL",
@@ -403,6 +412,13 @@ fn main() {
         mapping[mapping.len() - 1].1.push(Example::with_heading(
             "diesel_derives__tests__has_query_custom_base_query (mysql).snap",
             "MySQL - Custom base query",
+        ));
+    }
+    if has_postgres {
+        assert_eq!(mapping[mapping.len() - 16].0, "declare_sql_function");
+        mapping[mapping.len() - 16].1.push(Example::with_heading(
+            "diesel_derives__tests__declare_sql_function_with_named_parameters.snap",
+            "Named Parameters",
         ));
     }
 

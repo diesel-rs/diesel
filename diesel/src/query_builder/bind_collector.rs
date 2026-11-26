@@ -47,6 +47,21 @@ pub trait BindCollector<'a, DB: TypeMetadata>: Sized {
     }
 }
 
+/// A helper trait indicating that this is a bind data container
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
+pub trait BindData: Send + 'static {
+    /// How many bind values does this container contain
+    fn len(&self) -> usize;
+
+    /// Is this set of bind data empty
+    // This mostly exists to satisfy clippy::len_without_is_empty
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+}
+
 /// A movable version of the bind collector which allows it to be extracted, moved and refilled.
 ///
 /// This is mostly useful in async context where bind data needs to be moved across threads.
@@ -55,7 +70,7 @@ pub trait BindCollector<'a, DB: TypeMetadata>: Sized {
 )]
 pub trait MoveableBindCollector<DB: TypeMetadata> {
     /// The movable bind data of this bind collector
-    type BindData: Send + 'static;
+    type BindData: BindData;
 
     /// Builds a movable version of the bind collector
     fn moveable(&self) -> Self::BindData;
@@ -178,6 +193,17 @@ where
                 .iter()
                 .map(|m| Box::new(m.clone()) as Box<dyn core::fmt::Debug>),
         );
+    }
+}
+
+impl<DB> BindData for RawBytesBindCollector<DB>
+where
+    DB: Backend + TypeMetadata,
+    for<'a> DB: Backend<BindCollector<'a> = Self> + TypeMetadata + 'static,
+    <DB as TypeMetadata>::TypeMetadata: core::fmt::Debug + Clone + Send,
+{
+    fn len(&self) -> usize {
+        self.binds.len()
     }
 }
 

@@ -14,8 +14,23 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ### Added
 
-* Generated Rust enums now derive `Clone`, `Copy`, `PartialEq` and `Eq` when `custom_enum_derives` is not specified. `Debug` and `diesel::types::Enum` are always included.
-* Add support for sqlite-wasm-rs 0.6
+* `diesel print-schema` now generates `diesel::view!` definitions for PostgreSQL materialized views when `include_views` is enabled
+* Added `DatabaseErrorInformation::native_code`, the backend's own error code (MySQL and MariaDB error number, SQLite result code)
+* Added support for the `jiff` crate behind a new `jiff` feature, which is also part of `extras`. `jiff::civil::Date`, `jiff::civil::Time` and `jiff::civil::DateTime` map to the `Date`, `Time` and `Timestamp` SQL types on all backends (and `jiff::civil::DateTime` additionally to `Datetime` on MySQL and MariaDB), `jiff::Timestamp` maps to `Timestamptz` on PostgreSQL, and `#[derive(MultiConnection)]` supports the civil types
+
+### Fixed
+
+* `#[derive(QueryableByName)]` now respects `#[sql_name]` on table columns
+* `AsyncPgConnection` now maps the PostgreSQL connection exception codes that `PgConnection` reports as `DatabaseErrorKind::ClosedConnection` to the same kind
+
+### Changed
+
+
+## [2.4.0] 2026-11-13
+
+### Added
+
+
 * Add support for Batch-Update for PostgreSQL, MySQL and SQLite
 * Diesel-Migrations now contains a migration source that easily allows you to register Rust based migrations
 * Diesel-Migrations now contains a migration source that allows you to combine migrations from several different sources
@@ -47,24 +62,22 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Exposed the SQLite bind values collected for a query under the `i-implement-a-third-party-backend-and-opt-into-breaking-changes` feature, via public `SqliteBindCollector` and `SqliteBindCollectorData`, each with a `binds()` iterator over the live values and the owned snapshot respectively, plus the `SqliteBindValueRef` and `OwnedSqliteBindValue` enums.
 * Exposed `GroupByClause` and `NoGroupByClause` under the `i-implement-a-third-party-backend-and-opt-into-breaking-changes` feature so third-party crates can distinguish grouped and ungrouped `SelectStatement` types.
 * Added `--no-schema` CLI flag to the `migration run` subcommand
-* Added `SqliteConnection::auto_vacuum` and `SqliteConnection::set_auto_vacuum` to read and set a database's `auto_vacuum` mode through the typed `AutoVacuumMode` enum, each accepting an optional schema name to target an attached database.
-* Added `SqliteConnection::page_count` and `SqliteConnection::freelist_count` to read a database's total and reclaimable page counts, each accepting an optional schema name to target an attached database.
-* Added `SqliteConnection::incremental_vacuum` to return freelist pages to the filesystem on a database in incremental `auto_vacuum` mode, accepting an optional schema name and an optional bound on how many pages to reclaim.
 * Added `SqliteConnection::vacuum` and `SqliteConnection::vacuum_into` to rebuild a database or write a vacuumed copy of it to a new file, each accepting an optional schema name to target an attached database, with the destination path passed as a bind parameter.
 * Added `BoxedCloneQuery` type. This is a boxed query that uses `Arc` to allow the query to be cloned.
 * Added `SqliteConnection::wal_checkpoint` to checkpoint the write-ahead log through the typed `WalCheckpointMode` enum, returning a `WalCheckpointOutcome` with the busy flag and frame counts, and accepting an optional schema name where `None` checkpoints every attached database.
-* Added support for `RETURNING` to  Mariadb (`UPDATE ... RETURNING` requires Mariadb >= 13)
+* Added the `diesel::sqlite::pragma` module to declare SQLite pragmas as types, read them per schema or per connection into a Rust type the caller chooses, and assign them integer, keyword or quoted text values, with the built-in `PageCount` and `FreelistCount` pragmas for a database's total and reclaimable page counts, the `AutoVacuum` pragma for its `auto_vacuum` mode as an `AutoVacuumMode`, and the `IncrementalVacuum` pragma to release freelist pages in incremental mode.
+* Added a MariaDB backend including a MariadbConnection  
+* Added support for `RETURNING` clauses to the MariaDB backend
 * Added support for `VALUES(column)` in Upsert for Mysql and Mariadb
 * Added the `UnsignedTiny`, `UnsignedSmall`, `UnsignedMedium` and `UnsignedBig` variants to `NumericRepresentation` for the MySQL and MariaDB backends
-* Added support for `OLD_VALUE(col)` to Mariadb in `UPDATE ... RETURNING` (requires Mariadb >= 13)
 * `diesel print-schema` now uses the `COMMENT ON TYPE` of a PostgreSQL enum as the doc comment of its generated Rust enum. The doc comments of the generated Rust enums and of their `rust_types` module now follow `with_docs` like those of tables and columns, which they did not before: none with `no-doc-comments`, only the type comment with `only-database-comments`, and the type comment or else the generated doc comment with `database-comments-fallback-to-auto-generated-doc-comment`.
 * Added the `AsExpression` coercions of `now` and `today` (to `Timestamptz`, `Nullable<Timestamp>`, `Nullable<Date>`, …) to `&now`, `&&now`, `&today` and `&&today`, so a `#[derive(AsChangeset)]` struct with a `now`, `&now`, `today` or `&today` field can be used by reference, for instance in a batch update
-* Added `diesel::connection::DatabaseVersion`, a database version that orders by major, minor and patch
-* Added `FromStr` for `DatabaseVersion`, parsing the `major.minor.patch` form its `Display` writes
-* Added `SqliteConnection::version` to read the version of the linked SQLite library
-* Added `PgConnection::version` to read the version of the connected server
-* Added `MariadbConnection::version` to read the version of the connected server
-* Added `MysqlConnection::version` to read the version of the connected server
+* Added `diesel::connection::DatabaseVersion`, a database version that orders by major, minor and patch including support to read the database version from any provided connection
+* Added support for `Uuid` to Mariadb
+* Added `DatabaseErrorInformation::sqlstate`, returning the SQLSTATE of a database error as a `SqlState`, whose class is a `SqlStateClass` including exposing the SQLSTATE for error from database connections that support it
+* Added the `sqlstate` crate holding `SqlState`, `SqlStateClass`, `InvalidSqlState` and the SQLSTATE constants, which diesel re-exports
+* Added `named_parameters` attribute to the `declare_sql_function` macro to allow passing function parameters using named notation on backends that support it
+* Added support for database views via a new `view!` macro
 * Added `CompositeType` marker trait and `composite_type!` macro
 
 ### Fixed
@@ -77,14 +90,13 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fixed SQLite value reads to panic instead of creating invalid slices or returning incorrect data when SQLite allocation fails. Row iteration reports a failed value duplication as an error instead.
 * Fixed a use after free where reading a SQLite value in a second representation, for example a blob as text, invalidated slices another `SqliteValue` of the same field had returned. Such a read now works on a copy of the value.
 * `Bpchar` is now a distinct PostgreSQL SQL type (previously a hidden alias for `Varchar`). Binds on `CHAR(N)` / `BPCHAR` columns are now sent with OID 1042, allowing PostgreSQL to use the column's index instead of casting it to text.
-* Restore SQLite auto-extension support with `libsqlite3-sys` versions before 0.29
 * Fix non-deterministic test failures on PostgreSQL caused by loading rows without `ORDER BY` and assuming insertion order
 * `diesel_derives` does now correctly handle feature flag unification in mixed build/target dependency situations
 * Fixed several panics in the serialization and deserialization code for PostgreSQL and MySQL
 * Tighten requirements for `SqliteConnection::deserialize_readonly_database` to closely match the upstream requirements
 * `diesel print-schema` now generates `joinable!` and `allow_tables_to_appear_in_same_query!` for PostgreSQL foreign keys across multiple configured schemas
-* Fixed several Tests using schema modifications for `mysql` and `mariadb`
 * Fixed an overflow while converting a PostgreSQL `Interval` into a `chrono::Duration`, which panicked with debug assertions enabled and silently produced a wrong, sometimes negative, duration without them
+* `diesel print-schema` and `diesel migration generate --diff-schema` no longer drop `joinable!` definitions on MariaDB when two tables reuse one foreign key constraint name, which MariaDB permits from 12.1 onwards
 * The SQLite JSONB reader now rejects a `null`, `true` or `false` element that declares a payload or uses a multi byte header, instead of decoding a value that SQLite either refuses or reads differently
 * Fixed SQLite jsonb encoding writing a string with a quote or backslash as `TEXT`, which sqlite's own JSON functions then reject
 * Fixed decoding SQLite `jsonb` `INT` payloads above `i64::MAX`, which failed to deserialize even when SQLite itself wrote them
@@ -93,7 +105,25 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fixed a failed top-level `COMMIT`, such as a deferred foreign key violation on SQLite, leaving the transaction open
 * Fixed `embed_migrations!` making the crate hash depend on the directory the crate is built in, which broke reproducible builds
 * Reject subselects that reference an ungrouped column of an aggregating outer query
+* Fixed a out of bounds memory access while trying to reuse prepared statements with a different number of bind elements on the postgres backend
+* Fixed reusing the wrong prepared statement with batch inserts with static arrays containing BoxableExpression values
+* Fix a potential out of bounds memory access while executing `sql_query` statements with less binds supplied than expected on the mysql backend
 * Fixed the SQLite `diesel_manage_updated_at` function to return the SQL error when creating its trigger fails, for example on a missing table or an authorizer denial, instead of panicking
+* `diesel print-schema` now generates valid Rust names for custom types whose name starts with a digit or converts to `Self`, such as the PostgreSQL types `2fa_method` and `self` (now `Type2faMethod` and `Self_`) or the MySQL/MariaDB enum type of a table named `24h_orders`, now prefixed with `Type`
+* Fix `copy_to().load()` to correctly close the copy stream at the end of the statement to bring back the connection into a usable state
+* Fix parsing consecutive null values in the binary copy_to stream
+* Fix the copy iterator to only return a single error and stop afterwards
+* Fix potential panics while deserializing binary copy_to responses
+* Fixed an issue with a panic during `copy_from` statements could render the connection unusable
+* Fixed an issue with using `COPY FROM/TO` via `sql_query` and `batch_execute` which could render the connection unusable
+* Fixed a Segmentationfault when issuing an empty query while using libmariadb
+* Fixed SQL injection through the SQLite `diesel_manage_updated_at` function, which now quotes its argument as a table name and runs a single statement. Table names containing `"`, spaces or keywords now work
+* Fix a potential use-after-free issues for SQLite database deserialized in during register_auto_extension
+* Fix that the iterator returned by `SqliteConnection::load_iter` is correctly fused and doesn't return values after the first `None` or statement related `Some(Err(_))` by reexecuting the statement
+* Fix a potential use-after-free memory bug while holding rows in the Mysql backend longer than the connection/result iterator exists
+* Provide a BorrowedSqliteConnection passed to various hooks to prevent users calling `std::mem::replace` or similar methods
+* Fixed `diesel_tests::migration::test_rust_migrations` to allow consecutive runs without failing
+* Fixed a double free when a SQLite auto-extension leaked a cursor whose last step failed, and the matching abort in WAL hooks
 
 ### Changed
 
@@ -103,6 +133,9 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Improved documentation and added examples for `filter_target` on `IncompleteOnConflict`
 * A MySQL or MariaDB read whose requested signedness disagrees with the column's now errors instead of reinterpreting the bits, which affects a signed value read through `Unsigned<T>` and an `UNSIGNED BIGINT` above `i64::MAX` read as `BigInt`
 * Custom expression types used in the `WHERE` clause of a subselect need a `ValidGrouping<GB>` impl that is generic over `GB`, as derived impls already are, because an impl of only `ValidGrouping<()>` no longer compiles there
+* `SqliteConnection::establish` turns off the two-argument `fts3_tokenizer()`, which SQLite builds compiled with `SQLITE_ENABLE_FTS3_TOKENIZER`, such as Ubuntu's system library, enable by default and which lets SQL text make SQLite call through an arbitrary pointer. `SqliteConnection::set_fts3_tokenizer_enabled` is now an `unsafe fn`.
+* Extended libsqlite3-sys support to include 0.40
+* `diesel print-schema` now prefixes a table or column name that starts with a digit with `table_` or `column_` instead of `_`, so `24h_orders` gives `table_24h_orders` instead of `_24h_orders`
 
 
 ## [2.3.14] 2026-10-07
@@ -2491,3 +2524,4 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.3.12]: https://github.com/diesel-rs/diesel/compare/v2.3.11...v2.3.12
 [2.3.13]: https://github.com/diesel-rs/diesel/compare/v2.3.12...v2.3.13
 [2.3.14]: https://github.com/diesel-rs/diesel/compare/v2.3.13...v2.3.14
+[2.4.0]: https://github.com/diesel-rs/diesel/compare/v2.3.0..v2.4.0

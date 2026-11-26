@@ -19,7 +19,11 @@ impl TableName {
         let name = name.into();
 
         TableName {
-            rust_name: inference::rust_name_for_sql_name(&name, None),
+            rust_name: inference::rust_name_for_sql_name(
+                &name,
+                inference::IdentifierKind::Table,
+                None,
+            ),
             sql_name: name,
             schema: None,
             rust_schema: None,
@@ -34,9 +38,17 @@ impl TableName {
         let name = name.into();
         let schema = schema.into();
         TableName {
-            rust_name: inference::rust_name_for_sql_name(&name, None),
+            rust_name: inference::rust_name_for_sql_name(
+                &name,
+                inference::IdentifierKind::Table,
+                None,
+            ),
             sql_name: name,
-            rust_schema: Some(inference::rust_name_for_sql_name(&schema, None)),
+            rust_schema: Some(inference::rust_name_for_sql_name(
+                &schema,
+                inference::IdentifierKind::Schema,
+                None,
+            )),
             schema: Some(schema),
         }
     }

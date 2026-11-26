@@ -104,6 +104,7 @@ pub fn load_foreign_key_constraints(
                     };
                     let foreign_key_columns_rust = super::inference::rust_name_for_sql_name(
                         &row.foreign_key,
+                        super::inference::IdentifierKind::Column,
                         Some(&child_table),
                     );
                     Ok(ForeignKeyConstraint {
@@ -157,7 +158,8 @@ pub fn get_table_data(
     // and ensure that the rowid column uses the right type.
     let primary_key = match kind {
         SupportedQueryRelationStructures::Table => get_primary_keys(conn, table)?,
-        SupportedQueryRelationStructures::View => Vec::new(),
+        SupportedQueryRelationStructures::View
+        | SupportedQueryRelationStructures::MaterializedView => Vec::new(),
     };
     if primary_key.len() == 1 {
         let primary_key = primary_key.first().expect("guaranteed to have one element");

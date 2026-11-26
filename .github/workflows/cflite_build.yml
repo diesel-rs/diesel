@@ -3,9 +3,11 @@ on:
   push:
     branches:
       - main
-permissions: read-all
+permissions:
+  contents: read
 jobs:
   Build:
+    name: Fuzzing on main
     runs-on: ubuntu-latest
     concurrency:
       group: ${{ github.workflow }}-${{ matrix.sanitizer }}-${{ github.ref }}
@@ -18,7 +20,7 @@ jobs:
     steps:
       - name: Build Fuzzers (${{ matrix.sanitizer }})
         id: build
-        uses: google/clusterfuzzlite/actions/build_fuzzers@884713a6c30a92e5e8544c39945cd7cb630abcd1 # v1
+        uses: google/clusterfuzzlite/actions/build_fuzzers@v1
         with:
           language: rust
           sanitizer: ${{ matrix.sanitizer }}

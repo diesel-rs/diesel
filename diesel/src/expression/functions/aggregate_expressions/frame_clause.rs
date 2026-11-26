@@ -87,13 +87,17 @@ simple_frame_expr!(
     ///
     /// Requires to set a `ORDER BY` clause set via `window_order`
     /// for the current window function call
-    Range, " RANGE ");
+    Range,
+    " RANGE "
+);
 simple_frame_expr!(
     /// Rows frame mode
     ///
     /// This options specifies that the offset starts/ends
     /// a certain number of rows before/after the current row
-    Rows, " ROWS ");
+    Rows,
+    " ROWS "
+);
 simple_frame_expr_with_bound!(
     /// Groups frame mode
     ///
@@ -118,7 +122,9 @@ simple_frame_expr!(
     /// the first row of the partition
     ///
     /// This option can be used as frame start
-    UnboundedPreceding, "UNBOUNDED PRECEDING ");
+    UnboundedPreceding,
+    "UNBOUNDED PRECEDING "
+);
 simple_frame_expr!(
     /// A `CURRENT ROW` frame bound
     ///
@@ -131,7 +137,9 @@ simple_frame_expr!(
     /// row
     ///
     /// This option can be used as frame start and end
-    CurrentRow, "CURRENT ROW ");
+    CurrentRow,
+    "CURRENT ROW "
+);
 simple_frame_expr!(
     /// A `UNBOUNDED FOLLOWING` frame bound
     ///
@@ -139,7 +147,9 @@ simple_frame_expr!(
     /// the last row of the partition
     ///
     /// This option can be used as frame end
-    UnboundedFollowing, "UNBOUNDED FOLLOWING ");
+    UnboundedFollowing,
+    "UNBOUNDED FOLLOWING "
+);
 
 // exclusion
 simple_frame_expr_with_bound!(

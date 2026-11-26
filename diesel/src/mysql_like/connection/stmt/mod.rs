@@ -1,4 +1,5 @@
 #![allow(unsafe_code)] // module uses ffi
+use alloc::ffi::CString;
 use core::ffi as libc;
 use core::ffi::CStr;
 use core::marker::PhantomData;
@@ -6,9 +7,10 @@ use core::ptr::NonNull;
 use mysqlclient_sys as ffi;
 
 use super::bind::{OutputBinds, PreparedStatementBinds};
-use crate::connection::statement_cache::MaybeCached;
+use super::error_information::{MysqlLikeErrorInformation, sqlstate_from_ptr};
+use crate::connection::statement_cache::{MaybeCached, PreparedStatement};
 use crate::mysql_like::{MysqlLikeBackend, MysqlType};
-use crate::result::{DatabaseErrorKind, Error, QueryResult};
+use crate::result::{Error, QueryResult, SqlState};
 
 pub(super) mod iterator;
 mod metadata;
@@ -21,6 +23,19 @@ pub struct Statement<DB: MysqlLikeBackend> {
     stmt: NonNull<ffi::MYSQL_STMT>,
     input_binds: Option<PreparedStatementBinds>,
     _phantom: PhantomData<DB>,
+}
+
+impl<DB> PreparedStatement for Statement<DB>
+where
+    DB: MysqlLikeBackend,
+{
+    fn parameter_count(&self) -> u64 {
+        // SAFETY:
+        // stmt is a valid pointer to MYSQL_STMT that's not deallocated yet
+        //
+        // On windows that returns a u32
+        unsafe { ffi::mysql_stmt_param_count(self.stmt.as_ptr()) as u64 }
+    }
 }
 
 // mysql connection can be shared between threads according to libmysqlclients documentation
@@ -37,11 +52,14 @@ impl<DB: MysqlLikeBackend> Statement<DB> {
     }
 
     pub fn prepare(&self, query: &str) -> QueryResult<()> {
+        use crate::result::Error::InvalidCString;
+
+        let query = CString::new(query).map_err(InvalidCString)?;
         unsafe {
             ffi::mysql_stmt_prepare(
                 self.stmt.as_ptr(),
                 query.as_ptr() as *const libc::c_char,
-                query.len() as libc::c_ulong,
+                query.count_bytes() as libc::c_ulong,
             );
         }
         self.did_an_error_occur()
@@ -59,6 +77,15 @@ impl<DB: MysqlLikeBackend> Statement<DB> {
         &mut self,
         mut input_binds: PreparedStatementBinds,
     ) -> QueryResult<()> {
+        if input_binds.len() != self.parameter_count() {
+            return Err(
+                crate::connection::statement_cache::invalid_prepared_statement_parameter_count(
+                    self.parameter_count().try_into().unwrap_or(usize::MAX),
+                    input_binds.len().try_into().unwrap_or(usize::MAX),
+                ),
+            );
+        }
+
         input_binds.with_mysql_binds(|bind_ptr| {
             // This relies on the invariant that the current value of `self.input_binds`
             // will not change without this function being called
@@ -76,6 +103,14 @@ impl<DB: MysqlLikeBackend> Statement<DB> {
             .into_owned()
     }
 
+    fn last_error_sqlstate(&self) -> Option<SqlState> {
+        // SAFETY: `self.stmt` is the live statement handle owned by `self`.
+        let sqlstate = unsafe { ffi::mysql_stmt_sqlstate(self.stmt.as_ptr()) };
+        // SAFETY: the result is null or the NUL terminated SQLSTATE stored on the
+        // statement handle, which no call changes while `self` is borrowed here.
+        unsafe { sqlstate_from_ptr(sqlstate) }
+    }
+
     ///we return a Option here because mariadb sometimes doesn't provide the statement metadata before the execute
     pub(super) fn metadata(&self) -> QueryResult<Option<StatementMetadata>> {
         let result_ptr = unsafe { ffi::mysql_stmt_result_metadata(self.stmt.as_ptr()) };
@@ -90,17 +125,21 @@ impl<DB: MysqlLikeBackend> Statement<DB> {
         if error_message.is_empty() {
             Ok(())
         } else {
+            let error_number = self.last_error_number();
             Err(DatabaseError(
-                self.last_error_type(),
-                Box::new(error_message),
+                DB::map_error_number(error_number),
+                Box::new(MysqlLikeErrorInformation {
+                    message: error_message,
+                    sqlstate: self.last_error_sqlstate(),
+                    native_code: i32::try_from(error_number).ok().filter(|&code| code != 0),
+                }),
             ))
         }
     }
 
-    fn last_error_type(&self) -> DatabaseErrorKind {
-        let last_error_number = unsafe { ffi::mysql_stmt_errno(self.stmt.as_ptr()) };
-
-        DB::map_error_number(last_error_number)
+    fn last_error_number(&self) -> u32 {
+        // SAFETY: `self.stmt` is the live statement handle owned by `self`.
+        unsafe { ffi::mysql_stmt_errno(self.stmt.as_ptr()) }
     }
 
     /// If the pointers referenced by the `MYSQL_BIND` structures are invalidated,

@@ -1,4 +1,9 @@
-#[cfg(all(feature = "r2d2", feature = "chrono", feature = "time"))]
+#[cfg(all(
+    feature = "r2d2",
+    feature = "chrono",
+    feature = "time",
+    feature = "jiff"
+))]
 #[test]
 pub(crate) fn multiconnection_1() {
     let input = quote::quote! {
@@ -16,7 +21,12 @@ pub(crate) fn multiconnection_1() {
     );
 }
 
-#[cfg(all(feature = "r2d2", feature = "chrono", feature = "time"))]
+#[cfg(all(
+    feature = "r2d2",
+    feature = "chrono",
+    feature = "time",
+    feature = "jiff"
+))]
 #[test]
 pub(crate) fn multiconnection_2() {
     let input = quote::quote! {

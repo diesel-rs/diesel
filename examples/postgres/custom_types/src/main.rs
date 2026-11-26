@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout, reason = "Example code")]
 use self::schema::translations;
 use diesel::prelude::*;
 

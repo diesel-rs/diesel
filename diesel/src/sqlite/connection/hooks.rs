@@ -1,3 +1,5 @@
+use crate::sqlite::BorrowedSqliteConnection;
+
 use super::SqliteConnection;
 use core::num::NonZeroU32;
 
@@ -25,6 +27,10 @@ impl SqliteConnection {
     /// # Example
     ///
     /// ```rust
+    /// # // This test registers Rust callbacks that sqlite invokes through the
+    /// # // FFI boundary, which is not supported by miri `-Zmiri-native-lib`.
+    /// # #[cfg(not(miri))]
+    /// # fn main() {
     /// use diesel::prelude::*;
     /// use diesel::sqlite::{SqliteConnection, CommitDecision};
     /// use std::sync::{Arc, Mutex};
@@ -55,6 +61,9 @@ impl SqliteConnection {
     /// }).unwrap();
     ///
     /// assert_eq!(*commits.lock().unwrap(), 1);
+    /// # }
+    /// # #[cfg(miri)]
+    /// # fn main() {}
     /// ```
     pub fn on_commit<F>(&mut self, hook: F)
     where
@@ -90,6 +99,10 @@ impl SqliteConnection {
     /// # Example
     ///
     /// ```rust
+    /// # // This test registers Rust callbacks that sqlite invokes through the
+    /// # // FFI boundary, which is not supported by miri `-Zmiri-native-lib`.
+    /// # #[cfg(not(miri))]
+    /// # fn main() {
     /// use diesel::prelude::*;
     /// use diesel::sqlite::SqliteConnection;
     /// use std::sync::Arc;
@@ -111,6 +124,9 @@ impl SqliteConnection {
     /// });
     ///
     /// assert_eq!(rollbacks.load(Ordering::Relaxed), 1);
+    /// # }
+    /// # #[cfg(miri)]
+    /// # fn main() {}
     /// ```
     pub fn on_rollback<F>(&mut self, hook: F)
     where
@@ -213,19 +229,25 @@ impl SqliteConnection {
     /// # use diesel::connection::SimpleConnection;
     /// # use diesel::sqlite::SqliteConnection;
     /// # use diesel::sqlite::WalCheckpointMode;
+    ///
     /// # let conn = &mut SqliteConnection::establish("test.db").unwrap();
     /// # conn.batch_execute("PRAGMA journal_mode = WAL;").unwrap();
     /// conn.on_wal(|conn, db_name, n_pages| {
     ///     println!("WAL for {db_name}: {n_pages} pages");
     ///     if n_pages > 1000 {
     ///         // The connection may be used here, e.g. to force a checkpoint.
-    ///         let _ = conn.wal_checkpoint(None, WalCheckpointMode::Truncate);
+    ///         unsafe {
+    ///             // SAFETY: This is safe as long as we don't move or replace out the
+    ///             // inner SqliteConnection. None of the functions defined on SqliteConnection
+    ///             // do that
+    ///             let _ = conn.inner_mut().wal_checkpoint(None, WalCheckpointMode::Truncate);
+    ///         }
     ///     }
     /// });
     /// ```
     pub fn on_wal<F>(&mut self, hook: F)
     where
-        F: Fn(&mut SqliteConnection, &str, u32) + Send + 'static,
+        F: Fn(&'_ mut BorrowedSqliteConnection, &str, u32) + Send + 'static,
     {
         self.raw_connection.set_wal_hook(hook);
     }
@@ -297,9 +319,10 @@ impl SqliteConnection {
 
     /// Sets a simple timeout-based busy handler.
     ///
-    /// When a table is locked, SQLite will sleep and retry until `ms`
-    /// milliseconds have elapsed. Pass 0 to disable (return `SQLITE_BUSY`
-    /// immediately).
+    /// When a table is locked, SQLite will sleep and retry until `timeout`
+    /// has elapsed, rounded up to whole milliseconds and capped at `i32::MAX`
+    /// milliseconds. Pass [`Duration::ZERO`](core::time::Duration::ZERO) to
+    /// disable (return `SQLITE_BUSY` immediately).
     ///
     /// Setting this clears any custom [`on_busy`](Self::on_busy) handler.
     /// Conversely, calling `on_busy` clears this timeout. For most use cases,
@@ -315,10 +338,10 @@ impl SqliteConnection {
     ///
     /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
     /// // Wait up to 5 seconds for locked tables
-    /// conn.set_busy_timeout(5000);
+    /// conn.set_busy_timeout(std::time::Duration::from_secs(5));
     /// ```
-    pub fn set_busy_timeout(&mut self, ms: i32) {
-        self.raw_connection.set_busy_timeout(ms);
+    pub fn set_busy_timeout(&mut self, timeout: core::time::Duration) {
+        self.raw_connection.set_busy_timeout(timeout);
     }
 }
 
@@ -840,6 +863,28 @@ mod tests {
     // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
     #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
+    fn on_wal_leaked_failed_cursor_keeps_connection_open() {
+        let (conn, _dir) = &mut wal_connection();
+        crate::sql_query("CREATE TABLE t_wal_leak (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+        #[allow(unsafe_code, reason = "Test code")]
+        conn.on_wal(|conn, _db_name, _n_pages| unsafe {
+            crate::sqlite::connection::leak_failed_cursor(conn.inner_mut());
+        });
+
+        for _ in 0..2 {
+            crate::sql_query("INSERT INTO t_wal_leak DEFAULT VALUES")
+                .execute(conn)
+                .unwrap();
+        }
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
+    #[diesel_test_helper::test]
     fn on_wal_callback_write_re_enters_hook() {
         let (conn, _dir) = &mut wal_connection();
 
@@ -886,6 +931,58 @@ mod tests {
             logged, 1,
             "the write performed inside the callback should persist"
         );
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
+    #[diesel_test_helper::test]
+    fn on_wal_db_name_survives_detach_in_hook() {
+        // Raw SQL because the typed DSL cannot name a schema attached at runtime.
+        for schema in [
+            "wal_detach_arc".to_string(),
+            format!("wal_{}", "a".repeat(2000)),
+        ] {
+            let dir = tempfile::tempdir().unwrap();
+            let mut conn =
+                SqliteConnection::establish(dir.path().join("main.db").to_str().unwrap()).unwrap();
+            let archive = dir.path().join("archive.db");
+            crate::sql_query(format!(
+                "ATTACH DATABASE '{}' AS {schema}",
+                archive.display()
+            ))
+            .execute(&mut conn)
+            .unwrap();
+            crate::sql_query(format!("PRAGMA {schema}.journal_mode = WAL"))
+                .execute(&mut conn)
+                .unwrap();
+            crate::sql_query(format!("CREATE TABLE {schema}.log (line TEXT NOT NULL)"))
+                .execute(&mut conn)
+                .unwrap();
+
+            let observed: Arc<std::sync::Mutex<Option<(String, String)>>> = Default::default();
+            let observed2 = observed.clone();
+            conn.on_wal(move |conn, db_name, _| {
+                let at_entry = db_name.to_owned();
+                crate::sql_query(format!("DETACH DATABASE {at_entry}"))
+                    .execute(conn)
+                    .unwrap();
+                // `db_name` must stay readable after the DETACH ran.
+                *observed2.lock().unwrap() = Some((at_entry, db_name.to_owned()));
+            });
+
+            crate::sql_query(format!("INSERT INTO {schema}.log (line) VALUES ('hello')"))
+                .execute(&mut conn)
+                .unwrap();
+
+            let (at_entry, after) = observed.lock().unwrap().take().expect("WAL hook fired");
+            assert_eq!(at_entry, schema, "the hook fires for the attached schema");
+            assert_eq!(
+                after, at_entry,
+                "db_name must stay valid after a DETACH inside the hook"
+            );
+        }
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
@@ -969,6 +1066,57 @@ mod tests {
         assert!(
             calls.load(Ordering::Relaxed) >= 1,
             "the busy handler should have been invoked at least once"
+        );
+    }
+
+    // A hook closure whose destructor panics while a normal connection is
+    // dropped must not leave the handle open (and the database locked).
+    // Cannot run this test with miri due to callbacks
+    #[cfg(not(any(miri, all(target_family = "wasm", target_os = "unknown"))))]
+    #[diesel_test_helper::test]
+    fn panicking_hook_drop_on_connection_drop_still_closes_handle() {
+        use crate::connection::SimpleConnection;
+        use crate::sqlite::{SqliteChangeOps, SqliteUpdateRouter};
+        use std::sync::Arc;
+        use std::sync::atomic::{AtomicU32, Ordering};
+
+        struct PanicOnDrop;
+        impl Drop for PanicOnDrop {
+            fn drop(&mut self) {
+                panic!("hook closure dropped");
+            }
+        }
+
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("test.db");
+        let path = path.to_str().unwrap();
+        let mut conn = SqliteConnection::establish(path).unwrap();
+        conn.batch_execute("CREATE TABLE t_panic_hook (x)").unwrap();
+
+        // The update hook is the first one `RawConnection::drop` frees.
+        let guard = PanicOnDrop;
+        conn.on_update(
+            SqliteUpdateRouter::new().on_any(SqliteChangeOps::ALL, move |_| {
+                let _ = &guard;
+            }),
+        );
+        let rollbacks = Arc::new(AtomicU32::new(0));
+        let r = rollbacks.clone();
+        conn.on_rollback(move || {
+            r.fetch_add(1, Ordering::SeqCst);
+        });
+        // Leave a write transaction open, so a leaked handle keeps the file locked.
+        conn.batch_execute("BEGIN; INSERT INTO t_panic_hook VALUES (1)")
+            .unwrap();
+
+        let dropped = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| drop(conn)));
+        assert!(dropped.is_err(), "the closure destructor panics");
+
+        let mut other = SqliteConnection::establish(path).unwrap();
+        let write = other.batch_execute("INSERT INTO t_panic_hook VALUES (2)");
+        assert!(
+            write.is_ok(),
+            "the first handle was never closed: {write:?}"
         );
     }
 }

@@ -1,4 +1,5 @@
 mod bind;
+mod error_information;
 mod raw;
 mod stmt;
 mod url;

@@ -1,6 +1,5 @@
 use diesel::mysql::{Mysql, MysqlConnection};
 use diesel::*;
-use std::collections::HashMap;
 
 use super::data_structures::*;
 use super::information_schema::DefaultSchema;
@@ -21,7 +20,7 @@ pub fn load_foreign_key_constraints(
         None => &default_schema,
     };
 
-    let constraints = tc::table
+    let rows = tc::table
         .filter(tc::constraint_type.eq("FOREIGN KEY"))
         .filter(tc::table_schema.eq(schema_name))
         .filter(kcu::referenced_column_name.is_not_null())
@@ -37,41 +36,12 @@ pub fn load_foreign_key_constraints(
             kcu::referenced_column_name,
             kcu::constraint_name,
         ))
-        .load::<(TableName, TableName, String, String, String)>(connection)?
-        .into_iter()
-        .fold(
-            HashMap::new(),
-            |mut acc, (child_table, parent_table, foreign_key, primary_key, fk_constraint_name)| {
-                let entry = acc
-                    .entry(fk_constraint_name)
-                    .or_insert_with(|| (child_table, parent_table, Vec::new(), Vec::new()));
-                entry.2.push(foreign_key);
-                entry.3.push(primary_key);
-                acc
-            },
-        )
-        .into_values()
-        .map(
-            |(mut child_table, mut parent_table, foreign_key_columns, primary_key_columns)| {
-                child_table.strip_schema_if_matches(&default_schema);
-                parent_table.strip_schema_if_matches(&default_schema);
+        .load::<(TableName, TableName, String, String, String)>(connection)?;
 
-                let foreign_key_columns_rust = foreign_key_columns
-                    .iter()
-                    .map(|s| super::inference::rust_name_for_sql_name(s, Some(&child_table)))
-                    .collect();
-
-                ForeignKeyConstraint {
-                    child_table,
-                    parent_table,
-                    primary_key_columns,
-                    foreign_key_columns_rust,
-                    foreign_key_columns,
-                }
-            },
-        )
-        .collect();
-    Ok(constraints)
+    Ok(super::mysql_like::group_foreign_key_constraints(
+        rows,
+        &default_schema,
+    ))
 }
 
 #[cfg(test)]

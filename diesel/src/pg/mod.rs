@@ -35,6 +35,8 @@ pub use self::query_builder::{CopyFormat, CopyFromQuery, CopyHeader, CopyTarget,
 pub use self::transaction::TransactionBuilder;
 #[doc(inline)]
 pub use self::value::PgValue;
+#[doc(inline)]
+pub use sqlstate::pg as sql_state;
 
 #[doc(inline)]
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]

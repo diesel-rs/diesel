@@ -532,7 +532,11 @@ impl<'a> AuthorizerContext<'a> {
     /// Returns `true` if this action modifies the database schema.
     ///
     /// Schema-modifying actions include creating, dropping, or altering
-    /// tables, indexes, triggers, views, and virtual tables.
+    /// tables, indexes, triggers, views, and virtual tables, writing to the
+    /// schema table or `sqlite_dbpage`, and assigning the `writable_schema` or
+    /// `schema_version` pragma. Writes to virtual-table shadow tables are not
+    /// recognised, so use [`set_defensive`](SqliteConnection::set_defensive)
+    /// to stop ordinary SQL from corrupting the schema.
     ///
     /// # Example
     ///
@@ -571,7 +575,36 @@ impl<'a> AuthorizerContext<'a> {
                 | Self::DropView(_)
                 | Self::DropVTable(_)
                 | Self::AlterTable(_)
-        )
+        ) || self.writes_schema_storage()
+    }
+
+    /// Returns `true` for a write to the schema table or `sqlite_dbpage`, or an assignment of `writable_schema` or `schema_version`.
+    fn writes_schema_storage(&self) -> bool {
+        const SCHEMA_TABLES: [&str; 5] = [
+            "sqlite_schema",
+            "sqlite_master",
+            "sqlite_temp_schema",
+            "sqlite_temp_master",
+            "sqlite_dbpage",
+        ];
+        match self {
+            Self::Insert(Insert { table, .. })
+            | Self::Delete(Delete { table, .. })
+            | Self::Update(Update { table, .. }) => table.is_some_and(|table| {
+                SCHEMA_TABLES
+                    .iter()
+                    .any(|schema_table| table.eq_ignore_ascii_case(schema_table))
+            }),
+            Self::Pragma(Pragma {
+                name: Some(name),
+                argument: Some(_),
+                ..
+            }) => {
+                name.eq_ignore_ascii_case("writable_schema")
+                    || name.eq_ignore_ascii_case("schema_version")
+            }
+            _ => false,
+        }
     }
 
     /// Builds the context from the raw authorizer callback arguments.
@@ -1017,5 +1050,84 @@ mod tests {
             vec![None],
             "after replacing the authorizer the new decision takes effect"
         );
+    }
+
+    #[diesel_test_helper::test]
+    #[expect(
+        unsafe_code,
+        reason = "a non-UTF-8 identifier cannot be written through `&str` SQL"
+    )]
+    fn non_utf8_names_are_denied_before_the_callback() {
+        use std::sync::Mutex;
+
+        let conn = &mut connection();
+        let sql = c"CREATE VIEW \"helper\xff\" AS SELECT abs(-1) AS id; CREATE VIEW items AS SELECT id FROM \"helper\xff\";";
+        // SAFETY: the connection is live, and `sql` is a NUL-terminated string borrowed for the call.
+        let rc = unsafe {
+            conn.with_raw_connection(|raw| {
+                ffi::sqlite3_exec(
+                    raw,
+                    sql.as_ptr(),
+                    None,
+                    core::ptr::null_mut(),
+                    core::ptr::null_mut(),
+                )
+            })
+        };
+        assert_eq!(rc, ffi::SQLITE_OK);
+
+        let abs_accessors = Arc::new(Mutex::new(Vec::new()));
+        let abs_accessors2 = abs_accessors.clone();
+        conn.on_authorize(move |ctx| {
+            if let AuthorizerContext::Function(function) = ctx
+                && function.function == Some("abs")
+            {
+                abs_accessors2
+                    .lock()
+                    .unwrap()
+                    .push(function.accessor.map(str::to_owned));
+            }
+            AuthorizerDecision::Allow
+        });
+
+        let result = crate::sql_query("SELECT id FROM items").execute(conn);
+        assert!(result.is_err());
+        assert!(abs_accessors.lock().unwrap().iter().all(Option::is_some));
+    }
+
+    #[diesel_test_helper::test]
+    fn schema_modifying_policy_blocks_writable_schema_edits() {
+        use crate::connection::SimpleConnection;
+        use crate::dsl::sql;
+        use crate::sql_types::BigInt;
+
+        let conn = &mut connection();
+        conn.batch_execute(
+            "CREATE TABLE accounts (id INTEGER PRIMARY KEY, balance INTEGER NOT NULL CHECK (balance >= 0));
+             CREATE TRIGGER audit AFTER UPDATE ON accounts BEGIN SELECT 1; END;",
+        )
+        .unwrap();
+        conn.on_authorize(|ctx| {
+            if ctx.is_schema_modifying() {
+                AuthorizerDecision::Deny
+            } else {
+                AuthorizerDecision::Allow
+            }
+        });
+
+        let _ = conn.batch_execute(
+            "PRAGMA writable_schema = ON;
+             DELETE FROM sqlite_schema WHERE name = 'audit';
+             PRAGMA writable_schema = RESET;",
+        );
+        assert!(conn.batch_execute("PRAGMA writable_schema").is_ok());
+        assert!(conn.batch_execute("PRAGMA schema_version").is_ok());
+
+        conn.remove_authorizer();
+        let triggers: i64 =
+            sql::<BigInt>("SELECT count(*) FROM sqlite_schema WHERE name = 'audit'")
+                .get_result(conn)
+                .unwrap();
+        assert_eq!(triggers, 1);
     }
 }

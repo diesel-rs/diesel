@@ -159,6 +159,7 @@ pub use crate::pg::query_builder::only::Only;
 #[cfg(feature = "postgres_backend")]
 pub use crate::pg::query_builder::tablesample::{Tablesample, TablesampleMethod};
 
+pub(crate) use self::bind_collector::BindData;
 #[cfg(feature = "postgres_backend")]
 pub(crate) use self::bind_collector::ByteWrapper;
 use crate::backend::Backend;
@@ -321,6 +322,16 @@ pub trait QueryFragment<DB: Backend, SP = self::private::NotSpecialized> {
         let mut result = true;
         self.walk_ast(AstPass::is_noop(&mut result, backend))?;
         Ok(result)
+    }
+
+    /// Count the number of binds in a given prepared statement
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    fn count_binds(&self, backend: &DB) -> QueryResult<usize> {
+        let mut count = 0;
+        self.walk_ast(AstPass::count_binds(&mut count, backend))?;
+        Ok(count)
     }
 }
 

@@ -304,6 +304,82 @@ impl RawConnection {
             Ok(Some(ret))
         }
     }
+
+    #[allow(unsafe_code, reason = "FFI calls")]
+    pub(super) fn consume_results(&mut self) -> QueryResult<()> {
+        if self.get_status() != pq_sys::ConnStatusType::CONNECTION_OK {
+            return Err(crate::result::Error::DeserializationError(
+                "Database connection lost".into(),
+            ));
+        }
+        // https://www.postgresql.org/docs/current/libpq-copy.html#LIBPQ-COPY-RECEIVE
+        //
+        // After PQgetCopyData returns -1, call PQgetResult to obtain the final result status of the COPY command.
+        // One can wait for this result to be available in the usual way. Then return to normal operation.
+        if let Some(result) = self.get_next_result()? {
+            match result.result_status() {
+                pq_sys::ExecStatusType::PGRES_COPY_OUT => {
+                    let mut ptr: *mut libc::c_char = core::ptr::null_mut();
+                    let mut ret = Ok(());
+                    loop {
+                        if self.get_status() != pq_sys::ConnStatusType::CONNECTION_OK {
+                            return Err(crate::result::Error::DeserializationError(
+                                "Database connection lost".into(),
+                            ));
+                        }
+                        let len = unsafe {
+                            pq_sys::PQgetCopyData(self.internal_connection.as_ptr(), &mut ptr, 0)
+                        };
+                        match len {
+                            len if len >= 0 => {
+                                if !ptr.is_null() {
+                                    unsafe {
+                                        pq_sys::PQfreemem(ptr as *mut libc::c_void);
+                                    }
+                                    ptr = core::ptr::null_mut();
+                                }
+                            }
+                            -1 => {
+                                break;
+                            }
+                            _ => {
+                                if ret.is_ok() {
+                                    let error = self.last_error_message();
+                                    ret = Err(crate::result::Error::DeserializationError(
+                                        error.into(),
+                                    ));
+                                }
+                            }
+                        }
+                    }
+                    ret?;
+                    self.consume_results()
+                }
+                pq_sys::ExecStatusType::PGRES_COPY_IN => {
+                    self.finish_copy_from(Some(String::from("Unexpected error")))?;
+                    self.consume_results()
+                }
+                _ => {
+                    let mut ret = Ok(());
+                    loop {
+                        if self.get_status() != pq_sys::ConnStatusType::CONNECTION_OK {
+                            return Err(crate::result::Error::DeserializationError(
+                                "Database connection lost".into(),
+                            ));
+                        }
+                        match self.get_next_result() {
+                            Ok(None) => break,
+                            Err(e) if ret.is_ok() => ret = Err(e),
+                            Ok(_) | Err(_) => {}
+                        }
+                    }
+                    ret
+                }
+            }
+        } else {
+            Ok(())
+        }
+    }
 }
 
 /// Represents the current in-transaction status of the connection
