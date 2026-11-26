@@ -72,11 +72,13 @@ error[E0277]: function arguments cannot reference columns in an ordinary join
     |
     = help: the trait `query_source::function_call::private::ValidArguments<json_each_utils::json_each<users::columns::name>>` is not implemented for `diesel::internal::table_macro::NoFromClause`
     = note: use `inner_join_lateral` or `left_join_lateral` for column arguments
-help: the trait `query_source::function_call::private::ValidArguments<F>` is implemented for `query_source::function_call::private::Lateral`
+help: the following other types implement trait `query_source::function_call::private::ValidArguments<F>`
    --> ROOT/diesel/src/query_source/function_call.rs
     |
 LL |     impl<F> ValidArguments<F> for Lateral {}
-    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `query_source::function_call::private::Lateral`
+LL |     impl<F> ValidArguments<F> for Outer {}
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `query_source::function_call::private::Outer`
     = note: required for `FunctionCall<view, json_each<name>>` to implement `QuerySource`
     = note: required for `SelectStatement<FromClause<table>>` to implement `InternalJoinDsl<FunctionCall<view, _>, Inner, _>`
  
@@ -169,11 +171,13 @@ error[E0277]: function arguments cannot reference columns in an ordinary join
     |
     = help: the trait `query_source::function_call::private::ValidArguments<json_each_utils::json_each<users::columns::name>>` is not implemented for `diesel::internal::table_macro::NoFromClause`
     = note: use `inner_join_lateral` or `left_join_lateral` for column arguments
-help: the trait `query_source::function_call::private::ValidArguments<F>` is implemented for `query_source::function_call::private::Lateral`
+help: the following other types implement trait `query_source::function_call::private::ValidArguments<F>`
    --> ROOT/diesel/src/query_source/function_call.rs
     |
 LL |     impl<F> ValidArguments<F> for Lateral {}
-    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `query_source::function_call::private::Lateral`
+LL |     impl<F> ValidArguments<F> for Outer {}
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `query_source::function_call::private::Outer`
     = note: required for `FunctionCall<view, json_each<name>>` to implement `QuerySource`
     = note: required for `SelectStatement<FromClause<table>>` to implement `InternalJoinDsl<FunctionCall<view, _>, _, _>`
  

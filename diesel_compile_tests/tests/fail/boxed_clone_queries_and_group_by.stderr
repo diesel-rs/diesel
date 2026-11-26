@@ -203,7 +203,15 @@ LL | |     Self: QuerySource + AsQuery<Query = SelectStatement<FromClause<Self>>
 ...   |
 LL | |     <Self as AsQuery>::SqlType: TypedExpressionType,
 LL | |     <Self as AsQuery>::Query: GroupByDsl<Expr>,
-    | |_______________________________________________^ `FunctionCall<R, F, L>`
+    | |_______________________________________________^ `FunctionCall<R, F, L>` implements `GroupByDsl<Expr>`
+    |
+   ::: ROOT/diesel/src/query_source/correlated_select.rs
+    |
+LL | / impl<Query, Call, Grouping> GroupByDsl<Grouping> for CorrelatedSelect<Query, Call>
+LL | | where
+LL | |     Query: GroupByDsl<Grouping>,
+LL | |     Grouping: Expression,
+    | |_________________________^ `CorrelatedSelect<Query, Call>` implements `GroupByDsl<Grouping>`
     |
    ::: ROOT/diesel/src/query_source/aliasing/dsl_impls.rs
     |
@@ -214,4 +222,4 @@ LL | |     Self: QuerySource + AsQuery<Query = SelectStatement<FromClause<Self>>
 ...   |
 LL | |     <Self as AsQuery>::SqlType: TypedExpressionType,
 LL | |     <Self as AsQuery>::Query: GroupByDsl<Expr>,
-    | |_______________________________________________^ `Alias<S>`
+    | |_______________________________________________^ `Alias<S>` implements `GroupByDsl<Expr>`

@@ -51,4 +51,38 @@ note: required for `users::columns::name` to implement `AppearsOnTable<posts::ta
    = note: required for `posts::table` to implement `InternalLateralJoinDsl<OnClauseWrapper<_, _>, Inner>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+    --> tests/fail/table_function_lateral_scope.rs:38:32
+     |
+  LL |         .load::<(i32, String)>(connection);
+     |          ----                  ^^^^^^^^^^ expected `Once`, found `Never`
+     |          |
+     |          required by a bound introduced by this call
+     |
+note: required for `posts::columns::title` to implement `AppearsOnTable<users::table>`
+    --> tests/fail/table_function_lateral_scope.rs:7:33
+     |
+   LL | table! { posts { id -> Integer, title -> Text, } }
+     |                                 ^^^^^
+     = note: associated types for the current `impl` cannot be restricted in `where` clauses
+     = note: 1 redundant requirement hidden
+     = note: required for `json_each_utils::json_each<posts::columns::title>` to implement `AppearsOnTable<users::table>`
+     = note: required for `CorrelatedSelect<SelectStatement<_>, _>` to implement `diesel::expression::subselect::ValidSubselect<users::table>`
+     = note: 2 redundant requirements hidden
+     = note: required for `Exists<CorrelatedSelect<SelectStatement<_>, _>>` to implement `AppearsOnTable<users::table>`
+     = note: required for `WhereClause<Exists<CorrelatedSelect<_, _>>>` to implement `ValidWhereClause<FromClause<table>>`
+     = note: required for `SelectStatement<FromClause<table>, _, _, _>` to implement `Query`
+     = note: required for `SelectStatement<FromClause<table>, _, _, _>` to implement `LoadQuery<'_, _, (i32, std::string::String)>`
+note: required by a bound in `load`
+    --> ROOT/diesel/src/query_dsl/mod.rs
+     |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
+LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+  
+          = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 For more information about this error, try `rustc --explain E0271`.

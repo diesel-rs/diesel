@@ -201,6 +201,59 @@ mod pg {
             .unwrap();
         assert_eq!(rows, [(1, 1), (2, 1), (2, 2)]);
     }
+
+    #[diesel_test_helper::test]
+    fn correlated_calls_are_subselects() {
+        let connection = &mut connection_with_users_named();
+        let subselect = users_named(users::name)
+            .correlated()
+            .filter(users_named::user_name.eq("Sean"))
+            .select(users_named::user_name);
+        let rows = users::table
+            .filter(diesel::dsl::exists(subselect))
+            .select(users::name)
+            .load::<String>(connection)
+            .unwrap();
+        assert_eq!(rows, ["Sean"]);
+
+        let rows = users::table
+            .filter(users::name.eq_any(subselect))
+            .select(users::name)
+            .load::<String>(connection)
+            .unwrap();
+        assert_eq!(rows, ["Sean"]);
+
+        let rows = users::table
+            .select((users::name, subselect.single_value()))
+            .order(users::name)
+            .load::<(String, Option<String>)>(connection)
+            .unwrap();
+        assert_eq!(
+            rows,
+            [
+                ("Sean".to_string(), Some("Sean".to_string())),
+                ("Tess".to_string(), None),
+            ]
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn correlated_arguments_can_read_grouped_columns() {
+        let connection = &mut connection_with_users_named();
+        let rows = users::table
+            .group_by(users::id)
+            .select((
+                users::id,
+                generate_series(1, users::id)
+                    .correlated()
+                    .select(series::value)
+                    .single_value(),
+            ))
+            .order(users::id)
+            .load::<(i32, Option<i32>)>(connection)
+            .unwrap();
+        assert_eq!(rows, [(1, Some(1)), (2, Some(1))]);
+    }
 }
 
 #[cfg(feature = "sqlite")]
@@ -270,6 +323,38 @@ mod sqlite {
 
     #[cfg(not(miri))]
     #[diesel_test_helper::test]
+    fn correlated_calls_are_subselects() {
+        let connection = &mut connection();
+        let (first, second) = diesel::alias!(json_each as first, json_each as second);
+        let source = json_each(r#"["[\"a\"]","[]"]"#).aliased(first);
+        let subselect = json_each(first.field(json_each::value))
+            .aliased(second)
+            .correlated()
+            .select(second.field(json_each::value));
+        let rows = source
+            .filter(diesel::dsl::exists(subselect))
+            .select(first.field(json_each::key))
+            .load::<i32>(connection)
+            .unwrap();
+        assert_eq!(rows, [0]);
+
+        let rows = source
+            .filter("a".into_sql::<Text>().eq_any(subselect))
+            .select(first.field(json_each::key))
+            .load::<i32>(connection)
+            .unwrap();
+        assert_eq!(rows, [0]);
+
+        let rows = source
+            .select((first.field(json_each::key), subselect.single_value()))
+            .order(first.field(json_each::key))
+            .load::<(i32, Option<String>)>(connection)
+            .unwrap();
+        assert_eq!(rows, [(0, Some("a".to_string())), (1, None)]);
+    }
+
+    #[cfg(not(miri))]
+    #[diesel_test_helper::test]
     fn lateral_calls_follow_query_constructors() {
         let connection = &mut connection();
         diesel::insert_into(users::table)
@@ -313,6 +398,79 @@ mod sqlite {
             .load::<(String,)>(connection)
             .unwrap();
         assert_eq!(rows, expected);
+    }
+
+    #[cfg(not(miri))]
+    #[diesel_test_helper::test]
+    fn correlated_arguments_can_read_grouped_columns() {
+        let connection = &mut connection();
+        diesel::insert_into(users::table)
+            .values([users::name.eq(r#"["a"]"#), users::name.eq("[]")])
+            .execute(connection)
+            .unwrap();
+        let rows = users::table
+            .group_by(users::name)
+            .select((
+                users::name,
+                json_each(users::name)
+                    .correlated()
+                    .select(json_each::value)
+                    .single_value(),
+            ))
+            .order(users::name)
+            .load::<(String, Option<String>)>(connection)
+            .unwrap();
+        assert_eq!(
+            rows,
+            [
+                (r#"["a"]"#.to_string(), Some("a".to_string())),
+                ("[]".to_string(), None),
+            ]
+        );
+    }
+
+    #[cfg(not(miri))]
+    #[diesel_test_helper::test]
+    fn correlated_subselects_preserve_their_call_after_joins_and_boxing() {
+        let connection = &mut connection();
+        diesel::insert_into(users::table)
+            .values(users::name.eq(r#"["[\"a\"]"]"#))
+            .execute(connection)
+            .unwrap();
+        let (first, second, third) =
+            diesel::alias!(json_each as first, json_each as second, json_each as third,);
+        let subselect = json_each(users::name)
+            .aliased(first)
+            .correlated()
+            .inner_join_lateral(
+                json_each(first.field(json_each::value))
+                    .aliased(second)
+                    .on(second.field(json_each::key).ge(0)),
+            )
+            .inner_join(
+                json_each(r#"["a"]"#).aliased(third).on(third
+                    .field(json_each::value)
+                    .eq(second.field(json_each::value))),
+            )
+            .select(second.field(json_each::value));
+        let rows = users::table
+            .filter(
+                "a".into_sql::<Text>()
+                    .eq_any(subselect.into_boxed::<Sqlite>()),
+            )
+            .select(users::id)
+            .load::<i32>(connection)
+            .unwrap();
+        assert_eq!(rows, [1]);
+        let rows = users::table
+            .filter(
+                "b".into_sql::<Text>()
+                    .ne_all(subselect.into_boxed_clone::<Sqlite>()),
+            )
+            .select(users::id)
+            .load::<i32>(connection)
+            .unwrap();
+        assert_eq!(rows, [1]);
     }
 
     #[diesel_test_helper::test]

@@ -1,0 +1,35 @@
+error[E0271]: type mismatch resolving `<Join<_, table, Inner> as AppearsInFromClause<table>>::Count == Once`
+    --> tests/fail/table_function_correlated_boxed_duplicate_join.rs:27:32
+     |
+  LL |         .load::<(i32, String)>(connection);
+     |          ----                  ^^^^^^^^^^ expected `Once`, found `MoreThanOnce`
+     |          |
+     |          required by a bound introduced by this call
+     |
+note: required for `users::columns::id` to implement `AppearsOnTable<Join<JoinOn<_, _>, table, Inner>>`
+    --> tests/fail/table_function_correlated_boxed_duplicate_join.rs:7:18
+     |
+   LL | table! { users { id -> Integer, name -> Text, } }
+     |                  ^^
+     = note: associated types for the current `impl` cannot be restricted in `where` clauses
+     = note: 2 redundant requirements hidden
+     = note: required for `((value,), (id, name), (id, name))` to implement `AppearsOnTable<Join<JoinOn<_, _>, table, Inner>>`
+     = note: required for `Join<JoinOn<_, _>, table, Inner>` to implement `QuerySource`
+     = note: required for `CorrelatedSelect<_, _>` to implement `diesel::expression::subselect::ValidSubselect<users::table>`
+     = note: 3 redundant requirements hidden
+     = note: required for `Grouped<In<Bound<Text, &str>, Subselect<_, Text>>>` to implement `AppearsOnTable<users::table>`
+     = note: required for `WhereClause<Grouped<In<Bound<Text, &str>, _>>>` to implement `ValidWhereClause<FromClause<table>>`
+     = note: required for `SelectStatement<FromClause<table>, _, _, _>` to implement `Query`
+     = note: required for `SelectStatement<FromClause<table>, _, _, _>` to implement `LoadQuery<'_, _, (i32, std::string::String)>`
+note: required by a bound in `load`
+    --> ROOT/diesel/src/query_dsl/mod.rs
+     |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
+LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+  
+          = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+For more information about this error, try `rustc --explain E0271`.

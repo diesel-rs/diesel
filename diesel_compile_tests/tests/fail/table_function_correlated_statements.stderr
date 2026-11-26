@@ -1,0 +1,117 @@
+error[E0599]: the method `load` exists for struct `CorrelatedSelect<SelectStatement<_>, _>`, but its trait bounds were not satisfied
+  --> tests/fail/table_function_correlated_statements.rs:18:41
+   |
+LL |     json_each(users::name).correlated().load::<(String,)>(connection);
+   |                                         ^^^^ method cannot be called on `CorrelatedSelect<SelectStatement<_>, _>` due to unsatisfied trait bounds
+   |
+  ::: ROOT/diesel/src/query_source/correlated_select.rs
+   |
+LL | pub struct CorrelatedSelect<Query, Call> {
+   | ---------------------------------------- doesn't satisfy `_: RunQueryDsl<_>` or `_: RunQueryDslSupport`
+   |
+   = note: the following trait bounds were not satisfied:
+           `CorrelatedSelect<diesel::internal::table_macro::SelectStatement<diesel::internal::table_macro::FromClause<FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>, query_source::function_call::private::Outer>>>, FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>>: RunQueryDslSupport`
+           which is required by `CorrelatedSelect<diesel::internal::table_macro::SelectStatement<diesel::internal::table_macro::FromClause<FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>, query_source::function_call::private::Outer>>>, FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>>: diesel::RunQueryDsl<_>`
+           `&CorrelatedSelect<diesel::internal::table_macro::SelectStatement<diesel::internal::table_macro::FromClause<FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>, query_source::function_call::private::Outer>>>, FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>>: RunQueryDslSupport`
+           which is required by `&CorrelatedSelect<diesel::internal::table_macro::SelectStatement<diesel::internal::table_macro::FromClause<FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>, query_source::function_call::private::Outer>>>, FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>>: diesel::RunQueryDsl<_>`
+           `&mut CorrelatedSelect<diesel::internal::table_macro::SelectStatement<diesel::internal::table_macro::FromClause<FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>, query_source::function_call::private::Outer>>>, FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>>: RunQueryDslSupport`
+           which is required by `&mut CorrelatedSelect<diesel::internal::table_macro::SelectStatement<diesel::internal::table_macro::FromClause<FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>, query_source::function_call::private::Outer>>>, FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>>: diesel::RunQueryDsl<_>`
+
+   
+error[E0599]: the method `load` exists for struct `CorrelatedSelect<_, _>`, but its trait bounds were not satisfied
+  --> tests/fail/table_function_correlated_statements.rs:20:80
+   |
+LL | ...oxed::<diesel::sqlite::Sqlite>().load::<(String,)>(connection);
+   |                                     ^^^^ method cannot be called on `CorrelatedSelect<_, _>` due to unsatisfied trait bounds
+   |
+  ::: ROOT/diesel/src/query_source/correlated_select.rs
+   |
+LL | pub struct CorrelatedSelect<Query, Call> {
+   | ---------------------------------------- doesn't satisfy `_: RunQueryDsl<_>` or `_: RunQueryDslSupport`
+   |
+   = note: the following trait bounds were not satisfied:
+           `CorrelatedSelect<diesel::internal::table_macro::BoxedSelectStatement<'_, (diesel::sql_types::Text,), diesel::internal::table_macro::FromClause<FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>, query_source::function_call::private::Outer>>, Sqlite>, FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>>: RunQueryDslSupport`
+           which is required by `CorrelatedSelect<diesel::internal::table_macro::BoxedSelectStatement<'_, (diesel::sql_types::Text,), diesel::internal::table_macro::FromClause<FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>, query_source::function_call::private::Outer>>, Sqlite>, FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>>: diesel::RunQueryDsl<_>`
+           `&CorrelatedSelect<diesel::internal::table_macro::BoxedSelectStatement<'_, (diesel::sql_types::Text,), diesel::internal::table_macro::FromClause<FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>, query_source::function_call::private::Outer>>, Sqlite>, FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>>: RunQueryDslSupport`
+           which is required by `&CorrelatedSelect<diesel::internal::table_macro::BoxedSelectStatement<'_, (diesel::sql_types::Text,), diesel::internal::table_macro::FromClause<FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>, query_source::function_call::private::Outer>>, Sqlite>, FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>>: diesel::RunQueryDsl<_>`
+           `&mut CorrelatedSelect<diesel::internal::table_macro::BoxedSelectStatement<'_, (diesel::sql_types::Text,), diesel::internal::table_macro::FromClause<FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>, query_source::function_call::private::Outer>>, Sqlite>, FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>>: RunQueryDslSupport`
+           which is required by `&mut CorrelatedSelect<diesel::internal::table_macro::BoxedSelectStatement<'_, (diesel::sql_types::Text,), diesel::internal::table_macro::FromClause<FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>, query_source::function_call::private::Outer>>, Sqlite>, FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>>: diesel::RunQueryDsl<_>`
+
+   
+error[E0599]: the method `load` exists for struct `CorrelatedSelect<_, _>`, but its trait bounds were not satisfied
+  --> tests/fail/table_function_correlated_statements.rs:22:86
+   |
+LL | ...lone::<diesel::sqlite::Sqlite>().load::<(String,)>(connection);
+   |                                     ^^^^ method cannot be called on `CorrelatedSelect<_, _>` due to unsatisfied trait bounds
+   |
+  ::: ROOT/diesel/src/query_source/correlated_select.rs
+   |
+LL | pub struct CorrelatedSelect<Query, Call> {
+   | ---------------------------------------- doesn't satisfy `_: RunQueryDsl<_>` or `_: RunQueryDslSupport`
+   |
+   = note: the following trait bounds were not satisfied:
+           `CorrelatedSelect<diesel::internal::table_macro::BoxedCloneSelectStatement<'_, (diesel::sql_types::Text,), diesel::internal::table_macro::FromClause<FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>, query_source::function_call::private::Outer>>, Sqlite>, FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>>: RunQueryDslSupport`
+           which is required by `CorrelatedSelect<diesel::internal::table_macro::BoxedCloneSelectStatement<'_, (diesel::sql_types::Text,), diesel::internal::table_macro::FromClause<FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>, query_source::function_call::private::Outer>>, Sqlite>, FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>>: diesel::RunQueryDsl<_>`
+           `&CorrelatedSelect<diesel::internal::table_macro::BoxedCloneSelectStatement<'_, (diesel::sql_types::Text,), diesel::internal::table_macro::FromClause<FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>, query_source::function_call::private::Outer>>, Sqlite>, FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>>: RunQueryDslSupport`
+           which is required by `&CorrelatedSelect<diesel::internal::table_macro::BoxedCloneSelectStatement<'_, (diesel::sql_types::Text,), diesel::internal::table_macro::FromClause<FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>, query_source::function_call::private::Outer>>, Sqlite>, FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>>: diesel::RunQueryDsl<_>`
+           `&mut CorrelatedSelect<diesel::internal::table_macro::BoxedCloneSelectStatement<'_, (diesel::sql_types::Text,), diesel::internal::table_macro::FromClause<FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>, query_source::function_call::private::Outer>>, Sqlite>, FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>>: RunQueryDslSupport`
+           which is required by `&mut CorrelatedSelect<diesel::internal::table_macro::BoxedCloneSelectStatement<'_, (diesel::sql_types::Text,), diesel::internal::table_macro::FromClause<FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>, query_source::function_call::private::Outer>>, Sqlite>, FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>>: diesel::RunQueryDsl<_>`
+
+   
+error[E0599]: the method `union` exists for struct `CorrelatedSelect<SelectStatement<_>, _>`, but its trait bounds were not satisfied
+  --> tests/fail/table_function_correlated_statements.rs:24:41
+   |
+LL |     json_each(users::name).correlated().union(json_each("[]"));
+   |                                         ^^^^^ method cannot be called on `CorrelatedSelect<SelectStatement<_>, _>` due to unsatisfied trait bounds
+   |
+  ::: ROOT/diesel/src/query_source/correlated_select.rs
+   |
+LL | pub struct CorrelatedSelect<Query, Call> {
+   | ---------------------------------------- doesn't satisfy `_: CombineDsl` or `_: QueryRelation`
+   |
+   = note: the following trait bounds were not satisfied:
+           `CorrelatedSelect<diesel::internal::table_macro::SelectStatement<diesel::internal::table_macro::FromClause<FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>, query_source::function_call::private::Outer>>>, FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>>: QueryRelation`
+           which is required by `CorrelatedSelect<diesel::internal::table_macro::SelectStatement<diesel::internal::table_macro::FromClause<FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>, query_source::function_call::private::Outer>>>, FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>>: diesel::CombineDsl`
+           `&CorrelatedSelect<diesel::internal::table_macro::SelectStatement<diesel::internal::table_macro::FromClause<FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>, query_source::function_call::private::Outer>>>, FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>>: QueryRelation`
+           which is required by `&CorrelatedSelect<diesel::internal::table_macro::SelectStatement<diesel::internal::table_macro::FromClause<FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>, query_source::function_call::private::Outer>>>, FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>>: diesel::CombineDsl`
+           `&mut CorrelatedSelect<diesel::internal::table_macro::SelectStatement<diesel::internal::table_macro::FromClause<FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>, query_source::function_call::private::Outer>>>, FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>>: QueryRelation`
+           which is required by `&mut CorrelatedSelect<diesel::internal::table_macro::SelectStatement<diesel::internal::table_macro::FromClause<FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>, query_source::function_call::private::Outer>>>, FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>>: diesel::CombineDsl`
+
+   
+error[E0599]: the method `on` exists for struct `CorrelatedSelect<SelectStatement<_>, _>`, but its trait bounds were not satisfied
+  --> tests/fail/table_function_correlated_statements.rs:26:65
+   |
+LL |     users::table.inner_join(json_each(users::name).correlated().on(json_each::value.eq(users...
+   |                                                                 ^^
+   |
+  ::: ROOT/diesel/src/query_source/correlated_select.rs
+   |
+LL | pub struct CorrelatedSelect<Query, Call> {
+   | ---------------------------------------- doesn't satisfy `_: JoinOnDsl` or `_: QuerySource`
+   |
+   = note: the following trait bounds were not satisfied:
+           `CorrelatedSelect<diesel::internal::table_macro::SelectStatement<diesel::internal::table_macro::FromClause<FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>, query_source::function_call::private::Outer>>>, FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>>: QuerySource`
+           which is required by `CorrelatedSelect<diesel::internal::table_macro::SelectStatement<diesel::internal::table_macro::FromClause<FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>, query_source::function_call::private::Outer>>>, FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>>: diesel::JoinOnDsl`
+           `&CorrelatedSelect<diesel::internal::table_macro::SelectStatement<diesel::internal::table_macro::FromClause<FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>, query_source::function_call::private::Outer>>>, FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>>: QuerySource`
+           which is required by `&CorrelatedSelect<diesel::internal::table_macro::SelectStatement<diesel::internal::table_macro::FromClause<FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>, query_source::function_call::private::Outer>>>, FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>>: diesel::JoinOnDsl`
+           `&mut CorrelatedSelect<diesel::internal::table_macro::SelectStatement<diesel::internal::table_macro::FromClause<FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>, query_source::function_call::private::Outer>>>, FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>>: QuerySource`
+           which is required by `&mut CorrelatedSelect<diesel::internal::table_macro::SelectStatement<diesel::internal::table_macro::FromClause<FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>, query_source::function_call::private::Outer>>>, FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>>: diesel::JoinOnDsl`
+
+   
+error[E0277]: the trait bound `CorrelatedSelect<SelectStatement<_>, _>: Query` is not satisfied
+  --> tests/fail/table_function_correlated_statements.rs:31:21
+   |
+LL |     json_each("[]").union(json_each(users::name).correlated());
+   |                     ^^^^^ the trait `Query` is not implemented for `CorrelatedSelect<SelectStatement<_>, _>`
+   |
+   = help: the following other types implement trait `Query`:
+             &T
+             BoxedCloneSqlQuery<'_, DB, Q>
+             BoxedSqlQuery<'_, DB, Q>
+             CollectedQuery<T>
+             DeleteStatement<T, U, ReturningClause<Ret>>
+             InsertStatement<T, U, Op, ReturningClause<Ret>>
+             SqlLiteral<ST, T>
+             SqlQuery<Inner>
+           and N others
+   = note: required for `CorrelatedSelect<SelectStatement<_>, _>` to implement `AsQuery`

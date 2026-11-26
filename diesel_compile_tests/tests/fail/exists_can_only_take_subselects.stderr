@@ -5,8 +5,17 @@ error[E0277]: `bool` cannot be used as a subselect
     |                  ^^^^^^ the trait `diesel::expression::subselect::ValidSubselectGrouping<()>` is not implemented for `bool`
     |
     = note: only select statements and their combinations can be used as subselects
-help: the trait `diesel::expression::subselect::ValidSubselectGrouping<GB>` is implemented for `CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>`
-   --> ROOT/diesel/src/query_builder/combination_clause.rs
+help: the following other types implement trait `diesel::expression::subselect::ValidSubselectGrouping<GB>`
+   --> ROOT/diesel/src/query_source/correlated_select.rs
+    |
+ LL | / impl<Query, R, F, GB> ValidSubselectGrouping<GB> for CorrelatedSelect<Query, FunctionCall...
+ LL | | where
+ LL | |     Query: ValidSubselectGrouping<GB>,
+ LL | |     F: crate::expression::ValidGrouping<GB>,
+ LL | |     Query::IsAggregate: crate::expression::MixedAggregates<F::IsAggregate>,
+    | |___________________________________________________________________________^ `CorrelatedSelect<Query, FunctionCall<R, F>>`
+    |
+   ::: ROOT/diesel/src/query_builder/combination_clause.rs
     |
 LL | / impl<Combinator, Rule, Source, Rhs, O, LOf, GB> ValidSubselectGrouping<GB>
 LL | |     for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
@@ -14,7 +23,7 @@ LL | | where
 LL | |     Source: ValidSubselectGrouping<GB>,
 LL | |     Rhs: ValidSubselectGrouping<GB>,
 LL | |     Source::IsAggregate: MixedAggregates<Rhs::IsAggregate>,
-    | |___________________________________________________________^
+    | |___________________________________________________________^ `CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>`
     = note: required for `Subselect<bool, Bool>` to implement `ValidGrouping<()>`
     = note: required for `diesel::internal::derives::multiconnection::Exists<bool>` to implement `NonAggregate`
     = note: required for `SelectStatement<FromClause<table>>` to implement `FilterDsl<Exists<bool>>`
@@ -26,15 +35,20 @@ error[E0277]: the trait bound `bool: SelectQuery` is not satisfied
 LL |     users::table.filter(exists(true));
    |                  ^^^^^^ the trait `SelectQuery` is not implemented for `bool`
    |
-help: the trait `SelectQuery` is implemented for `CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>`
-  --> ROOT/diesel/src/query_builder/combination_clause.rs
+help: the following other types implement trait `SelectQuery`
+  --> ROOT/diesel/src/query_source/correlated_select.rs
+   |
+LL |   impl<Query: SelectQuery, Call> SelectQuery for CorrelatedSelect<Query, Call> {
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `CorrelatedSelect<Query, Call>`
+   |
+  ::: ROOT/diesel/src/query_builder/combination_clause.rs
    |
 LL | / impl<Combinator, Rule, Source, Rhs, O, LOf> SelectQuery
 LL | |     for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
 LL | | where
 LL | |     Source: SelectQuery,
 LL | |     Rhs: SelectQuery<SqlType = Source::SqlType>,
-   | |________________________________________________^
+   | |________________________________________________^ `CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>`
    = note: required for `Subselect<bool, Bool>` to implement `Expression`
    = note: 1 redundant requirement hidden
    = note: required for `diesel::internal::derives::multiconnection::Exists<bool>` to implement `Expression`
@@ -53,8 +67,17 @@ help: the trait `diesel::expression::subselect::ValidSubselectGrouping<()>` is n
   LL |         id -> Integer,
     |         ^^
     = note: only select statements and their combinations can be used as subselects
-help: the trait `diesel::expression::subselect::ValidSubselectGrouping<GB>` is implemented for `CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>`
-   --> ROOT/diesel/src/query_builder/combination_clause.rs
+help: the following other types implement trait `diesel::expression::subselect::ValidSubselectGrouping<GB>`
+   --> ROOT/diesel/src/query_source/correlated_select.rs
+    |
+ LL | / impl<Query, R, F, GB> ValidSubselectGrouping<GB> for CorrelatedSelect<Query, FunctionCall...
+ LL | | where
+ LL | |     Query: ValidSubselectGrouping<GB>,
+ LL | |     F: crate::expression::ValidGrouping<GB>,
+ LL | |     Query::IsAggregate: crate::expression::MixedAggregates<F::IsAggregate>,
+    | |___________________________________________________________________________^ `CorrelatedSelect<Query, FunctionCall<R, F>>`
+    |
+   ::: ROOT/diesel/src/query_builder/combination_clause.rs
     |
 LL | / impl<Combinator, Rule, Source, Rhs, O, LOf, GB> ValidSubselectGrouping<GB>
 LL | |     for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
@@ -62,7 +85,7 @@ LL | | where
 LL | |     Source: ValidSubselectGrouping<GB>,
 LL | |     Rhs: ValidSubselectGrouping<GB>,
 LL | |     Source::IsAggregate: MixedAggregates<Rhs::IsAggregate>,
-    | |___________________________________________________________^
+    | |___________________________________________________________^ `CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>`
     = note: required for `Subselect<id, Bool>` to implement `ValidGrouping<()>`
     = note: required for `Exists<id>` to implement `NonAggregate`
     = note: required for `SelectStatement<FromClause<table>>` to implement `FilterDsl<Exists<id>>`
@@ -80,15 +103,20 @@ help: the trait `SelectQuery` is not implemented for `users::columns::id`
    |
  LL |         id -> Integer,
    |         ^^
-help: the trait `SelectQuery` is implemented for `CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>`
-  --> ROOT/diesel/src/query_builder/combination_clause.rs
+help: the following other types implement trait `SelectQuery`
+  --> ROOT/diesel/src/query_source/correlated_select.rs
+   |
+LL |   impl<Query: SelectQuery, Call> SelectQuery for CorrelatedSelect<Query, Call> {
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `CorrelatedSelect<Query, Call>`
+   |
+  ::: ROOT/diesel/src/query_builder/combination_clause.rs
    |
 LL | / impl<Combinator, Rule, Source, Rhs, O, LOf> SelectQuery
 LL | |     for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
 LL | | where
 LL | |     Source: SelectQuery,
 LL | |     Rhs: SelectQuery<SqlType = Source::SqlType>,
-   | |________________________________________________^
+   | |________________________________________________^ `CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>`
    = note: required for `Subselect<id, Bool>` to implement `Expression`
    = note: 1 redundant requirement hidden
    = note: required for `Exists<id>` to implement `Expression`

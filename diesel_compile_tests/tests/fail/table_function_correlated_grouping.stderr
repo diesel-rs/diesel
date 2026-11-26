@@ -1,0 +1,26 @@
+error[E0271]: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
+  --> tests/fail/table_function_correlated_grouping.rs:20:10
+   |
+LL | ...   .select((users::name, generate_series(1, users::id).correlated().select(series::value)...
+   |        ^^^^^^ type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
+   |
+note: expected this to be `diesel::expression::is_contained_in_group_by::Yes`
+  --> tests/fail/table_function_correlated_grouping.rs:6:1
+   |
+ LL | table! { users { id -> Integer, name -> Text, } }
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+note: required for `users::columns::id` to implement `ValidGrouping<users::columns::name>`
+  --> tests/fail/table_function_correlated_grouping.rs:6:18
+   |
+ LL | table! { users { id -> Integer, name -> Text, } }
+   |                  ^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: 1 redundant requirement hidden
+   = note: required for `__Derived<Bound<Integer, i32>, id>` to implement `ValidGrouping<users::columns::name>`
+   = note: required for `CorrelatedSelect<_, _>` to implement `ValidSubselectGrouping<name>`
+   = note: 1 redundant requirement hidden
+   = note: required for `(name, Grouped<Subselect<_, _>>)` to implement `ValidGrouping<users::columns::name>`
+   = note: required for `SelectStatement<_, _, _, _, _, _, _>` to implement `SelectDsl<(name, Grouped<Subselect<_, _>>)>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+For more information about this error, try `rustc --explain E0271`.

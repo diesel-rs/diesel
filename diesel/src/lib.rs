@@ -511,6 +511,9 @@ pub mod helper_types {
     pub type LeftJoinLateral<Source, Rhs> =
         <Source as crate::query_dsl::InternalLateralJoinDsl<Rhs, joins::LeftOuter>>::Output;
 
+    /// Represents the return type of [`.correlated()`](crate::query_source::FunctionCall::correlated).
+    pub type Correlated<Call> = <Call as crate::query_source::CorrelatedDsl>::Output;
+
     /// Represents the return type of [`rhs.on(on)`](crate::query_dsl::JoinOnDsl::on)
     pub type On<Source, On> = joins::OnClauseWrapper<Source, On>;
 

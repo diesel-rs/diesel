@@ -361,7 +361,7 @@ error[E0277]: the trait bound `BoxedSelectStatement<'_, _, _, _>: QueryRelation`
     |                        ^^^^^^^^^^ unsatisfied trait bound
     |
     = help: the trait `LockingDsl<diesel::query_builder::locking_clause::ForUpdate>` is not implemented for `BoxedSelectStatement<'_, (Integer,), _, _>`
-help: the trait `LockingDsl<Lock>` is implemented for `Alias<S>`
+help: the following other types implement trait `LockingDsl<Lock>`
    --> ROOT/diesel/src/query_source/aliasing/dsl_impls.rs
     |
 LL | / impl<S, Lock> LockingDsl<Lock> for Alias<S>
@@ -370,7 +370,14 @@ LL | |     Self: QuerySource + AsQuery<Query = SelectStatement<FromClause<Self>>
 LL | |     <Self as QuerySource>::DefaultSelection:
 LL | |         Expression<SqlType = <Self as AsQuery>::SqlType> + ValidGrouping<()>,
 LL | |     <Self as AsQuery>::SqlType: TypedExpressionType,
-    | |____________________________________________________^
+    | |____________________________________________________^ `Alias<S>`
+    |
+   ::: ROOT/diesel/src/query_source/correlated_select.rs
+    |
+LL | / impl<Query, Call, Lock> LockingDsl<Lock> for CorrelatedSelect<Query, Call>
+LL | | where
+LL | |     Query: LockingDsl<Lock>,
+    | |____________________________^ `CorrelatedSelect<Query, Call>`
  
     
 error[E0277]: cannot box `SelectStatement<_, _, _, _, _, _, _, _, _>` for backend `_`

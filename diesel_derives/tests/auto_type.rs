@@ -136,6 +136,17 @@ fn test_left_join_lateral() -> _ {
 }
 
 #[auto_type]
+fn test_correlated() -> _ {
+    users::table
+        .filter(diesel::dsl::exists(
+            generate_series(1_i32, users::id)
+                .correlated()
+                .select(series::value),
+        ))
+        .select(users::id)
+}
+
+#[auto_type]
 fn single_value() -> _ {
     users::table.select(users::id).find(42_i32).single_value()
 }
