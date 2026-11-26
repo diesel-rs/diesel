@@ -78,6 +78,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added the `sqlstate` crate holding `SqlState`, `SqlStateClass`, `InvalidSqlState` and the SQLSTATE constants, which diesel re-exports
 * Added `named_parameters` attribute to the `declare_sql_function` macro to allow passing function parameters using named notation on backends that support it
 * Added support for database views via a new `view!` macro
+* Added `CompositeType` marker trait and `composite_type!` macro
 
 ### Fixed
 

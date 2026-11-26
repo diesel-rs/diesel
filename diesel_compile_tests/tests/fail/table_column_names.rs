@@ -5,7 +5,7 @@ table! {
     users {
         id -> Integer,
         users -> Integer,
-        //~^ ERROR: column `users` cannot be named the same as it's table.
+        //~^ ERROR: column `users` cannot be named the same as its table.
     }
 }
 

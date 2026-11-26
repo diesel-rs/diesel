@@ -14,7 +14,16 @@ diesel::view! {
     counted_view {
         #[auto_increment]
         id -> Integer,
-        //~^ ERROR: `#[auto_increment]` is not supported in `view!` definitions
+        //~^ ERROR: `#[auto_increment]` is not supported in `view!` or `composite_type!` definitions
+        name -> Text,
+    }
+}
+
+diesel::composite_type! {
+    my_type {
+        #[auto_increment]
+        id -> Integer,
+        //~^ ERROR: `#[auto_increment]` is not supported in `view!` or `composite_type!` definitions
         name -> Text,
     }
 }

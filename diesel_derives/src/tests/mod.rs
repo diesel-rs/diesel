@@ -230,6 +230,7 @@ mod as_changeset;
 mod as_expression;
 mod associations;
 mod auto_type;
+mod composite_type;
 mod declare_sql_function;
 mod define_sql_function;
 mod diesel_for_each_tuple;

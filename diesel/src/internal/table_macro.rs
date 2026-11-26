@@ -80,3 +80,9 @@ pub const MAX_COLUMN_COUNT: u16 = 32;
     not(feature = "32-column-tables")
 ))]
 pub const MAX_COLUMN_COUNT: u16 = 16;
+
+#[doc(hidden)]
+pub mod sql_types {
+    #[doc(hidden)]
+    pub use crate::sql_types::sealed::Sealed;
+}
