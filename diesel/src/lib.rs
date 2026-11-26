@@ -495,6 +495,10 @@ pub mod helper_types {
     pub type InnerJoinOn<Source, Rhs, On> =
         <Source as InternalJoinDsl<Rhs, joins::Inner, On>>::Output;
 
+    /// Represents the return type of [`.inner_join_lateral(rhs)`](crate::prelude::QueryDsl::inner_join_lateral).
+    pub type InnerJoinLateral<Source, Rhs> =
+        <Source as crate::query_dsl::InternalLateralJoinDsl<Rhs, joins::Inner>>::Output;
+
     /// Represents the return type of [`.left_join(rhs)`](crate::prelude::QueryDsl::left_join)
     pub type LeftJoin<Source, Rhs> =
         <Source as JoinWithImplicitOnClause<Rhs, joins::LeftOuter>>::Output;
@@ -502,6 +506,10 @@ pub mod helper_types {
     /// Represents the return type of [`.left_join(rhs.on(on))`](crate::prelude::QueryDsl::left_join)
     pub type LeftJoinOn<Source, Rhs, On> =
         <Source as InternalJoinDsl<Rhs, joins::LeftOuter, On>>::Output;
+
+    /// Represents the return type of [`.left_join_lateral(rhs)`](crate::prelude::QueryDsl::left_join_lateral).
+    pub type LeftJoinLateral<Source, Rhs> =
+        <Source as crate::query_dsl::InternalLateralJoinDsl<Rhs, joins::LeftOuter>>::Output;
 
     /// Represents the return type of [`rhs.on(on)`](crate::query_dsl::JoinOnDsl::on)
     pub type On<Source, On> = joins::OnClauseWrapper<Source, On>;

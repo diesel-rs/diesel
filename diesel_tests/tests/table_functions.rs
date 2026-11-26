@@ -162,6 +162,45 @@ mod pg {
             .unwrap();
         assert_eq!(rows, [("Sean".to_string(), "Tess".to_string())]);
     }
+
+    #[diesel_test_helper::test]
+    fn lateral_calls_read_the_left_source() {
+        let connection = &mut connection_with_users_named();
+        let rows = users::table
+            .inner_join_lateral(users_named(users::name).on(users_named::user_name.eq("Sean")))
+            .select((users::name, users_named::user_name))
+            .load::<(String, String)>(connection)
+            .unwrap();
+        assert_eq!(rows, [("Sean".to_string(), "Sean".to_string())]);
+
+        let rows = users::table
+            .left_join_lateral(users_named(users::name).on(users_named::user_name.eq("Sean")))
+            .select((users::name, users_named::user_name.nullable()))
+            .order(users::name)
+            .load::<(String, Option<String>)>(connection)
+            .unwrap();
+        assert_eq!(
+            rows,
+            [
+                ("Sean".to_string(), Some("Sean".to_string())),
+                ("Tess".to_string(), None),
+            ]
+        );
+
+        let (first, second) = diesel::alias!(series as first, series as second);
+        let rows = generate_series(1, 2)
+            .aliased(first)
+            .inner_join_lateral(
+                generate_series(1, first.field(series::value))
+                    .aliased(second)
+                    .on(true.into_sql::<Bool>()),
+            )
+            .select((first.field(series::value), second.field(series::value)))
+            .order((first.field(series::value), second.field(series::value)))
+            .load::<(i32, i32)>(connection)
+            .unwrap();
+        assert_eq!(rows, [(1, 1), (2, 1), (2, 2)]);
+    }
 }
 
 #[cfg(feature = "sqlite")]
@@ -192,6 +231,88 @@ mod sqlite {
 
         #[query_source(series, base_type)]
         fn generate_series(start: Integer, stop: Integer) -> series::SqlType;
+    }
+
+    #[cfg(not(miri))]
+    #[diesel_test_helper::test]
+    fn lateral_calls_read_the_left_source() {
+        let connection = &mut connection();
+        let (first, second) = diesel::alias!(json_each as first, json_each as second);
+        let rows = json_each(r#"["[\"a\",\"b\"]","[]"]"#)
+            .aliased(first)
+            .inner_join_lateral(
+                json_each(first.field(json_each::value))
+                    .aliased(second)
+                    .on(second.field(json_each::key).ge(0)),
+            )
+            .select((first.field(json_each::key), second.field(json_each::value)))
+            .order((first.field(json_each::key), second.field(json_each::key)))
+            .load::<(i32, String)>(connection)
+            .unwrap();
+        assert_eq!(rows, [(0, "a".to_string()), (0, "b".to_string())]);
+
+        let rows = json_each(r#"["[\"a\"]","[]"]"#)
+            .aliased(first)
+            .left_join_lateral(
+                json_each(first.field(json_each::value))
+                    .aliased(second)
+                    .on(second.field(json_each::key).ge(0)),
+            )
+            .select((
+                first.field(json_each::key),
+                second.field(json_each::value).nullable(),
+            ))
+            .order(first.field(json_each::key))
+            .load::<(i32, Option<String>)>(connection)
+            .unwrap();
+        assert_eq!(rows, [(0, Some("a".to_string())), (1, None)]);
+    }
+
+    #[cfg(not(miri))]
+    #[diesel_test_helper::test]
+    fn lateral_calls_follow_query_constructors() {
+        let connection = &mut connection();
+        diesel::insert_into(users::table)
+            .values([users::name.eq(r#"["a"]"#), users::name.eq("[]")])
+            .execute(connection)
+            .unwrap();
+        let call = json_each(users::name).on(json_each::key.ge(0));
+        let expected = vec![("a".to_string(),)];
+        let rows = users::table
+            .inner_join_lateral(call)
+            .select((json_each::value,))
+            .load::<(String,)>(connection)
+            .unwrap();
+        assert_eq!(rows, expected);
+        let rows = users::table
+            .select(users::id)
+            .inner_join_lateral(call)
+            .select((json_each::value,))
+            .load::<(String,)>(connection)
+            .unwrap();
+        assert_eq!(rows, expected);
+        let rows = users::table
+            .into_boxed::<Sqlite>()
+            .inner_join_lateral(call)
+            .select((json_each::value,))
+            .load::<(String,)>(connection)
+            .unwrap();
+        assert_eq!(rows, expected);
+        let rows = users::table
+            .into_boxed_clone::<Sqlite>()
+            .inner_join_lateral(call)
+            .select((json_each::value,))
+            .load::<(String,)>(connection)
+            .unwrap();
+        assert_eq!(rows, expected);
+
+        let person = diesel::alias!(users as person);
+        let rows = person
+            .inner_join_lateral(json_each(person.field(users::name)).on(json_each::key.ge(0)))
+            .select((json_each::value,))
+            .load::<(String,)>(connection)
+            .unwrap();
+        assert_eq!(rows, expected);
     }
 
     #[diesel_test_helper::test]

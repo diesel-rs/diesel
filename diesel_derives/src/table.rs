@@ -1137,7 +1137,7 @@ fn expand_column_def(
             }
 
             #(#cfg_attrs)*
-            impl<__DieselFunction> diesel::SelectableExpression<diesel::query_source::FunctionCall<super::view, __DieselFunction>>
+            impl<__DieselFunction, __DieselLateral> diesel::SelectableExpression<diesel::query_source::FunctionCall<super::view, __DieselFunction, __DieselLateral>>
                 for #column_name
             {
             }

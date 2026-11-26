@@ -196,14 +196,14 @@ error[E0277]: the trait bound `BoxedCloneSelectStatement<'_, _, _, _>: QueryRela
 help: the following other types implement trait `GroupByDsl<Expr>`
    --> ROOT/diesel/src/query_source/function_call.rs
     |
-LL | / impl<R, F, Expr> GroupByDsl<Expr> for FunctionCall<R, F>
+LL | / impl<R, F, L, Expr> GroupByDsl<Expr> for FunctionCall<R, F, L>
 LL | | where
 LL | |     Expr: Expression,
 LL | |     Self: QuerySource + AsQuery<Query = SelectStatement<FromClause<Self>>>,
 ...   |
 LL | |     <Self as AsQuery>::SqlType: TypedExpressionType,
 LL | |     <Self as AsQuery>::Query: GroupByDsl<Expr>,
-    | |_______________________________________________^ `FunctionCall<R, F>`
+    | |_______________________________________________^ `FunctionCall<R, F, L>`
     |
    ::: ROOT/diesel/src/query_source/aliasing/dsl_impls.rs
     |

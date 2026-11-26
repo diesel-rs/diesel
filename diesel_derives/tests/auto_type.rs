@@ -105,6 +105,36 @@ fn test_all_query_dsl() -> _ {
     //.into_boxed()
 }
 
+diesel::view! {
+    series {
+        value -> Integer,
+    }
+}
+
+diesel::allow_tables_to_appear_in_same_query!(users, series);
+
+#[diesel::declare_sql_function(generate_return_type_helpers = true)]
+extern "SQL" {
+    #[query_source(series, base_type)]
+    fn generate_series(start: sql_types::Integer, stop: sql_types::Integer) -> series::SqlType;
+}
+
+use return_type_helpers::generate_series;
+
+#[auto_type]
+fn test_inner_join_lateral() -> _ {
+    users::table
+        .inner_join_lateral(generate_series(1_i32, users::id).on(series::value.ge(1_i32)))
+        .select((users::id, series::value))
+}
+
+#[auto_type]
+fn test_left_join_lateral() -> _ {
+    users::table
+        .left_join_lateral(generate_series(1_i32, users::id).on(series::value.ge(1_i32)))
+        .select((users::id, series::value.nullable()))
+}
+
 #[auto_type]
 fn single_value() -> _ {
     users::table.select(users::id).find(42_i32).single_value()

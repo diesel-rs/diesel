@@ -9,25 +9,25 @@ error[E0277]: `FunctionCall<view, json_each<Bound<Text, &str>>>` is no valid SQL
      = help: the trait `QueryFragment<Mysql, diesel::internal::derives::multiconnection::sql_dialect::table_function_syntax::DoesNotSupportTableFunctions>` is not implemented for `FunctionCall<view, json_each<Bound<Text, &str>>>`
      = note: this usually means that the `Mysql` database system does not support 
              this SQL syntax
-help: `FunctionCall<R, F>` implements trait `QueryFragment<DB, SP>`
+help: `FunctionCall<R, F, L>` implements trait `QueryFragment<DB, SP>`
     --> ROOT/diesel/src/query_source/function_call.rs
      |
- LL | / impl<R, F, DB> QueryFragment<DB> for FunctionCall<R, F>
+ LL | / impl<R, F, L, DB> QueryFragment<DB> for FunctionCall<R, F, L>
  LL | | where
  LL | |     DB: Backend,
  LL | |     Self: QueryFragment<DB, DB::TableFunctionSyntax>,
      | |_____________________________________________________^ `QueryFragment<DB>`
 ...
- LL | / impl<R, F, DB> QueryFragment<DB, sql_dialect::table_function_syntax::PgLikeTableFunctions>
- LL | |     for FunctionCall<R, F>
+ LL | / impl<R, F, L, DB> QueryFragment<DB, sql_dialect::table_function_syntax::PgLikeTableFunct...
+ LL | |     for FunctionCall<R, F, L>
  LL | | where
  LL | |     DB: Backend,
  LL | |     R: private::TableFunctionRelation,
  LL | |     F: QueryFragment<DB> + TableFunction,
      | |_________________________________________^ `QueryFragment<DB, PgLikeTableFunctions>`
 ...
- LL | / impl<R, F, DB> QueryFragment<DB, sql_dialect::table_function_syntax::SqliteLikeTableFunc...
- LL | |     for FunctionCall<R, F>
+ LL | / impl<R, F, L, DB> QueryFragment<DB, sql_dialect::table_function_syntax::SqliteLikeTableF...
+ LL | |     for FunctionCall<R, F, L>
  LL | | where
  LL | |     DB: Backend,
  LL | |     R: private::TableFunctionRelation,

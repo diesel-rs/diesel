@@ -15,14 +15,14 @@ help: the trait `DistinctOnDsl<posts::columns::id>` is not implemented for `user
 help: the following other types implement trait `DistinctOnDsl<Selection>`
    --> ROOT/diesel/src/query_source/function_call.rs
     |
-LL | / impl<R, F, Selection> DistinctOnDsl<Selection> for FunctionCall<R, F>
+LL | / impl<R, F, L, Selection> DistinctOnDsl<Selection> for FunctionCall<R, F, L>
 LL | | where
 LL | |     Selection: SelectableExpression<Self>,
 LL | |     Self: QuerySource + AsQuery<Query = SelectStatement<FromClause<Self>>>,
 ...   |
 LL | |         Expression<SqlType = <Self as AsQuery>::SqlType> + ValidGrouping<()>,
 LL | |     <Self as AsQuery>::SqlType: TypedExpressionType,
-    | |____________________________________________________^ `FunctionCall<R, F>`
+    | |____________________________________________________^ `FunctionCall<R, F, L>`
     |
    ::: ROOT/diesel/src/query_source/aliasing/dsl_impls.rs
     |
@@ -53,14 +53,14 @@ help: the trait `DistinctOnDsl<(posts::columns::name, users::columns::name)>` is
 help: the following other types implement trait `DistinctOnDsl<Selection>`
    --> ROOT/diesel/src/query_source/function_call.rs
     |
-LL | / impl<R, F, Selection> DistinctOnDsl<Selection> for FunctionCall<R, F>
+LL | / impl<R, F, L, Selection> DistinctOnDsl<Selection> for FunctionCall<R, F, L>
 LL | | where
 LL | |     Selection: SelectableExpression<Self>,
 LL | |     Self: QuerySource + AsQuery<Query = SelectStatement<FromClause<Self>>>,
 ...   |
 LL | |         Expression<SqlType = <Self as AsQuery>::SqlType> + ValidGrouping<()>,
 LL | |     <Self as AsQuery>::SqlType: TypedExpressionType,
-    | |____________________________________________________^ `FunctionCall<R, F>`
+    | |____________________________________________________^ `FunctionCall<R, F, L>`
     |
    ::: ROOT/diesel/src/query_source/aliasing/dsl_impls.rs
     |

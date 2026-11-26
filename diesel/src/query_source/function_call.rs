@@ -18,6 +18,7 @@ use crate::query_source::{
     View,
 };
 use crate::result::QueryResult;
+use core::marker::PhantomData;
 
 /// A function call in the `FROM` clause, named after the relation `R`
 ///
@@ -26,9 +27,10 @@ use crate::result::QueryResult;
 /// listing the result columns, or an [`Alias`] of it after
 /// [`aliased`](FunctionCall::aliased). `F` is the function call.
 #[derive(Debug, Clone, Copy)]
-pub struct FunctionCall<R, F> {
+pub struct FunctionCall<R, F, L = NoFromClause> {
     relation: R,
     call: F,
+    lateral: PhantomData<L>,
 }
 
 impl<F> FunctionCall<F::Relation, F>
@@ -41,11 +43,12 @@ where
         Self {
             relation: Default::default(),
             call,
+            lateral: PhantomData,
         }
     }
 }
 
-impl<V, F> FunctionCall<V, F>
+impl<V, F, L> FunctionCall<V, F, L>
 where
     V: View,
 {
@@ -54,13 +57,29 @@ where
     ///
     /// The columns of an aliased call are read with
     /// [`Alias::field`].
-    pub fn aliased<S>(self, alias: Alias<S>) -> FunctionCall<Alias<S>, F>
+    pub fn aliased<S>(self, alias: Alias<S>) -> FunctionCall<Alias<S>, F, L>
     where
         S: AliasSource<Target = V>,
     {
         FunctionCall {
             relation: alias,
             call: self.call,
+            lateral: PhantomData,
+        }
+    }
+}
+
+impl<R, F> FunctionCall<R, F> {
+    /// Supplies the join predicate for this function call.
+    pub fn on<On>(self, predicate: On) -> OnClauseWrapper<Self, On> {
+        OnClauseWrapper::new(self, predicate)
+    }
+
+    pub(crate) fn lateral(self) -> FunctionCall<R, F, private::Lateral> {
+        FunctionCall {
+            relation: self.relation,
+            call: self.call,
+            lateral: PhantomData,
         }
     }
 }
@@ -113,6 +132,23 @@ where
 pub(crate) mod private {
     use crate::query_builder::nodes::{Identifier, StaticQueryFragment};
     use crate::query_source::{AliasSource, QueryRelation, QueryRelationField, View};
+
+    #[derive(Debug, Clone, Copy, crate::query_builder::QueryId)]
+    pub struct Lateral;
+
+    #[diagnostic::on_unimplemented(
+        message = "function arguments cannot reference columns in an ordinary join",
+        note = "use `inner_join_lateral` or `left_join_lateral` for column arguments"
+    )]
+    pub trait ValidArguments<F> {}
+
+    #[diagnostic::do_not_recommend]
+    impl<F: crate::expression::AppearsOnTable<crate::query_builder::NoFromClause>> ValidArguments<F>
+        for crate::query_builder::NoFromClause
+    {
+    }
+
+    impl<F> ValidArguments<F> for Lateral {}
 
     /// A relation that can name a function call
     pub trait TableFunctionRelation {
@@ -184,22 +220,24 @@ pub(crate) mod private {
     }
 }
 
-impl<R, F> QueryId for FunctionCall<R, F>
+impl<R, F, L> QueryId for FunctionCall<R, F, L>
 where
     R: QueryId,
     F: QueryId,
+    L: QueryId + 'static,
 {
-    type QueryId = FunctionCall<R::QueryId, F::QueryId>;
+    type QueryId = FunctionCall<R::QueryId, F::QueryId, L>;
 
     const HAS_STATIC_QUERY_ID: bool = R::HAS_STATIC_QUERY_ID && F::HAS_STATIC_QUERY_ID;
 }
 
-impl<R, F> QuerySource for FunctionCall<R, F>
+impl<R, F, L> QuerySource for FunctionCall<R, F, L>
 where
     Self: Clone,
     R: QuerySource,
     R::DefaultSelection: SelectableExpression<Self>,
-    F: AppearsOnTable<NoFromClause> + NonAggregate,
+    F: NonAggregate,
+    L: private::ValidArguments<F>,
 {
     type FromClause = Self;
     type DefaultSelection = R::DefaultSelection;
@@ -213,7 +251,7 @@ where
     }
 }
 
-impl<R, F> AsQuery for FunctionCall<R, F>
+impl<R, F, L> AsQuery for FunctionCall<R, F, L>
 where
     Self: QuerySource,
     <Self as QuerySource>::DefaultSelection: ValidGrouping<()>,
@@ -226,14 +264,14 @@ where
     }
 }
 
-impl<R, F, QS> AppearsInFromClause<QS> for FunctionCall<R, F>
+impl<R, F, L, QS> AppearsInFromClause<QS> for FunctionCall<R, F, L>
 where
     R: AppearsInFromClause<QS>,
 {
     type Count = R::Count;
 }
 
-impl<R, F, DB> QueryFragment<DB> for FunctionCall<R, F>
+impl<R, F, L, DB> QueryFragment<DB> for FunctionCall<R, F, L>
 where
     DB: Backend,
     Self: QueryFragment<DB, DB::TableFunctionSyntax>,
@@ -243,8 +281,8 @@ where
     }
 }
 
-impl<R, F, DB> QueryFragment<DB, sql_dialect::table_function_syntax::PgLikeTableFunctions>
-    for FunctionCall<R, F>
+impl<R, F, L, DB> QueryFragment<DB, sql_dialect::table_function_syntax::PgLikeTableFunctions>
+    for FunctionCall<R, F, L>
 where
     DB: Backend,
     R: private::TableFunctionRelation,
@@ -258,8 +296,8 @@ where
     }
 }
 
-impl<R, F, DB> QueryFragment<DB, sql_dialect::table_function_syntax::SqliteLikeTableFunctions>
-    for FunctionCall<R, F>
+impl<R, F, L, DB> QueryFragment<DB, sql_dialect::table_function_syntax::SqliteLikeTableFunctions>
+    for FunctionCall<R, F, L>
 where
     DB: Backend,
     R: private::TableFunctionRelation,
@@ -272,19 +310,19 @@ where
     }
 }
 
-impl<S, C, F> SelectableExpression<FunctionCall<Alias<S>, F>> for AliasedField<S, C>
+impl<S, C, F, L> SelectableExpression<FunctionCall<Alias<S>, F, L>> for AliasedField<S, C>
 where
     S: AliasSource,
     C: QueryRelationField<QueryRelation = S::Target>,
-    Self: AppearsOnTable<FunctionCall<Alias<S>, F>>,
+    Self: AppearsOnTable<FunctionCall<Alias<S>, F, L>>,
 {
 }
 
-impl<R, F> ToInnerJoin for FunctionCall<R, F> {
+impl<R, F, L> ToInnerJoin for FunctionCall<R, F, L> {
     type InnerJoin = Self;
 }
 
-impl<R, F, Selection> AppendSelection<Selection> for FunctionCall<R, F>
+impl<R, F, L, Selection> AppendSelection<Selection> for FunctionCall<R, F, L>
 where
     Self: QuerySource,
 {
@@ -295,7 +333,7 @@ where
     }
 }
 
-impl<R, F, Rhs, On> JoinTo<OnClauseWrapper<Rhs, On>> for FunctionCall<R, F> {
+impl<R, F, L, Rhs, On> JoinTo<OnClauseWrapper<Rhs, On>> for FunctionCall<R, F, L> {
     type FromClause = Rhs;
     type OnClause = On;
 
@@ -304,7 +342,7 @@ impl<R, F, Rhs, On> JoinTo<OnClauseWrapper<Rhs, On>> for FunctionCall<R, F> {
     }
 }
 
-impl<R, F, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On> for FunctionCall<R, F>
+impl<R, F, L, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On> for FunctionCall<R, F, L>
 where
     Self: AsQuery,
     <Self as AsQuery>::Query: InternalJoinDsl<Rhs, Kind, On>,
@@ -316,11 +354,11 @@ where
     }
 }
 
-impl<R, F> QueryDsl for FunctionCall<R, F> {}
+impl<R, F, L> QueryDsl for FunctionCall<R, F, L> {}
 
-impl<R, F> RunQueryDslSupport for FunctionCall<R, F> {}
+impl<R, F, L> RunQueryDslSupport for FunctionCall<R, F, L> {}
 
-impl<R, F, Predicate> FilterDsl<Predicate> for FunctionCall<R, F>
+impl<R, F, L, Predicate> FilterDsl<Predicate> for FunctionCall<R, F, L>
 where
     Self: AsQuery,
     <Self as AsQuery>::Query: FilterDsl<Predicate>,
@@ -332,7 +370,7 @@ where
     }
 }
 
-impl<R, F, Predicate> OrFilterDsl<Predicate> for FunctionCall<R, F>
+impl<R, F, L, Predicate> OrFilterDsl<Predicate> for FunctionCall<R, F, L>
 where
     Self: AsQuery,
     <Self as AsQuery>::Query: OrFilterDsl<Predicate>,
@@ -344,7 +382,7 @@ where
     }
 }
 
-impl<R, F, Selection> SelectDsl<Selection> for FunctionCall<R, F>
+impl<R, F, L, Selection> SelectDsl<Selection> for FunctionCall<R, F, L>
 where
     Selection: Expression,
     Self: AsQuery,
@@ -357,7 +395,7 @@ where
     }
 }
 
-impl<R, F> DistinctDsl for FunctionCall<R, F>
+impl<R, F, L> DistinctDsl for FunctionCall<R, F, L>
 where
     Self: QuerySource + AsQuery<Query = SelectStatement<FromClause<Self>>>,
     <Self as QuerySource>::DefaultSelection:
@@ -372,7 +410,7 @@ where
 }
 
 #[cfg(feature = "postgres_backend")]
-impl<R, F, Selection> DistinctOnDsl<Selection> for FunctionCall<R, F>
+impl<R, F, L, Selection> DistinctOnDsl<Selection> for FunctionCall<R, F, L>
 where
     Selection: SelectableExpression<Self>,
     Self: QuerySource + AsQuery<Query = SelectStatement<FromClause<Self>>>,
@@ -388,7 +426,7 @@ where
     }
 }
 
-impl<R, F, Expr> GroupByDsl<Expr> for FunctionCall<R, F>
+impl<R, F, L, Expr> GroupByDsl<Expr> for FunctionCall<R, F, L>
 where
     Expr: Expression,
     Self: QuerySource + AsQuery<Query = SelectStatement<FromClause<Self>>>,
@@ -404,7 +442,7 @@ where
     }
 }
 
-impl<R, F, Expr> OrderDsl<Expr> for FunctionCall<R, F>
+impl<R, F, L, Expr> OrderDsl<Expr> for FunctionCall<R, F, L>
 where
     Expr: Expression,
     Self: AsQuery,
@@ -417,7 +455,7 @@ where
     }
 }
 
-impl<R, F, Expr> ThenOrderDsl<Expr> for FunctionCall<R, F>
+impl<R, F, L, Expr> ThenOrderDsl<Expr> for FunctionCall<R, F, L>
 where
     Expr: Expression,
     Self: AsQuery,
@@ -430,7 +468,7 @@ where
     }
 }
 
-impl<R, F> LimitDsl for FunctionCall<R, F>
+impl<R, F, L> LimitDsl for FunctionCall<R, F, L>
 where
     Self: AsQuery,
     <Self as AsQuery>::Query: LimitDsl,
@@ -442,7 +480,7 @@ where
     }
 }
 
-impl<R, F> OffsetDsl for FunctionCall<R, F>
+impl<R, F, L> OffsetDsl for FunctionCall<R, F, L>
 where
     Self: AsQuery,
     <Self as AsQuery>::Query: OffsetDsl,
@@ -454,7 +492,7 @@ where
     }
 }
 
-impl<'a, R, F, DB> BoxedDsl<'a, DB> for FunctionCall<R, F>
+impl<'a, R, F, L, DB> BoxedDsl<'a, DB> for FunctionCall<R, F, L>
 where
     Self: QuerySource + AsQuery<Query = SelectStatement<FromClause<Self>>>,
     SelectStatement<FromClause<Self>>: BoxedDsl<'a, DB>,
@@ -469,7 +507,7 @@ where
     }
 }
 
-impl<'a, R, F, DB> BoxedCloneDsl<'a, DB> for FunctionCall<R, F>
+impl<'a, R, F, L, DB> BoxedCloneDsl<'a, DB> for FunctionCall<R, F, L>
 where
     Self: QuerySource + AsQuery<Query = SelectStatement<FromClause<Self>>>,
     SelectStatement<FromClause<Self>>: BoxedCloneDsl<'a, DB>,
@@ -484,7 +522,7 @@ where
     }
 }
 
-impl<R, F> CombineDsl for FunctionCall<R, F>
+impl<R, F, L> CombineDsl for FunctionCall<R, F, L>
 where
     Self: AsQuery,
 {

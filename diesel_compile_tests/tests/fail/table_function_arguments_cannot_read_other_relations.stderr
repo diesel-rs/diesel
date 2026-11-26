@@ -1,33 +1,193 @@
-error[E0599]: the method `on` exists for struct `FunctionCall<view, json_each<name>>`, but its trait bounds were not satisfied
-  --> tests/fail/table_function_arguments_cannot_read_other_relations.rs:31:44
+error[E0277]: the trait bound `Join<table, _, Inner>: AppearsInFromClause<view>` is not satisfied
+   --> tests/fail/table_function_arguments_cannot_read_other_relations.rs:31:10
+    |
+ LL |         .inner_join(json_each(users::name).on(json_each::value.eq(users::name)))
+    |          ^^^^^^^^^^ unsatisfied trait bound
+    |
+    = help: the trait `AppearsInFromClause<json_each::view>` is not implemented for `Join<table, FunctionCall<view, _>, Inner>`
+    = note: double check that `json_each::view` and `Join<table, FunctionCall<view, _>, Inner>` appear in the same `allow_tables_to_appear_in_same_query!` 
+            call if both are tables
+    = note: double check that any two aliases to the same table in `json_each::view` and `Join<table, FunctionCall<view, _>, Inner>` appear in the same `alias!` call
+help: the trait `AppearsInFromClause<T>` is conditionally implemented for `diesel::internal::table_macro::Join<Left, Right, Kind>`
+   --> ROOT/diesel/src/query_source/joins.rs
+    |
+LL | / impl<T, Left, Right, Kind> AppearsInFromClause<T> for Join<Left, Right, Kind>
+LL | | where
+LL | |     Left: AppearsInFromClause<T> + QuerySource,
+LL | |     Right: AppearsInFromClause<T> + QuerySource,
+    | |                                     ----------- unsatisfied requirement introduced here: `FunctionCall<view, json_each<name>>: QuerySource`
+LL | |     Left::Count: Plus<Right::Count>,
+    | |____________________________________^
+note: required for `json_each::columns::value` to implement `AppearsOnTable<Join<table, _, Inner>>`
+   --> tests/fail/table_function_arguments_cannot_read_other_relations.rs:15:9
+    |
+ LL |         value -> Text,
+    |         ^^^^^
+    = note: 2 redundant requirements hidden
+    = note: required for `((id, name), (value,))` to implement `AppearsOnTable<Join<table, _, Inner>>`
+    = note: required for `Join<table, FunctionCall<view, _>, Inner>` to implement `QuerySource`
+    = note: 1 redundant requirement hidden
+    = note: required for `JoinOn<Join<table, _, Inner>, _>` to implement `QuerySource`
+    = note: required for `SelectStatement<FromClause<table>>` to implement `InternalJoinDsl<FunctionCall<view, _>, Inner, _>`
+ 
+        = note: this error originates in the macro `view` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `Join<table, _, Inner>: AppearsInFromClause<table>` is not satisfied
+   --> tests/fail/table_function_arguments_cannot_read_other_relations.rs:31:10
+    |
+ LL |         .inner_join(json_each(users::name).on(json_each::value.eq(users::name)))
+    |          ^^^^^^^^^^ unsatisfied trait bound
+    |
+    = help: the trait `AppearsInFromClause<users::table>` is not implemented for `Join<table, FunctionCall<view, _>, Inner>`
+    = note: double check that `users::table` and `Join<table, FunctionCall<view, _>, Inner>` appear in the same `allow_tables_to_appear_in_same_query!` 
+            call if both are tables
+    = note: double check that any two aliases to the same table in `users::table` and `Join<table, FunctionCall<view, _>, Inner>` appear in the same `alias!` call
+help: the trait `AppearsInFromClause<T>` is conditionally implemented for `diesel::internal::table_macro::Join<Left, Right, Kind>`
+   --> ROOT/diesel/src/query_source/joins.rs
+    |
+LL | / impl<T, Left, Right, Kind> AppearsInFromClause<T> for Join<Left, Right, Kind>
+LL | | where
+LL | |     Left: AppearsInFromClause<T> + QuerySource,
+LL | |     Right: AppearsInFromClause<T> + QuerySource,
+    | |                                     ----------- unsatisfied requirement introduced here: `FunctionCall<view, json_each<name>>: QuerySource`
+LL | |     Left::Count: Plus<Right::Count>,
+    | |____________________________________^
+note: required for `users::columns::name` to implement `AppearsOnTable<Join<table, _, Inner>>`
+   --> tests/fail/table_function_arguments_cannot_read_other_relations.rs:9:9
+    |
+  LL |         name -> Text,
+    |         ^^^^
+    = note: 2 redundant requirements hidden
+    = note: required for `Grouped<Eq<value, name>>` to implement `AppearsOnTable<Join<table, _, Inner>>`
+    = note: required for `JoinOn<Join<table, _, Inner>, _>` to implement `QuerySource`
+    = note: required for `SelectStatement<FromClause<table>>` to implement `InternalJoinDsl<FunctionCall<view, _>, Inner, _>`
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: function arguments cannot reference columns in an ordinary join
+   --> tests/fail/table_function_arguments_cannot_read_other_relations.rs:31:10
+    |
+ LL |         .inner_join(json_each(users::name).on(json_each::value.eq(users::name)))
+    |          ^^^^^^^^^^ unsatisfied trait bound
+    |
+    = help: the trait `query_source::function_call::private::ValidArguments<json_each_utils::json_each<users::columns::name>>` is not implemented for `diesel::internal::table_macro::NoFromClause`
+    = note: use `inner_join_lateral` or `left_join_lateral` for column arguments
+help: the trait `query_source::function_call::private::ValidArguments<F>` is implemented for `query_source::function_call::private::Lateral`
+   --> ROOT/diesel/src/query_source/function_call.rs
+    |
+LL |     impl<F> ValidArguments<F> for Lateral {}
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    = note: required for `FunctionCall<view, json_each<name>>` to implement `QuerySource`
+    = note: required for `SelectStatement<FromClause<table>>` to implement `InternalJoinDsl<FunctionCall<view, _>, Inner, _>`
+ 
+    
+error[E0599]: no method named `select` found for struct `SelectStatement<From, Select, Distinct, Where, Order, LimitOffset, GroupBy, Having, Locking>` in the current scope
+  --> tests/fail/table_function_arguments_cannot_read_other_relations.rs:35:10
    |
+LL |     users::table
+   |     ------------ method `select` is available on `users::table`
 LL |         .inner_join(json_each(users::name).on(json_each::value.eq(users::name)))
-   |                                            ^^ method cannot be called on `FunctionCall<view, json_each<name>>` due to unsatisfied trait bounds
+LL |
+LL |
+LL |
+LL |         .select(json_each::value)
+   |          ^^^^^^ private field, not a method
    |
-  ::: ROOT/diesel/src/query_source/function_call.rs
-   |
-LL | pub struct FunctionCall<R, F> {
-   | ----------------------------- doesn't satisfy `_: JoinOnDsl` or `_: QuerySource`
-   |
-   = note: the following trait bounds were not satisfied:
-           `FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>: QuerySource`
-           which is required by `FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>: diesel::JoinOnDsl`
-           `&FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>: QuerySource`
-           which is required by `&FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>: diesel::JoinOnDsl`
-           `&mut FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>: QuerySource`
-           which is required by `&mut FunctionCall<json_each::view, json_each_utils::json_each<users::columns::name>>: diesel::JoinOnDsl`
 
    
+error[E0277]: the trait bound `Join<table, _, _>: AppearsInFromClause<view>` is not satisfied
+   --> tests/fail/table_function_arguments_cannot_read_other_relations.rs:40:18
+    |
+ LL |     users::table.left_join(json_each(users::name).on(json_each::value.eq(users::name)));
+    |                  ^^^^^^^^^ unsatisfied trait bound
+    |
+    = help: the trait `AppearsInFromClause<json_each::view>` is not implemented for `Join<table, FunctionCall<view, _>, _>`
+    = note: double check that `json_each::view` and `Join<table, FunctionCall<view, _>, _>` appear in the same `allow_tables_to_appear_in_same_query!` 
+            call if both are tables
+    = note: double check that any two aliases to the same table in `json_each::view` and `Join<table, FunctionCall<view, _>, _>` appear in the same `alias!` call
+help: the trait `AppearsInFromClause<T>` is conditionally implemented for `diesel::internal::table_macro::Join<Left, Right, Kind>`
+   --> ROOT/diesel/src/query_source/joins.rs
+    |
+LL | / impl<T, Left, Right, Kind> AppearsInFromClause<T> for Join<Left, Right, Kind>
+LL | | where
+LL | |     Left: AppearsInFromClause<T> + QuerySource,
+LL | |     Right: AppearsInFromClause<T> + QuerySource,
+    | |                                     ----------- unsatisfied requirement introduced here: `FunctionCall<view, json_each<name>>: QuerySource`
+LL | |     Left::Count: Plus<Right::Count>,
+    | |____________________________________^
+note: required for `json_each::columns::value` to implement `AppearsOnTable<Join<table, _, _>>`
+   --> tests/fail/table_function_arguments_cannot_read_other_relations.rs:15:9
+    |
+ LL |         value -> Text,
+    |         ^^^^^
+    = note: 3 redundant requirements hidden
+    = note: required for `((id, name), NullableExpression<(value,)>)` to implement `AppearsOnTable<Join<table, _, _>>`
+    = note: required for `Join<table, FunctionCall<view, _>, _>` to implement `QuerySource`
+    = note: 1 redundant requirement hidden
+    = note: required for `JoinOn<Join<table, FunctionCall<view, _>, _>, _>` to implement `QuerySource`
+    = note: required for `SelectStatement<FromClause<table>>` to implement `InternalJoinDsl<FunctionCall<view, _>, _, _>`
+ 
+        = note: this error originates in the macro `view` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `Join<table, _, _>: AppearsInFromClause<table>` is not satisfied
+   --> tests/fail/table_function_arguments_cannot_read_other_relations.rs:40:18
+    |
+ LL |     users::table.left_join(json_each(users::name).on(json_each::value.eq(users::name)));
+    |                  ^^^^^^^^^ unsatisfied trait bound
+    |
+    = help: the trait `AppearsInFromClause<users::table>` is not implemented for `Join<table, FunctionCall<view, _>, _>`
+    = note: double check that `users::table` and `Join<table, FunctionCall<view, _>, _>` appear in the same `allow_tables_to_appear_in_same_query!` 
+            call if both are tables
+    = note: double check that any two aliases to the same table in `users::table` and `Join<table, FunctionCall<view, _>, _>` appear in the same `alias!` call
+help: the trait `AppearsInFromClause<T>` is conditionally implemented for `diesel::internal::table_macro::Join<Left, Right, Kind>`
+   --> ROOT/diesel/src/query_source/joins.rs
+    |
+LL | / impl<T, Left, Right, Kind> AppearsInFromClause<T> for Join<Left, Right, Kind>
+LL | | where
+LL | |     Left: AppearsInFromClause<T> + QuerySource,
+LL | |     Right: AppearsInFromClause<T> + QuerySource,
+    | |                                     ----------- unsatisfied requirement introduced here: `FunctionCall<view, json_each<name>>: QuerySource`
+LL | |     Left::Count: Plus<Right::Count>,
+    | |____________________________________^
+note: required for `users::columns::name` to implement `AppearsOnTable<Join<table, _, _>>`
+   --> tests/fail/table_function_arguments_cannot_read_other_relations.rs:9:9
+    |
+  LL |         name -> Text,
+    |         ^^^^
+    = note: 2 redundant requirements hidden
+    = note: required for `Grouped<Eq<value, name>>` to implement `AppearsOnTable<Join<table, _, _>>`
+    = note: required for `JoinOn<Join<table, FunctionCall<view, _>, _>, _>` to implement `QuerySource`
+    = note: required for `SelectStatement<FromClause<table>>` to implement `InternalJoinDsl<FunctionCall<view, _>, _, _>`
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: function arguments cannot reference columns in an ordinary join
+   --> tests/fail/table_function_arguments_cannot_read_other_relations.rs:40:18
+    |
+ LL |     users::table.left_join(json_each(users::name).on(json_each::value.eq(users::name)));
+    |                  ^^^^^^^^^ unsatisfied trait bound
+    |
+    = help: the trait `query_source::function_call::private::ValidArguments<json_each_utils::json_each<users::columns::name>>` is not implemented for `diesel::internal::table_macro::NoFromClause`
+    = note: use `inner_join_lateral` or `left_join_lateral` for column arguments
+help: the trait `query_source::function_call::private::ValidArguments<F>` is implemented for `query_source::function_call::private::Lateral`
+   --> ROOT/diesel/src/query_source/function_call.rs
+    |
+LL |     impl<F> ValidArguments<F> for Lateral {}
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    = note: required for `FunctionCall<view, json_each<name>>` to implement `QuerySource`
+    = note: required for `SelectStatement<FromClause<table>>` to implement `InternalJoinDsl<FunctionCall<view, _>, _, _>`
+ 
+    
 error[E0277]: the trait bound `FunctionCall<view, json_each<name>>: SelectDsl<_>` is not satisfied
-   --> tests/fail/table_function_arguments_cannot_read_other_relations.rs:38:10
+   --> tests/fail/table_function_arguments_cannot_read_other_relations.rs:46:10
     |
  LL |         .select(json_each::value)
     |          ^^^^^^ the trait `SelectDsl<_>` is not implemented for `FunctionCall<view, json_each<name>>`
     |
-help: the trait `SelectDsl<Selection>` is conditionally implemented for `FunctionCall<R, F>`
+help: the trait `SelectDsl<Selection>` is conditionally implemented for `FunctionCall<R, F, L>`
    --> ROOT/diesel/src/query_source/function_call.rs
     |
-LL | / impl<R, F, Selection> SelectDsl<Selection> for FunctionCall<R, F>
+LL | / impl<R, F, L, Selection> SelectDsl<Selection> for FunctionCall<R, F, L>
 LL | | where
 LL | |     Selection: Expression,
 LL | |     Self: AsQuery,

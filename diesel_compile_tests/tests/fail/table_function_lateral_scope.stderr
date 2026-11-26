@@ -1,0 +1,54 @@
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+  --> tests/fail/table_function_lateral_scope.rs:18:18
+   |
+LL |     users::table.inner_join_lateral(json_each(posts::title).on(json_each::value.eq(users::na...
+   |                  ^^^^^^^^^^^^^^^^^^ expected `Once`, found `Never`
+   |
+note: required for `posts::columns::title` to implement `AppearsOnTable<users::table>`
+  --> tests/fail/table_function_lateral_scope.rs:7:33
+   |
+ LL | table! { posts { id -> Integer, title -> Text, } }
+   |                                 ^^^^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: 1 redundant requirement hidden
+   = note: required for `json_each_utils::json_each<posts::columns::title>` to implement `AppearsOnTable<users::table>`
+   = note: required for `users::table` to implement `InternalLateralJoinDsl<OnClauseWrapper<_, _>, Inner>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+  --> tests/fail/table_function_lateral_scope.rs:22:10
+   |
+LL |         .inner_join_lateral(json_each(posts::title).on(json_each::value.eq(users::name)))
+   |          ^^^^^^^^^^^^^^^^^^ expected `Once`, found `Never`
+   |
+note: required for `posts::columns::title` to implement `AppearsOnTable<users::table>`
+  --> tests/fail/table_function_lateral_scope.rs:7:33
+   |
+ LL | table! { posts { id -> Integer, title -> Text, } }
+   |                                 ^^^^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: 1 redundant requirement hidden
+   = note: required for `json_each_utils::json_each<posts::columns::title>` to implement `AppearsOnTable<users::table>`
+   = note: required for `users::table` to implement `InternalLateralJoinDsl<OnClauseWrapper<_, _>, Inner>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+  --> tests/fail/table_function_lateral_scope.rs:28:14
+   |
+LL |             .inner_join_lateral(json_each(users::name).on(json_each::value.eq(posts::title)))
+   |              ^^^^^^^^^^^^^^^^^^ expected `Once`, found `Never`
+   |
+note: required for `users::columns::name` to implement `AppearsOnTable<posts::table>`
+  --> tests/fail/table_function_lateral_scope.rs:6:33
+   |
+ LL | table! { users { id -> Integer, name -> Text, } }
+   |                                 ^^^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: 1 redundant requirement hidden
+   = note: required for `json_each_utils::json_each<users::columns::name>` to implement `AppearsOnTable<posts::table>`
+   = note: required for `posts::table` to implement `InternalLateralJoinDsl<OnClauseWrapper<_, _>, Inner>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+For more information about this error, try `rustc --explain E0271`.

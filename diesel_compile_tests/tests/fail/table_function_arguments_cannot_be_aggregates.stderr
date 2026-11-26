@@ -4,10 +4,10 @@ error[E0277]: the trait bound `FunctionCall<view, json_each<_>>: SelectDsl<_>` i
  LL |         .select(json_each::value)
     |          ^^^^^^ the trait `SelectDsl<_>` is not implemented for `FunctionCall<view, json_each<group_concat<_>>>`
     |
-help: the trait `SelectDsl<Selection>` is conditionally implemented for `FunctionCall<R, F>`
+help: the trait `SelectDsl<Selection>` is conditionally implemented for `FunctionCall<R, F, L>`
    --> ROOT/diesel/src/query_source/function_call.rs
     |
-LL | / impl<R, F, Selection> SelectDsl<Selection> for FunctionCall<R, F>
+LL | / impl<R, F, L, Selection> SelectDsl<Selection> for FunctionCall<R, F, L>
 LL | | where
 LL | |     Selection: Expression,
 LL | |     Self: AsQuery,

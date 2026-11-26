@@ -33,6 +33,7 @@ pub mod filter_dsl;
 pub(crate) mod group_by_dsl;
 mod having_dsl;
 mod join_dsl;
+pub(crate) mod lateral_join_dsl;
 #[doc(hidden)]
 pub mod limit_dsl;
 #[doc(hidden)]
@@ -51,6 +52,8 @@ mod single_value_dsl;
 pub use self::belonging_to_dsl::BelongingToDsl;
 pub use self::combine_dsl::CombineDsl;
 pub use self::join_dsl::{InternalJoinDsl, JoinOnDsl, JoinWithImplicitOnClause};
+#[doc(hidden)]
+pub use self::lateral_join_dsl::InternalLateralJoinDsl;
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub use self::load_dsl::CompatibleType;
 #[doc(hidden)]
@@ -600,6 +603,78 @@ pub trait QueryDsl: Sized {
         self.join_with_implicit_on_clause(rhs, joins::Inner)
     }
 
+    /// Joins a function call whose arguments can reference the items to its left.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(all(any(feature = "sqlite", feature = "postgres"), not(miri)))]
+    /// # {
+    /// use diesel::prelude::*;
+    /// use diesel::sql_types::{Integer, Text};
+    ///
+    /// diesel::view! {
+    ///     json_each {
+    ///         key -> Integer,
+    ///         value -> Text,
+    ///     }
+    /// }
+    /// # #[cfg(not(feature = "postgres"))]
+    /// #[diesel::declare_sql_function]
+    /// extern "SQL" {
+    ///     #[query_source(json_each)]
+    ///     fn json_each(json: Text) -> json_each::SqlType;
+    /// }
+    ///
+    /// # #[cfg(feature = "postgres")]
+    /// # #[diesel::declare_sql_function]
+    /// # extern "SQL" {
+    /// #     #[query_source(json_each)]
+    /// #     #[sql_name = "pg_temp.json_each"]
+    /// #     fn json_each(json: Text) -> json_each::SqlType;
+    /// # }
+    /// # #[cfg(not(feature = "postgres"))]
+    /// # let connection = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// # #[cfg(feature = "postgres")]
+    /// # let connection = &mut {
+    /// #     dotenvy::dotenv().ok();
+    /// #     let database_url = std::env::var("PG_DATABASE_URL")
+    /// #         .or_else(|_| std::env::var("DATABASE_URL")).unwrap();
+    /// #     PgConnection::establish(&database_url).unwrap()
+    /// # };
+    /// # #[cfg(feature = "postgres")]
+    /// # {
+    /// #     use diesel::connection::SimpleConnection;
+    /// #     connection.batch_execute(
+    /// #         "CREATE FUNCTION pg_temp.json_each(input text) RETURNS TABLE(key integer, value text)
+    /// #          LANGUAGE SQL AS 'SELECT (ordinality - 1)::integer, value
+    /// #          FROM json_array_elements_text(input::json) WITH ORDINALITY AS elements(value, ordinality)'"
+    /// #     )?;
+    /// # }
+    /// let (outer, inner) = diesel::alias!(json_each as outer, json_each as inner);
+    /// let rows = json_each(r#"["[\"a\",\"b\"]","[]"]"#)
+    ///     .aliased(outer)
+    ///     .inner_join_lateral(
+    ///         json_each(outer.field(json_each::value))
+    ///             .aliased(inner)
+    ///             .on(inner.field(json_each::key).ge(0)),
+    ///     )
+    ///     .select(inner.field(json_each::value))
+    ///     .order(inner.field(json_each::key))
+    ///     .load::<String>(connection)?;
+    /// assert_eq!(rows, ["a", "b"]);
+    /// # }
+    /// # Ok::<(), diesel::result::Error>(())
+    /// ```
+    fn inner_join_lateral<Rhs>(self, rhs: Rhs) -> InnerJoinLateral<Self, Rhs>
+    where
+        Self: InternalLateralJoinDsl<Rhs, joins::Inner>,
+    {
+        self.join_lateral(rhs, joins::Inner)
+    }
+
     /// Join two tables using a SQL `LEFT OUTER JOIN`.
     ///
     /// Behaves similarly to [`inner_join`], but will produce a left join
@@ -696,6 +771,78 @@ pub trait QueryDsl: Sized {
         Self: JoinWithImplicitOnClause<Rhs, joins::LeftOuter>,
     {
         self.left_outer_join(rhs)
+    }
+
+    /// Left joins a function call, whose result columns require `.nullable()`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(all(any(feature = "sqlite", feature = "postgres"), not(miri)))]
+    /// # {
+    /// use diesel::prelude::*;
+    /// use diesel::sql_types::{Integer, Text};
+    ///
+    /// diesel::view! {
+    ///     json_each {
+    ///         key -> Integer,
+    ///         value -> Text,
+    ///     }
+    /// }
+    /// # #[cfg(not(feature = "postgres"))]
+    /// #[diesel::declare_sql_function]
+    /// extern "SQL" {
+    ///     #[query_source(json_each)]
+    ///     fn json_each(json: Text) -> json_each::SqlType;
+    /// }
+    ///
+    /// # #[cfg(feature = "postgres")]
+    /// # #[diesel::declare_sql_function]
+    /// # extern "SQL" {
+    /// #     #[query_source(json_each)]
+    /// #     #[sql_name = "pg_temp.json_each"]
+    /// #     fn json_each(json: Text) -> json_each::SqlType;
+    /// # }
+    /// # #[cfg(not(feature = "postgres"))]
+    /// # let connection = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// # #[cfg(feature = "postgres")]
+    /// # let connection = &mut {
+    /// #     dotenvy::dotenv().ok();
+    /// #     let database_url = std::env::var("PG_DATABASE_URL")
+    /// #         .or_else(|_| std::env::var("DATABASE_URL")).unwrap();
+    /// #     PgConnection::establish(&database_url).unwrap()
+    /// # };
+    /// # #[cfg(feature = "postgres")]
+    /// # {
+    /// #     use diesel::connection::SimpleConnection;
+    /// #     connection.batch_execute(
+    /// #         "CREATE FUNCTION pg_temp.json_each(input text) RETURNS TABLE(key integer, value text)
+    /// #          LANGUAGE SQL AS 'SELECT (ordinality - 1)::integer, value
+    /// #          FROM json_array_elements_text(input::json) WITH ORDINALITY AS elements(value, ordinality)'"
+    /// #     )?;
+    /// # }
+    /// let (outer, inner) = diesel::alias!(json_each as outer, json_each as inner);
+    /// let rows = json_each(r#"["[\"a\"]","[]"]"#)
+    ///     .aliased(outer)
+    ///     .left_join_lateral(
+    ///         json_each(outer.field(json_each::value))
+    ///             .aliased(inner)
+    ///             .on(inner.field(json_each::key).ge(0)),
+    ///     )
+    ///     .select(inner.field(json_each::value).nullable())
+    ///     .order(outer.field(json_each::key))
+    ///     .load::<Option<String>>(connection)?;
+    /// assert_eq!(rows, [Some("a".to_string()), None]);
+    /// # }
+    /// # Ok::<(), diesel::result::Error>(())
+    /// ```
+    fn left_join_lateral<Rhs>(self, rhs: Rhs) -> LeftJoinLateral<Self, Rhs>
+    where
+        Self: InternalLateralJoinDsl<Rhs, joins::LeftOuter>,
+    {
+        self.join_lateral(rhs, joins::LeftOuter)
     }
 
     /// Adds to the `WHERE` clause of a query.
