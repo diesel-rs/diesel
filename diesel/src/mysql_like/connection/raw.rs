@@ -254,7 +254,7 @@ impl RawConnection {
     }
 
     fn set_ssl_mode(&self, ssl_mode: mysqlclient_sys::mysql_ssl_mode) {
-        cfg_select!(
+        cfg_select! {
                 not(mariadbbuild) =>
                 {
                     let v = ssl_mode as u32;
@@ -301,7 +301,7 @@ impl RawConnection {
                         _ => (),
                     }
                 }
-        );
+        };
     }
 
     fn set_ssl_ca(&self, ssl_ca: &CStr) {
