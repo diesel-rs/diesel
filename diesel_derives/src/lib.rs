@@ -2318,11 +2318,9 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// On PostgreSQL the call then renders that column's name as a column alias,
 /// `generate_series($1, $2) AS "series"("value")`.
 ///
-/// The arguments of a call must not read columns of other tables or aggregate
-/// rows. Joining a call to a table requires listing its view in
-/// [`allow_tables_to_appear_in_same_query!`](../diesel/macro.allow_tables_to_appear_in_same_query.html).
-/// Diesel renders calls on PostgreSQL and SQLite, and rejects them at compile
-/// time on MySQL, MariaDB and `#[derive(MultiConnection)]` connections.
+/// A standalone call's arguments cannot reference other tables or aggregate rows. `inner_join_lateral` and `left_join_lateral` let arguments reference the items to the left of the call, within the same join. Columns from a left-joined call require `.nullable()`.
+///
+/// Joining a call to a table requires listing its view in [`allow_tables_to_appear_in_same_query!`](../diesel/macro.allow_tables_to_appear_in_same_query.html). Diesel renders calls on PostgreSQL and SQLite, and rejects them at compile time on MySQL, MariaDB and `#[derive(MultiConnection)]` connections.
 ///
 /// The macro generates no `pub type` alias named after such a function, since
 /// the name usually belongs to the view module. The type of a call is
@@ -2366,6 +2364,19 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 ///         .select(json_each::value)
 ///         .load::<String>(connection)?;
 ///
+///     assert_eq!(values, ["a", "b"]);
+///
+///     let (first, second) = diesel::alias!(json_each as first, json_each as second);
+///     let values = json_each(r#"["[\"a\",\"b\"]"]"#)
+///         .aliased(first)
+///         .inner_join_lateral(
+///             json_each(first.field(json_each::value))
+///                 .aliased(second)
+///                 .on(second.field(json_each::key).ge(0)),
+///         )
+///         .select(second.field(json_each::value))
+///         .order(second.field(json_each::key))
+///         .load::<String>(connection)?;
 ///     assert_eq!(values, ["a", "b"]);
 ///     Ok(())
 /// }

@@ -29,10 +29,18 @@ fn main() {
 
     users::table
         .inner_join(json_each(users::name).on(json_each::value.eq(users::name)))
-        //~^ ERROR: the method `on` exists for struct `FunctionCall<view, json_each<name>>`, but its trait bounds were not satisfied
+        //~^ ERROR: the trait bound `Join<table, _, Inner>: AppearsInFromClause<view>` is not satisfied
+        //~| ERROR: the trait bound `Join<table, _, Inner>: AppearsInFromClause<table>` is not satisfied
+        //~| ERROR: function arguments cannot reference columns in an ordinary join
         .select(json_each::value)
+        //~^ ERROR: no method named `select` found for struct `SelectStatement<From, Select, Distinct, Where, Order, LimitOffset, GroupBy, Having, Locking>` in the current scope
         .load::<String>(conn)
         .unwrap();
+
+    users::table.left_join(json_each(users::name).on(json_each::value.eq(users::name)));
+    //~^ ERROR: function arguments cannot reference columns in an ordinary join
+    //~| ERROR: the trait bound `Join<table, _, _>: AppearsInFromClause<view>` is not satisfied
+    //~| ERROR: the trait bound `Join<table, _, _>: AppearsInFromClause<table>` is not satisfied
 
     json_each(users::name)
         .select(json_each::value)

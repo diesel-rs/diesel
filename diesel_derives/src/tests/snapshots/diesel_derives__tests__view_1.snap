@@ -741,8 +741,13 @@ pub mod view {
         }
         impl<
             __DieselFunction,
+            __DieselLateral,
         > diesel::SelectableExpression<
-            diesel::query_source::FunctionCall<super::view, __DieselFunction>,
+            diesel::query_source::FunctionCall<
+                super::view,
+                __DieselFunction,
+                __DieselLateral,
+            >,
         > for id {}
         #[allow(non_camel_case_types, dead_code)]
         #[derive(
@@ -937,8 +942,13 @@ pub mod view {
         }
         impl<
             __DieselFunction,
+            __DieselLateral,
         > diesel::SelectableExpression<
-            diesel::query_source::FunctionCall<super::view, __DieselFunction>,
+            diesel::query_source::FunctionCall<
+                super::view,
+                __DieselFunction,
+                __DieselLateral,
+            >,
         > for name {}
         impl diesel::expression::IsContainedInGroupBy<id> for name {
             type Output = diesel::expression::is_contained_in_group_by::No;
