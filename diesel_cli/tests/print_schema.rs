@@ -485,6 +485,12 @@ fn print_schema_citext() {
     test_print_schema("print_schema_citext", vec![])
 }
 
+#[cfg(feature = "postgres")]
+#[test]
+fn print_schema_jsonpath() {
+    test_print_schema("print_schema_jsonpath", vec![])
+}
+
 #[test]
 fn print_schema_with_multiple_schema() {
     test_multiple_print_schema(

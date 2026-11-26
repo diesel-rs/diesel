@@ -7,6 +7,7 @@ error[E0277]: cannot deserialize a value of the database type `BigInt` as `std::
      = note: double check your type mappings via the documentation of `BigInt`
      = help: `std::string::String` implements trait `FromSql<A, DB>`:
                FromSql<Citext, Pg>
+               FromSql<Jsonpath, Pg>
                FromSql<TimestamptzSqlite, Sqlite>
                FromSql<diesel::sql_types::Date, Sqlite>
                FromSql<diesel::sql_types::Time, Sqlite>

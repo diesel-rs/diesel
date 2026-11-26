@@ -849,6 +849,26 @@ fn bytes_to_sql_binary() {
 
 #[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
+fn jsonpath_round_trips() {
+    let expected = r#"$."a""#;
+    assert_eq!(
+        expected,
+        query_single_value::<Jsonpath, String>("'$.a'::jsonpath")
+    );
+
+    let connection = &mut connection();
+    let borrowed = select("$.a".into_sql::<Jsonpath>())
+        .get_result::<String>(connection)
+        .unwrap();
+    assert_eq!(expected, borrowed);
+    let owned = select(borrowed.into_sql::<Jsonpath>())
+        .get_result::<String>(connection)
+        .unwrap();
+    assert_eq!(expected, owned);
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
 fn pg_specific_option_from_sql() {
     assert_eq!(
         Some(true),
