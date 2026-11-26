@@ -10,7 +10,7 @@ fn main() {
             println!("Mysql is found");
         }
         Ok(_) | Err(_) => {
-            //Could be changed to a panic if build fails between dependancies
+            //Could be changed to a panic if build fails between dependencies
             println!("Cannot determine libmariadb/libmysql version, default to Mysql.")
         }
     }
