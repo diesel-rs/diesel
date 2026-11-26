@@ -49,9 +49,9 @@ LL | |         C: QueryRelationField,
 note: required by a bound in `diesel::internal::table_functions::TableFunction::ColumnAliases`
    --> ROOT/diesel/src/query_source/function_call.rs
     |
- LL | pub trait TableFunction {
+LL | pub trait TableFunction {
 ...
- LL |     type ColumnAliases: ColumnAliases<Self::Relation>;
+LL |     type ColumnAliases: ColumnAliases<Self::Relation>;
     |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `TableFunction::ColumnAliases`
 
 error[E0277]: a function call in `FROM` must be named after a `view!` without a schema
@@ -75,9 +75,9 @@ LL | |         <S::Target as StaticQueryFragment>::Component: UnqualifiedName,
 note: required by a bound in `diesel::internal::table_functions::TableFunction::Relation`
    --> ROOT/diesel/src/query_source/function_call.rs
     |
- LL | pub trait TableFunction {
- LL |     /// The `view!` listing the result columns
- LL |     type Relation: View + Default + private::TableFunctionRelation;
+LL | pub trait TableFunction {
+LL |     /// The `view!` listing the result columns
+LL |     type Relation: View + Default + private::TableFunctionRelation;
     |                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `TableFunction::Relation`
  
     

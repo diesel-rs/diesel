@@ -5,6 +5,7 @@
 //! [`table!`]: crate::table!
 
 pub(crate) mod aliasing;
+mod correlated_select;
 pub(crate) mod function_call;
 pub(crate) mod joins;
 mod peano_numbers;
@@ -13,6 +14,9 @@ use crate::query_builder::nodes::StaticQueryFragment;
 use crate::query_builder::*;
 
 pub use self::aliasing::{Alias, AliasSource, AliasedField};
+pub use self::correlated_select::CorrelatedSelect;
+#[doc(hidden)]
+pub use self::function_call::CorrelatedDsl;
 pub use self::function_call::FunctionCall;
 pub use self::joins::JoinTo;
 pub use self::peano_numbers::*;

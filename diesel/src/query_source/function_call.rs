@@ -75,6 +75,82 @@ impl<R, F> FunctionCall<R, F> {
         OnClauseWrapper::new(self, predicate)
     }
 
+    /// Builds a subselect whose arguments may reference the enclosing query.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(all(any(feature = "sqlite", feature = "postgres"), not(miri)))]
+    /// # {
+    /// use diesel::dsl::exists;
+    /// use diesel::prelude::*;
+    /// use diesel::sql_types::{Integer, Text};
+    ///
+    /// diesel::view! {
+    ///     json_each {
+    ///         key -> Integer,
+    ///         value -> Text,
+    ///     }
+    /// }
+    /// # #[cfg(not(feature = "postgres"))]
+    /// #[diesel::declare_sql_function]
+    /// extern "SQL" {
+    ///     #[query_source(json_each)]
+    ///     fn json_each(json: Text) -> json_each::SqlType;
+    /// }
+    ///
+    /// # #[cfg(feature = "postgres")]
+    /// # #[diesel::declare_sql_function]
+    /// # extern "SQL" {
+    /// #     #[query_source(json_each)]
+    /// #     #[sql_name = "pg_temp.json_each"]
+    /// #     fn json_each(json: Text) -> json_each::SqlType;
+    /// # }
+    /// # #[cfg(not(feature = "postgres"))]
+    /// # let connection = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// # #[cfg(feature = "postgres")]
+    /// # let connection = &mut {
+    /// #     dotenvy::dotenv().ok();
+    /// #     let database_url = std::env::var("PG_DATABASE_URL")
+    /// #         .or_else(|_| std::env::var("DATABASE_URL")).unwrap();
+    /// #     PgConnection::establish(&database_url).unwrap()
+    /// # };
+    /// # #[cfg(feature = "postgres")]
+    /// # {
+    /// #     use diesel::connection::SimpleConnection;
+    /// #     connection.batch_execute(
+    /// #         "CREATE FUNCTION pg_temp.json_each(input text) RETURNS TABLE(key integer, value text)
+    /// #          LANGUAGE SQL AS 'SELECT (ordinality - 1)::integer, value
+    /// #          FROM json_array_elements_text(input::json) WITH ORDINALITY AS elements(value, ordinality)'"
+    /// #     )?;
+    /// # }
+    /// let (outer, inner) = diesel::alias!(json_each as outer, json_each as inner);
+    /// let subselect = json_each(outer.field(json_each::value))
+    ///     .aliased(inner)
+    ///     .correlated()
+    ///     .select(inner.field(json_each::value));
+    /// let rows = json_each(r#"["[\"a\"]","[]"]"#)
+    ///     .aliased(outer)
+    ///     .filter(exists(subselect))
+    ///     .select(outer.field(json_each::key))
+    ///     .load::<i32>(connection)?;
+    /// assert_eq!(rows, [0]);
+    /// # }
+    /// # Ok::<(), diesel::result::Error>(())
+    /// ```
+    pub fn correlated(self) -> dsl::Correlated<Self>
+    where
+        FunctionCall<R, F, private::Outer>: QuerySource,
+    {
+        crate::query_source::CorrelatedSelect::new(SelectStatement::simple(FunctionCall {
+            relation: self.relation,
+            call: self.call,
+            lateral: PhantomData,
+        }))
+    }
+
     pub(crate) fn lateral(self) -> FunctionCall<R, F, private::Lateral> {
         FunctionCall {
             relation: self.relation,
@@ -82,6 +158,21 @@ impl<R, F> FunctionCall<R, F> {
             lateral: PhantomData,
         }
     }
+}
+
+#[doc(hidden)]
+pub trait CorrelatedDsl {
+    type Output;
+}
+
+impl<Relation, Call> CorrelatedDsl for FunctionCall<Relation, Call>
+where
+    FunctionCall<Relation, Call, private::Outer>: QuerySource,
+{
+    type Output = crate::query_source::CorrelatedSelect<
+        SelectStatement<FromClause<FunctionCall<Relation, Call, private::Outer>>>,
+        Self,
+    >;
 }
 
 /// Implemented by [`declare_sql_function`](crate::declare_sql_function) for
@@ -136,6 +227,9 @@ pub(crate) mod private {
     #[derive(Debug, Clone, Copy, crate::query_builder::QueryId)]
     pub struct Lateral;
 
+    #[derive(Debug, Clone, Copy, crate::query_builder::QueryId)]
+    pub struct Outer;
+
     #[diagnostic::on_unimplemented(
         message = "function arguments cannot reference columns in an ordinary join",
         note = "use `inner_join_lateral` or `left_join_lateral` for column arguments"
@@ -149,6 +243,7 @@ pub(crate) mod private {
     }
 
     impl<F> ValidArguments<F> for Lateral {}
+    impl<F> ValidArguments<F> for Outer {}
 
     /// A relation that can name a function call
     pub trait TableFunctionRelation {

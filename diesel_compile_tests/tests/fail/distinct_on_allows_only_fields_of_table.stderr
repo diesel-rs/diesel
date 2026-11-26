@@ -24,6 +24,14 @@ LL | |         Expression<SqlType = <Self as AsQuery>::SqlType> + ValidGrouping<
 LL | |     <Self as AsQuery>::SqlType: TypedExpressionType,
     | |____________________________________________________^ `FunctionCall<R, F, L>`
     |
+   ::: ROOT/diesel/src/query_source/correlated_select.rs
+    |
+LL | / impl<Query, Call, Selection> DistinctOnDsl<Selection> for CorrelatedSelect<Query, Call>
+LL | | where
+LL | |     Query: DistinctOnDsl<Selection>,
+LL | |     Selection: Expression,
+    | |__________________________^ `CorrelatedSelect<Query, Call>`
+    |
    ::: ROOT/diesel/src/query_source/aliasing/dsl_impls.rs
     |
 LL | / impl<S, Selection> DistinctOnDsl<Selection> for Alias<S>
@@ -61,6 +69,14 @@ LL | |     Self: QuerySource + AsQuery<Query = SelectStatement<FromClause<Self>>
 LL | |         Expression<SqlType = <Self as AsQuery>::SqlType> + ValidGrouping<()>,
 LL | |     <Self as AsQuery>::SqlType: TypedExpressionType,
     | |____________________________________________________^ `FunctionCall<R, F, L>`
+    |
+   ::: ROOT/diesel/src/query_source/correlated_select.rs
+    |
+LL | / impl<Query, Call, Selection> DistinctOnDsl<Selection> for CorrelatedSelect<Query, Call>
+LL | | where
+LL | |     Query: DistinctOnDsl<Selection>,
+LL | |     Selection: Expression,
+    | |__________________________^ `CorrelatedSelect<Query, Call>`
     |
    ::: ROOT/diesel/src/query_source/aliasing/dsl_impls.rs
     |

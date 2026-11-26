@@ -2320,6 +2320,8 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 ///
 /// A standalone call's arguments cannot reference other tables or aggregate rows. `inner_join_lateral` and `left_join_lateral` let arguments reference the items to the left of the call, within the same join. Columns from a left-joined call require `.nullable()`.
 ///
+/// `FunctionCall::correlated` builds a subselect whose arguments may reference its enclosing query, usable with `exists`, `eq_any`, `ne_all` and `single_value`. A correlated subselect cannot be loaded as a statement or combined with another query.
+///
 /// Joining a call to a table requires listing its view in [`allow_tables_to_appear_in_same_query!`](../diesel/macro.allow_tables_to_appear_in_same_query.html). Diesel renders calls on PostgreSQL and SQLite, and rejects them at compile time on MySQL, MariaDB and `#[derive(MultiConnection)]` connections.
 ///
 /// The macro generates no `pub type` alias named after such a function, since

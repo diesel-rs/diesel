@@ -30,3 +30,11 @@ fn main() {
             .on(posts::id.eq(users::id)),
     );
 }
+
+fn correlated_argument_is_absent() {
+    let connection = &mut SqliteConnection::establish(":memory:").unwrap();
+    users::table
+        .filter(diesel::dsl::exists(json_each(posts::title).correlated()))
+        .load::<(i32, String)>(connection);
+        //~^ ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+}
