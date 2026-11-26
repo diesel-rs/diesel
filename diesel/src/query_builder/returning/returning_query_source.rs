@@ -129,6 +129,18 @@ impl<V, Target, Changeset, Tab, WhereClause> InsertStmtKind
     type StmtKind = InsertStmtWithOnConflictDoUpdate;
 }
 
+impl<V, Target, T, WhereClause> InsertStmtKind
+    for crate::query_builder::upsert::on_conflict_clause::OnConflictValues<
+        V,
+        Target,
+        crate::query_builder::upsert::on_conflict_actions::DoSelect<T>,
+        WhereClause,
+    >
+{
+    // On the select path old and new values are identical, so `old.xxx` adds nothing.
+    type StmtKind = InsertStmtWithoutOnConflictDoUpdate;
+}
+
 /// Make `Box<dyn BoxableExpression<table>>` be `SelectableExpression` in returning clauses.
 /// This is necessary for backwards-compatibility.
 ///

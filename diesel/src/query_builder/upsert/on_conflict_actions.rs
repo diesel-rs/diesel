@@ -82,6 +82,37 @@ where
 
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy, QueryId)]
+pub struct DoSelect<T>(PhantomData<T>);
+
+impl<T> DoSelect<T> {
+    pub(crate) fn new() -> Self {
+        Self(PhantomData)
+    }
+}
+
+impl<DB, T> QueryFragment<DB> for DoSelect<T>
+where
+    DB: Backend,
+    Self: QueryFragment<DB, DB::OnConflictClause>,
+{
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        <Self as QueryFragment<DB, DB::OnConflictClause>>::walk_ast(self, pass)
+    }
+}
+
+impl<DB, T, SD> QueryFragment<DB, SD> for DoSelect<T>
+where
+    DB: Backend<OnConflictClause = SD>,
+    SD: on_conflict_clause::SupportsOnConflictDoSelect,
+{
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        out.push_sql(" DO SELECT");
+        Ok(())
+    }
+}
+
+#[doc(hidden)]
+#[derive(Debug, Clone, Copy, QueryId)]
 pub struct Excluded<T>(T);
 
 impl<T> Excluded<T> {

@@ -789,6 +789,21 @@ pub mod helper_types {
     >;
 
     /// Represents the return type of
+    /// [`IncompleteOnConflict::do_select()`](crate::upsert::IncompleteOnConflict::do_select)
+    pub type DoSelect<I> = crate::query_builder::InsertStatement<
+        <I as crate::upsert::OnConflictHelper>::Table,
+        crate::query_builder::upsert::on_conflict_clause::OnConflictValues<
+            <I as crate::upsert::OnConflictHelper>::Values,
+            <I as crate::upsert::OnConflictHelper>::Target,
+            crate::query_builder::upsert::on_conflict_actions::DoSelect<
+                <I as crate::upsert::OnConflictHelper>::Table,
+            >,
+        >,
+        <I as crate::upsert::OnConflictHelper>::Op,
+        <I as crate::upsert::OnConflictHelper>::Ret,
+    >;
+
+    /// Represents the return type of
     /// [`UpdateStatement::set()`](crate::query_builder::UpdateStatement::set) and
     /// [`IncompleteDoUpdate::set()`](crate::upsert::IncompleteDoUpdate::set)
     pub type Set<U, V> = <U as crate::query_builder::update_statement::SetAutoTypeHelper<V>>::Out;

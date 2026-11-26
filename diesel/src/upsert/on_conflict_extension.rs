@@ -845,6 +845,54 @@ impl<T: QuerySource, U, Op, Ret, Target>
             target: self.target,
         }
     }
+
+    /// Used to create a query in the form
+    /// `ON CONFLICT (target) DO SELECT ...
+    /// [FOR { UPDATE | NO KEY UPDATE | SHARE | KEY SHARE }]
+    /// [WHERE ...] RETURNING ...`
+    ///
+    /// This provides a _get-or-create_ behaviour, returning the existing
+    /// row if there's a conflict on `target`, else inserts it.
+    ///
+    /// A `RETURNING` clause is mandatory. This can be done with `get_result`
+    /// or `load`.
+    ///
+    /// Note: PostgreSQL only. Requires PostgreSQL 19 or newer
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("on_conflict_docs_setup.rs");
+    /// #
+    /// # #[cfg(feature = "postgres")]
+    /// # fn main() {
+    /// #     use self::users::dsl::*;
+    /// #     let conn = &mut establish_connection();
+    /// #     if conn.version().unwrap() < diesel::connection::DatabaseVersion::new(19, 0, 0) {
+    /// #         return;
+    /// #     }
+    /// #     diesel::sql_query("TRUNCATE TABLE users").execute(conn).unwrap();
+    /// let user = User { id: 1, name: "Pascal" };
+    /// let user2 = User { id: 1, name: "Sean" };
+    ///
+    /// assert_eq!(Ok(1), diesel::insert_into(users).values(&user).execute(conn));
+    ///
+    /// let existing = diesel::insert_into(users)
+    ///     .values(&user2)
+    ///     .on_conflict(id)
+    ///     .do_select()
+    ///     .get_result::<(i32, String)>(conn);
+    /// assert_eq!(Ok((1, "Pascal".to_string())), existing);
+    /// # }
+    /// # #[cfg(not(feature = "postgres"))]
+    /// # fn main() {}
+    /// ```
+    pub fn do_select(self) -> crate::dsl::DoSelect<Self> {
+        let target = self.target;
+        self.stmt.replace_values(|values| {
+            OnConflictValues::new(values, target, DoSelect::new(), NoWhereClause)
+        })
+    }
 }
 
 /// A partially constructed `ON CONFLICT DO UPDATE` clause.
