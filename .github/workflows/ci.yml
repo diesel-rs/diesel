@@ -323,7 +323,7 @@ jobs:
         if: matrix.rust == 'beta'
         shell: bash
         run: |
-          echo FLAGS="${FLAGS} -F diesel/time -F diesel/chrono -F diesel/numeric -F diesel/extras -F diesel_derives/time -F diesel_derives/chrono -F diesel_derives/numeric"
+          echo FLAGS="${FLAGS} -F diesel/time -F diesel/chrono -F diesel/jiff -F diesel/numeric -F diesel/extras -F diesel_derives/time -F diesel_derives/chrono -F diesel_derives/jiff -F diesel_derives/numeric"
 
       - name: Add Flags (stable)
         if: matrix.rust == 'stable'

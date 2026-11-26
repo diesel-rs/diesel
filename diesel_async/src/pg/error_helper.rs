@@ -35,6 +35,12 @@ pub(super) fn from_tokio_postgres_error(
                 Some(sql_state::READ_ONLY_SQL_TRANSACTION) => ReadOnlyTransaction,
                 Some(sql_state::NOT_NULL_VIOLATION) => NotNullViolation,
                 Some(sql_state::CHECK_VIOLATION) => CheckViolation,
+                Some(sql_state::CONNECTION_EXCEPTION)
+                | Some(sql_state::CONNECTION_FAILURE)
+                | Some(sql_state::SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION)
+                | Some(sql_state::SQLSERVER_REJECTED_ESTABLISHMENT_OF_SQLCONNECTION) => {
+                    ClosedConnection
+                }
                 _ => Unknown,
             };
 

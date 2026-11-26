@@ -213,6 +213,13 @@ pub trait DatabaseErrorInformation {
     fn sqlstate(&self) -> Option<SqlState> {
         None
     }
+
+    /// The native error code of the error, if the connection reports one.
+    ///
+    /// What the code means is documented by each connection.
+    fn native_code(&self) -> Option<i32> {
+        None
+    }
 }
 
 impl fmt::Debug for dyn DatabaseErrorInformation + Send + Sync {

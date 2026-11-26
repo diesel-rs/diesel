@@ -207,14 +207,21 @@ impl RawConnection {
         if error_message.is_empty() {
             Ok(())
         } else {
+            let error_number = self.last_error_number();
             Err(DatabaseError(
                 DatabaseErrorKind::Unknown,
                 Box::new(MysqlLikeErrorInformation {
                     message: error_message,
                     sqlstate: self.last_error_sqlstate(),
+                    native_code: i32::try_from(error_number).ok().filter(|&code| code != 0),
                 }),
             ))
         }
+    }
+
+    fn last_error_number(&self) -> u32 {
+        // SAFETY: `self.0` is the live handle owned by `self`.
+        unsafe { ffi::mysql_errno(self.0.as_ptr()) }
     }
 
     fn flush_pending_results(&self) -> QueryResult<()> {

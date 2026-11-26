@@ -82,6 +82,8 @@ impl ClippyArgs {
                 "-F",
                 "diesel_derives/time",
                 "-F",
+                "diesel_derives/jiff",
+                "-F",
                 "diesel-async/migrations",
             ])
             .args(&self.flags)

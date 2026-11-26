@@ -7,6 +7,13 @@ use diesel::result::Error::DatabaseError;
 use diesel::sql_query;
 use diesel::*;
 
+// The table does not exist in the test database.
+table! {
+    missing_table {
+        id -> Integer,
+    }
+}
+
 // This test reads query results, which requires reading memory
 // allocated by the native sqlite library. Miri cannot track the
 // provenance of that memory when using `-Zmiri-native-lib`.
@@ -249,6 +256,132 @@ fn sqlstate_reports_a_custom_code_raised_by_signal() {
             assert_eq!(code.class().as_str(), "P1");
             assert!(!code.class().is_standard());
             assert_eq!(e.message(), "custom");
+        }
+        other => panic!("{other:?} did not match Err(DatabaseError(Unknown, e))"),
+    }
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn native_code_is_none_on_postgres() {
+    use diesel::result::DatabaseErrorKind::Unknown;
+
+    let connection = &mut connection();
+
+    let failure =
+        diesel::select(1.into_sql::<sql_types::Integer>() / 0.into_sql::<sql_types::Integer>())
+            .get_result::<i32>(connection);
+
+    match failure {
+        Err(DatabaseError(Unknown, e)) => {
+            assert_eq!(e.native_code(), None);
+        }
+        other => panic!("{other:?} did not match Err(DatabaseError(Unknown, e))"),
+    }
+}
+
+#[diesel_test_helper::test]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+fn native_code_reports_the_error_number_of_a_statement_error_on_mysql_like() {
+    use diesel::result::DatabaseErrorKind::Unknown;
+
+    let connection = &mut connection();
+
+    let failure = missing_table::table
+        .select(missing_table::id)
+        .execute(connection);
+
+    match failure {
+        Err(DatabaseError(Unknown, e)) => {
+            // ER_NO_SUCH_TABLE
+            assert_eq!(e.native_code(), Some(1146));
+        }
+        other => panic!("{other:?} did not match Err(DatabaseError(Unknown, e))"),
+    }
+}
+
+#[diesel_test_helper::test]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+fn native_code_reports_the_error_number_of_a_raw_query_error_on_mysql_like() {
+    use diesel::connection::SimpleConnection;
+    use diesel::result::DatabaseErrorKind::Unknown;
+
+    let connection = &mut connection();
+
+    // The text protocol path cannot be driven through the typed DSL.
+    let failure = connection.batch_execute("SELECT id FROM missing_table");
+
+    match failure {
+        Err(DatabaseError(Unknown, e)) => {
+            // ER_NO_SUCH_TABLE
+            assert_eq!(e.native_code(), Some(1146));
+        }
+        other => panic!("{other:?} did not match Err(DatabaseError(Unknown, e))"),
+    }
+}
+
+// Miri cannot track the provenance of the error message sqlite allocates.
+#[cfg(not(miri))]
+#[diesel_test_helper::test]
+#[cfg(feature = "sqlite")]
+fn native_code_reports_the_result_code_of_a_sqlite_statement_error() {
+    use diesel::result::DatabaseErrorKind::Unknown;
+
+    let connection = &mut connection();
+
+    let failure = missing_table::table
+        .select(missing_table::id)
+        .execute(connection);
+
+    match failure {
+        Err(DatabaseError(Unknown, e)) => {
+            // SQLITE_ERROR
+            assert_eq!(e.native_code(), Some(1));
+        }
+        other => panic!("{other:?} did not match Err(DatabaseError(Unknown, e))"),
+    }
+}
+
+#[cfg_attr(
+    all(target_family = "wasm", target_os = "unknown"),
+    ignore = "no filesystem on this platform"
+)]
+// Miri with isolation enabled provides no file system.
+#[cfg(not(miri))]
+#[diesel_test_helper::test]
+#[cfg(feature = "sqlite")]
+fn native_code_reports_the_result_code_of_a_locked_sqlite_database() {
+    use diesel::connection::SimpleConnection;
+    use diesel::result::DatabaseErrorKind::Unknown;
+
+    table! {
+        locked_table {
+            id -> Integer,
+        }
+    }
+
+    let mut path = std::env::temp_dir();
+    path.push("diesel_test_sqlite_locked.db");
+    let _ = std::fs::remove_file(&path);
+    let url = format!("{}", path.display());
+
+    let mut holder = SqliteConnection::establish(&url).unwrap();
+    holder
+        .batch_execute("CREATE TABLE locked_table (id INTEGER PRIMARY KEY); BEGIN EXCLUSIVE;")
+        .unwrap();
+
+    let mut reader = SqliteConnection::establish(&url).unwrap();
+    let failure = locked_table::table
+        .select(locked_table::id)
+        .execute(&mut reader);
+
+    drop(reader);
+    holder.batch_execute("ROLLBACK").unwrap();
+
+    match failure {
+        Err(DatabaseError(Unknown, e)) => {
+            // SQLITE_BUSY
+            assert_eq!(e.native_code(), Some(5));
         }
         other => panic!("{other:?} did not match Err(DatabaseError(Unknown, e))"),
     }

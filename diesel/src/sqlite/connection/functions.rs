@@ -288,7 +288,15 @@ impl SqliteConnection {
     /// `collation` must always return the same answer given the same inputs.
     /// If `collation` panics and unwinds the stack, the process is aborted, since it is used
     /// across a C FFI boundary, which cannot be unwound across and there is no way to
-    /// signal failures via the SQLite interface in this case..
+    /// signal failures via the SQLite interface in this case.
+    ///
+    /// The comparator receives the right operand of the comparison as its
+    /// first argument and the left operand as its second argument. A
+    /// comparator written as `|left, right| left.cmp(right)` therefore sorts
+    /// in descending order. This order is kept for compatibility with
+    /// existing databases, where indexes on columns with such a collation
+    /// are already built with it, and swapping the arguments would silently
+    /// reorder such indexes.
     ///
     /// If the name is already registered it will be overwritten.
     ///
@@ -314,13 +322,36 @@ impl SqliteConnection {
     /// #     run_test().unwrap();
     /// # }
     /// #
+    /// table! {
+    ///     collation_example {
+    ///         id -> Integer,
+    ///         value -> Text,
+    ///     }
+    /// }
+    /// use self::collation_example::dsl::*;
+    /// use diesel::collation::Custom;
+    /// use diesel::connection::SimpleConnection;
+    /// use diesel::insert_into;
+    ///
     /// # fn run_test() -> QueryResult<()> {
     /// #     let mut conn = SqliteConnection::establish(":memory:").unwrap();
-    /// // sqlite NOCASE only works for ASCII characters,
-    /// // this collation allows handling UTF-8 (barring locale differences)
-    /// conn.register_collation("RUSTNOCASE", |rhs, lhs| {
-    ///     rhs.to_lowercase().cmp(&lhs.to_lowercase())
-    /// })
+    /// // The comparator receives the right operand of the comparison first and
+    /// // the left operand second, so `left.cmp(right)` orders ascending.
+    /// conn.register_collation("MY_COLLATION", |right, left| left.cmp(right))?;
+    ///
+    /// conn.batch_execute(
+    ///     "CREATE TABLE collation_example (id INTEGER PRIMARY KEY, value TEXT NOT NULL)",
+    /// )?;
+    /// insert_into(collation_example)
+    ///     .values([value.eq("b"), value.eq("a")])
+    ///     .execute(&mut conn)?;
+    ///
+    /// let sorted = collation_example
+    ///     .select(value)
+    ///     .order(value.collate(Custom("MY_COLLATION")))
+    ///     .load::<String>(&mut conn)?;
+    /// assert_eq!(sorted, vec!["a", "b"]);
+    /// # Ok(())
     /// # }
     /// ```
     pub fn register_collation<F>(&mut self, collation_name: &str, collation: F) -> QueryResult<()>

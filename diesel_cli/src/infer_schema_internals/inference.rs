@@ -121,7 +121,7 @@ pub fn load_table_names(
         #[cfg(feature = "sqlite")]
         InferConnection::Sqlite(c) => super::sqlite::load_table_names(c, schema_name),
         #[cfg(feature = "postgres")]
-        InferConnection::Pg(c) => super::information_schema::load_table_names(c, schema_name),
+        InferConnection::Pg(c) => super::pg::load_table_names(c, schema_name),
         #[cfg(feature = "mysql")]
         InferConnection::Mysql(c) => super::information_schema::load_table_names(c, schema_name),
         #[cfg(feature = "mariadb")]
@@ -199,7 +199,7 @@ fn get_column_information(
         }
         #[cfg(feature = "postgres")]
         InferConnection::Pg(ref mut c) => {
-            super::pg::get_table_data(c, table, column_sorting, pg_domains_as_custom_types)
+            super::pg::get_table_data(c, table, column_sorting, pg_domains_as_custom_types, kind)
         }
         #[cfg(feature = "mysql")]
         InferConnection::Mysql(ref mut c) => {
@@ -214,7 +214,7 @@ fn get_column_information(
         Err(crate::errors::Error::NoTableFound(table.clone()))
     } else {
         let mut column_info = column_info?;
-        if matches!(kind, SupportedQueryRelationStructures::View) {
+        if kind != SupportedQueryRelationStructures::Table {
             // we don't support max_length for views yet
             column_info
                 .iter_mut()
@@ -383,14 +383,15 @@ pub fn load_table_data(
     connection: &mut InferConnection,
     name: TableName,
     config: &PrintSchema,
-    tpe: SupportedQueryRelationStructures,
+    kind: SupportedQueryRelationStructures,
 ) -> Result<TableData, crate::errors::Error> {
-    let primary_key = match tpe {
+    let primary_key = match kind {
         SupportedQueryRelationStructures::Table => get_primary_keys(connection, &name)?,
-        SupportedQueryRelationStructures::View => Vec::new(),
+        SupportedQueryRelationStructures::View
+        | SupportedQueryRelationStructures::MaterializedView => Vec::new(),
     };
     let (table_comment, column_data) =
-        load_column_structure_data(connection, &name, config, Some(&primary_key), tpe)?;
+        load_column_structure_data(connection, &name, config, Some(&primary_key), kind)?;
     let primary_key = primary_key
         .iter()
         .map(|k| rust_name_for_sql_name(k, IdentifierKind::Column, Some(&name)))
@@ -407,15 +408,11 @@ pub fn load_table_data(
 pub fn load_view_data(
     resolver: &mut SchemaResolverImpl,
     name: TableName,
+    kind: SupportedQueryRelationStructures,
 ) -> Result<ViewData, crate::errors::Error> {
-    let (table_comment, mut column_data) = load_column_structure_data(
-        resolver.connection,
-        &name,
-        resolver.config,
-        None,
-        SupportedQueryRelationStructures::View,
-    )?;
-    let sql_definition = load_view_sql_definition(resolver.connection, &name)?;
+    let (table_comment, mut column_data) =
+        load_column_structure_data(resolver.connection, &name, resolver.config, None, kind)?;
+    let sql_definition = load_view_sql_definition(resolver.connection, &name, kind)?;
     if resolver.config.experimental_infer_nullable_for_views {
         tracing::debug!("Infer nullability for view fields");
         match diesel_infer_query::parse_view_def(&sql_definition) {
@@ -468,12 +465,19 @@ pub fn load_view_data(
 fn load_view_sql_definition(
     connection: &mut InferConnection,
     name: &TableName,
+    kind: SupportedQueryRelationStructures,
 ) -> Result<String, crate::errors::Error> {
+    #[cfg(not(feature = "postgres"))]
+    let _ = kind;
+
     match connection {
         #[cfg(feature = "postgres")]
-        InferConnection::Pg(pg_connection) => Ok(
-            super::information_schema::load_view_sql_definition(pg_connection, name)?,
-        ),
+        InferConnection::Pg(pg_connection) => Ok(match kind {
+            SupportedQueryRelationStructures::MaterializedView => {
+                super::pg::load_materialized_view_sql_definition(pg_connection, name)?
+            }
+            _ => super::information_schema::load_view_sql_definition(pg_connection, name)?,
+        }),
         #[cfg(feature = "sqlite")]
         InferConnection::Sqlite(sqlite_connection) => {
             super::sqlite::load_view_sql_definition(sqlite_connection, name)
