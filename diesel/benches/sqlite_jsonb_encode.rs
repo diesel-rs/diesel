@@ -11,15 +11,21 @@
 //! the `Output` carries no pre-allocated buffer — all allocation comes from
 //! the encoder itself, giving a clean measurement of encoding cost.
 
+#[cfg(not(target_family = "wasm"))]
 use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
+#[cfg(not(target_family = "wasm"))]
 use diesel::serialize::{Output, ToSql};
+#[cfg(not(target_family = "wasm"))]
 use diesel::sql_types::Jsonb;
+#[cfg(not(target_family = "wasm"))]
 use diesel::sqlite::{Sqlite, SqliteBindValue};
+#[cfg(not(target_family = "wasm"))]
 use serde_json::{Value, json};
 
 /// Encode `value` to JSONB using Diesel's `ToSql` implementation.
 ///
 /// Panics on serialization error (should never happen with well-formed JSON).
+#[cfg(not(target_family = "wasm"))]
 fn encode_jsonb(value: &Value) -> SqliteBindValue<'_> {
     let null_buf: SqliteBindValue<'_> = SqliteBindValue::from(None::<Vec<u8>>);
     let mut out = Output::test(null_buf);
@@ -31,6 +37,7 @@ fn encode_jsonb(value: &Value) -> SqliteBindValue<'_> {
     out.into_inner()
 }
 
+#[cfg(not(target_family = "wasm"))]
 fn bench_jsonb_encode(c: &mut Criterion) {
     // ── Fixtures ──────────────────────────────────────────────────────────────
 
@@ -131,5 +138,10 @@ fn bench_jsonb_encode(c: &mut Criterion) {
     }
 }
 
+#[cfg(not(target_family = "wasm"))]
 criterion_group!(benches, bench_jsonb_encode);
+#[cfg(not(target_family = "wasm"))]
 criterion_main!(benches);
+
+#[cfg(target_family = "wasm")]
+fn main() {}
