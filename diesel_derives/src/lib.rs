@@ -2318,6 +2318,10 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// On PostgreSQL the call then renders that column's name as a column alias,
 /// `generate_series($1, $2) AS "series"("value")`.
 ///
+/// A polymorphic declaration may name a generic parameter with `#[query_source(R)]` and return `R::SqlType`.
+/// Bound `R` by `diesel::query_source::TableFunctionRelation`, or by `diesel::query_source::SingleColumnRelation<ColumnSqlType = ST>` for a single-column result linked to an argument's SQL type `ST`.
+/// The return type helper takes the relation explicitly before its argument types.
+///
 /// The arguments of a call must not read columns of other tables or aggregate
 /// rows. Joining a call to a table requires listing its view in
 /// [`allow_tables_to_appear_in_same_query!`](../diesel/macro.allow_tables_to_appear_in_same_query.html).

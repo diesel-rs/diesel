@@ -88,6 +88,43 @@ mod pg {
         assert_eq!(values, [3, 2, 1]);
     }
 
+    #[diesel::declare_sql_function(generate_return_type_helpers = true)]
+    extern "SQL" {
+        #[sql_name = "generate_series"]
+        #[query_source(Relation, base_type)]
+        fn generic_generate_series<
+            Relation: diesel::query_source::SingleColumnRelation<ColumnSqlType = Value>,
+            Value: diesel::sql_types::SqlType + diesel::expression::TypedExpressionType,
+        >(
+            start: Value,
+            stop: Value,
+        ) -> Relation::SqlType;
+    }
+
+    #[diesel_test_helper::test]
+    fn a_generic_relation_links_the_result_column_to_the_arguments() {
+        diesel::view! {
+            bigint_series {
+                value -> BigInt,
+            }
+        }
+
+        let connection = &mut connection();
+        let values = generic_generate_series::<series::view, _, _, _>(1, 3)
+            .select(series::value)
+            .order(series::value)
+            .load::<i32>(connection)
+            .unwrap();
+        assert_eq!(values, [1, 2, 3]);
+
+        let values = generic_generate_series::<bigint_series::view, _, _, _>(1_i64, 3_i64)
+            .select(bigint_series::value)
+            .order(bigint_series::value)
+            .load::<i64>(connection)
+            .unwrap();
+        assert_eq!(values, [1, 2, 3]);
+    }
+
     #[diesel_test_helper::test]
     fn a_table_returning_call_loads_its_rows() {
         let connection = &mut connection_with_users_named();
@@ -192,6 +229,29 @@ mod sqlite {
 
         #[query_source(series, base_type)]
         fn generate_series(start: Integer, stop: Integer) -> series::SqlType;
+    }
+
+    #[diesel::declare_sql_function(generate_return_type_helpers = true)]
+    extern "SQL" {
+        #[sql_name = "json_each"]
+        #[query_source(R)]
+        fn generic_json_each<R: diesel::query_source::TableFunctionRelation>(
+            document: Text,
+        ) -> R::SqlType;
+    }
+
+    // This test reads query results, which requires reading memory
+    // allocated by the native sqlite library. Miri cannot track the
+    // provenance of that memory when using `-Zmiri-native-lib`.
+    #[cfg(not(miri))]
+    #[diesel_test_helper::test]
+    fn a_generic_relation_loads_the_declared_columns() {
+        let connection = &mut connection();
+        let rows = generic_json_each::<json_each::view, _>(r#"["first","second"]"#)
+            .select(json_each::value)
+            .load::<String>(connection)
+            .unwrap();
+        assert_eq!(rows, vec!["first", "second"]);
     }
 
     #[diesel_test_helper::test]
