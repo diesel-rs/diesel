@@ -218,12 +218,14 @@ fn decode_into_cstring(s: &str) -> ConnectionResult<CString> {
 }
 
 fn connection_url_error() -> ConnectionError {
-    #[cfg(feature = "mariadb")]
-    let msg = "MariaDB connection URLs must be in the form \
-               `mariadb://[[user]:[password]@]host[:port][/database][?unix_socket=socket-path]`";
-    #[cfg(not(feature = "mariadb"))]
-    let msg = "MySQL connection URLs must be in the form \
-               `mysql://[[user]:[password]@]host[:port][/database][?unix_socket=socket-path]`";
+    let msg = cfg_select! {
+        feature = "mariadb" =>
+        "MariaDB connection URLs must be in the form \
+                   `mariadb://[[user]:[password]@]host[:port][/database][?unix_socket=socket-path]`",
+        _ =>
+        "MySQL connection URLs must be in the form \
+                   `mysql://[[user]:[password]@]host[:port][/database][?unix_socket=socket-path]`"
+    };
     ConnectionError::InvalidConnectionUrl(msg.into())
 }
 
