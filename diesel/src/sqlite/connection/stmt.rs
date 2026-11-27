@@ -330,19 +330,6 @@ impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
         statement.reset();
         statement.clear_bindings();
 
-        let mut bind_collector = SqliteBindCollector::new();
-        query.collect_binds(&mut bind_collector, &mut (), &Sqlite)?;
-
-        let SqliteBindCollector { binds } = bind_collector;
-        if statement.parameter_count() != binds.len() as u64 {
-            return Err(
-                crate::connection::statement_cache::invalid_prepared_statement_parameter_count(
-                    statement.parameter_count().try_into().unwrap_or(usize::MAX),
-                    binds.len(),
-                ),
-            );
-        }
-
         let mut ret = BoundStatement {
             statement,
             query: None,
@@ -351,7 +338,19 @@ impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
             has_error: false,
         };
 
-        ret.bind_buffers(binds)?;
+        let mut bind_collector = SqliteBindCollector::new();
+        let bound = query
+            .collect_binds(&mut bind_collector, &mut (), &Sqlite)
+            .and_then(|()| ret.bind_buffers(bind_collector.binds));
+        if let Err(e) = bound {
+            ret.instrumentation.on_connection_event(
+                crate::connection::InstrumentationEvent::FinishQuery {
+                    query: &crate::debug_query(&*query),
+                    error: Some(&e),
+                },
+            );
+            return Err(e);
+        }
 
         let query = query as Box<dyn QueryFragment<Sqlite> + 'query>;
         ret.query = NonNull::new(Box::into_raw(query));
@@ -366,6 +365,20 @@ impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
         &mut self,
         binds: Vec<(SqliteBindValueRef<'_>, SqliteType)>,
     ) -> QueryResult<()> {
+        let parameter_count = self
+            .statement
+            .parameter_count()
+            .try_into()
+            .unwrap_or(usize::MAX);
+        if parameter_count != binds.len() {
+            return Err(
+                crate::connection::statement_cache::invalid_prepared_statement_parameter_count(
+                    parameter_count,
+                    binds.len(),
+                ),
+            );
+        }
+
         // It is useful to preallocate `binds_to_free` because it
         // - Guarantees that pushing inside it cannot panic, which guarantees the `Drop`
         //   impl of `BoundStatement` will always re-`bind` as needed
@@ -412,7 +425,7 @@ impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
         Ok(())
     }
 
-    fn finish_query_with_error(mut self, e: &Error) {
+    fn finish_query_with_error(&mut self, e: &Error) {
         self.has_error = true;
         if let Some(q) = self.query {
             // it's safe to get a reference from this ptr as it's guaranteed to not be null
@@ -521,16 +534,12 @@ impl<'stmt, 'query> StatementUse<'stmt, 'query> {
     }
 
     pub(super) fn run(mut self) -> QueryResult<()> {
-        let r = unsafe {
+        unsafe {
             // This is safe as we pass `first_step = true`
             // and we consume the statement so nobody could
             // access the columns later on anyway.
             self.step(true).map(|_| ())
-        };
-        if let Err(ref e) = r {
-            self.statement.finish_query_with_error(e);
         }
-        r
     }
 
     // This function is marked as unsafe incorrectly passing `false` to `first_step`
@@ -555,6 +564,7 @@ impl<'stmt, 'query> StatementUse<'stmt, 'query> {
                         .status
                         .set_rolled_back_by_database();
                 }
+                self.statement.finish_query_with_error(&error);
                 Err(error)
             }
         };
@@ -672,5 +682,167 @@ mod tests {
             e.to_string(),
             "prepared statement expected a different number of parameters than provided: Expected 0, provided: 1"
         );
+    }
+
+    // Reading query results and sqlite's error messages requires accessing memory
+    // allocated by the native library, which is not supported when running under
+    // miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))]
+    mod finish_query {
+        use crate::connection::{
+            DefaultLoadingMode, Instrumentation, InstrumentationEvent, LoadConnection,
+        };
+        use crate::prelude::*;
+        use crate::query_builder::{Query, QueryFragment, QueryId};
+        use crate::row::Row;
+        use crate::sql_types::{BigInt, Integer};
+        use crate::sqlite::Sqlite;
+
+        #[crate::declare_sql_function]
+        extern "SQL" {
+            fn abs(x: BigInt) -> BigInt;
+        }
+
+        #[derive(Debug, PartialEq)]
+        enum QueryEvent {
+            Start,
+            Finish(Option<String>),
+        }
+
+        #[derive(Default)]
+        struct RecordQueryEvents(Vec<QueryEvent>);
+
+        impl Instrumentation for RecordQueryEvents {
+            fn on_connection_event(&mut self, event: InstrumentationEvent<'_>) {
+                match event {
+                    InstrumentationEvent::StartQuery { .. } => self.0.push(QueryEvent::Start),
+                    InstrumentationEvent::FinishQuery { error, .. } => self
+                        .0
+                        .push(QueryEvent::Finish(error.map(ToString::to_string))),
+                    _ => {}
+                }
+            }
+        }
+
+        /// Runs `run` on a fresh connection and returns the query start and finish events it emitted.
+        fn query_events(run: impl FnOnce(&mut SqliteConnection)) -> Vec<QueryEvent> {
+            let mut connection = SqliteConnection::establish(":memory:").unwrap();
+            connection.set_instrumentation(RecordQueryEvents::default());
+            run(&mut connection);
+            let recorder = connection
+                .instrumentation()
+                .as_any_mut()
+                .downcast_mut::<RecordQueryEvents>()
+                .unwrap();
+            core::mem::take(&mut recorder.0)
+        }
+
+        /// Yields `1`, then fails with an integer overflow while stepping to the second row.
+        fn overflow_on_second_row()
+        -> impl Query<SqlType = BigInt> + QueryFragment<Sqlite> + QueryId + RunQueryDsl<SqliteConnection>
+        {
+            crate::select(1_i64.into_sql::<BigInt>())
+                .union_all(crate::select(abs(i64::MIN.into_sql::<BigInt>())))
+        }
+
+        fn failed(message: &str) -> [QueryEvent; 2] {
+            [QueryEvent::Start, QueryEvent::Finish(Some(message.into()))]
+        }
+
+        const SUCCEEDED: [QueryEvent; 2] = [QueryEvent::Start, QueryEvent::Finish(None)];
+
+        #[diesel_test_helper::test]
+        fn first_step_error() {
+            let events = query_events(|connection| {
+                let mut rows = crate::select(abs(i64::MIN.into_sql::<BigInt>()))
+                    .load_iter::<i64, DefaultLoadingMode>(connection)
+                    .unwrap();
+                let error = rows.next().unwrap().unwrap_err();
+                assert_eq!(error.to_string(), "integer overflow");
+                assert!(rows.next().is_none());
+            });
+            assert_eq!(events, failed("integer overflow"));
+        }
+
+        #[diesel_test_helper::test]
+        fn later_step_error() {
+            let events = query_events(|connection| {
+                let mut rows = overflow_on_second_row()
+                    .load_iter::<i64, DefaultLoadingMode>(connection)
+                    .unwrap();
+                assert_eq!(rows.next().unwrap().unwrap(), 1);
+                let error = rows.next().unwrap().unwrap_err();
+                assert_eq!(error.to_string(), "integer overflow");
+                assert!(rows.next().is_none());
+            });
+            assert_eq!(events, failed("integer overflow"));
+        }
+
+        #[diesel_test_helper::test]
+        fn later_step_error_with_retained_row() {
+            let events = query_events(|connection| {
+                let mut rows = LoadConnection::<DefaultLoadingMode>::load(
+                    connection,
+                    overflow_on_second_row(),
+                )
+                .unwrap();
+                let first = rows.next().unwrap().unwrap();
+                let error = rows.next().unwrap().err().unwrap();
+                assert_eq!(error.to_string(), "integer overflow");
+                assert!(rows.next().is_none());
+                assert_eq!(first.get_value::<BigInt, i64, _>(0).unwrap(), 1);
+            });
+            assert_eq!(events, failed("integer overflow"));
+        }
+
+        #[diesel_test_helper::test]
+        fn execute_step_error() {
+            let events = query_events(|connection| {
+                let error = crate::select(abs(i64::MIN.into_sql::<BigInt>()))
+                    .execute(connection)
+                    .unwrap_err();
+                assert_eq!(error.to_string(), "integer overflow");
+            });
+            assert_eq!(events, failed("integer overflow"));
+        }
+
+        #[diesel_test_helper::test]
+        fn exhausted_rows() {
+            let events = query_events(|connection| {
+                let rows = crate::select(1_i64.into_sql::<BigInt>())
+                    .load_iter::<i64, DefaultLoadingMode>(connection)
+                    .unwrap()
+                    .collect::<QueryResult<Vec<_>>>()
+                    .unwrap();
+                assert_eq!(rows, [1]);
+            });
+            assert_eq!(events, SUCCEEDED);
+        }
+
+        #[diesel_test_helper::test]
+        fn rows_dropped_early() {
+            let events = query_events(|connection| {
+                let mut rows = overflow_on_second_row()
+                    .load_iter::<i64, DefaultLoadingMode>(connection)
+                    .unwrap();
+                assert_eq!(rows.next().unwrap().unwrap(), 1);
+            });
+            assert_eq!(events, SUCCEEDED);
+        }
+
+        #[diesel_test_helper::test]
+        fn bind_error() {
+            let message = "prepared statement expected a different number of parameters than provided: Expected 1, provided: 2";
+            let events = query_events(|connection| {
+                // The typed query builder cannot produce a parameter count mismatch.
+                let error = crate::sql_query("SELECT ?")
+                    .bind::<Integer, _>(1)
+                    .bind::<Integer, _>(2)
+                    .execute(connection)
+                    .unwrap_err();
+                assert_eq!(error.to_string(), message);
+            });
+            assert_eq!(events, failed(message));
+        }
     }
 }
