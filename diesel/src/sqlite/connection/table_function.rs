@@ -191,7 +191,8 @@ impl SqliteConnection {
     /// they name each column of the view once. SQLite exposes the parameters as
     /// hidden columns, so the query DSL calls the function by filtering them with
     /// `eq`, and `name(a)` in SQL is the same call. A query that leaves a parameter
-    /// unbound fails to prepare.
+    /// unbound fails to prepare. `diesel_dynamic_schema` declares a function at
+    /// run time with dynamic columns instead of a view.
     ///
     /// Each call runs `function` once with its arguments and collects every row it
     /// returns before the query reads the first. `function` may run queries on the

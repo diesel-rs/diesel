@@ -87,6 +87,8 @@ mod dynamic_select;
 pub mod dynamic_value;
 mod schema;
 mod table;
+#[cfg(any(feature = "sqlite", feature = "sqlite-no-std"))]
+mod table_function;
 
 /// A database table column.
 pub use column::Column;
