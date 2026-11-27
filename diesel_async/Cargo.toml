@@ -106,6 +106,7 @@ features = [
   "postgres",
   "mysql",
   "sqlite",
+  "mariadb",
   "deadpool",
   "bb8",
   "mobc",
