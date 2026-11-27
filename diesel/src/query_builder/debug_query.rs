@@ -30,17 +30,6 @@ impl<'a, T, DB> DebugQuery<'a, T, DB> {
     }
 }
 
-fn serialize_query<DB>(query: &dyn QueryFragment<DB>) -> Result<String, fmt::Error>
-where
-    DB: Backend + Default,
-    DB::QueryBuilder: Default,
-{
-    let mut query_builder = DB::QueryBuilder::default();
-    let backend = DB::default();
-    QueryFragment::<DB>::to_sql(query, &mut query_builder, &backend).map_err(|_| fmt::Error)?;
-    Ok(query_builder.finish())
-}
-
 fn fmt_query<DB>(
     query: &dyn QueryFragment<DB>,
     f: &mut fmt::Formatter<'_>,
@@ -53,9 +42,22 @@ where
     let backend = DB::default();
     let mut buffer = Vec::new();
     let ast_pass = AstPass::debug_binds(&mut buffer, &backend);
-    query.walk_ast(ast_pass).map_err(|_| fmt::Error)?;
+    let mut query_builder = DB::QueryBuilder::default();
+
+    // A query that cannot be built still has to render. This type ends up in
+    // log messages, and returning an error from `Display`/`Debug` makes the
+    // caller panic ("a formatting trait implementation returned an error")
+    // instead of reporting the actual problem.
+    let build_error = query
+        .walk_ast(ast_pass)
+        .err()
+        .or_else(|| QueryFragment::<DB>::to_sql(query, &mut query_builder, &backend).err());
+
     let debug_binds = DebugBinds::new(&buffer);
-    let query = serialize_query(query)?;
+    let query = match build_error {
+        Some(error) => alloc::format!("<query could not be built: {error}>"),
+        None => query_builder.finish(),
+    };
     formatter(query, &debug_binds, f)
 }
 
@@ -124,4 +126,35 @@ fn format_list<'b>(f: &mut fmt::Formatter<'_>, entries: &[Box<dyn Debug + 'b>]) 
         list.entry(entry);
     }
     list.finish()
+}
+
+#[cfg(all(test, feature = "sqlite"))]
+mod tests {
+    use super::*;
+    use crate::debug_query;
+    use crate::result::{EmptyChangeset, Error, QueryResult};
+    use crate::sqlite::Sqlite;
+
+    /// Stands in for a query whose `walk_ast` reports the problem that
+    /// `update(table).set(())` reports, without needing a database.
+    struct CannotBuild;
+
+    impl QueryFragment<Sqlite> for CannotBuild {
+        fn walk_ast<'b>(&'b self, _pass: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
+            Err(Error::QueryBuilderError(Box::new(EmptyChangeset)))
+        }
+    }
+
+    #[test]
+    fn formatting_an_unbuildable_query_does_not_fail() {
+        let rendered = debug_query::<Sqlite, _>(&CannotBuild).to_string();
+        assert!(
+            rendered.contains("could not be built"),
+            "unexpected rendering: {rendered}"
+        );
+        assert!(
+            rendered.contains("There are no changes to save"),
+            "the build error should be visible: {rendered}"
+        );
+    }
 }
