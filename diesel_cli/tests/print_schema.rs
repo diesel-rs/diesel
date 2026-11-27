@@ -485,6 +485,12 @@ fn print_schema_citext() {
     test_print_schema("print_schema_citext", vec![])
 }
 
+#[cfg(feature = "postgres")]
+#[test]
+fn print_schema_custom_type_named_like_builtin_type() {
+    test_print_schema("print_schema_custom_type_named_like_builtin_type", vec![])
+}
+
 #[test]
 fn print_schema_with_multiple_schema() {
     test_multiple_print_schema(
@@ -640,6 +646,24 @@ fn print_schema_view_infer_nullable_mixed_schema() {
         "print_schema_view_infer_nullable_mixed_schema",
         vec!["--include-views", "--experimental-infer-nullable-for-views"],
     )
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn print_schema_with_materialized_view() {
+    test_print_schema(
+        "print_schema_with_materialized_view",
+        vec!["--include-views", "--with-docs"],
+    );
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn print_schema_materialized_view_infer_nullable() {
+    test_print_schema(
+        "print_schema_materialized_view_infer_nullable",
+        vec!["--include-views", "--experimental-infer-nullable-for-views"],
+    );
 }
 
 #[test]

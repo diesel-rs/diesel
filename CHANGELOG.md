@@ -13,10 +13,23 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 ## Unreleased
 
 ### Added
+### Fixed
+### Changed
+
+## [2.4.1] 2026-12-04
+
+### Added
+
+* `diesel print-schema` now generates `diesel::view!` definitions for PostgreSQL materialized views when `include_views` is enabled
+* Added support for the `jiff` crate behind a new `jiff` feature, which is also part of `extras`. `jiff::civil::Date`, `jiff::civil::Time` and `jiff::civil::DateTime` map to the `Date`, `Time` and `Timestamp` SQL types on all backends (and `jiff::civil::DateTime` additionally to `Datetime` on MySQL and MariaDB), `jiff::Timestamp` maps to `Timestamptz` on PostgreSQL, and `#[derive(MultiConnection)]` supports the civil types
 
 ### Fixed
 
-### Changed
+* `#[derive(QueryableByName)]` now respects `#[sql_name]` on table columns
+* `AsyncPgConnection` now maps the PostgreSQL connection exception codes that `PgConnection` reports as `DatabaseErrorKind::ClosedConnection` to the same kind
+* `SqliteConnection` now detects when SQLite rolls back the open transaction on its own (for example via `ON CONFLICT ROLLBACK`, `RAISE(ROLLBACK, ...)` or an I/O error) on every statement path. The transaction then stays open in Diesel and refuses every statement and commit with the new `Error::TransactionRolledBackByDatabase` until it is rolled back, so `Connection::transaction` returns the original error and nothing the closure runs afterwards is committed
+* `diesel print-schema` no longer treats a user-defined PostgreSQL type as a type provided by Diesel if it has the same name as one, like an enum named `range`, `money` or `interval`, or a domain named `longtext` that is selected by `pg_domains_as_custom_types`. Such types now get a definition in the `sql_types` module like any other custom type
+* Correctly validate the connection in the `mobc` connection handler in diesel-async
 
 
 ## [2.4.0] 2026-11-13
@@ -2516,4 +2529,5 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.3.12]: https://github.com/diesel-rs/diesel/compare/v2.3.11...v2.3.12
 [2.3.13]: https://github.com/diesel-rs/diesel/compare/v2.3.12...v2.3.13
 [2.3.14]: https://github.com/diesel-rs/diesel/compare/v2.3.13...v2.3.14
-[2.4.0]: https://github.com/diesel-rs/diesel/compare/v2.3.0..v2.4.0
+[2.4.0]: https://github.com/diesel-rs/diesel/compare/v2.3.0...v2.4.0
+[2.4.1]: https://github.com/diesel-rs/diesel/compare/v2.4.0...v2.4.1

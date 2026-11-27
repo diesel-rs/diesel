@@ -143,7 +143,7 @@ fn establish_connection() -> InferConnection {
     InferConnection::establish(&database_url).unwrap()
 }
 
-#[cfg(all(feature = "chrono", feature = "time"))]
+#[cfg(all(feature = "chrono", feature = "time", feature = "jiff"))]
 fn make_test_table(conn: &mut InferConnection) {
     match conn {
         #[cfg(feature = "postgres")]
@@ -163,7 +163,10 @@ fn make_test_table(conn: &mut InferConnection) {
                      timestamp2 TIMESTAMP,\
                      date2 DATE,\
                      time2 TIME,\
-                     numeric NUMERIC
+                     numeric NUMERIC,\
+                     timestamp3 TIMESTAMP,\
+                     date3 DATE,\
+                     time3 TIME
                  )",
             )
             .execute(conn)
@@ -186,7 +189,10 @@ fn make_test_table(conn: &mut InferConnection) {
                      timestamp2 TIMESTAMP,\
                      date2 DATE,\
                      time2 TIME,\
-                     numeric NUMERIC
+                     numeric NUMERIC,\
+                     timestamp3 TIMESTAMP,\
+                     date3 DATE,\
+                     time3 TIME
                  )",
             )
             .execute(conn)
@@ -209,7 +215,10 @@ fn make_test_table(conn: &mut InferConnection) {
                      `timestamp2` DATETIME,
                      `date2` DATE,\
                      `time2` TIME,\
-                     `numeric` NUMERIC
+                     `numeric` NUMERIC,\
+                     `timestamp3` DATETIME,\
+                     `date3` DATE,\
+                     `time3` TIME
                  )",
             )
             .execute(conn)
@@ -232,7 +241,10 @@ fn make_test_table(conn: &mut InferConnection) {
                      `timestamp2` DATETIME,
                      `date2` DATE,\
                      `time2` TIME,\
-                     `numeric` NUMERIC
+                     `numeric` NUMERIC,\
+                     `timestamp3` DATETIME,\
+                     `date3` DATE,\
+                     `time3` TIME
                  )",
             )
             .execute(conn)
@@ -241,11 +253,11 @@ fn make_test_table(conn: &mut InferConnection) {
     }
 }
 
-#[cfg(all(feature = "chrono", feature = "time"))]
+#[cfg(all(feature = "chrono", feature = "time", feature = "jiff"))]
 #[test]
 fn type_checks() {
     use bigdecimal::FromPrimitive;
-    use diesel::internal::derives::multiconnection::{bigdecimal, chrono, time};
+    use diesel::internal::derives::multiconnection::{bigdecimal, chrono, jiff, time};
 
     table! {
         type_test(integer) {
@@ -263,6 +275,9 @@ fn type_checks() {
             time2 -> Time,
             date2 -> Date,
             numeric -> Numeric,
+            timestamp3 -> Timestamp,
+            time3 -> Time,
+            date3 -> Date,
         }
     }
 
@@ -283,6 +298,9 @@ fn type_checks() {
     let date2 = time::Date::from_calendar_date(2023, time::Month::August, 26).unwrap();
     let timestamp2 = time::PrimitiveDateTime::new(date2, time2);
     let numeric = bigdecimal::BigDecimal::from_f64(std::f64::consts::PI).unwrap();
+    let time3 = jiff::civil::time(17, 4, 45, 0);
+    let date3 = jiff::civil::date(2023, 8, 28);
+    let timestamp3 = date3.to_datetime(time3);
 
     diesel::insert_into(type_test::table)
         .values((
@@ -300,6 +318,9 @@ fn type_checks() {
             type_test::time2.eq(time2),
             type_test::date2.eq(date2),
             type_test::numeric.eq(&numeric),
+            type_test::timestamp3.eq(timestamp3),
+            type_test::time3.eq(time3),
+            type_test::date3.eq(date3),
         ))
         .execute(&mut conn)
         .unwrap();
@@ -320,6 +341,9 @@ fn type_checks() {
             time::Time,              //11
             time::Date,              //12
             bigdecimal::BigDecimal,  //13
+            jiff::civil::DateTime,   //14
+            jiff::civil::Time,       //15
+            jiff::civil::Date,       //16
         )>(&mut conn)
         .unwrap();
 
@@ -337,14 +361,22 @@ fn type_checks() {
     assert_eq!(time2, result.11);
     assert_eq!(date2, result.12);
     assert_eq!(numeric, result.13);
+    assert_eq!(timestamp3, result.14);
+    assert_eq!(time3, result.15);
+    assert_eq!(date3, result.16);
 }
 
-#[cfg(all(feature = "chrono", feature = "time", feature = "numeric"))]
+#[cfg(all(
+    feature = "chrono",
+    feature = "time",
+    feature = "jiff",
+    feature = "numeric"
+))]
 #[allow(clippy::unnecessary_literal_unwrap)]
 #[test]
 fn nullable_type_checks() {
     use bigdecimal::FromPrimitive;
-    use diesel::internal::derives::multiconnection::{bigdecimal, chrono, time};
+    use diesel::internal::derives::multiconnection::{bigdecimal, chrono, jiff, time};
 
     table! {
         type_test(integer) {
@@ -362,6 +394,9 @@ fn nullable_type_checks() {
             time2 -> Nullable<Time>,
             date2 -> Nullable<Date>,
             numeric -> Nullable<Numeric>,
+            timestamp3 -> Nullable<Timestamp>,
+            time3 -> Nullable<Time>,
+            date3 -> Nullable<Date>,
 
         }
     }
@@ -384,6 +419,9 @@ fn nullable_type_checks() {
     let date2 = Some(time::Date::from_calendar_date(2023, time::Month::August, 26).unwrap());
     let timestamp2 = Some(time::PrimitiveDateTime::new(date2.unwrap(), time2.unwrap()));
     let numeric = Some(bigdecimal::BigDecimal::from_f64(std::f64::consts::PI).unwrap());
+    let time3 = Some(jiff::civil::time(17, 4, 45, 0));
+    let date3 = Some(jiff::civil::date(2023, 8, 28));
+    let timestamp3 = Some(date3.unwrap().to_datetime(time3.unwrap()));
 
     diesel::insert_into(type_test::table)
         .values((
@@ -401,6 +439,9 @@ fn nullable_type_checks() {
             type_test::time2.eq(time2),
             type_test::date2.eq(date2),
             type_test::numeric.eq(&numeric),
+            type_test::timestamp3.eq(timestamp3),
+            type_test::time3.eq(time3),
+            type_test::date3.eq(date3),
         ))
         .execute(&mut conn)
         .unwrap();
@@ -421,6 +462,9 @@ fn nullable_type_checks() {
             Option<time::Time>,
             Option<time::Date>,
             Option<bigdecimal::BigDecimal>,
+            Option<jiff::civil::DateTime>,
+            Option<jiff::civil::Time>,
+            Option<jiff::civil::Date>,
         )>(&mut conn)
         .unwrap();
 
@@ -438,6 +482,9 @@ fn nullable_type_checks() {
     assert_eq!(time2, result.11);
     assert_eq!(date2, result.12);
     assert_eq!(numeric, result.13);
+    assert_eq!(timestamp3, result.14);
+    assert_eq!(time3, result.15);
+    assert_eq!(date3, result.16);
 
     diesel::delete(type_test::table).execute(&mut conn).unwrap();
 
@@ -457,6 +504,9 @@ fn nullable_type_checks() {
             type_test::time2.eq(None::<time::Time>),
             type_test::date2.eq(None::<time::Date>),
             type_test::numeric.eq(None::<bigdecimal::BigDecimal>),
+            type_test::timestamp3.eq(None::<jiff::civil::DateTime>),
+            type_test::time3.eq(None::<jiff::civil::Time>),
+            type_test::date3.eq(None::<jiff::civil::Date>),
         ))
         .execute(&mut conn)
         .unwrap();
@@ -476,6 +526,9 @@ fn nullable_type_checks() {
             Option<time::Time>,
             Option<time::Date>,
             Option<bigdecimal::BigDecimal>,
+            Option<jiff::civil::DateTime>,
+            Option<jiff::civil::Time>,
+            Option<jiff::civil::Date>,
         )>(&mut conn)
         .unwrap();
     assert!(result.0.is_none());
@@ -492,6 +545,9 @@ fn nullable_type_checks() {
     assert!(result.11.is_none());
     assert!(result.12.is_none());
     assert!(result.13.is_none());
+    assert!(result.14.is_none());
+    assert!(result.15.is_none());
+    assert!(result.16.is_none());
 }
 
 #[test]

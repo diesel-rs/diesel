@@ -11,6 +11,9 @@ pub struct ColumnInformation {
     pub column_name: String,
     pub type_name: String,
     pub type_schema: Option<String>,
+    /// The OID of the type for PostgreSQL, `0` for other backends and for types parsed
+    /// from `schema.rs`
+    pub type_oid: u32,
     pub nullable: bool,
     pub max_length: Option<u64>,
     pub comment: Option<String>,
@@ -22,6 +25,9 @@ pub struct ColumnType {
     pub schema: Option<String>,
     pub rust_name: String,
     pub sql_name: String,
+    /// The OID of the type for PostgreSQL (for arrays the OID of the array type),
+    /// `0` for other backends and for types parsed from `schema.rs`
+    pub oid: u32,
     pub is_array: bool,
     pub is_nullable: bool,
     pub is_unsigned: bool,
@@ -58,6 +64,7 @@ impl ColumnType {
             schema: None,
             rust_name: last.ident.to_string(),
             sql_name: String::new(),
+            oid: 0,
             is_array: last.ident == "Array",
             is_nullable: last.ident == "Nullable",
             is_unsigned: last.ident == "Unsigned",
@@ -174,10 +181,12 @@ pub struct ColumnDefinition {
 }
 
 impl ColumnInformation {
+    #[allow(clippy::too_many_arguments)]
     pub fn new<T, U>(
         column_name: T,
         type_name: U,
         type_schema: Option<String>,
+        type_oid: u32,
         nullable: bool,
         max_length: Option<u64>,
         comment: Option<String>,
@@ -191,6 +200,7 @@ impl ColumnInformation {
             column_name: column_name.into(),
             type_name: type_name.into(),
             type_schema,
+            type_oid,
             nullable,
             max_length,
             comment,
@@ -222,6 +232,8 @@ impl ForeignKeyConstraint {
 pub enum SupportedQueryRelationStructures {
     View,
     Table,
+    #[cfg_attr(not(feature = "postgres"), expect(dead_code))]
+    MaterializedView,
 }
 
 #[derive(Debug, Clone)]
@@ -283,6 +295,7 @@ impl SupportedQueryRelationStructures {
         match self {
             Self::Table => "BASE TABLE",
             Self::View => "VIEW",
+            Self::MaterializedView => "MATERIALIZED VIEW",
         }
     }
 

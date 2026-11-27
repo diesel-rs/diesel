@@ -1577,6 +1577,36 @@ mod multi_connection_impl {
                 Ok(diesel::serialize::IsNull::No)
             }
         }
+        impl diesel::serialize::ToSql<diesel::sql_types::Timestamp, super::MultiBackend>
+        for diesel::internal::derives::multiconnection::jiff::civil::DateTime {
+            fn to_sql<'b>(
+                &'b self,
+                out: &mut diesel::serialize::Output<'b, '_, super::MultiBackend>,
+            ) -> diesel::serialize::Result {
+                out.set_value((diesel::sql_types::Timestamp, self));
+                Ok(diesel::serialize::IsNull::No)
+            }
+        }
+        impl diesel::serialize::ToSql<diesel::sql_types::Time, super::MultiBackend>
+        for diesel::internal::derives::multiconnection::jiff::civil::Time {
+            fn to_sql<'b>(
+                &'b self,
+                out: &mut diesel::serialize::Output<'b, '_, super::MultiBackend>,
+            ) -> diesel::serialize::Result {
+                out.set_value((diesel::sql_types::Time, self));
+                Ok(diesel::serialize::IsNull::No)
+            }
+        }
+        impl diesel::serialize::ToSql<diesel::sql_types::Date, super::MultiBackend>
+        for diesel::internal::derives::multiconnection::jiff::civil::Date {
+            fn to_sql<'b>(
+                &'b self,
+                out: &mut diesel::serialize::Output<'b, '_, super::MultiBackend>,
+            ) -> diesel::serialize::Result {
+                out.set_value((diesel::sql_types::Date, self));
+                Ok(diesel::serialize::IsNull::No)
+            }
+        }
         impl diesel::deserialize::FromSql<
             diesel::sql_types::SmallInt,
             super::MultiBackend,
@@ -1701,6 +1731,32 @@ mod multi_connection_impl {
         }
         impl diesel::deserialize::FromSql<diesel::sql_types::Date, super::MultiBackend>
         for diesel::internal::derives::multiconnection::time::Date {
+            fn from_sql(
+                bytes: <super::MultiBackend as diesel::backend::Backend>::RawValue<'_>,
+            ) -> diesel::deserialize::Result<Self> {
+                bytes.from_sql::<Self, diesel::sql_types::Date>()
+            }
+        }
+        impl diesel::deserialize::FromSql<
+            diesel::sql_types::Timestamp,
+            super::MultiBackend,
+        > for diesel::internal::derives::multiconnection::jiff::civil::DateTime {
+            fn from_sql(
+                bytes: <super::MultiBackend as diesel::backend::Backend>::RawValue<'_>,
+            ) -> diesel::deserialize::Result<Self> {
+                bytes.from_sql::<Self, diesel::sql_types::Timestamp>()
+            }
+        }
+        impl diesel::deserialize::FromSql<diesel::sql_types::Time, super::MultiBackend>
+        for diesel::internal::derives::multiconnection::jiff::civil::Time {
+            fn from_sql(
+                bytes: <super::MultiBackend as diesel::backend::Backend>::RawValue<'_>,
+            ) -> diesel::deserialize::Result<Self> {
+                bytes.from_sql::<Self, diesel::sql_types::Time>()
+            }
+        }
+        impl diesel::deserialize::FromSql<diesel::sql_types::Date, super::MultiBackend>
+        for diesel::internal::derives::multiconnection::jiff::civil::Date {
             fn from_sql(
                 bytes: <super::MultiBackend as diesel::backend::Backend>::RawValue<'_>,
             ) -> diesel::deserialize::Result<Self> {

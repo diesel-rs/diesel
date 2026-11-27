@@ -6,6 +6,10 @@ description: "Test: print_schema_domain_types"
 
 pub mod sql_types {
     #[derive(Clone, diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "longtext"))]
+    pub struct Longtext;
+
+    #[derive(Clone, diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "neginteger"))]
     pub struct Neginteger;
 
@@ -18,6 +22,7 @@ diesel::table! {
     use diesel::sql_types::*;
     use super::sql_types::Posinteger;
     use super::sql_types::Neginteger;
+    use super::sql_types::Longtext;
 
     mytable (id) {
         id -> Int4,

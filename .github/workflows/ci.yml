@@ -323,7 +323,7 @@ jobs:
         if: matrix.rust == 'beta'
         shell: bash
         run: |
-          echo FLAGS="${FLAGS} -F diesel/time -F diesel/chrono -F diesel/numeric -F diesel/extras -F diesel_derives/time -F diesel_derives/chrono -F diesel_derives/numeric"
+          echo FLAGS="${FLAGS} -F diesel/time -F diesel/chrono -F diesel/jiff -F diesel/numeric -F diesel/extras -F diesel_derives/time -F diesel_derives/chrono -F diesel_derives/jiff -F diesel_derives/numeric"
 
       - name: Add Flags (stable)
         if: matrix.rust == 'stable'
@@ -769,6 +769,8 @@ jobs:
       - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
+      - name: Show API rate limit
+        run: gh api rate_limit --jq '.resources.core'
       - run: gh extension install github/gh-actions-lock --pin v0.4.1
       - run: gh actions-lock --verify
       - name: Install zizmor

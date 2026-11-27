@@ -1,6 +1,6 @@
 [package]
 name = "diesel-async"
-version = "0.10.0"
+version = "0.10.1"
 authors = ["Georg Semmler <github@weiznich.de>"]
 edition.workspace = true
 autotests = false
@@ -106,6 +106,7 @@ features = [
   "postgres",
   "mysql",
   "sqlite",
+  "mariadb",
   "deadpool",
   "bb8",
   "mobc",

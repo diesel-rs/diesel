@@ -8,6 +8,8 @@ use crate::sql_types::{self, Date, Interval, Time, Timestamp, Timestamptz};
 
 #[cfg(feature = "chrono")]
 mod chrono;
+#[cfg(feature = "jiff")]
+mod jiff;
 #[cfg(feature = "quickcheck")]
 mod quickcheck_impls;
 mod std_time;

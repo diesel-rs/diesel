@@ -158,7 +158,8 @@ pub fn get_table_data(
     // and ensure that the rowid column uses the right type.
     let primary_key = match kind {
         SupportedQueryRelationStructures::Table => get_primary_keys(conn, table)?,
-        SupportedQueryRelationStructures::View => Vec::new(),
+        SupportedQueryRelationStructures::View
+        | SupportedQueryRelationStructures::MaterializedView => Vec::new(),
     };
     if primary_key.len() == 1 {
         let primary_key = primary_key.first().expect("guaranteed to have one element");
@@ -170,6 +171,7 @@ pub fn get_table_data(
                     column_name: String::from(primary_key),
                     type_name: String::from(ROWID_TYPE_NAME),
                     type_schema: None,
+                    type_oid: 0,
                     nullable: false,
                     max_length: None,
                     comment: None,
@@ -200,6 +202,7 @@ impl QueryableByName<Sqlite> for ColumnInformation {
             column_name,
             type_name,
             None,
+            0,
             !notnull,
             None,
             None,
@@ -390,6 +393,7 @@ pub fn determine_column_type(
         schema: None,
         rust_name: path.clone(),
         sql_name: path,
+        oid: 0,
         is_array: false,
         is_nullable: attr.nullable,
         is_unsigned: false,

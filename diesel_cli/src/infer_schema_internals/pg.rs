@@ -4,6 +4,7 @@ use super::information_schema::DefaultSchema;
 use crate::print_schema::ColumnSorting;
 use diesel::connection::DefaultLoadingMode;
 use diesel::dsl::AsExprOf;
+use diesel::expression::ValidGrouping;
 use diesel::pg::Pg;
 use diesel::prelude::table;
 use diesel::prelude::*;
@@ -66,7 +67,22 @@ table! {
     }
 }
 
-allow_tables_to_appear_in_same_query!(pg_type, pg_enum);
+table! {
+    pg_matviews(schemaname, matviewname) {
+        schemaname -> Text,
+        matviewname -> Text,
+        definition -> Text,
+    }
+}
+
+table! {
+    pg_namespace(oid) {
+        oid -> Oid,
+        nspname -> Text,
+    }
+}
+
+allow_tables_to_appear_in_same_query!(pg_type, pg_enum, pg_namespace, information_schema::columns);
 
 #[tracing::instrument]
 pub fn determine_column_type(
@@ -104,6 +120,7 @@ pub fn determine_column_type(
             }
         }),
         sql_name: tpe.to_string(),
+        oid: attr.type_oid,
         rust_name: super::inference::make_valid_identifier(
             tpe.to_upper_camel_case().into(),
             super::inference::IdentifierKind::Type,
@@ -142,25 +159,62 @@ fn regnamespace(schema: &str) -> RegNamespace<quote_ident<AsExprOf<&str, sql_typ
     RegNamespace::new(quote_ident(schema))
 }
 
+/// Looks up the OID of the type named by two columns of `information_schema.columns` in the
+/// catalogs. Unlike a `::regtype` cast this does not need `USAGE` on the schema of the type.
+#[diesel::dsl::auto_type]
+fn type_oid_by_name<N, S>(name_column: N, schema_column: S) -> _
+where
+    N: BoxableExpression<
+            information_schema::columns::table,
+            diesel::pg::Pg,
+            SqlType = diesel::sql_types::Nullable<diesel::sql_types::Text>,
+        > + ValidGrouping<(), IsAggregate = diesel::expression::is_aggregate::No>,
+    S: BoxableExpression<
+            information_schema::columns::table,
+            diesel::pg::Pg,
+            SqlType = diesel::sql_types::Nullable<diesel::sql_types::Text>,
+        > + ValidGrouping<(), IsAggregate = diesel::expression::is_aggregate::No>,
+{
+    pg_type::table
+        .inner_join(pg_namespace::table.on(pg_type::typnamespace.eq(pg_namespace::oid)))
+        .select(pg_type::oid)
+        .filter(pg_type::typname.nullable().eq(name_column))
+        .filter(pg_namespace::nspname.nullable().eq(schema_column))
+        .single_value()
+}
+
+#[derive(Queryable, QueryableByName)]
+struct ColumnRow {
+    #[diesel(sql_type = sql_types::Text)]
+    column_name: String,
+    #[diesel(sql_type = sql_types::Text)]
+    type_name: String,
+    #[diesel(sql_type = sql_types::Nullable<sql_types::Text>)]
+    type_schema: Option<String>,
+    #[diesel(sql_type = sql_types::Oid)]
+    type_oid: u32,
+    #[diesel(sql_type = sql_types::Nullable<sql_types::Text>)]
+    domain_name: Option<String>,
+    #[diesel(sql_type = sql_types::Nullable<sql_types::Text>)]
+    domain_schema: Option<String>,
+    #[diesel(sql_type = sql_types::Nullable<sql_types::Oid>)]
+    domain_oid: Option<u32>,
+    #[diesel(sql_type = sql_types::Text)]
+    nullable: String,
+    #[diesel(sql_type = sql_types::Nullable<sql_types::Integer>)]
+    max_length: Option<i32>,
+    #[diesel(sql_type = sql_types::Nullable<sql_types::Text>)]
+    comment: Option<String>,
+}
+
 pub fn get_table_data(
     conn: &mut PgConnection,
     table: &TableName,
     column_sorting: &ColumnSorting,
     domains_as_custom_types: &[&regex::Regex],
+    kind: SupportedQueryRelationStructures,
 ) -> QueryResult<Vec<ColumnInformation>> {
     use self::information_schema::columns::dsl::*;
-
-    #[derive(Queryable)]
-    struct Row {
-        column_name: String,
-        type_name: String,
-        type_schema: Option<String>,
-        domain_name: Option<String>,
-        domain_schema: Option<String>,
-        nullable: String,
-        max_length: Option<i32>,
-        comment: Option<String>,
-    }
 
     let schema_name = match table.schema {
         Some(ref name) => Cow::Borrowed(name),
@@ -172,31 +226,49 @@ pub fn get_table_data(
             column_name,
             udt_name,
             udt_schema.nullable(),
+            type_oid_by_name(
+                information_schema::columns::udt_name.nullable(),
+                information_schema::columns::udt_schema.nullable(),
+            )
+            .assume_not_null(),
             domain_name,
             domain_schema.nullable(),
+            type_oid_by_name(
+                information_schema::columns::domain_name,
+                information_schema::columns::domain_schema,
+            ),
             __is_nullable,
             character_maximum_length,
             col_description(regclass(table), ordinal_position),
         ))
         .filter(table_name.eq(&table.sql_name))
-        .filter(table_schema.eq(schema_name));
+        .filter(table_schema.eq(&*schema_name));
 
-    let rows: Vec<Row> = match column_sorting {
-        ColumnSorting::OrdinalPosition => query.order(ordinal_position).load(conn),
-        ColumnSorting::Name => query.order(column_name).load(conn),
+    let rows: Vec<ColumnRow> = match (kind, column_sorting) {
+        // `information_schema.columns` does not list materialized views
+        (SupportedQueryRelationStructures::MaterializedView, _) => {
+            diesel::sql_query(include_str!("load_materialized_view_columns.sql"))
+                .bind::<sql_types::Text, _>(&table.sql_name)
+                .bind::<sql_types::Text, _>(&*schema_name)
+                .bind::<sql_types::Bool, _>(matches!(column_sorting, ColumnSorting::Name))
+                .load(conn)
+        }
+        (_, ColumnSorting::OrdinalPosition) => query.order(ordinal_position).load(conn),
+        (_, ColumnSorting::Name) => query.order(column_name).load(conn),
     }?;
 
     rows.into_iter()
         .map(|row| {
-            let (type_name, type_schema) = row
+            let (type_name, type_schema, type_oid) = row
                 .domain_name
-                .filter(|name| {
+                .zip(row.domain_oid)
+                .filter(|(name, _)| {
                     domains_as_custom_types
                         .iter()
                         .any(|regex| regex.is_match(name))
                 })
-                .map(|name| (name, row.domain_schema))
-                .unwrap_or((row.type_name, row.type_schema));
+                .map(|(name, oid)| (name, row.domain_schema, oid))
+                .unwrap_or((row.type_name, row.type_schema, row.type_oid));
 
             let max_length = row
                 .max_length
@@ -214,6 +286,7 @@ pub fn get_table_data(
                 row.column_name,
                 type_name,
                 type_schema,
+                type_oid,
                 row.nullable == "YES",
                 max_length,
                 row.comment,
@@ -221,6 +294,54 @@ pub fn get_table_data(
             ))
         })
         .collect()
+}
+
+pub fn load_table_names(
+    conn: &mut PgConnection,
+    schema_name: Option<&str>,
+) -> Result<Vec<(SupportedQueryRelationStructures, TableName)>, crate::errors::Error> {
+    let mut tables = super::information_schema::load_table_names(conn, schema_name)?;
+    tables.extend(load_materialized_view_names(conn, schema_name)?);
+    tables.sort_by(|(_, a), (_, b)| a.sql_name.cmp(&b.sql_name));
+    Ok(tables)
+}
+
+fn load_materialized_view_names(
+    conn: &mut PgConnection,
+    schema_name: Option<&str>,
+) -> QueryResult<Vec<(SupportedQueryRelationStructures, TableName)>> {
+    let default_schema = Pg::default_schema(conn)?;
+    let schema_name = schema_name.unwrap_or(&default_schema);
+
+    let names = pg_matviews::table
+        .select(pg_matviews::matviewname)
+        .filter(pg_matviews::schemaname.eq(schema_name))
+        .load::<String>(conn)?;
+
+    Ok(names
+        .into_iter()
+        .map(|name| {
+            let mut table = TableName::new(name, schema_name);
+            table.strip_schema_if_matches(&default_schema);
+            (SupportedQueryRelationStructures::MaterializedView, table)
+        })
+        .collect())
+}
+
+pub fn load_materialized_view_sql_definition(
+    conn: &mut PgConnection,
+    view: &TableName,
+) -> QueryResult<String> {
+    let schema_name = match view.schema {
+        Some(ref name) => Cow::Borrowed(name),
+        None => Cow::Owned(Pg::default_schema(conn)?),
+    };
+
+    pg_matviews::table
+        .select(pg_matviews::definition)
+        .filter(pg_matviews::matviewname.eq(&view.sql_name))
+        .filter(pg_matviews::schemaname.eq(schema_name))
+        .get_result(conn)
 }
 
 pub fn get_table_comment(
@@ -370,6 +491,7 @@ mod test {
             "id",
             "int4",
             pg_catalog.clone(),
+            23,
             false,
             None,
             Some("column comment".to_string()),
@@ -379,6 +501,7 @@ mod test {
             "text_col",
             "varchar",
             pg_catalog.clone(),
+            1043,
             true,
             Some(128),
             None,
@@ -388,6 +511,7 @@ mod test {
             "not_null",
             "text",
             pg_catalog.clone(),
+            25,
             false,
             None,
             None,
@@ -397,6 +521,7 @@ mod test {
             "array_col",
             "_varchar",
             pg_catalog,
+            1015,
             false,
             None,
             None,
@@ -408,7 +533,8 @@ mod test {
                 &mut connection,
                 &table_1,
                 &ColumnSorting::OrdinalPosition,
-                &[]
+                &[],
+                SupportedQueryRelationStructures::Table,
             )
         );
         assert_eq!(
@@ -417,7 +543,8 @@ mod test {
                 &mut connection,
                 &table_2,
                 &ColumnSorting::OrdinalPosition,
-                &[]
+                &[],
+                SupportedQueryRelationStructures::Table,
             )
         );
     }
@@ -583,6 +710,93 @@ mod test {
     }
 
     #[test]
+    fn get_table_data_for_materialized_view_matches_view() {
+        let mut connection = connection();
+
+        for statement in [
+            "CREATE SCHEMA test_schema",
+            "CREATE DOMAIN test_schema.posinteger AS integer NOT NULL CHECK (VALUE > 0)",
+            "CREATE TABLE test_schema.source (id test_schema.posinteger, name VARCHAR, tags TEXT[])",
+            "CREATE VIEW test_schema.v AS SELECT * FROM test_schema.source",
+            "CREATE MATERIALIZED VIEW test_schema.mv AS SELECT * FROM test_schema.source",
+            "COMMENT ON COLUMN test_schema.v.name IS 'the name'",
+            "COMMENT ON COLUMN test_schema.mv.name IS 'the name'",
+        ] {
+            diesel::sql_query(statement)
+                .execute(&mut connection)
+                .unwrap();
+        }
+
+        let view = TableName::new("v", "test_schema");
+        let materialized_view = TableName::new("mv", "test_schema");
+        let domain_regex = "posinteger".try_into().unwrap();
+
+        for sorting in [ColumnSorting::OrdinalPosition, ColumnSorting::Name] {
+            for domains in [&[][..], &[&domain_regex]] {
+                let expected = get_table_data(
+                    &mut connection,
+                    &view,
+                    &sorting,
+                    domains,
+                    SupportedQueryRelationStructures::View,
+                )
+                .unwrap();
+                let actual = get_table_data(
+                    &mut connection,
+                    &materialized_view,
+                    &sorting,
+                    domains,
+                    SupportedQueryRelationStructures::MaterializedView,
+                )
+                .unwrap();
+                assert_eq!(expected, actual);
+            }
+        }
+    }
+
+    #[test]
+    fn get_table_data_does_not_need_usage_on_the_schema_of_a_type() {
+        let mut connection = connection();
+
+        for statement in [
+            "CREATE SCHEMA test_types",
+            "CREATE TYPE test_types.mood AS ENUM ('happy', 'sad')",
+            "CREATE DOMAIN test_types.posinteger AS integer CHECK (VALUE > 0)",
+            "CREATE SCHEMA test_schema",
+            "CREATE TABLE test_schema.table_1 (mood test_types.mood, id test_types.posinteger)",
+            "CREATE ROLE diesel_cli_test_no_usage",
+            "GRANT USAGE ON SCHEMA test_schema TO diesel_cli_test_no_usage",
+            "GRANT SELECT ON test_schema.table_1 TO diesel_cli_test_no_usage",
+        ] {
+            diesel::sql_query(statement)
+                .execute(&mut connection)
+                .unwrap();
+        }
+
+        let table_1 = TableName::new("table_1", "test_schema");
+        let domain_regex = "posinteger".try_into().unwrap();
+
+        let load = |connection: &mut PgConnection| {
+            [&[][..], &[&domain_regex]].map(|domains| {
+                get_table_data(
+                    connection,
+                    &table_1,
+                    &ColumnSorting::OrdinalPosition,
+                    domains,
+                    SupportedQueryRelationStructures::Table,
+                )
+            })
+        };
+        let expected = load(&mut connection);
+        assert!(expected.iter().all(Result::is_ok), "{expected:?}");
+
+        diesel::sql_query("SET LOCAL ROLE diesel_cli_test_no_usage")
+            .execute(&mut connection)
+            .unwrap();
+        assert_eq!(expected, load(&mut connection));
+    }
+
+    #[test]
     fn get_table_data_considers_domain_types() {
         let mut connection = connection();
 
@@ -600,10 +814,17 @@ mod test {
 
         let table_1 = TableName::new("table_1", "test_schema");
 
+        let posinteger_oid = pg_type::table
+            .select(pg_type::oid)
+            .filter(pg_type::typname.eq("posinteger"))
+            .get_result::<u32>(&mut connection)
+            .unwrap();
+
         let id_int = ColumnInformation::new(
             "id",
             "int4",
             Some(String::from("pg_catalog")),
+            23,
             false,
             None,
             None,
@@ -613,6 +834,7 @@ mod test {
             "id",
             "posinteger",
             Some(String::from("public")),
+            posinteger_oid,
             false,
             None,
             None,
@@ -625,7 +847,8 @@ mod test {
                 &mut connection,
                 &table_1,
                 &ColumnSorting::OrdinalPosition,
-                &[]
+                &[],
+                SupportedQueryRelationStructures::Table,
             )
         );
 
@@ -635,7 +858,8 @@ mod test {
                 &mut connection,
                 &table_1,
                 &ColumnSorting::OrdinalPosition,
-                &[&"non-matching-regex".try_into().unwrap()]
+                &[&"non-matching-regex".try_into().unwrap()],
+                SupportedQueryRelationStructures::Table,
             )
         );
 
@@ -645,7 +869,8 @@ mod test {
                 &mut connection,
                 &table_1,
                 &ColumnSorting::OrdinalPosition,
-                &[&"int".try_into().unwrap()]
+                &[&"int".try_into().unwrap()],
+                SupportedQueryRelationStructures::Table,
             )
         );
     }

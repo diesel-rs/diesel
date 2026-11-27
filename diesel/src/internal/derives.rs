@@ -86,6 +86,10 @@ pub mod multiconnection {
     pub use time;
 
     #[doc(hidden)]
+    #[cfg(feature = "jiff")]
+    pub use jiff;
+
+    #[doc(hidden)]
     #[cfg(feature = "numeric")]
     pub use bigdecimal;
 
@@ -145,7 +149,21 @@ pub mod multiconnection {
         ($($tt:tt)*) => {};
     }
 
-    pub use {expand_chrono, expand_numeric, expand_r2d2, expand_time};
+    #[doc(hidden)]
+    #[macro_export]
+    #[cfg(feature = "jiff")]
+    macro_rules! expand_jiff {
+        ($($tt:tt)*) => {$($tt)*};
+    }
+
+    #[doc(hidden)]
+    #[macro_export]
+    #[cfg(not(feature = "jiff"))]
+    macro_rules! expand_jiff {
+        ($($tt:tt)*) => {};
+    }
+
+    pub use {expand_chrono, expand_jiff, expand_numeric, expand_r2d2, expand_time};
 
     #[doc(hidden)]
     pub use crate::types::enum_::{

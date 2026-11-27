@@ -1,6 +1,6 @@
 [package]
 name = "diesel_derives"
-version = "2.4.0"
+version = "2.4.1"
 license = "MIT OR Apache-2.0"
 description = "You should not use this crate directly, it is internal to Diesel."
 documentation = "https://diesel.rs/guides/"
@@ -49,10 +49,11 @@ with-deprecated = ["diesel_attribute_parser/with-deprecated"]
 r2d2 = []
 chrono = []
 time = []
+jiff = []
 numeric = []
 
 [package.metadata.docs.rs]
-features = ["postgres", "mysql", "mariadb", "sqlite", "chrono", "numeric", "time", "r2d2"]
+features = ["postgres", "mysql", "mariadb", "sqlite", "chrono", "numeric", "time", "jiff", "r2d2"]
 no-default-features = true
 rustc-args = ["--cfg", "diesel_docs"]
 rustdoc-args = ["--cfg", "diesel_docs", "-Z", "unstable-options", "--generate-link-to-definition", "--generate-macro-expansion"]
