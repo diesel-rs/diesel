@@ -34,3 +34,7 @@ skip-tree = [
 executables = "deny"
 #interpreted = "deny"
 #include-archives = true
+
+[advisories.ignore]
+id = "RUSTSEC-2026-0543"
+reason = "We cannot do much about that without breaking the public API"
