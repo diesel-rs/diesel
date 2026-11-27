@@ -519,6 +519,38 @@ impl SqliteConnection {
         NonZeroI64::new(self.raw_connection.last_insert_rowid())
     }
 
+    /// Returns whether SQLite has a transaction open on this connection,
+    /// which is the case whenever [autocommit mode] is disabled.
+    ///
+    /// The answer comes from SQLite itself, so it also covers transactions
+    /// opened or closed by SQL text such as `BEGIN`, `SAVEPOINT` or `COMMIT`,
+    /// and transactions SQLite rolled back on its own. Diesel's transaction
+    /// manager does not track those.
+    ///
+    /// [autocommit mode]: https://www.sqlite.org/c3ref/get_autocommit.html
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// # fn run_test() -> QueryResult<()> {
+    /// use diesel::connection::SimpleConnection;
+    /// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// assert!(!conn.in_transaction());
+    /// conn.batch_execute("BEGIN")?;
+    /// assert!(conn.in_transaction());
+    /// conn.batch_execute("COMMIT")?;
+    /// assert!(!conn.in_transaction());
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn in_transaction(&self) -> bool {
+        !self.raw_connection.is_autocommit()
+    }
+
     fn transaction_sql<T, E, F>(&mut self, f: F, sql: &str) -> Result<T, E>
     where
         F: FnOnce(&mut Self) -> Result<T, E>,
@@ -935,6 +967,76 @@ mod tests {
             .get_result(connection)
             .unwrap();
         assert_eq!(count, 1);
+    }
+
+    #[diesel_test_helper::test]
+    fn in_transaction_follows_transaction_control_sql() {
+        let connection = &mut connection();
+        assert!(!connection.in_transaction());
+
+        connection.batch_execute("BEGIN").unwrap();
+        assert!(connection.in_transaction());
+        connection.batch_execute("COMMIT").unwrap();
+        assert!(!connection.in_transaction());
+
+        // The query DSL cannot express transaction control, and the prepared
+        // statement path is the one under test here.
+        crate::sql_query("BEGIN").execute(connection).unwrap();
+        assert!(connection.in_transaction());
+        crate::sql_query("ROLLBACK").execute(connection).unwrap();
+        assert!(!connection.in_transaction());
+
+        connection.batch_execute("SAVEPOINT outer_sp").unwrap();
+        assert!(connection.in_transaction());
+        connection.batch_execute("ROLLBACK TO outer_sp").unwrap();
+        assert!(connection.in_transaction());
+        connection.batch_execute("RELEASE outer_sp").unwrap();
+        assert!(!connection.in_transaction());
+    }
+
+    #[diesel_test_helper::test]
+    fn in_transaction_is_false_after_sqlite_rolls_back() {
+        let connection = &mut connection();
+        connection
+            .batch_execute(
+                "CREATE TABLE unique_value(value INTEGER UNIQUE ON CONFLICT ROLLBACK);
+                 INSERT INTO unique_value VALUES (1);
+                 BEGIN",
+            )
+            .unwrap();
+        assert!(connection.in_transaction());
+
+        assert!(
+            connection
+                .batch_execute("INSERT INTO unique_value VALUES (1)")
+                .is_err()
+        );
+        assert!(!connection.in_transaction());
+    }
+
+    #[diesel_test_helper::test]
+    fn in_transaction_follows_managed_transactions() {
+        let connection = &mut connection();
+
+        connection
+            .transaction::<_, Error, _>(|connection| {
+                assert!(connection.in_transaction());
+                connection.transaction::<_, Error, _>(|connection| {
+                    assert!(connection.in_transaction());
+                    Ok(())
+                })?;
+                assert!(connection.in_transaction());
+                Ok(())
+            })
+            .unwrap();
+        assert!(!connection.in_transaction());
+
+        let result = connection.transaction::<(), _, _>(|connection| {
+            assert!(connection.in_transaction());
+            Err(Error::RollbackTransaction)
+        });
+        assert_eq!(result, Err(Error::RollbackTransaction));
+        assert!(!connection.in_transaction());
     }
 
     #[diesel_test_helper::test]

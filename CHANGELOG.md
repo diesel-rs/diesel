@@ -17,6 +17,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * `diesel print-schema` now generates `diesel::view!` definitions for PostgreSQL materialized views when `include_views` is enabled
 * Added `DatabaseErrorInformation::native_code`, the backend's own error code (MySQL and MariaDB error number, SQLite result code)
 * Added support for the `jiff` crate behind a new `jiff` feature, which is also part of `extras`. `jiff::civil::Date`, `jiff::civil::Time` and `jiff::civil::DateTime` map to the `Date`, `Time` and `Timestamp` SQL types on all backends (and `jiff::civil::DateTime` additionally to `Datetime` on MySQL and MariaDB), `jiff::Timestamp` maps to `Timestamptz` on PostgreSQL, and `#[derive(MultiConnection)]` supports the civil types
+* Added `SqliteConnection::in_transaction`, which reports whether SQLite has a transaction open on the connection, including transactions opened or closed by SQL text that Diesel's transaction manager does not track
 
 ### Fixed
 
