@@ -32,6 +32,8 @@ pub use self::instrumentation::set_default_instrumentation;
 pub use self::instrumentation::{
     DebugQuery, Instrumentation, InstrumentationEvent, get_default_instrumentation,
 };
+#[cfg(feature = "__sqlite-shared")]
+pub(crate) use self::transaction_manager::TransactionControl;
 #[doc(inline)]
 pub use self::transaction_manager::{
     AnsiTransactionManager, InTransactionStatus, TransactionDepthChange, TransactionManager,

@@ -31,7 +31,10 @@ pub(in crate::sqlite) mod sqlite_blob;
 mod sqlite_value;
 mod statement_iterator;
 mod stmt;
+// Every test runs the authorizer callback, which Miri with a native libsqlite3 cannot call.
 mod trace;
+#[cfg(all(test, not(miri)))]
+mod transaction_control_tests;
 mod update_hook;
 
 pub use self::authorizer::{AuthorizerContext, AuthorizerDecision};
@@ -82,6 +85,9 @@ use core::num::NonZeroI64;
 /// Errors carry the result code of the failed API call in
 /// [`DatabaseErrorInformation::native_code`], the extended result code where
 /// SQLite reports one, listed at <https://www.sqlite.org/rescode.html>.
+///
+/// Successful SQLite transaction-control statements executed through Diesel
+/// synchronize its transaction depth and named savepoint stack.
 ///
 /// # Supported loading model implementations
 ///
@@ -240,7 +246,7 @@ impl SimpleConnection for SqliteConnection {
         }
         let sql = match CString::new(query) {
             Ok(sql) => sql,
-            Err(error) => return self.report_batch_statement(query, || Err(error.into())),
+            Err(error) => return self.report_batch_statement(query, |_| Err(error.into())),
         };
         let mut start = 0;
         loop {
@@ -256,7 +262,7 @@ impl SimpleConnection for SqliteConnection {
                 match Statement::prepare_first(&self.raw_connection, &sql, start, 0) {
                     Ok(prepared) => prepared,
                     Err(error) => {
-                        return self.report_batch_statement(&query[start..], || Err(error));
+                        return self.report_batch_statement(&query[start..], |_| Err(error));
                     }
                 };
             let text = query
@@ -265,7 +271,12 @@ impl SimpleConnection for SqliteConnection {
                 .expect("SQLite consumes at least one token of non-blank text");
             start = end;
             if let Some(statement) = statement {
-                self.report_batch_statement(text, || statement.run_to_completion())?;
+                self.report_batch_statement(text, |connection| {
+                    statement.track_to_completion(
+                        &connection.raw_connection,
+                        &mut connection.transaction_state,
+                    )
+                })?;
             }
         }
     }
@@ -276,13 +287,13 @@ impl SqliteConnection {
     fn report_batch_statement(
         &mut self,
         text: &str,
-        run: impl FnOnce() -> QueryResult<()>,
+        run: impl FnOnce(&mut Self) -> QueryResult<()>,
     ) -> QueryResult<()> {
         self.instrumentation
             .on_connection_event(InstrumentationEvent::StartQuery {
                 query: &StrQueryHelper::new(text),
             });
-        let result = run();
+        let result = run(self);
         self.instrumentation
             .on_connection_event(InstrumentationEvent::FinishQuery {
                 query: &StrQueryHelper::new(text),
@@ -290,7 +301,7 @@ impl SqliteConnection {
             });
         if result.is_err() && self.raw_connection.is_autocommit() {
             // SQLite ends the transaction on some failures, e.g. an aborting commit hook.
-            self.transaction_state.status.set_rolled_back_by_database();
+            self.transaction_state.set_rolled_back_by_database();
         }
         result
     }
@@ -572,9 +583,9 @@ impl SqliteConnection {
     /// which is the case whenever [autocommit mode] is disabled.
     ///
     /// The answer comes from SQLite itself, so it also covers transactions
-    /// opened or closed by SQL text such as `BEGIN`, `SAVEPOINT` or `COMMIT`,
-    /// and transactions SQLite rolled back on its own. Diesel's transaction
-    /// manager does not track those.
+    /// opened or closed through
+    /// [`with_raw_connection`](Self::with_raw_connection), which Diesel's
+    /// transaction manager does not see.
     ///
     /// [autocommit mode]: https://www.sqlite.org/c3ref/get_autocommit.html
     ///
@@ -659,6 +670,7 @@ impl SqliteConnection {
             source,
             &mut *self.instrumentation,
             &mut self.transaction_state,
+            raw_connection,
         )
     }
 
@@ -903,7 +915,12 @@ impl SqliteConnection {
         let conn = Self {
             statement_cache: StatementCache::new(),
             raw_connection,
-            transaction_state: AnsiTransactionManager::default(),
+            // Miri with a native libsqlite3 cannot run the authorizer callback that reports control statements.
+            transaction_state: if cfg!(miri) {
+                AnsiTransactionManager::default()
+            } else {
+                AnsiTransactionManager::tracking_control_statements()
+            },
             metadata_lookup: (),
             instrumentation: DynInstrumentation::none(),
         };

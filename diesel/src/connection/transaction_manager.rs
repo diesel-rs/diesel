@@ -4,6 +4,13 @@ use alloc::borrow::Cow;
 use alloc::boxed::Box;
 use core::num::NonZeroU32;
 
+#[cfg(feature = "__sqlite-shared")]
+mod tracked;
+#[cfg(feature = "__sqlite-shared")]
+pub(crate) use self::tracked::TransactionControl;
+#[cfg(feature = "__sqlite-shared")]
+use self::tracked::TransactionFrames;
+
 /// Manages the internal transaction state for a connection.
 ///
 /// You will not need to interact with this trait, unless you are writing an
@@ -106,6 +113,10 @@ pub trait TransactionManager<Conn: Connection> {
 #[derive(Default, Debug)]
 pub struct AnsiTransactionManager {
     pub(crate) status: TransactionManagerStatus,
+    /// The open transaction and savepoints, kept for connections that report
+    /// every transaction control statement they complete.
+    #[cfg(feature = "__sqlite-shared")]
+    pub(crate) frames: Option<TransactionFrames>,
 }
 
 /// Status of the transaction manager
@@ -368,6 +379,10 @@ impl AnsiTransactionManager {
     where
         Conn: Connection<TransactionManager = Self>,
     {
+        #[cfg(feature = "__sqlite-shared")]
+        if Self::tracked_frames(conn).is_some() {
+            return Self::begin_tracked(conn, Some(sql));
+        }
         let state = Self::get_transaction_state(conn)?;
         if let Some(_depth) = state.transaction_depth() {
             return Err(Error::AlreadyInTransaction);
@@ -395,6 +410,10 @@ where
     type TransactionStateData = Self;
 
     fn begin_transaction(conn: &mut Conn) -> QueryResult<()> {
+        #[cfg(feature = "__sqlite-shared")]
+        if Self::tracked_frames(conn).is_some() {
+            return Self::begin_tracked(conn, None);
+        }
         let transaction_state = Self::get_transaction_state(conn)?;
         let transaction_depth = transaction_state.transaction_depth();
         let start_transaction_sql = match transaction_depth {
@@ -421,6 +440,10 @@ where
     }
 
     fn rollback_transaction(conn: &mut Conn) -> QueryResult<()> {
+        #[cfg(feature = "__sqlite-shared")]
+        if Self::tracked_frames(conn).is_some() {
+            return Self::rollback_tracked(conn);
+        }
         let transaction_state = Self::get_transaction_state(conn)?;
         let rolled_back_by_database = transaction_state
             .in_transaction
@@ -532,6 +555,10 @@ where
     /// In the second case the connection will be considered broken
     /// as it contains a uncommitted unabortable open transaction.
     fn commit_transaction(conn: &mut Conn) -> QueryResult<()> {
+        #[cfg(feature = "__sqlite-shared")]
+        if Self::tracked_frames(conn).is_some() {
+            return Self::commit_tracked(conn);
+        }
         let transaction_state = Self::get_transaction_state(conn)?;
         let transaction_depth = transaction_state.transaction_depth();
         let (commit_sql, committing_top_level) = match transaction_depth {

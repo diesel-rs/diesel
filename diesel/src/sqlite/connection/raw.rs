@@ -17,6 +17,7 @@ use super::trace::{SqliteTraceEvent, SqliteTraceFlags, TRACE_PROFILE, TRACE_ROW,
 use super::update_hook::{SqliteChangeEvent, SqliteChangeOp};
 use super::{BusyDecision, CommitDecision, ProgressDecision};
 use super::{Sqlite, SqliteAggregateFunction};
+use crate::connection::TransactionControl;
 use crate::deserialize::FromSqlRow;
 use crate::result::Error::DatabaseError;
 use crate::result::*;
@@ -27,6 +28,7 @@ use alloc::borrow::{Cow, ToOwned};
 use alloc::boxed::Box;
 use alloc::ffi::{CString, NulError};
 use alloc::string::{String, ToString};
+use core::cell::{Cell, UnsafeCell};
 use core::ffi as libc;
 use core::ffi::CStr;
 use core::num::NonZeroU32;
@@ -90,8 +92,9 @@ pub(super) struct Hooks {
     wal_hook: Option<Box<dyn Fn(&'_ mut BorrowedSqliteConnection, &str, u32) + Send>>,
     /// Boxed closure kept alive while the busy handler is registered.
     busy_handler: Option<Box<dyn FnMut(i32) -> BusyDecision + Send>>,
-    /// Boxed closure kept alive while the authorizer is registered.
-    authorizer_hook: Option<Box<dyn FnMut(AuthorizerContext<'_>) -> AuthorizerDecision + Send>>,
+    /// The authorizer, installed on every owned connection and on a borrowed
+    /// connection once it registers a policy.
+    authorizer: Option<Box<Authorizer>>,
     /// Boxed closure kept alive while the trace callback is registered.
     trace_hook: Option<Box<dyn FnMut(SqliteTraceEvent<'_>) + Send>>,
     /// Boxed closure kept alive while the collation-needed callback is registered.
@@ -133,10 +136,15 @@ impl RawConnection {
         match connection_status {
             ffi::SQLITE_OK => {
                 let conn_pointer = unsafe { NonNull::new_unchecked(conn_pointer) };
-                Ok(RawConnection {
+                let mut connection = RawConnection {
                     internal_connection: conn_pointer,
                     hooks: Hooks::default(),
-                })
+                };
+                // Miri with a native libsqlite3 cannot call back into Rust.
+                if !cfg!(miri) {
+                    connection.install_authorizer(None);
+                }
+                Ok(connection)
             }
             err_code => {
                 let message = super::error_message(err_code);
@@ -782,51 +790,50 @@ impl RawConnection {
         self.hooks.busy_handler = None;
     }
 
-    /// Sets the authorizer callback, replacing any previous one. Only one
-    /// can be active at a time per connection.
-    ///
-    /// # Safety
-    ///
-    /// The `ptr` is derived from `&raw mut *boxed` and points to the heap
-    /// allocation of the closure. The `authorizer_trampoline` function
-    /// matches the signature expected by `sqlite3_set_authorizer`. The pointer
-    /// remains valid because we store `boxed` in `self.authorizer_hook` below,
-    /// keeping it alive for the lifetime of this `RawConnection`.
+    /// Sets the authorizer policy, replacing any previous one.
     pub(super) fn set_authorizer<F>(&mut self, hook: F)
     where
         F: FnMut(AuthorizerContext<'_>) -> AuthorizerDecision + Send + 'static,
     {
-        let mut boxed: Box<dyn FnMut(AuthorizerContext<'_>) -> AuthorizerDecision + Send> =
-            Box::new(hook);
-        let ptr = &raw mut *boxed as *mut libc::c_void;
+        self.install_authorizer(Some(Box::new(hook)));
+    }
 
+    /// Removes the authorizer policy, so that every action is allowed.
+    pub(super) fn remove_authorizer(&mut self) {
+        self.install_authorizer(None);
+    }
+
+    /// Installs the authorizer with `policy`, which makes SQLite expire every prepared statement.
+    fn install_authorizer(&mut self, policy: Option<AuthorizerPolicy>) {
+        let authorizer = self
+            .hooks
+            .authorizer
+            .get_or_insert_with(|| Box::new(Authorizer::default()));
+        // SAFETY: only the trampoline reads `policy`, and SQLite runs no callback during this exclusive borrow.
+        drop(mem::replace(
+            unsafe { &mut *authorizer.policy.get() },
+            policy,
+        ));
+        let user_data = &raw const **authorizer as *mut libc::c_void;
+        // SAFETY: `user_data` points to the boxed `Authorizer`, which stays in `self.hooks` until
+        // `reset_registered_hooks` unregisters the callback, and the trampoline only takes shared references to it.
         unsafe {
             ffi::sqlite3_set_authorizer(
                 self.internal_connection.as_ptr(),
-                Some(authorizer_trampoline::<F>),
-                ptr,
+                Some(authorizer_trampoline),
+                user_data,
             );
         }
-
-        // The old Box (if any) is dropped here after SQLite has already
-        // switched to the new callback, preventing use-after-free.
-        self.hooks.authorizer_hook = Some(boxed);
     }
 
-    /// Removes the authorizer callback.
+    /// Starts recording the transaction control statement that SQLite
+    /// compiles until the returned guard finishes.
     ///
-    /// # Safety
-    ///
-    /// `self.internal_connection` is a valid pointer to an open SQLite
-    /// connection. Passing `None` as the callback and `null_mut()` as the
-    /// user data unregisters any existing authorizer. The authorizer is
-    /// unregistered before dropping `self.authorizer_hook` to prevent
-    /// callbacks from firing during cleanup.
-    pub(super) fn remove_authorizer(&mut self) {
-        unsafe {
-            ffi::sqlite3_set_authorizer(self.internal_connection.as_ptr(), None, ptr::null_mut());
-        }
-        self.hooks.authorizer_hook = None;
+    /// Returns `None` for a borrowed connection without an authorizer.
+    pub(super) fn capture_control(&self) -> Option<ControlCapture<'_>> {
+        let authorizer = self.hooks.authorizer.as_deref()?;
+        authorizer.capture.set(Capture::Armed);
+        Some(ControlCapture { authorizer })
     }
 
     /// Sets a trace callback, replacing any previous one.
@@ -953,7 +960,7 @@ impl RawConnection {
             if hooks.busy_handler.is_some() {
                 ffi::sqlite3_busy_handler(db, None, ptr::null_mut());
             }
-            if hooks.authorizer_hook.is_some() {
+            if hooks.authorizer.is_some() {
                 ffi::sqlite3_set_authorizer(db, None, ptr::null_mut());
             }
             if hooks.trace_hook.is_some() {
@@ -1542,23 +1549,100 @@ where
     }
 }
 
+type AuthorizerPolicy = Box<dyn FnMut(AuthorizerContext<'_>) -> AuthorizerDecision + Send>;
+
+/// The callback SQLite consults while compiling a statement. It applies the
+/// user's policy and records which transaction control statement is compiled.
+#[derive(Default)]
+pub(super) struct Authorizer {
+    policy: UnsafeCell<Option<AuthorizerPolicy>>,
+    capture: Cell<Capture>,
+}
+
+#[derive(Default)]
+enum Capture {
+    #[default]
+    Idle,
+    Armed,
+    Captured(ControlStatement),
+}
+
+/// A transaction control statement and whether the authorizer allowed it to run.
+#[derive(Debug)]
+pub(super) struct ControlStatement {
+    pub(super) control: TransactionControl,
+    pub(super) allowed: bool,
+}
+
+/// Records the first transaction control statement SQLite compiles while it lives.
+pub(super) struct ControlCapture<'a> {
+    authorizer: &'a Authorizer,
+}
+
+impl ControlCapture<'_> {
+    pub(super) fn finish(self) -> Option<ControlStatement> {
+        match self.authorizer.capture.replace(Capture::Idle) {
+            Capture::Captured(control) => Some(control),
+            Capture::Idle | Capture::Armed => None,
+        }
+    }
+}
+
+impl Drop for ControlCapture<'_> {
+    fn drop(&mut self) {
+        self.authorizer.capture.set(Capture::Idle);
+    }
+}
+
+impl Authorizer {
+    /// Records the action if it is the first transaction control statement since arming.
+    fn capture(
+        &self,
+        action_code: libc::c_int,
+        operation: &str,
+        name: Option<&str>,
+        allowed: bool,
+    ) {
+        let previous = self.capture.take();
+        if !matches!(previous, Capture::Armed) {
+            return self.capture.set(previous);
+        }
+        let control = match (action_code, operation, name) {
+            (ffi::SQLITE_TRANSACTION, "BEGIN", _) => Some(TransactionControl::Begin),
+            (ffi::SQLITE_TRANSACTION, "COMMIT", _) => Some(TransactionControl::Commit),
+            (ffi::SQLITE_TRANSACTION, "ROLLBACK", _) => Some(TransactionControl::Rollback),
+            (ffi::SQLITE_SAVEPOINT, "BEGIN", Some(name)) => {
+                Some(TransactionControl::Savepoint(name.into()))
+            }
+            (ffi::SQLITE_SAVEPOINT, "RELEASE", Some(name)) => {
+                Some(TransactionControl::Release(name.into()))
+            }
+            (ffi::SQLITE_SAVEPOINT, "ROLLBACK", Some(name)) => {
+                Some(TransactionControl::RollbackTo(name.into()))
+            }
+            _ => None,
+        };
+        self.capture.set(match control {
+            Some(control) => Capture::Captured(ControlStatement { control, allowed }),
+            None => Capture::Armed,
+        });
+    }
+}
+
 /// C trampoline for `sqlite3_set_authorizer`.
 ///
 /// # Safety
 ///
-/// `user_data` must point to a live `F` stored in `RawConnection::authorizer_hook`.
-unsafe extern "C" fn authorizer_trampoline<F>(
+/// `user_data` must point to a live `Authorizer` stored in `RawConnection::hooks`.
+unsafe extern "C" fn authorizer_trampoline(
     user_data: *mut libc::c_void,
     action_code: libc::c_int,
     arg1: *const libc::c_char,
     arg2: *const libc::c_char,
     db_name: *const libc::c_char,
     accessor: *const libc::c_char,
-) -> libc::c_int
-where
-    F: FnMut(AuthorizerContext<'_>) -> AuthorizerDecision,
-{
-    // A null pointer is `None`, and the borrow only lives inside the `AuthorizerContext` passed to the callback.
+) -> libc::c_int {
+    // A null pointer is `None`, and the borrow only lives for this callback.
     fn to_str<'a>(ptr: *const libc::c_char) -> Result<Option<&'a str>, core::str::Utf8Error> {
         if ptr.is_null() {
             Ok(None)
@@ -1570,6 +1654,15 @@ where
     }
 
     let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
+        // SAFETY: `user_data` points to a live `Authorizer`, only ever borrowed shared.
+        let authorizer = unsafe { &*(user_data as *const Authorizer) };
+        let is_control = matches!(action_code, ffi::SQLITE_TRANSACTION | ffi::SQLITE_SAVEPOINT);
+        // SAFETY: SQLite never runs the authorizer reentrantly for one connection, and the
+        // policy can only be replaced through `&mut RawConnection`, while no callback runs.
+        let policy = unsafe { &mut *authorizer.policy.get() };
+        if policy.is_none() && !is_control {
+            return AuthorizerDecision::Allow;
+        }
         // A name that is not UTF-8 is denied, since mapping it to `None` would read as top-level SQL.
         let (Ok(arg1), Ok(arg2), Ok(db_name), Ok(accessor)) = (
             to_str(arg1),
@@ -1577,19 +1670,30 @@ where
             to_str(db_name),
             to_str(accessor),
         ) else {
-            return AuthorizerDecision::Deny;
+            return match policy {
+                Some(_) => AuthorizerDecision::Deny,
+                None => AuthorizerDecision::Allow,
+            };
         };
-
-        // SAFETY: `user_data` points to a live `F` in `RawConnection::authorizer_hook`.
-        let f = unsafe { &mut *(user_data as *mut F) };
-
-        f(AuthorizerContext::from_ffi(
-            action_code,
-            arg1,
-            arg2,
-            db_name,
-            accessor,
-        ))
+        let decision = match policy {
+            Some(policy) => policy(AuthorizerContext::from_ffi(
+                action_code,
+                arg1,
+                arg2,
+                db_name,
+                accessor,
+            )),
+            None => AuthorizerDecision::Allow,
+        };
+        if let (true, Some(operation)) = (is_control, arg1) {
+            authorizer.capture(
+                action_code,
+                operation,
+                arg2,
+                decision == AuthorizerDecision::Allow,
+            );
+        }
+        decision
     }));
 
     match result {

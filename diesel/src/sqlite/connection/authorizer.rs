@@ -894,13 +894,10 @@ impl SqliteConnection {
     /// See [`on_authorize`](Self::on_authorize) for usage example.
     pub fn remove_authorizer(&mut self) {
         self.raw_connection.remove_authorizer();
-        // Removing an authorizer does not expire prepared statements: SQLite
-        // expires them only when a non-null authorizer is installed. A statement
-        // prepared while the authorizer was active can have its decisions
-        // compiled in (an `Ignore` on a column read, for example, bakes a `NULL`
-        // into the statement), and nothing invalidates that cached statement on
-        // removal, so it keeps returning the old result. Clear the cache to force
-        // the next query to re-prepare without the authorizer.
+        // A statement prepared while the authorizer was active can have its
+        // decisions compiled in (an `Ignore` on a column read bakes a `NULL`
+        // into the statement). Clear the cache so the next query re-prepares
+        // without the user's authorizer.
         self.statement_cache.clear();
     }
 }
@@ -985,9 +982,8 @@ mod tests {
             "Ignore substitutes NULL for the column"
         );
 
-        // SQLite does not expire prepared statements when an authorizer is
-        // removed, so `remove_authorizer` clears diesel's statement cache to
-        // force the cached statement (with its baked-in NULL) to be re-prepared.
+        // `remove_authorizer` clears diesel's statement cache so the cached
+        // statement with its baked-in NULL is re-prepared.
         conn.remove_authorizer();
         let restored = auth_ignore_items::table
             .select(auth_ignore_items::id.nullable())

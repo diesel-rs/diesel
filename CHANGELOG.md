@@ -17,7 +17,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * `diesel print-schema` now generates `diesel::view!` definitions for PostgreSQL materialized views when `include_views` is enabled
 * Added `DatabaseErrorInformation::native_code`, the backend's own error code (MySQL and MariaDB error number, SQLite result code)
 * Added support for the `jiff` crate behind a new `jiff` feature, which is also part of `extras`. `jiff::civil::Date`, `jiff::civil::Time` and `jiff::civil::DateTime` map to the `Date`, `Time` and `Timestamp` SQL types on all backends (and `jiff::civil::DateTime` additionally to `Datetime` on MySQL and MariaDB), `jiff::Timestamp` maps to `Timestamptz` on PostgreSQL, and `#[derive(MultiConnection)]` supports the civil types
-* Added `SqliteConnection::in_transaction`, which reports whether SQLite has a transaction open on the connection, including transactions opened or closed by SQL text that Diesel's transaction manager does not track
+* Added `SqliteConnection::in_transaction`, which reports whether SQLite has a transaction open on the connection, including transactions opened or closed through `SqliteConnection::with_raw_connection`
 
 ### Fixed
 
@@ -25,6 +25,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * `AsyncPgConnection` now maps the PostgreSQL connection exception codes that `PgConnection` reports as `DatabaseErrorKind::ClosedConnection` to the same kind
 * `SqliteConnection` now detects when SQLite rolls back the open transaction on its own (for example via `ON CONFLICT ROLLBACK`, `RAISE(ROLLBACK, ...)` or an I/O error) on every statement path. The transaction then stays open in Diesel and refuses every statement and commit with the new `Error::TransactionRolledBackByDatabase` until it is rolled back, so `Connection::transaction` returns the original error and nothing the closure runs afterwards is committed
 * `diesel print-schema` no longer treats a user-defined PostgreSQL type as a type provided by Diesel if it has the same name as one, like an enum named `range`, `money` or `interval`, or a domain named `longtext` that is selected by `pg_domains_as_custom_types`. Such types now get a definition in the `sql_types` module like any other custom type
+* `SqliteConnection` now keeps its transaction depth and savepoint stack in step with SQLite transaction-control statements such as `BEGIN`, `SAVEPOINT`, `RELEASE`, `ROLLBACK TO` and `COMMIT` run through `sql_query` or `batch_execute`, so `Connection::transaction` composes with them. Managed savepoints avoid the names of open savepoints, and a rolled back nested transaction releases its savepoint
 * Correctly validate the connection in the `mobc` connection handler in diesel-async
 
 ### Changed

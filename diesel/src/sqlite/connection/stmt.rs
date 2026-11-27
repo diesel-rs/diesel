@@ -1,7 +1,7 @@
 #![allow(unsafe_code)] // fii code
 use super::bind_collector::{SqliteBindCollector, SqliteBindValueRef};
 use super::error_information::SqliteErrorInformation;
-use super::raw::RawConnection;
+use super::raw::{ControlStatement, RawConnection};
 use super::sqlite_value::OwnedSqliteValue;
 use crate::connection::statement_cache::{MaybeCached, PrepareForCache, PreparedStatement};
 use crate::connection::{AnsiTransactionManager, Instrumentation};
@@ -24,6 +24,8 @@ use sqlite_wasm_rs as ffi;
 
 pub(super) struct Statement {
     inner_statement: NonNull<ffi::sqlite3_stmt>,
+    /// The transaction control this statement performs when it completes.
+    control: Option<ControlStatement>,
 }
 
 // This relies on the invariant that RawConnection or Statement are never
@@ -77,6 +79,7 @@ impl Statement {
         let rest = &sql.to_bytes_with_nul()[start..];
         let mut stmt = ptr::null_mut();
         let mut tail = ptr::null();
+        let capture = raw_connection.capture_control();
         // SAFETY: the connection is open, `rest` is NUL terminated and outlives the call, and
         // both output slots are writable.
         let prepare_result = unsafe {
@@ -89,8 +92,9 @@ impl Statement {
                 &mut tail,
             )
         };
+        let control = capture.and_then(|capture| capture.finish());
         ensure_sqlite_ok(prepare_result, raw_connection.internal_connection.as_ptr())?;
-        let statement = NonNull::new(stmt).map(|inner_statement| Statement { inner_statement });
+        let statement = Self::from_prepared(stmt, control);
         let end = tail
             .addr()
             .checked_sub(sql.as_ptr().addr())
@@ -110,11 +114,42 @@ impl Statement {
                 _ => return Err(last_error(self.raw_connection())),
             }
         }
+        self.finalize()
+    }
+
+    /// Steps the statement until it is done, discarding every row and
+    /// recording its transaction control, then finalizes it.
+    pub(super) fn track_to_completion(
+        mut self,
+        raw_connection: &RawConnection,
+        transaction_manager: &mut AnsiTransactionManager,
+    ) -> QueryResult<()> {
+        // `Drop` finalizes after an error, which only repeats it.
+        while self.step(raw_connection, transaction_manager)? {}
+        self.finalize()
+    }
+
+    fn finalize(mut self) -> QueryResult<()> {
+        drop(self.control.take());
         let statement = core::mem::ManuallyDrop::new(self);
         let raw_connection = statement.raw_connection();
         // SAFETY: `ManuallyDrop` keeps `Drop` from finalizing the statement a second time.
         let result = unsafe { ffi::sqlite3_finalize(statement.inner_statement.as_ptr()) };
         ensure_sqlite_ok(result, raw_connection)
+    }
+
+    fn from_prepared(
+        stmt: *mut ffi::sqlite3_stmt,
+        control: Option<ControlStatement>,
+    ) -> Option<Self> {
+        let inner_statement = NonNull::new(stmt)?;
+        // SAFETY: `inner_statement` was just prepared and is not finalized.
+        let explains = unsafe { ffi::sqlite3_stmt_isexplain(inner_statement.as_ptr()) } != 0;
+        Some(Statement {
+            inner_statement,
+            // `EXPLAIN` compiles the control without running it.
+            control: control.filter(|_| !explains),
+        })
     }
 
     // The caller of this function has to ensure that:
@@ -243,6 +278,55 @@ impl Statement {
         unsafe { ffi::sqlite3_reset(self.inner_statement.as_ptr()) };
     }
 
+    /// Steps the statement once, recording a transaction control it completes
+    /// and a transaction SQLite rolls back on its own.
+    ///
+    /// Returns whether a row is available.
+    pub(super) fn step(
+        &mut self,
+        raw_connection: &RawConnection,
+        transaction_manager: &mut AnsiTransactionManager,
+    ) -> QueryResult<bool> {
+        let inner_statement = self.inner_statement.as_ptr();
+        // SQLite recompiles an expired statement inside `sqlite3_step`, consulting the authorizer again.
+        let recompile = self.control.is_some().then(|| {
+            (
+                raw_connection.capture_control(),
+                reprepare_count(inner_statement),
+            )
+        });
+        // SAFETY: `inner_statement` stays a live prepared statement until `Drop`.
+        let step_result = unsafe { ffi::sqlite3_step(inner_statement) };
+        if let Some((capture, reprepares)) = recompile {
+            let recompiled = capture.and_then(|capture| capture.finish());
+            if reprepare_count(inner_statement) != reprepares
+                && let (Some(control), Some(recompiled)) = (&mut self.control, recompiled)
+            {
+                control.allowed = recompiled.allowed;
+            }
+        }
+        let db = self.raw_connection();
+        // SAFETY: the statement keeps its connection open, so `db` is valid.
+        let autocommit = || unsafe { ffi::sqlite3_get_autocommit(db) } != 0;
+        match step_result {
+            ffi::SQLITE_DONE => {
+                if let Some(control) = self.control.as_ref().filter(|control| control.allowed) {
+                    transaction_manager.complete_control(&control.control, autocommit());
+                }
+                Ok(false)
+            }
+            ffi::SQLITE_ROW => Ok(true),
+            _ => {
+                let error = last_error(db);
+                // SQLite ends the transaction on some failures, e.g. `ON CONFLICT ROLLBACK`.
+                if autocommit() {
+                    transaction_manager.set_rolled_back_by_database();
+                }
+                Err(error)
+            }
+        }
+    }
+
     fn clear_bindings(&mut self) {
         unsafe { ffi::sqlite3_clear_bindings(self.inner_statement.as_ptr()) };
     }
@@ -297,6 +381,12 @@ fn last_error_message(conn: *mut ffi::sqlite3) -> String {
 
 fn last_error_code(conn: *mut ffi::sqlite3) -> libc::c_int {
     unsafe { ffi::sqlite3_extended_errcode(conn) }
+}
+
+/// How often SQLite has recompiled `statement` since it was prepared.
+fn reprepare_count(statement: *mut ffi::sqlite3_stmt) -> libc::c_int {
+    // SAFETY: callers pass a live prepared statement, and reading a counter without resetting it has no other effect.
+    unsafe { ffi::sqlite3_stmt_status(statement, ffi::SQLITE_STMTSTATUS_REPREPARE, 0) }
 }
 
 impl Drop for Statement {
@@ -520,6 +610,7 @@ pub struct StatementUse<'stmt, 'query> {
     // as we borrow into `statement`
     column_names: OnceCell<Vec<*const str>>,
     transaction_manager: &'stmt mut AnsiTransactionManager,
+    raw_connection: &'stmt RawConnection,
 }
 
 impl<'stmt, 'query> StatementUse<'stmt, 'query> {
@@ -528,6 +619,7 @@ impl<'stmt, 'query> StatementUse<'stmt, 'query> {
         query: T,
         instrumentation: &'stmt mut dyn Instrumentation,
         transaction_manager: &'stmt mut AnsiTransactionManager,
+        raw_connection: &'stmt RawConnection,
     ) -> QueryResult<StatementUse<'stmt, 'query>>
     where
         T: QueryFragment<Sqlite> + QueryId + 'query,
@@ -536,6 +628,7 @@ impl<'stmt, 'query> StatementUse<'stmt, 'query> {
             statement: BoundStatement::bind(statement, query, instrumentation)?,
             column_names: OnceCell::new(),
             transaction_manager,
+            raw_connection,
         })
     }
 
@@ -559,24 +652,10 @@ impl<'stmt, 'query> StatementUse<'stmt, 'query> {
     // It's always safe to call this function with `first_step = true` as this removes
     // the cached column names
     pub(super) unsafe fn step(&mut self, first_step: bool) -> QueryResult<bool> {
-        let step_result =
-            unsafe { ffi::sqlite3_step(self.statement.statement.inner_statement.as_ptr()) };
-        let res = match step_result {
-            ffi::SQLITE_DONE => Ok(false),
-            ffi::SQLITE_ROW => Ok(true),
-            _ => {
-                let raw_connection = self.statement.statement.raw_connection();
-                let error = last_error(raw_connection);
-                // SQLite ends the transaction on some failures, e.g. `ON CONFLICT ROLLBACK`.
-                // SAFETY: the statement keeps its connection open, so `raw_connection` is valid.
-                if unsafe { ffi::sqlite3_get_autocommit(raw_connection) } != 0 {
-                    self.transaction_manager
-                        .status
-                        .set_rolled_back_by_database();
-                }
-                Err(error)
-            }
-        };
+        let res = self
+            .statement
+            .statement
+            .step(self.raw_connection, self.transaction_manager);
         if first_step {
             self.column_names = OnceCell::new();
         }
