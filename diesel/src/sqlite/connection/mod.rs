@@ -54,7 +54,7 @@ pub use self::trace::{SqliteTraceEvent, SqliteTraceFlags};
 pub use self::update_hook::{
     SqliteChangeEvent, SqliteChangeOp, SqliteChangeOps, SqliteUpdateRouter,
 };
-use super::{BorrowedSqliteConnection, SqliteAggregateFunction};
+use super::{BorrowedSqliteConnection, SqliteAggregateFunction, SqliteWindowFunction};
 use crate::connection::instrumentation::{DynInstrumentation, StrQueryHelper};
 use crate::connection::statement_cache::StatementCache;
 use crate::connection::*;
