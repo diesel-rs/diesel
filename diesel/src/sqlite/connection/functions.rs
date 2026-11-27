@@ -125,7 +125,7 @@ where
     }
 }
 
-struct FunctionRow<'a> {
+pub(super) struct FunctionRow<'a> {
     args: &'a [Option<OwnedSqliteValue>],
     field_count: usize,
     connection: core::ptr::NonNull<ffi::sqlite3>,
@@ -133,7 +133,7 @@ struct FunctionRow<'a> {
 
 impl FunctionRow<'_> {
     #[allow(unsafe_code)] // complicated ptr cast
-    fn new(
+    pub(super) fn new(
         args: &mut [*mut ffi::sqlite3_value],
         connection: core::ptr::NonNull<ffi::sqlite3>,
     ) -> Self {
@@ -214,7 +214,7 @@ impl<'a> RowIndex<&'a str> for FunctionRow<'_> {
     }
 }
 
-struct FunctionArgument<'a> {
+pub(super) struct FunctionArgument<'a> {
     args: &'a [Option<OwnedSqliteValue>],
     col_idx: usize,
     connection: core::ptr::NonNull<ffi::sqlite3>,

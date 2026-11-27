@@ -31,8 +31,10 @@ pub(in crate::sqlite) mod sqlite_blob;
 mod sqlite_value;
 mod statement_iterator;
 mod stmt;
+mod table_function;
 mod trace;
 mod update_hook;
+mod virtual_table;
 
 pub use self::authorizer::{AuthorizerContext, AuthorizerDecision};
 #[diesel_derives::__diesel_public_if(
@@ -50,6 +52,9 @@ pub use self::serialized_database::SerializedDatabase;
 pub use self::sqlite_value::SqliteValue;
 use self::statement_iterator::*;
 use self::stmt::{Statement, StatementUse};
+pub use self::table_function::{
+    SqliteTableFunctionColumns, SqliteTableFunctionParameters, SqliteTableFunctionRow,
+};
 pub use self::trace::{SqliteTraceEvent, SqliteTraceFlags};
 pub use self::update_hook::{
     SqliteChangeEvent, SqliteChangeOp, SqliteChangeOps, SqliteUpdateRouter,
