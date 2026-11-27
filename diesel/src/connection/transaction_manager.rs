@@ -1216,6 +1216,114 @@ mod test {
         assert_eq!(Ok(1_i64), recovered_items::table.count().get_result(conn));
     }
 
+    #[diesel_test_helper::test]
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
+    #[cfg(feature = "__sqlite-shared")]
+    fn sqlite_transaction_status_follows_an_implicit_rollback() {
+        use crate::connection::SimpleConnection;
+        use crate::connection::transaction_manager::AnsiTransactionManager;
+        use crate::connection::transaction_manager::TransactionManager;
+        use crate::prelude::*;
+        use crate::result::{DatabaseErrorKind, Error};
+        use core::num::NonZeroU32;
+
+        crate::table! {
+            implicit_rollback_items (id) {
+                id -> Integer,
+            }
+        }
+
+        fn depth(conn: &mut SqliteConnection) -> Option<NonZeroU32> {
+            <AnsiTransactionManager as TransactionManager<SqliteConnection>>::transaction_manager_status_mut(
+                conn
+            ).transaction_depth().expect("Transaction depth")
+        }
+
+        fn insert(conn: &mut SqliteConnection, id: i32) -> QueryResult<usize> {
+            crate::insert_into(implicit_rollback_items::table)
+                .values(implicit_rollback_items::id.eq(id))
+                .execute(conn)
+        }
+
+        let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+        conn.batch_execute(
+            "CREATE TABLE implicit_rollback_items (
+                 id INTEGER PRIMARY KEY ON CONFLICT ROLLBACK CHECK (id < 100)
+             );
+             CREATE TRIGGER refuse_negative_ids BEFORE INSERT ON implicit_rollback_items
+             WHEN NEW.id < 0 BEGIN SELECT RAISE(ROLLBACK, 'refused'); END;",
+        )
+        .unwrap();
+
+        // A failure that SQLite answers by aborting only the statement keeps the transaction.
+        AnsiTransactionManager::begin_transaction(conn).unwrap();
+        insert(conn, 1).unwrap();
+        let check = insert(conn, 100);
+        assert!(
+            matches!(
+                check,
+                Err(Error::DatabaseError(DatabaseErrorKind::CheckViolation, _))
+            ),
+            "{check:?}"
+        );
+        assert_eq!(NonZeroU32::new(1), depth(conn));
+        AnsiTransactionManager::commit_transaction(conn).unwrap();
+        assert_eq!(None, depth(conn));
+
+        AnsiTransactionManager::begin_transaction(conn).unwrap();
+        insert(conn, 2).unwrap();
+        let conflict = insert(conn, 2);
+        assert!(
+            matches!(
+                conflict,
+                Err(Error::DatabaseError(DatabaseErrorKind::UniqueViolation, _))
+            ),
+            "{conflict:?}"
+        );
+        assert_eq!(None, depth(conn));
+        // The next transaction is an outermost one, not a savepoint.
+        AnsiTransactionManager::begin_transaction(conn).unwrap();
+        assert_eq!(NonZeroU32::new(1), depth(conn));
+        AnsiTransactionManager::commit_transaction(conn).unwrap();
+        assert_eq!(None, depth(conn));
+
+        // The rollback inside a savepoint ends every level of the transaction.
+        AnsiTransactionManager::begin_transaction(conn).unwrap();
+        AnsiTransactionManager::begin_transaction(conn).unwrap();
+        assert_eq!(NonZeroU32::new(2), depth(conn));
+        let conflict = insert(conn, 1);
+        assert!(
+            matches!(
+                conflict,
+                Err(Error::DatabaseError(DatabaseErrorKind::UniqueViolation, _))
+            ),
+            "{conflict:?}"
+        );
+        assert_eq!(None, depth(conn));
+
+        #[cfg(feature = "returning_clauses_for_sqlite_3_35")]
+        {
+            AnsiTransactionManager::begin_transaction(conn).unwrap();
+            let refused = crate::insert_into(implicit_rollback_items::table)
+                .values(implicit_rollback_items::id.eq(-1))
+                .returning(implicit_rollback_items::id)
+                .get_result::<i32>(conn);
+            assert!(
+                matches!(&refused, Err(Error::DatabaseError(_, info)) if info.message() == "refused"),
+                "{refused:?}"
+            );
+            assert_eq!(None, depth(conn));
+        }
+
+        assert_eq!(
+            Ok(1_i64),
+            implicit_rollback_items::table.count().get_result(conn)
+        );
+    }
+
     // regression test for #3470
     // crates.io depends on this behaviour
     #[diesel_test_helper::test]

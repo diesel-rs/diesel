@@ -567,7 +567,12 @@ impl SqliteConnection {
             }
         };
 
-        StatementUse::bind(statement, source, &mut *self.instrumentation)
+        StatementUse::bind(
+            statement,
+            source,
+            &mut *self.instrumentation,
+            &mut self.transaction_state,
+        )
     }
 
     /// Serialize the current SQLite database into a byte buffer.

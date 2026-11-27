@@ -22,6 +22,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 * `#[derive(QueryableByName)]` now respects `#[sql_name]` on table columns
 * `AsyncPgConnection` now maps the PostgreSQL connection exception codes that `PgConnection` reports as `DatabaseErrorKind::ClosedConnection` to the same kind
+* `SqliteConnection` now resets its transaction status when a query run through `execute` or `load` fails and SQLite has rolled back the transaction on its own (for example via `ON CONFLICT ROLLBACK`, `RAISE(ROLLBACK, ...)` or an I/O error), so the next transaction starts with `BEGIN` instead of a savepoint
 
 ### Changed
 
