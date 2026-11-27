@@ -769,6 +769,8 @@ jobs:
       - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
+      - name: Show API rate limit
+        run: gh api rate_limit --jq '.resources.core'
       - run: gh extension install github/gh-actions-lock --pin v0.4.1
       - run: gh actions-lock --verify
       - name: Install zizmor
