@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout, reason = "Example code")]
 use getting_started_step_2_pg::*;
 use std::io::{Read, stdin};
 

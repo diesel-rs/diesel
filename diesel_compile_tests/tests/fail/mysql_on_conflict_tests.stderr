@@ -44,8 +44,9 @@ help: the following other types implement trait `QueryFragment<DB, SP>`
 note: required by a bound in `diesel::RunQueryDsl::execute`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
-     |        ------- required by a bound in this associated function
 ...
 LL |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
@@ -97,8 +98,9 @@ help: the following other types implement trait `QueryFragment<DB, SP>`
 note: required by a bound in `diesel::RunQueryDsl::execute`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
-     |        ------- required by a bound in this associated function
 ...
 LL |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
@@ -126,8 +128,9 @@ error[E0277]: the trait bound `ConflictTarget<(_, name)>: OnConflictTarget<table
 note: required by a bound in `diesel::upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`
    --> ROOT/diesel/src/upsert/on_conflict_extension.rs
     |
+ LL | impl<T, U, Op, Ret> InsertStatement<T, U, Op, Ret>
+...
 LL |     pub fn on_conflict<Target>(self, target: Target) -> crate::dsl::OnConflict<Self, Target>
-    |            ----------- required by a bound in this associated function
 LL |     where
 LL |         ConflictTarget<Target>: OnConflictTarget<T>,
     |                                 ^^^^^^^^^^^^^^^^^^^ required by this bound in `diesel::upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`
@@ -179,8 +182,9 @@ help: the following other types implement trait `QueryFragment<DB, SP>`
 note: required by a bound in `diesel::RunQueryDsl::execute`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
-     |        ------- required by a bound in this associated function
 ...
 LL |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
@@ -232,8 +236,9 @@ help: the following other types implement trait `QueryFragment<DB, SP>`
 note: required by a bound in `diesel::RunQueryDsl::execute`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
-     |        ------- required by a bound in this associated function
 ...
 LL |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
@@ -267,8 +272,9 @@ error[E0277]: `diesel::query_builder::ConflictTarget<DuplicatedKeys>` is no vali
 note: required by a bound in `diesel::RunQueryDsl::execute`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
-     |        ------- required by a bound in this associated function
 ...
 LL |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
@@ -296,8 +302,9 @@ error[E0277]: the trait bound `ConflictTarget<(name, _)>: OnConflictTarget<table
 note: required by a bound in `diesel::upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`
    --> ROOT/diesel/src/upsert/on_conflict_extension.rs
     |
+ LL | impl<T, U, Op, Ret> InsertStatement<T, U, Op, Ret>
+...
 LL |     pub fn on_conflict<Target>(self, target: Target) -> crate::dsl::OnConflict<Self, Target>
-    |            ----------- required by a bound in this associated function
 LL |     where
 LL |         ConflictTarget<Target>: OnConflictTarget<T>,
     |                                 ^^^^^^^^^^^^^^^^^^^ required by this bound in `diesel::upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`
@@ -330,8 +337,9 @@ error[E0277]: `ConflictTarget<(name, DuplicatedKeys)>` is no valid SQL fragment 
 note: required by a bound in `diesel::RunQueryDsl::execute`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
-     |        ------- required by a bound in this associated function
 ...
 LL |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
@@ -359,8 +367,9 @@ error[E0277]: the trait bound `ConflictTarget<(_, name)>: OnConflictTarget<table
 note: required by a bound in `diesel::upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`
    --> ROOT/diesel/src/upsert/on_conflict_extension.rs
     |
+ LL | impl<T, U, Op, Ret> InsertStatement<T, U, Op, Ret>
+...
 LL |     pub fn on_conflict<Target>(self, target: Target) -> crate::dsl::OnConflict<Self, Target>
-    |            ----------- required by a bound in this associated function
 LL |     where
 LL |         ConflictTarget<Target>: OnConflictTarget<T>,
     |                                 ^^^^^^^^^^^^^^^^^^^ required by this bound in `diesel::upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`
@@ -393,8 +402,9 @@ error[E0277]: `ConflictTarget<(DuplicatedKeys, name)>` is no valid SQL fragment 
 note: required by a bound in `diesel::RunQueryDsl::execute`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
-     |        ------- required by a bound in this associated function
 ...
 LL |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`

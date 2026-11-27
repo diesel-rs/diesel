@@ -15,8 +15,9 @@ LL | impl BoolOrNullableBool for Nullable<Bool> {}
 note: required by a bound in `diesel::BoolExpressionMethods::and`
    --> ROOT/diesel/src/expression_methods/bool_expression_methods.rs
     |
+  LL | pub trait BoolExpressionMethods: Expression + Sized {
+...
  LL |     fn and<T, ST>(self, other: T) -> dsl::And<Self, T, ST>
-    |        --- required by a bound in this associated function
 ...
  LL |         ST: SqlType + TypedExpressionType + BoolOrNullableBool,
     |                                             ^^^^^^^^^^^^^^^^^^ required by this bound in `BoolExpressionMethods::and`
@@ -38,8 +39,9 @@ LL | impl BoolOrNullableBool for Nullable<Bool> {}
 note: required by a bound in `diesel::BoolExpressionMethods::or`
    --> ROOT/diesel/src/expression_methods/bool_expression_methods.rs
     |
+  LL | pub trait BoolExpressionMethods: Expression + Sized {
+...
  LL |     fn or<T, ST>(self, other: T) -> dsl::Or<Self, T, ST>
-    |        -- required by a bound in this associated function
 ...
 LL |         ST: SqlType + TypedExpressionType + BoolOrNullableBool,
     |                                             ^^^^^^^^^^^^^^^^^^ required by this bound in `BoolExpressionMethods::or`

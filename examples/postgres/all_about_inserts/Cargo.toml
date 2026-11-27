@@ -16,3 +16,6 @@ diesel_migrations = { version = "2.3.0", path = "../../../diesel_migrations" }
 
 [lib]
 doc = false
+
+[lints]
+workspace = true

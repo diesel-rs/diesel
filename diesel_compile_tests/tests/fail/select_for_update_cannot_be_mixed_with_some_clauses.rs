@@ -36,8 +36,7 @@ fn main() {
     //~| ERROR: the trait bound `SelectStatement<FromClause<_>>: LockingDsl<_>` is not satisfied
     //~| ERROR: the trait bound `SelectStatement<_, _, _, _, _, _, _>: QueryRelation` is not satisfied
     users.into_boxed().for_update();
-    //~^ ERROR: the trait bound `BoxedSelectStatement<'_, _, _, _>: LockingDsl<_>` is not satisfied
-    //~| ERROR: the trait bound `SelectStatement<FromClause<_>>: LockingDsl<_>` is not satisfied
+    //~^ ERROR: the trait bound `SelectStatement<FromClause<_>>: LockingDsl<_>` is not satisfied
     //~| ERROR: the trait bound `BoxedSelectStatement<'_, _, _, _>: QueryRelation` is not satisfied
     users.for_update().into_boxed();
     //~^ ERROR: cannot box `SelectStatement<_, _, _, _, _, _, _, _, _>` for backend `_`

@@ -16,6 +16,10 @@ use crate::mariadb::Mariadb;
 /// described at <https://mariadb.com/docs/server/reference/sql-statements/programmatic-compound-statements/programmatic-compound-statements-diagnostics/sqlstate>.
 /// [`sql_state`](crate::mysql_like::sql_state) names the codes.
 ///
+/// Errors also carry the error number in
+/// [`DatabaseErrorInformation::native_code`](crate::result::DatabaseErrorInformation::native_code),
+/// listed at <https://mariadb.com/docs/server/reference/error-codes>.
+///
 /// # Supported loading model implementations
 ///
 /// * [`DefaultLoadingMode`](crate::connection::DefaultLoadingMode)

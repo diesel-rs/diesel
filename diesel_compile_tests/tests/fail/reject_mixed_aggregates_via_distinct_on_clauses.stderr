@@ -18,8 +18,8 @@ LL | |     S: SelectClauseExpression<FromClause<F>>,
 LL | |     (Selection, S::Selection): ValidGrouping<G::Expressions>,
     | |________________________________-----------------------------^
     |                                  |
-    |                                  unsatisfied requirement introduced here: `(_, <diesel::query_builder::select_clause::DefaultSelectClause<diesel::internal::table_macro::FromClause<posts::table>> as diesel::query_builder::select_clause::SelectClauseExpression<diesel::internal::table_macro::FromClause<posts::table>>>::Selection): ValidGrouping<<diesel::query_builder::group_by_clause::GroupByClause<columns::user_id> as diesel::query_builder::group_by_clause::ValidGroupByClause>::Expressions>`
-    |                                  unsatisfied requirement introduced here: `(_, <diesel::query_builder::select_clause::DefaultSelectClause<diesel::internal::table_macro::FromClause<posts::table>> as diesel::query_builder::select_clause::SelectClauseExpression<diesel::internal::table_macro::FromClause<posts::table>>>::Selection): ValidGrouping<<diesel::query_builder::group_by_clause::GroupByClause<columns::user_id> as diesel::query_builder::group_by_clause::ValidGroupByClause>::Expressions>`
+    |                                  unsatisfied requirement introduced here: `(_, _): ValidGrouping<_>`
+    |                                  unsatisfied requirement introduced here: `(_, _): ValidGrouping<_>`
  
     
 error[E0277]: the trait bound `SelectStatement<_, _, _, _, _, _, _>: SelectDsl<_>` is not satisfied

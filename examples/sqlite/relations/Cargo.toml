@@ -15,3 +15,6 @@ dotenvy = "0.15.6"
 name = "relations"
 path = "src/main.rs"
 doc = false
+
+[lints]
+workspace = true

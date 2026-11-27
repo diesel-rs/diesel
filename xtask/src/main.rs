@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout, reason = "Dev tooling")]
 use std::fmt::Display;
 
 use clap::{Parser, ValueEnum};

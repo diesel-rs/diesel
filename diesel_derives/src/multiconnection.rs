@@ -268,7 +268,7 @@ fn generate_connection_impl(
                     #load_query
                     Box::pin(async move {
                         Ok(Box::pin(
-                            futures_util::StreamExt::map(r.await?, |result| result.map(super::row::MultiRow::#variant_ident))
+                            diesel_async::futures_util::StreamExt::map(r.await?, |result| result.map(super::row::MultiRow::#variant_ident))
                         ) as Self::Stream<'conn, 'query>)
                     })
                 }
@@ -276,9 +276,9 @@ fn generate_connection_impl(
         });
         quote::quote! {
             impl #conn_load for MultiConnection {
-                type LoadFuture<'conn, 'query> = futures_util::future::BoxFuture<'conn, diesel::QueryResult<Self::Stream<'conn, 'query>>>;
-                type ExecuteFuture<'conn, 'query> = futures_util::future::BoxFuture<'conn, diesel::QueryResult<usize>>;
-                type Stream<'conn, 'query> = futures_util::stream::BoxStream<'conn, diesel::QueryResult<Self::Row<'conn, 'query>>>;
+                type LoadFuture<'conn, 'query> = diesel_async::futures_util::future::BoxFuture<'conn, diesel::QueryResult<Self::Stream<'conn, 'query>>>;
+                type ExecuteFuture<'conn, 'query> = diesel_async::futures_util::future::BoxFuture<'conn, diesel::QueryResult<usize>>;
+                type Stream<'conn, 'query> = diesel_async::futures_util::stream::BoxStream<'conn, diesel::QueryResult<Self::Row<'conn, 'query>>>;
                 type Row<'conn, 'query> = super::MultiRow<'conn, 'query>;
 
                 type Backend = super::MultiBackend;
@@ -972,6 +972,25 @@ fn generate_bind_collector(
     .map(|p| quote::quote! {diesel::internal::derives::multiconnection::expand_time!{#p}});
     to_sql_impls.extend(time_impls);
 
+    let jiff_impls = [
+        (
+            quote::quote!(diesel::sql_types::Timestamp),
+            quote::quote!(diesel::internal::derives::multiconnection::jiff::civil::DateTime),
+        ),
+        (
+            quote::quote!(diesel::sql_types::Time),
+            quote::quote!(diesel::internal::derives::multiconnection::jiff::civil::Time),
+        ),
+        (
+            quote::quote!(diesel::sql_types::Date),
+            quote::quote!(diesel::internal::derives::multiconnection::jiff::civil::Date),
+        ),
+    ]
+    .into_iter()
+    .map(|t| generate_to_sql_impls(t, connection_types))
+    .map(|p| quote::quote! {diesel::internal::derives::multiconnection::expand_jiff!{#p}});
+    to_sql_impls.extend(jiff_impls);
+
     let mut from_sql_impls = [
         (
             quote::quote!(diesel::sql_types::SmallInt),
@@ -1048,6 +1067,25 @@ fn generate_bind_collector(
         }
     });
     from_sql_impls.extend(time_impls);
+
+    let jiff_impls = [
+        (
+            quote::quote!(diesel::sql_types::Timestamp),
+            quote::quote!(diesel::internal::derives::multiconnection::jiff::civil::DateTime),
+        ),
+        (
+            quote::quote!(diesel::sql_types::Time),
+            quote::quote!(diesel::internal::derives::multiconnection::jiff::civil::Time),
+        ),
+        (
+            quote::quote!(diesel::sql_types::Date),
+            quote::quote!(diesel::internal::derives::multiconnection::jiff::civil::Date),
+        ),
+    ]
+    .into_iter()
+    .map(generate_from_sql_impls)
+    .map(|p| quote::quote! {diesel::internal::derives::multiconnection::expand_jiff!{#p}});
+    from_sql_impls.extend(jiff_impls);
 
     let into_bind_value_bounds = connection_types.iter().map(|c| {
         let ty = c.ty;
