@@ -63,6 +63,7 @@ use crate::query_builder::*;
 use crate::result::*;
 use crate::sql_types::TypeMetadata;
 use crate::sqlite::Sqlite;
+use alloc::ffi::CString;
 #[cfg(not(miri))]
 use alloc::string::String;
 use core::ffi as libc;
@@ -225,25 +226,73 @@ pub struct SqliteConnection {
 unsafe impl Send for SqliteConnection {}
 
 impl SimpleConnection for SqliteConnection {
+    /// Executes the statements of `query` one at a time and stops at the first error.
+    ///
+    /// Each statement gets its own [`StartQuery`](InstrumentationEvent::StartQuery) and
+    /// [`FinishQuery`](InstrumentationEvent::FinishQuery) events, and statements without
+    /// SQL (whitespace, comments, `;`) get none. `StartQuery` follows the statement's
+    /// preparation, as SQLite only knows where a statement ends once it has prepared it,
+    /// so effects SQLite performs while preparing (some `PRAGMA`s, the authorizer) precede
+    /// it. A statement that fails to prepare is reported with the whole rest of `query`.
     fn batch_execute(&mut self, query: &str) -> QueryResult<()> {
         if self.transaction_state.status.is_rolled_back_by_database() {
             return Err(Error::TransactionRolledBackByDatabase);
         }
+        let sql = match CString::new(query) {
+            Ok(sql) => sql,
+            Err(error) => return self.report_batch_statement(query, || Err(error.into())),
+        };
+        let mut start = 0;
+        loop {
+            // The whitespace `sqlite3_exec` skips, so event text starts at the statement.
+            start += query.as_bytes()[start..]
+                .iter()
+                .take_while(|byte| matches!(byte, b'\t'..=b'\r' | b' '))
+                .count();
+            if start == query.len() {
+                return Ok(());
+            }
+            let (statement, end) =
+                match Statement::prepare_first(&self.raw_connection, &sql, start, 0) {
+                    Ok(prepared) => prepared,
+                    Err(error) => {
+                        return self.report_batch_statement(&query[start..], || Err(error));
+                    }
+                };
+            let text = query
+                .get(start..end)
+                .filter(|text| !text.is_empty())
+                .expect("SQLite consumes at least one token of non-blank text");
+            start = end;
+            if let Some(statement) = statement {
+                self.report_batch_statement(text, || statement.run_to_completion())?;
+            }
+        }
+    }
+}
+
+impl SqliteConnection {
+    /// Runs one `batch_execute` statement between its instrumentation events.
+    fn report_batch_statement(
+        &mut self,
+        text: &str,
+        run: impl FnOnce() -> QueryResult<()>,
+    ) -> QueryResult<()> {
         self.instrumentation
             .on_connection_event(InstrumentationEvent::StartQuery {
-                query: &StrQueryHelper::new(query),
+                query: &StrQueryHelper::new(text),
             });
-        let resp = self.raw_connection.exec(query);
+        let result = run();
         self.instrumentation
             .on_connection_event(InstrumentationEvent::FinishQuery {
-                query: &StrQueryHelper::new(query),
-                error: resp.as_ref().err(),
+                query: &StrQueryHelper::new(text),
+                error: result.as_ref().err(),
             });
-        if resp.is_err() && self.raw_connection.is_autocommit() {
+        if result.is_err() && self.raw_connection.is_autocommit() {
             // SQLite ends the transaction on some failures, e.g. an aborting commit hook.
             self.transaction_state.status.set_rolled_back_by_database();
         }
-        resp
+        result
     }
 }
 
@@ -841,7 +890,7 @@ impl SqliteConnection {
                             crate::connection::statement_cache::PrepareForCache::No,
                             &[],
                         )?
-                        .run()?;
+                        .run_to_completion()?;
                         Ok(0) // have to return *something*
                     },
                 )
@@ -1040,6 +1089,250 @@ mod tests {
         });
         assert_eq!(result, Err(Error::RollbackTransaction));
         assert!(!connection.in_transaction());
+    }
+
+    crate::table! {
+        batch_records (value) {
+            value -> Integer,
+        }
+    }
+
+    /// A `StartQuery` (`true`) or `FinishQuery` (`false`) event with its text and error message.
+    type QueryEvent = (bool, String, Option<String>);
+
+    fn start(query: &str) -> QueryEvent {
+        (true, query.into(), None)
+    }
+
+    fn finish(query: &str, error: Option<&str>) -> QueryEvent {
+        (false, query.into(), error.map(Into::into))
+    }
+
+    fn record_query_events(
+        connection: &mut SqliteConnection,
+    ) -> std::sync::Arc<std::sync::Mutex<Vec<QueryEvent>>> {
+        let events = std::sync::Arc::<std::sync::Mutex<Vec<QueryEvent>>>::default();
+        let sink = std::sync::Arc::clone(&events);
+        connection.set_instrumentation(move |event: InstrumentationEvent<'_>| {
+            let event = match event {
+                InstrumentationEvent::StartQuery { query, .. } => start(&query.to_string()),
+                InstrumentationEvent::FinishQuery { query, error, .. } => (
+                    false,
+                    query.to_string(),
+                    error.map(alloc::string::ToString::to_string),
+                ),
+                _ => return,
+            };
+            sink.lock().unwrap().push(event);
+        });
+        events
+    }
+
+    fn take_query_events(events: &std::sync::Mutex<Vec<QueryEvent>>) -> Vec<QueryEvent> {
+        core::mem::take(&mut *events.lock().unwrap())
+    }
+
+    fn batch_values(connection: &mut SqliteConnection) -> Vec<i32> {
+        batch_records::table
+            .select(batch_records::value)
+            .order(batch_records::value)
+            .load(connection)
+            .unwrap()
+    }
+
+    #[diesel_test_helper::test]
+    fn batch_execute_reports_each_statement() {
+        let connection = &mut connection();
+        let events = record_query_events(connection);
+
+        connection
+            .batch_execute(
+                "CREATE TABLE batch_records(value INTEGER UNIQUE);
+                 INSERT INTO batch_records VALUES (1);INSERT INTO batch_records VALUES (2);
+                 -- trailing comment
+                 /* tail */ ;",
+            )
+            .unwrap();
+        assert_eq!(
+            take_query_events(&events),
+            [
+                start("CREATE TABLE batch_records(value INTEGER UNIQUE);"),
+                finish("CREATE TABLE batch_records(value INTEGER UNIQUE);", None),
+                start("INSERT INTO batch_records VALUES (1);"),
+                finish("INSERT INTO batch_records VALUES (1);", None),
+                start("INSERT INTO batch_records VALUES (2);"),
+                finish("INSERT INTO batch_records VALUES (2);", None),
+            ]
+        );
+
+        connection.batch_execute("").unwrap();
+        connection
+            .batch_execute(" \n-- a comment\n/* another */ ; ;")
+            .unwrap();
+        assert_eq!(take_query_events(&events), []);
+        assert_eq!(batch_values(connection), [1, 2]);
+    }
+
+    #[diesel_test_helper::test]
+    fn batch_execute_reports_a_trigger_definition_as_one_statement() {
+        const TRIGGER: &str = "CREATE TRIGGER expand AFTER INSERT ON batch_records \
+            WHEN new.value = 1 BEGIN INSERT INTO batch_records VALUES (2); \
+            INSERT INTO batch_records VALUES (3); END;";
+        let connection = &mut connection();
+        connection
+            .batch_execute("CREATE TABLE batch_records(value INTEGER UNIQUE)")
+            .unwrap();
+        let events = record_query_events(connection);
+
+        connection
+            .batch_execute(&format!(
+                "{TRIGGER}INSERT INTO batch_records VALUES (1);PRAGMA table_info(batch_records);"
+            ))
+            .unwrap();
+        assert_eq!(
+            take_query_events(&events),
+            [
+                start(TRIGGER),
+                finish(TRIGGER, None),
+                start("INSERT INTO batch_records VALUES (1);"),
+                finish("INSERT INTO batch_records VALUES (1);", None),
+                start("PRAGMA table_info(batch_records);"),
+                finish("PRAGMA table_info(batch_records);", None),
+            ]
+        );
+        assert_eq!(batch_values(connection), [1, 2, 3]);
+    }
+
+    #[diesel_test_helper::test]
+    #[cfg(not(miri))] // reads the error message allocated by the native library
+    fn batch_execute_stops_at_the_first_failing_statement() {
+        let connection = &mut connection();
+        connection
+            .batch_execute("CREATE TABLE batch_records(value INTEGER UNIQUE)")
+            .unwrap();
+        let events = record_query_events(connection);
+
+        let result = connection.batch_execute(
+            "INSERT INTO batch_records VALUES (1);\
+             INSERT INTO batch_records VALUES (1);\
+             INSERT INTO batch_records VALUES (3);",
+        );
+        assert!(
+            matches!(
+                &result,
+                Err(Error::DatabaseError(DatabaseErrorKind::UniqueViolation, info))
+                    if info.message() == "UNIQUE constraint failed: batch_records.value"
+            ),
+            "{result:?}"
+        );
+        assert_eq!(
+            take_query_events(&events),
+            [
+                start("INSERT INTO batch_records VALUES (1);"),
+                finish("INSERT INTO batch_records VALUES (1);", None),
+                start("INSERT INTO batch_records VALUES (1);"),
+                finish(
+                    "INSERT INTO batch_records VALUES (1);",
+                    Some("UNIQUE constraint failed: batch_records.value")
+                ),
+            ]
+        );
+        assert_eq!(batch_values(connection), [1]);
+    }
+
+    #[diesel_test_helper::test]
+    #[cfg(not(miri))] // reads the error message allocated by the native library
+    fn batch_execute_reports_a_failed_preparation_with_the_unexecuted_rest() {
+        const MISSING: &str =
+            "INSERT INTO missing VALUES (2);INSERT INTO batch_records VALUES (3);";
+        const BROKEN: &str = "SELECT FROM broken;INSERT INTO batch_records VALUES (3);";
+        let connection = &mut connection();
+        connection
+            .batch_execute("CREATE TABLE batch_records(value INTEGER UNIQUE)")
+            .unwrap();
+        let events = record_query_events(connection);
+
+        let result = connection.batch_execute(&format!(
+            "INSERT INTO batch_records VALUES (1);\n  {MISSING}"
+        ));
+        assert_eq!(
+            result.map_err(|error| error.to_string()),
+            Err("no such table: missing".into())
+        );
+        assert_eq!(
+            take_query_events(&events),
+            [
+                start("INSERT INTO batch_records VALUES (1);"),
+                finish("INSERT INTO batch_records VALUES (1);", None),
+                start(MISSING),
+                finish(MISSING, Some("no such table: missing")),
+            ]
+        );
+
+        let result = connection.batch_execute(BROKEN);
+        assert_eq!(
+            result.map_err(|error| error.to_string()),
+            Err("near \"FROM\": syntax error".into())
+        );
+        assert_eq!(
+            take_query_events(&events),
+            [
+                start(BROKEN),
+                finish(BROKEN, Some("near \"FROM\": syntax error"))
+            ]
+        );
+        assert_eq!(batch_values(connection), [1]);
+    }
+
+    #[diesel_test_helper::test]
+    #[cfg(not(miri))] // reads the error message allocated by the native library
+    fn batch_execute_stops_after_an_implicit_rollback() {
+        let connection = &mut connection();
+        connection
+            .batch_execute(
+                "CREATE TABLE batch_records(value INTEGER UNIQUE ON CONFLICT ROLLBACK);
+                 INSERT INTO batch_records VALUES (1);",
+            )
+            .unwrap();
+        let events = record_query_events(connection);
+
+        let result = connection.transaction(|connection| {
+            connection.batch_execute(
+                "INSERT INTO batch_records VALUES (2);\
+                 INSERT INTO batch_records VALUES (1);\
+                 INSERT INTO batch_records VALUES (3);",
+            )
+        });
+        assert!(
+            matches!(
+                result,
+                Err(Error::DatabaseError(DatabaseErrorKind::UniqueViolation, _))
+            ),
+            "{result:?}"
+        );
+        assert_eq!(
+            take_query_events(&events),
+            [
+                start("BEGIN"),
+                finish("BEGIN", None),
+                start("INSERT INTO batch_records VALUES (2);"),
+                finish("INSERT INTO batch_records VALUES (2);", None),
+                start("INSERT INTO batch_records VALUES (1);"),
+                finish(
+                    "INSERT INTO batch_records VALUES (1);",
+                    Some("UNIQUE constraint failed: batch_records.value")
+                ),
+            ]
+        );
+        assert!(!connection.in_transaction());
+        assert_eq!(
+            Ok(None),
+            <AnsiTransactionManager as TransactionManager<SqliteConnection>>::transaction_manager_status_mut(
+                connection
+            )
+            .transaction_depth()
+        );
+        assert_eq!(batch_values(connection), [1]);
     }
 
     #[diesel_test_helper::test]

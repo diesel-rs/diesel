@@ -50,37 +50,71 @@ impl Statement {
         is_cached: PrepareForCache,
         _: &[SqliteType],
     ) -> QueryResult<Self> {
-        let mut stmt = ptr::null_mut();
-        let mut unused_portion = ptr::null();
-        let n_byte = sql
-            .len()
-            .try_into()
-            .map_err(|e| Error::SerializationError(Box::new(e)))?;
         // the cast for `ffi::SQLITE_PREPARE_PERSISTENT` is required for old libsqlite3-sys versions
         #[allow(clippy::unnecessary_cast)]
+        let flags = if matches!(is_cached, PrepareForCache::Yes { counter: _ }) {
+            ffi::SQLITE_PREPARE_PERSISTENT as u32
+        } else {
+            0
+        };
+        let sql = CString::new(sql)?;
+        let (statement, _) = Self::prepare_first(raw_connection, &sql, 0, flags)?;
+        // sqlite3_prepare_v3 returns a null pointer for empty statements. This includes
+        // empty or only whitespace strings or any other non-op query string like a comment
+        statement.ok_or_else(|| {
+            crate::result::Error::QueryBuilderError(Box::new(crate::result::EmptyQuery))
+        })
+    }
+
+    /// Prepares the first statement of `sql[start..]`, returning `None` for text without one, and the offset where SQLite stopped.
+    pub(super) fn prepare_first(
+        raw_connection: &RawConnection,
+        sql: &CStr,
+        start: usize,
+        flags: u32,
+    ) -> QueryResult<(Option<Self>, usize)> {
+        // A suffix of a C string's bytes is NUL terminated and holds no other NUL.
+        let rest = &sql.to_bytes_with_nul()[start..];
+        let mut stmt = ptr::null_mut();
+        let mut tail = ptr::null();
+        // SAFETY: the connection is open, `rest` is NUL terminated and outlives the call, and
+        // both output slots are writable.
         let prepare_result = unsafe {
             ffi::sqlite3_prepare_v3(
                 raw_connection.internal_connection.as_ptr(),
-                CString::new(sql)?.as_ptr(),
-                n_byte,
-                if matches!(is_cached, PrepareForCache::Yes { counter: _ }) {
-                    ffi::SQLITE_PREPARE_PERSISTENT as u32
-                } else {
-                    0
-                },
+                rest.as_ptr().cast(),
+                -1,
+                flags,
                 &mut stmt,
-                &mut unused_portion,
+                &mut tail,
             )
         };
-
         ensure_sqlite_ok(prepare_result, raw_connection.internal_connection.as_ptr())?;
+        let statement = NonNull::new(stmt).map(|inner_statement| Statement { inner_statement });
+        let end = tail
+            .addr()
+            .checked_sub(sql.as_ptr().addr())
+            .filter(|end| (start..=sql.count_bytes()).contains(end))
+            .expect("SQLite returns a tail pointer into the prepared text");
+        Ok((statement, end))
+    }
 
-        // sqlite3_prepare_v3 returns a null pointer for empty statements. This includes
-        // empty or only whitespace strings or any other non-op query string like a comment
-        let inner_statement = NonNull::new(stmt).ok_or_else(|| {
-            crate::result::Error::QueryBuilderError(Box::new(crate::result::EmptyQuery))
-        })?;
-        Ok(Statement { inner_statement })
+    /// Steps the statement until it is done, discarding every row, then finalizes it.
+    pub(super) fn run_to_completion(self) -> QueryResult<()> {
+        loop {
+            // SAFETY: `inner_statement` stays a live prepared statement until it is finalized.
+            match unsafe { ffi::sqlite3_step(self.inner_statement.as_ptr()) } {
+                ffi::SQLITE_ROW => {}
+                ffi::SQLITE_DONE => break,
+                // `Drop` finalizes, which only repeats this error.
+                _ => return Err(last_error(self.raw_connection())),
+            }
+        }
+        let statement = core::mem::ManuallyDrop::new(self);
+        let raw_connection = statement.raw_connection();
+        // SAFETY: `ManuallyDrop` keeps `Drop` from finalizing the statement a second time.
+        let result = unsafe { ffi::sqlite3_finalize(statement.inner_statement.as_ptr()) };
+        ensure_sqlite_ok(result, raw_connection)
     }
 
     // The caller of this function has to ensure that:
@@ -207,21 +241,6 @@ impl Statement {
 
     fn reset(&mut self) {
         unsafe { ffi::sqlite3_reset(self.inner_statement.as_ptr()) };
-    }
-
-    /// Steps the statement once for its side effects.
-    #[cfg(not(miri))]
-    pub(super) fn run(&mut self) -> QueryResult<()> {
-        // SAFETY: `inner_statement` stays a live prepared statement until `Drop`.
-        match unsafe { ffi::sqlite3_step(self.inner_statement.as_ptr()) } {
-            ffi::SQLITE_DONE | ffi::SQLITE_ROW => Ok(()),
-            _ => {
-                let error = last_error(self.raw_connection());
-                // Clears the step error so that `Drop` finalizes successfully.
-                self.reset();
-                Err(error)
-            }
-        }
     }
 
     fn clear_bindings(&mut self) {

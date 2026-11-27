@@ -29,6 +29,8 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ### Changed
 
+* `SqliteConnection::batch_execute` now executes its statements one at a time and reports each one to the connection's `Instrumentation` with its own `StartQuery` and `FinishQuery` events, so the statement that failed is visible. Text without a statement, such as an empty string or a comment, produces no events
+
 
 ## [2.4.0] 2026-11-13
 

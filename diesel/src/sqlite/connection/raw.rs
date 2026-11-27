@@ -151,23 +151,6 @@ impl RawConnection {
         }
     }
 
-    pub(super) fn exec(&self, query: &str) -> QueryResult<()> {
-        let query = CString::new(query)?;
-        let callback_fn = None;
-        let callback_arg = ptr::null_mut();
-        let result = unsafe {
-            ffi::sqlite3_exec(
-                self.internal_connection.as_ptr(),
-                query.as_ptr(),
-                callback_fn,
-                callback_arg,
-                ptr::null_mut(),
-            )
-        };
-
-        ensure_sqlite_ok(result, self.internal_connection.as_ptr())
-    }
-
     pub(super) fn rows_affected_by_last_query(
         &self,
     ) -> Result<usize, Box<dyn core::error::Error + Send + Sync>> {
@@ -1769,6 +1752,24 @@ mod tests {
 
     fn test_connection() -> RawConnection {
         RawConnection::establish(":memory:").expect("failed to establish :memory: connection")
+    }
+
+    impl RawConnection {
+        /// Runs `query` through `sqlite3_exec`, bypassing `SqliteConnection`.
+        fn exec(&self, query: &str) -> QueryResult<()> {
+            let query = CString::new(query)?;
+            // SAFETY: the connection is open and `query` is NUL terminated and outlives the call.
+            let result = unsafe {
+                ffi::sqlite3_exec(
+                    self.internal_connection.as_ptr(),
+                    query.as_ptr(),
+                    None,
+                    ptr::null_mut(),
+                    ptr::null_mut(),
+                )
+            };
+            ensure_sqlite_ok(result, self.internal_connection.as_ptr())
+        }
     }
 
     #[test]
