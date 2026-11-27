@@ -1,0 +1,214 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/jiff-1.0.3/src/tz/tzif.rs`."><title>tzif.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-1e18a8e7.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="jiff" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (6c709eb42 2026-11-25)" data-channel="nightly" data-search-js="search-085293d4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../../static.files/storage-41dd4d93.js"></script><script defer src="../../../static.files/src-script-813739b1.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">jiff/tz/</div>tzif.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">/*!
+<a href=#2 id=2 data-nosnippet>2</a>Contains some tests for the TZif parser in `jiff-core`.
+<a href=#3 id=3 data-nosnippet>3</a>
+<a href=#4 id=4 data-nosnippet>4</a>These tests are a little awkward to have live in `jiff-core` because of the use
+<a href=#5 id=5 data-nosnippet>5</a>of `insta` and because I didn't want to duplicate the time zone data at the
+<a href=#6 id=6 data-nosnippet>6</a>time of writing. For the former, I didn't want to use `insta` in `jiff-core`
+<a href=#7 id=7 data-nosnippet>7</a>because I've found it to be somewhat painful to use.
+<a href=#8 id=8 data-nosnippet>8</a>*/
+<a href=#9 id=9 data-nosnippet>9</a>
+<a href=#10 id=10 data-nosnippet>10</a></span><span class="attr">#[cfg(all(test, feature = <span class="string">"alloc"</span>))]
+<a href=#11 id=11 data-nosnippet>11</a></span><span class="kw">mod </span>tests {
+<a href=#12 id=12 data-nosnippet>12</a>    <span class="kw">use </span>alloc::{
+<a href=#13 id=13 data-nosnippet>13</a>        string::{String, ToString},
+<a href=#14 id=14 data-nosnippet>14</a>        vec,
+<a href=#15 id=15 data-nosnippet>15</a>    };
+<a href=#16 id=16 data-nosnippet>16</a>
+<a href=#17 id=17 data-nosnippet>17</a>    <span class="kw">use </span>jcore::tz::tzif;
+<a href=#18 id=18 data-nosnippet>18</a>
+<a href=#19 id=19 data-nosnippet>19</a>    <span class="attr">#[cfg(not(miri))]
+<a href=#20 id=20 data-nosnippet>20</a>    </span><span class="kw">use </span><span class="kw">crate</span>::tz::testdata::TZIF_TEST_FILES;
+<a href=#21 id=21 data-nosnippet>21</a>
+<a href=#22 id=22 data-nosnippet>22</a>    <span class="doccomment">/// This converts TZif data into a human readable format.
+<a href=#23 id=23 data-nosnippet>23</a>    ///
+<a href=#24 id=24 data-nosnippet>24</a>    /// This is useful for debugging (via `./scripts/jiff-debug tzif`), but we
+<a href=#25 id=25 data-nosnippet>25</a>    /// also use it for snapshot testing to make reading the test output at
+<a href=#26 id=26 data-nosnippet>26</a>    /// least *somewhat* comprehensible for humans. Otherwise, one needs to
+<a href=#27 id=27 data-nosnippet>27</a>    /// read and understand Unix timestamps. That ain't going to fly.
+<a href=#28 id=28 data-nosnippet>28</a>    ///
+<a href=#29 id=29 data-nosnippet>29</a>    /// For this to work, we make sure everything in a `Tzif` value is
+<a href=#30 id=30 data-nosnippet>30</a>    /// represented in some way in this output.
+<a href=#31 id=31 data-nosnippet>31</a>    </span><span class="kw">fn </span>tzif_to_human_readable(tzif: <span class="kw-2">&amp;</span>tzif::TimeZone) -&gt; String {
+<a href=#32 id=32 data-nosnippet>32</a>        <span class="kw">use </span>std::io::Write;
+<a href=#33 id=33 data-nosnippet>33</a>
+<a href=#34 id=34 data-nosnippet>34</a>        <span class="kw">struct </span>IndicatorDisplay(tzif::Indicator);
+<a href=#35 id=35 data-nosnippet>35</a>
+<a href=#36 id=36 data-nosnippet>36</a>        <span class="kw">impl </span>core::fmt::Display <span class="kw">for </span>IndicatorDisplay {
+<a href=#37 id=37 data-nosnippet>37</a>            <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>core::fmt::Formatter) -&gt; core::fmt::Result {
+<a href=#38 id=38 data-nosnippet>38</a>                <span class="kw">match </span><span class="self">self</span>.<span class="number">0 </span>{
+<a href=#39 id=39 data-nosnippet>39</a>                    tzif::Indicator::LocalWall =&gt; <span class="macro">write!</span>(f, <span class="string">"local/wall"</span>),
+<a href=#40 id=40 data-nosnippet>40</a>                    tzif::Indicator::LocalStandard =&gt; <span class="macro">write!</span>(f, <span class="string">"local/std"</span>),
+<a href=#41 id=41 data-nosnippet>41</a>                    tzif::Indicator::UTStandard =&gt; <span class="macro">write!</span>(f, <span class="string">"ut/std"</span>),
+<a href=#42 id=42 data-nosnippet>42</a>                }
+<a href=#43 id=43 data-nosnippet>43</a>            }
+<a href=#44 id=44 data-nosnippet>44</a>        }
+<a href=#45 id=45 data-nosnippet>45</a>
+<a href=#46 id=46 data-nosnippet>46</a>        <span class="kw">fn </span>datetime(dt: tzif::DateTime) -&gt; <span class="kw">crate</span>::civil::DateTime {
+<a href=#47 id=47 data-nosnippet>47</a>            <span class="kw">crate</span>::civil::DateTime::constant(
+<a href=#48 id=48 data-nosnippet>48</a>                dt.year(),
+<a href=#49 id=49 data-nosnippet>49</a>                dt.month(),
+<a href=#50 id=50 data-nosnippet>50</a>                dt.day(),
+<a href=#51 id=51 data-nosnippet>51</a>                dt.hour(),
+<a href=#52 id=52 data-nosnippet>52</a>                dt.minute(),
+<a href=#53 id=53 data-nosnippet>53</a>                dt.second(),
+<a href=#54 id=54 data-nosnippet>54</a>                <span class="number">0</span>,
+<a href=#55 id=55 data-nosnippet>55</a>            )
+<a href=#56 id=56 data-nosnippet>56</a>        }
+<a href=#57 id=57 data-nosnippet>57</a>
+<a href=#58 id=58 data-nosnippet>58</a>        <span class="kw">let </span><span class="kw-2">mut </span>out = tabwriter::TabWriter::new(<span class="macro">vec!</span>[])
+<a href=#59 id=59 data-nosnippet>59</a>            .alignment(tabwriter::Alignment::Left);
+<a href=#60 id=60 data-nosnippet>60</a>
+<a href=#61 id=61 data-nosnippet>61</a>        <span class="macro">writeln!</span>(out, <span class="string">"TIME ZONE VERSION"</span>).unwrap();
+<a href=#62 id=62 data-nosnippet>62</a>        <span class="macro">writeln!</span>(out, <span class="string">"  {}"</span>, char::try_from(tzif.version).unwrap()).unwrap();
+<a href=#63 id=63 data-nosnippet>63</a>
+<a href=#64 id=64 data-nosnippet>64</a>        <span class="macro">writeln!</span>(out, <span class="string">"LOCAL TIME TYPES"</span>).unwrap();
+<a href=#65 id=65 data-nosnippet>65</a>        <span class="kw">for </span>(i, typ) <span class="kw">in </span>tzif.types.iter().enumerate() {
+<a href=#66 id=66 data-nosnippet>66</a>            <span class="macro">writeln!</span>(
+<a href=#67 id=67 data-nosnippet>67</a>                out,
+<a href=#68 id=68 data-nosnippet>68</a>                <span class="string">"  {i:03}:\toffset={off}\t\
+<a href=#69 id=69 data-nosnippet>69</a>                   designation={desig}\t{dst}\tindicator={ind}"</span>,
+<a href=#70 id=70 data-nosnippet>70</a>                off = jcore::tz::Offset::from_seconds(typ.offset.seconds())
+<a href=#71 id=71 data-nosnippet>71</a>                    .unwrap(),
+<a href=#72 id=72 data-nosnippet>72</a>                desig = tzif.designations[usize::from(typ.designation)],
+<a href=#73 id=73 data-nosnippet>73</a>                dst = <span class="kw">if </span>typ.dst.is_dst() { <span class="string">"dst" </span>} <span class="kw">else </span>{ <span class="string">"" </span>},
+<a href=#74 id=74 data-nosnippet>74</a>                ind = IndicatorDisplay(typ.indicator),
+<a href=#75 id=75 data-nosnippet>75</a>            )
+<a href=#76 id=76 data-nosnippet>76</a>            .unwrap();
+<a href=#77 id=77 data-nosnippet>77</a>        }
+<a href=#78 id=78 data-nosnippet>78</a>        <span class="kw">if </span>!tzif.transitions.timestamps.is_empty() {
+<a href=#79 id=79 data-nosnippet>79</a>            <span class="macro">writeln!</span>(out, <span class="string">"TRANSITIONS"</span>).unwrap();
+<a href=#80 id=80 data-nosnippet>80</a>            <span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..tzif.transitions.timestamps.len() {
+<a href=#81 id=81 data-nosnippet>81</a>                <span class="kw">let </span>trans = <span class="kw-2">&amp;</span>tzif.transitions;
+<a href=#82 id=82 data-nosnippet>82</a>                <span class="kw">let </span>timestamp = trans.timestamps[i];
+<a href=#83 id=83 data-nosnippet>83</a>                <span class="kw">let </span>dt = jcore::tz::Offset::UTC
+<a href=#84 id=84 data-nosnippet>84</a>                    .to_datetime(timestamp.to_standard_timestamp());
+<a href=#85 id=85 data-nosnippet>85</a>                <span class="kw">let </span>typ = tzif.types[usize::from(trans.infos[i].type_index)];
+<a href=#86 id=86 data-nosnippet>86</a>                <span class="kw">let </span>wall =
+<a href=#87 id=87 data-nosnippet>87</a>                    <span class="macro">alloc::format!</span>(<span class="string">"{}"</span>, datetime(trans.civil_starts[i]));
+<a href=#88 id=88 data-nosnippet>88</a>                <span class="kw">let </span>ambiguous = <span class="kw">match </span>trans.infos[i].kind {
+<a href=#89 id=89 data-nosnippet>89</a>                    tzif::TransitionKind::Unambiguous =&gt; {
+<a href=#90 id=90 data-nosnippet>90</a>                        <span class="string">"unambiguous"</span>.to_string()
+<a href=#91 id=91 data-nosnippet>91</a>                    }
+<a href=#92 id=92 data-nosnippet>92</a>                    tzif::TransitionKind::Gap =&gt; {
+<a href=#93 id=93 data-nosnippet>93</a>                        <span class="kw">let </span>end = datetime(trans.civil_ends[i]);
+<a href=#94 id=94 data-nosnippet>94</a>                        <span class="macro">alloc::format!</span>(<span class="string">" gap-until({end})"</span>)
+<a href=#95 id=95 data-nosnippet>95</a>                    }
+<a href=#96 id=96 data-nosnippet>96</a>                    tzif::TransitionKind::Fold =&gt; {
+<a href=#97 id=97 data-nosnippet>97</a>                        <span class="kw">let </span>end = datetime(trans.civil_ends[i]);
+<a href=#98 id=98 data-nosnippet>98</a>                        <span class="macro">alloc::format!</span>(<span class="string">"fold-until({end})"</span>)
+<a href=#99 id=99 data-nosnippet>99</a>                    }
+<a href=#100 id=100 data-nosnippet>100</a>                };
+<a href=#101 id=101 data-nosnippet>101</a>
+<a href=#102 id=102 data-nosnippet>102</a>                <span class="macro">writeln!</span>(
+<a href=#103 id=103 data-nosnippet>103</a>                    out,
+<a href=#104 id=104 data-nosnippet>104</a>                    <span class="string">"  {i:04}:\t{dt:?}Z\tunix={ts}\twall={wall}\t\
+<a href=#105 id=105 data-nosnippet>105</a>                       {ambiguous}\t\
+<a href=#106 id=106 data-nosnippet>106</a>                       type={type_index}\t{off}\t\
+<a href=#107 id=107 data-nosnippet>107</a>                       {desig}\t{dst}"</span>,
+<a href=#108 id=108 data-nosnippet>108</a>                    ts = timestamp.as_second(),
+<a href=#109 id=109 data-nosnippet>109</a>                    type_index = trans.infos[i].type_index,
+<a href=#110 id=110 data-nosnippet>110</a>                    off =
+<a href=#111 id=111 data-nosnippet>111</a>                        jcore::tz::Offset::from_seconds(typ.offset.seconds())
+<a href=#112 id=112 data-nosnippet>112</a>                            .unwrap(),
+<a href=#113 id=113 data-nosnippet>113</a>                    desig = tzif.designations[usize::from(typ.designation)],
+<a href=#114 id=114 data-nosnippet>114</a>                    dst = <span class="kw">if </span>typ.dst.is_dst() { <span class="string">"dst" </span>} <span class="kw">else </span>{ <span class="string">"" </span>},
+<a href=#115 id=115 data-nosnippet>115</a>                )
+<a href=#116 id=116 data-nosnippet>116</a>                .unwrap();
+<a href=#117 id=117 data-nosnippet>117</a>            }
+<a href=#118 id=118 data-nosnippet>118</a>        }
+<a href=#119 id=119 data-nosnippet>119</a>        <span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw-2">ref </span>posix_tz) = tzif.posix_tz {
+<a href=#120 id=120 data-nosnippet>120</a>            <span class="macro">writeln!</span>(out, <span class="string">"POSIX TIME ZONE STRING"</span>).unwrap();
+<a href=#121 id=121 data-nosnippet>121</a>            <span class="macro">writeln!</span>(
+<a href=#122 id=122 data-nosnippet>122</a>                out,
+<a href=#123 id=123 data-nosnippet>123</a>                <span class="string">"  {}"</span>,
+<a href=#124 id=124 data-nosnippet>124</a>                <span class="kw">crate</span>::tz::posix::TimeZoneFormatter(posix_tz)
+<a href=#125 id=125 data-nosnippet>125</a>            )
+<a href=#126 id=126 data-nosnippet>126</a>            .unwrap();
+<a href=#127 id=127 data-nosnippet>127</a>        }
+<a href=#128 id=128 data-nosnippet>128</a>        String::from_utf8(out.into_inner().unwrap()).unwrap()
+<a href=#129 id=129 data-nosnippet>129</a>    }
+<a href=#130 id=130 data-nosnippet>130</a>
+<a href=#131 id=131 data-nosnippet>131</a>    <span class="doccomment">/// DEBUG COMMAND
+<a href=#132 id=132 data-nosnippet>132</a>    ///
+<a href=#133 id=133 data-nosnippet>133</a>    /// Takes environment variable `JIFF_DEBUG_TZIF_PATH` as input, and treats
+<a href=#134 id=134 data-nosnippet>134</a>    /// the value as a TZif file path. This test will open the file, parse it
+<a href=#135 id=135 data-nosnippet>135</a>    /// as a TZif and then dump debug data about the file in a human readable
+<a href=#136 id=136 data-nosnippet>136</a>    /// plain text format.
+<a href=#137 id=137 data-nosnippet>137</a>    </span><span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
+<a href=#138 id=138 data-nosnippet>138</a>    #[test]
+<a href=#139 id=139 data-nosnippet>139</a>    </span><span class="kw">fn </span>debug_tzif() -&gt; anyhow::Result&lt;()&gt; {
+<a href=#140 id=140 data-nosnippet>140</a>        <span class="kw">use </span>anyhow::Context;
+<a href=#141 id=141 data-nosnippet>141</a>
+<a href=#142 id=142 data-nosnippet>142</a>        <span class="kw">let _ </span>= <span class="kw">crate</span>::logging::Logger::init();
+<a href=#143 id=143 data-nosnippet>143</a>
+<a href=#144 id=144 data-nosnippet>144</a>        <span class="kw">const </span>ENV: <span class="kw-2">&amp;</span>str = <span class="string">"JIFF_DEBUG_TZIF_PATH"</span>;
+<a href=#145 id=145 data-nosnippet>145</a>        <span class="kw">let </span><span class="prelude-val">Some</span>(val) = std::env::var_os(ENV) <span class="kw">else </span>{ <span class="kw">return </span><span class="prelude-val">Ok</span>(()) };
+<a href=#146 id=146 data-nosnippet>146</a>        <span class="kw">let </span><span class="prelude-val">Ok</span>(val) = val.into_string() <span class="kw">else </span>{
+<a href=#147 id=147 data-nosnippet>147</a>            <span class="macro">anyhow::bail!</span>(<span class="string">"{ENV} has invalid UTF-8"</span>)
+<a href=#148 id=148 data-nosnippet>148</a>        };
+<a href=#149 id=149 data-nosnippet>149</a>        <span class="kw">let </span>bytes =
+<a href=#150 id=150 data-nosnippet>150</a>            std::fs::read(<span class="kw-2">&amp;</span>val).with_context(|| <span class="macro">alloc::format!</span>(<span class="string">"{val:?}"</span>))<span class="question-mark">?</span>;
+<a href=#151 id=151 data-nosnippet>151</a>        <span class="kw">let </span>tzif = tzif::TimeZone::parse(<span class="kw-2">&amp;</span>bytes)<span class="question-mark">?</span>;
+<a href=#152 id=152 data-nosnippet>152</a>        <span class="macro">std::eprint!</span>(<span class="string">"{}"</span>, tzif_to_human_readable(<span class="kw-2">&amp;</span>tzif));
+<a href=#153 id=153 data-nosnippet>153</a>        <span class="prelude-val">Ok</span>(())
+<a href=#154 id=154 data-nosnippet>154</a>    }
+<a href=#155 id=155 data-nosnippet>155</a>
+<a href=#156 id=156 data-nosnippet>156</a>    <span class="attr">#[cfg(not(miri))]
+<a href=#157 id=157 data-nosnippet>157</a>    #[test]
+<a href=#158 id=158 data-nosnippet>158</a>    </span><span class="kw">fn </span>tzif_parse_v2plus() {
+<a href=#159 id=159 data-nosnippet>159</a>        <span class="kw">for </span>tzif_test <span class="kw">in </span>TZIF_TEST_FILES {
+<a href=#160 id=160 data-nosnippet>160</a>            <span class="macro">insta::assert_snapshot!</span>(
+<a href=#161 id=161 data-nosnippet>161</a>                <span class="macro">alloc::format!</span>(<span class="string">"{}_v2+"</span>, tzif_test.name),
+<a href=#162 id=162 data-nosnippet>162</a>                tzif_to_human_readable(<span class="kw-2">&amp;</span>tzif_test.parse())
+<a href=#163 id=163 data-nosnippet>163</a>            );
+<a href=#164 id=164 data-nosnippet>164</a>        }
+<a href=#165 id=165 data-nosnippet>165</a>    }
+<a href=#166 id=166 data-nosnippet>166</a>
+<a href=#167 id=167 data-nosnippet>167</a>    <span class="attr">#[cfg(not(miri))]
+<a href=#168 id=168 data-nosnippet>168</a>    #[test]
+<a href=#169 id=169 data-nosnippet>169</a>    </span><span class="kw">fn </span>tzif_parse_v1() {
+<a href=#170 id=170 data-nosnippet>170</a>        <span class="kw">for </span>tzif_test <span class="kw">in </span>TZIF_TEST_FILES {
+<a href=#171 id=171 data-nosnippet>171</a>            <span class="macro">insta::assert_snapshot!</span>(
+<a href=#172 id=172 data-nosnippet>172</a>                <span class="macro">alloc::format!</span>(<span class="string">"{}_v1"</span>, tzif_test.name),
+<a href=#173 id=173 data-nosnippet>173</a>                tzif_to_human_readable(<span class="kw-2">&amp;</span>tzif_test.parse_v1())
+<a href=#174 id=174 data-nosnippet>174</a>            );
+<a href=#175 id=175 data-nosnippet>175</a>        }
+<a href=#176 id=176 data-nosnippet>176</a>    }
+<a href=#177 id=177 data-nosnippet>177</a>
+<a href=#178 id=178 data-nosnippet>178</a>    <span class="doccomment">/// This tests walks the /usr/share/zoneinfo directory (if it exists) and
+<a href=#179 id=179 data-nosnippet>179</a>    /// tries to parse every TZif formatted file it can find. We don't really
+<a href=#180 id=180 data-nosnippet>180</a>    /// do much with it other than to ensure we don't panic or return an error.
+<a href=#181 id=181 data-nosnippet>181</a>    /// That is, we check that we can parse each file, but not that we do so
+<a href=#182 id=182 data-nosnippet>182</a>    /// correctly.
+<a href=#183 id=183 data-nosnippet>183</a>    </span><span class="attr">#[cfg(not(miri))]
+<a href=#184 id=184 data-nosnippet>184</a>    #[cfg(feature = <span class="string">"tzdb-zoneinfo"</span>)]
+<a href=#185 id=185 data-nosnippet>185</a>    #[cfg(target_os = <span class="string">"linux"</span>)]
+<a href=#186 id=186 data-nosnippet>186</a>    #[test]
+<a href=#187 id=187 data-nosnippet>187</a>    </span><span class="kw">fn </span>zoneinfo() {
+<a href=#188 id=188 data-nosnippet>188</a>        <span class="kw">const </span>TZDIR: <span class="kw-2">&amp;</span>str = <span class="string">"/usr/share/zoneinfo"</span>;
+<a href=#189 id=189 data-nosnippet>189</a>
+<a href=#190 id=190 data-nosnippet>190</a>        <span class="kw">for </span>result <span class="kw">in </span>walkdir::WalkDir::new(TZDIR) {
+<a href=#191 id=191 data-nosnippet>191</a>            <span class="comment">// Just skip if we got an error traversing the directory tree.
+<a href=#192 id=192 data-nosnippet>192</a>            // These aren't related to our parsing, so it's some other problem
+<a href=#193 id=193 data-nosnippet>193</a>            // (like the directory not existing).
+<a href=#194 id=194 data-nosnippet>194</a>            </span><span class="kw">let </span><span class="prelude-val">Ok</span>(dent) = result <span class="kw">else </span>{ <span class="kw">continue </span>};
+<a href=#195 id=195 data-nosnippet>195</a>            <span class="comment">// This test can take some time in debug mode, so skip parsing
+<a href=#196 id=196 data-nosnippet>196</a>            // some of the less frequently used TZif files.
+<a href=#197 id=197 data-nosnippet>197</a>            </span><span class="kw">let </span><span class="prelude-val">Some</span>(name) = dent.path().to_str() <span class="kw">else </span>{ <span class="kw">continue </span>};
+<a href=#198 id=198 data-nosnippet>198</a>            <span class="kw">if </span>name.contains(<span class="string">"right/"</span>) || name.contains(<span class="string">"posix/"</span>) {
+<a href=#199 id=199 data-nosnippet>199</a>                <span class="kw">continue</span>;
+<a href=#200 id=200 data-nosnippet>200</a>            }
+<a href=#201 id=201 data-nosnippet>201</a>            <span class="comment">// Again, skip if we can't read. Not my monkeys, not my circus.
+<a href=#202 id=202 data-nosnippet>202</a>            </span><span class="kw">let </span><span class="prelude-val">Ok</span>(bytes) = std::fs::read(dent.path()) <span class="kw">else </span>{ <span class="kw">continue </span>};
+<a href=#203 id=203 data-nosnippet>203</a>            <span class="kw">if </span>!tzif::is_possibly_tzif(<span class="kw-2">&amp;</span>bytes) {
+<a href=#204 id=204 data-nosnippet>204</a>                <span class="kw">continue</span>;
+<a href=#205 id=205 data-nosnippet>205</a>            }
+<a href=#206 id=206 data-nosnippet>206</a>            <span class="comment">// OK at this point, we're pretty sure `bytes` should be a TZif
+<a href=#207 id=207 data-nosnippet>207</a>            // binary file. So try to parse it and fail the test if it fails.
+<a href=#208 id=208 data-nosnippet>208</a>            </span><span class="kw">if let </span><span class="prelude-val">Err</span>(err) = tzif::TimeZone::parse(<span class="kw-2">&amp;</span>bytes) {
+<a href=#209 id=209 data-nosnippet>209</a>                <span class="macro">panic!</span>(<span class="string">"failed to parse TZif file {:?}: {err}"</span>, dent.path());
+<a href=#210 id=210 data-nosnippet>210</a>            }
+<a href=#211 id=211 data-nosnippet>211</a>        }
+<a href=#212 id=212 data-nosnippet>212</a>    }
+<a href=#213 id=213 data-nosnippet>213</a>}
+</code></pre></div></section></main></body></html>

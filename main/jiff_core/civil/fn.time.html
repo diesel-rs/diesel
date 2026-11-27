@@ -1,0 +1,33 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Creates a new `Time` value in a `const` context."><title>time in jiff_core::civil - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-1e18a8e7.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="jiff_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (6c709eb42 2026-11-25)" data-channel="nightly" data-search-js="search-085293d4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../static.files/storage-41dd4d93.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc fn"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">time</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../jiff_core/index.html">jiff_<wbr>core</a><span class="version">1.0.2</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">time</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#panics" title="Panics">Panics</a></li><li><a href="#example" title="Example">Example</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="index.html">In jiff_<wbr>core::<wbr>civil</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">jiff_core</a>::<wbr><a href="index.html">civil</a></div><h1>Function <span class="fn">time</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/jiff_core/civil/mod.rs.html#155-165">Source</a> </span></div><pre class="rust item-decl"><code>pub const fn time(
+    hour: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.i8.html">i8</a>,
+    minute: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.i8.html">i8</a>,
+    second: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.i8.html">i8</a>,
+    subsec_nanosecond: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.i32.html">i32</a>,
+) -&gt; <a class="struct" href="struct.Time.html" title="struct jiff_core::civil::Time">Time</a></code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Creates a new <code>Time</code> value in a <code>const</code> context.</p>
+<p>This is a convenience free function for <a href="struct.Time.html#method.new" title="associated function jiff_core::civil::Time::new"><code>Time::new</code></a> that panics when
+the given time is not valid. It is intended to provide a terse syntax for
+constructing <code>Time</code> values from parameters that are known to be valid.</p>
+<h2 id="panics"><a class="doc-anchor" href="#panics">§</a>Panics</h2>
+<p>This panics if the given values do not correspond to a valid <code>Time</code>.
+All of the following conditions must be true:</p>
+<ul>
+<li><code>0 &lt;= hour &lt;= 23</code></li>
+<li><code>0 &lt;= minute &lt;= 59</code></li>
+<li><code>0 &lt;= second &lt;= 59</code></li>
+<li><code>0 &lt;= subsec_nanosecond &lt;= 999,999,999</code></li>
+</ul>
+<p>Similarly, when used in a const context, invalid parameters will
+prevent your Rust program from compiling.</p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<p>This shows an example of a valid time in a <code>const</code> context:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff_core::civil::time;
+
+<span class="kw">let </span>t = time(<span class="number">21</span>, <span class="number">30</span>, <span class="number">5</span>, <span class="number">123_456_789</span>);
+<span class="macro">assert_eq!</span>(t.hour(), <span class="number">21</span>);
+<span class="macro">assert_eq!</span>(t.minute(), <span class="number">30</span>);
+<span class="macro">assert_eq!</span>(t.second(), <span class="number">5</span>);
+<span class="macro">assert_eq!</span>(t.millisecond(), <span class="number">123</span>);
+<span class="macro">assert_eq!</span>(t.microsecond(), <span class="number">456</span>);
+<span class="macro">assert_eq!</span>(t.nanosecond(), <span class="number">789</span>);
+<span class="macro">assert_eq!</span>(t.subsec_nanosecond(), <span class="number">123_456_789</span>);</code></pre></div></div></details></section></div></main></body></html>

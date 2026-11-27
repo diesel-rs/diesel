@@ -1,0 +1,509 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="The API design rationale for Jiff"><title>jiff::_documentation::design - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-1e18a8e7.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="jiff" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (6c709eb42 2026-11-25)" data-channel="nightly" data-search-js="search-085293d4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../../static.files/storage-41dd4d93.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Module design</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../jiff/index.html">jiff</a><span class="version">1.0.3</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module design</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#the-api-design-rationale-for-jiff" title="The API design rationale for Jiff">The API design rationale for Jiff</a><ul><li><a href="#why-name-the-library-jiff" title="Why name the library “jiff”?">Why name the library “jiff”?</a></li><li><a href="#why-build-another-datetime-library" title="Why build another datetime library?">Why build another datetime library?</a></li><li><a href="#why-not-contribute-to-an-existing-library-instead-of-building-a-new-one" title="Why not contribute to an existing library instead of building a new one?">Why not contribute to an existing library instead of building a new one?</a></li><li><a href="#are-there-any-published-alternative-perspectives-on-rust-datetime-libraries" title="Are there any published alternative perspectives on Rust datetime libraries?">Are there any published alternative perspectives on Rust datetime libraries?</a></li><li><a href="#why-are-there-two-duration-types" title="Why are there two duration types?">Why are there two duration types?</a></li><li><a href="#why-isnt-there-a-timezone-trait" title="Why isn’t there a `TimeZone` trait?">Why isn’t there a <code>TimeZone</code> trait?</a></li><li><a href="#why-doesnt-timezone-implement-copy" title="Why doesn’t `TimeZone` implement `Copy`?">Why doesn’t <code>TimeZone</code> implement <code>Copy</code>?</a></li><li><a href="#why-no-systemzoneddatetime-or-offsetzoneddatetime-types" title="Why no `SystemZonedDateTime` or `OffsetZonedDateTime` types?">Why no <code>SystemZonedDateTime</code> or <code>OffsetZonedDateTime</code> types?</a></li><li><a href="#why-doesnt-jiff-support-leap-seconds" title="Why doesn’t Jiff support leap seconds?">Why doesn’t Jiff support leap seconds?</a></li><li><a href="#why-isnt-there-any-integration-with-stdtimeduration" title="Why isn’t there any integration with `std::time::Duration`?">Why isn’t there any integration with <code>std::time::Duration</code>?</a></li><li><a href="#what-are-the-zonedifference-and-zoneddatetimeround-types-for" title="What are the `ZoneDifference` and `ZonedDateTimeRound` types for?">What are the <code>ZoneDifference</code> and <code>ZonedDateTimeRound</code> types for?</a></li><li><a href="#why-isnt-timestamp-called-instant" title="Why isn’t `Timestamp` called `Instant`?">Why isn’t <code>Timestamp</code> called <code>Instant</code>?</a></li></ul></li></ul></section><div id="rustdoc-modnav"><h2><a href="../index.html">In jiff::<wbr>_<wbr>documentation</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../../index.html">jiff</a>::<wbr><a href="../index.html">_documentation</a></div><h1>Module <span>design</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../../src/jiff/lib.rs.html#806">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="the-api-design-rationale-for-jiff"><a class="doc-anchor" href="#the-api-design-rationale-for-jiff">§</a>The API design rationale for Jiff</h2>
+<p>This document discusses some of the design decisions that led to Jiff’s API.
+The purpose of writing this document is to help folks understand <em>why</em> Jiff’s
+API is the way it is, above and beyond “Jiff did it this way to match
+<a href="https://tc39.es/proposal-temporal/docs/">Temporal</a>.”</p>
+<p>This document is written as an FAQ, although it is restricted in scope to the
+API design of Jiff. This isn’t a FAQ for questions like, “How do I add 1 day
+to a zoned datetime?”</p>
+<p>Unlike “<a href="http://docs.rs/jiff/*/jiff/_documentation/comparison/index.html">Comparison with other Rust datetime crates</a>,” this
+document is <em>opinionated</em>. That is, some value judgments are expressed that are
+opinion based, and on which reasonable people may disagree.</p>
+<h3 id="why-name-the-library-jiff"><a class="doc-anchor" href="#why-name-the-library-jiff">§</a>Why name the library “jiff”?</h3>
+<p>I wanted something short and related to time for the library name. Most of the
+“obvious” names are taken.</p>
+<p>I thought a lot about phrases or words that had some connection to time. There
+are more than you think. One phrase I heard a lot as a kid who grew up in New
+England was, “I’ll be back in a jiff” or “I’ll be back in a jiffy.” The meaning
+of that phrase was, roughly, “I’ll be back very soon.” So “jiff” refers to some
+“short span of time.” Since “jiff” was shorter than “jiffy,” that’s what I went
+with.</p>
+<p>Jiff is pronounced like “gif” with a soft “g,” as in “gem.”</p>
+<h3 id="why-build-another-datetime-library"><a class="doc-anchor" href="#why-build-another-datetime-library">§</a>Why build another datetime library?</h3>
+<p>At the time of writing, there are four existing prominent datetime libraries
+for Rust: <a href="https://docs.rs/chrono"><code>chrono</code></a>, <a href="https://docs.rs/time"><code>time</code></a>, <a href="https://docs.rs/hifitime"><code>hifitime</code></a> and <a href="https://docs.rs/icu"><code>icu</code></a>. “<a href="http://docs.rs/jiff/*/jiff/_documentation/comparison/index.html">Comparison with
+other Rust datetime crates</a>” goes over the “facts of comparison”
+between the crates (mostly for just <code>chrono</code> and <code>time</code>), but it intentionally
+leaves out value judgments. To answer this question, I have to introduce value
+judgments and my opinions on existing libraries. <strong>These are opinions on which
+reasonable people can disagree.</strong> Moreover, since these are opinions meant to
+justify an alternative, these opinions tend to be oriented on the faults (as
+this author sees them) in existing crates as opposed to their benefits.</p>
+<p>Broadly speaking, my view on Rust datetime libraries was that they had reached
+a local maximum, and there didn’t seem to be much movement toward breaking out
+of that local maximum and getting to something that was categorically better.
+Much of my thoughts revolve around not just the functionality provided, but
+also the API design of these crates. Thus, I perceived a gap in the ecosystem
+that I felt like I could fill.</p>
+<p>I’ll share my brief thoughts on each crate. I’ll cover “why not contribute to
+an existing library and make it better” in the next question.</p>
+<h4 id="chrono"><a class="doc-anchor" href="#chrono">§</a><code>chrono</code></h4>
+<p>In my view, Chrono is the closest to Jiff in terms of the functionality it
+provides. It has some support for DST safe arithmetic for example, and even
+some support for doing calendar math. But its support is incomplete. While one
+can add units of days to Chrono datetimes, Chrono lacks the ability to do math
+on multiple calendar units at the same time. Moreover, Chrono cannot <em>produce</em>
+calendar durations between two time zone aware datetimes.</p>
+<p>Moreover, Chrono’s integration with the <a href="https://en.wikipedia.org/wiki/Tz_database">IANA Time Zone Database</a> is somewhat
+spotty. Support for it isn’t included in the <code>chrono</code> crate itself, but
+is instead something you need to opt into with additional crates, such
+as <a href="https://docs.rs/chrono-tz"><code>chrono-tz</code></a> or <a href="https://docs.rs/tzfile"><code>tzfile</code></a>. And each crate comes with its own set of
+trade-offs. <code>chrono-tz</code> embeds the entire database into your binary and makes
+the time zones available at compile time, while <code>tzfile</code> reads the database
+from your system’s copy of the database (i.e., <code>/usr/share/zoneinfo</code> on Unix).
+In my view, this creates a difficult situation for non-expert users of Chrono
+where the “right” choice isn’t obvious. In my opinion, the <em>default</em> should be
+to read time zone transition data from the system’s copy of the database on
+disk, and only bundle the data into the binary as a last resort when a copy of
+the database isn’t reliably available (like on Windows). The main reason for
+this is that the database is frequently updated (a few times each year) since
+the rules for time zone transitions can change. If that time zone data is
+embedded into your binary, then you need to 1) wait for <code>chrono-tz</code> to update
+their data and 2) re-compile your application and ship it out to users.</p>
+<p>In contrast, Jiff <em>abstracts</em> the method of time zone data discovery. That
+is, there are no API differences between “read time zone data from the system
+database” and “read embedded time zone data.” Of course, Jiff provides options
+to choose which method to use (like forcing bundling on Unix), but all of this
+is transparent to users of Jiff itself. That is, <em>Jiff tries to do the right
+thing by default</em>. There’s no need to go off and find a different crate to
+handle time zone data for you.</p>
+<p>While on the topic of time zones, Chrono also has no support for serializing
+IANA time zone identifiers. This implies that if you have a time zone aware
+datetime in Chrono (whether by <code>chrono-tz</code> or <code>tzfile</code>), then you can’t
+losslessly serialize and deserialize it. Namely, serialization will lose
+the time zone the datetime is associated with, and instead only include
+the offset. Then when it’s deserialized, you’re left with an offset-only
+datetime that won’t, for example, provide DST safe arithmetic based on the
+original time zone. In contrast, Jiff follows <a href="https://datatracker.ietf.org/doc/rfc9557/">RFC 9557</a> to support embedding
+IANA time zone identifiers in the serialized representation. For example,
+<code>2024-07-21T17:11-04[America/New_York]</code>.</p>
+<p>There are a variety of other things that Jiff supports which Chrono does
+not, but that’s covered in <a href="https://docs.rs/jiff/*/jiff/_documentation/comparison/index.html#chrono-v0438">the comparison section between Jiff and
+Chrono</a>.</p>
+<p>As for API design, I found Chrono’s API to be overengineered and difficult to
+deal with. This is a frustratingly vague complaint, but here are some things
+that I believe contribute to that opinion:</p>
+<ul>
+<li>I’ve used Chrono for various things, and I found it very difficult to figure
+out from its API what the right operations to use were.</li>
+<li>Chrono has been steadily deprecating huge portions of its API in favor of
+fallible routines. I find the resulting documentation difficult to read and the
+naming to be very clunky.</li>
+<li>The fallible routines return a mixture of <code>Option&lt;T&gt;</code> and <code>Result&lt;T, E&gt;</code>.
+This is frustrating in my experience because the <code>Option&lt;T&gt;</code> <em>usually</em> needs to
+be converted to a human readable error message, and I think the library should
+make use of its contextual information to do this for you. Indeed, Jiff rarely
+returns <code>Option&lt;T&gt;</code> and instead returns <code>Result&lt;T, E&gt;</code> with a contextualized
+human readable error message. (Although I’m sure the error messages could use a
+lot of improvement.)</li>
+<li>I find the use of generics in Chrono to be overengineered. It has some
+key benefits, for example, making the notion of “time zone” an open concept
+that can be defined by users of the crate. But in my opinion, this is rarely
+needed. The Chrono crate ecosystem makes use of this via the <code>chrono-tz</code> and
+<code>tzfile</code> crates, but Jiff covers both of those use cases (broadly speaking)
+automatically.</li>
+<li>Chrono overall puts a large emphasis on “fixed offset” datetimes, but these
+are rarely the right abstraction to use. It’s possible this is due to the fact
+that IANA time zone support is external to Chrono itself. Instead, Jiff just
+tries to do the right thing by default, and gives users IANA time zone support
+out of the box. Jiff does support fixed offset datetimes as well, but they are
+de-emphasized.</li>
+<li>I find generic traits like <code>Datelike</code> to also be very confusing because they
+split the APIs of types like <code>NaiveDate</code> into concrete methods and generic
+methods, and there’s no obvious rhyme or reason as to how those methods are
+split up.</li>
+<li>Chrono’s API doesn’t offer clean on-ramps from civil (“naive”) datetimes to
+time zone aware datetimes. For example, Chrono provides <code>NaiveDate::succ_opt</code>
+to get the next day, but this method isn’t available on <code>NaiveDateTime</code> or
+<code>DateTime</code>. Instead, to implement it correctly on <code>DateTime</code>, you have to get
+the naive date, get the date for tomorrow via <code>succ_opt</code>, and then convert it
+back to the same <code>NaiveDateTime</code> and finally make it time zone aware by
+applying the original time zone to it. In contrast, in Jiff, it’s just a matter
+of calling <code>ZonedDateTime::tomorrow</code>. Indeed, (almost) any method you can call
+on <code>civil::Date</code> in Jiff is also available on <code>civil::DateTime</code> and likewise
+for <code>ZonedDateTime</code>. This makes transitioning between datetime types very easy.
+Chrono almost appears to provide this same experience via traits like
+<code>Datelike</code>, but doesn’t fully commit and, in my opinion, the end result has a
+feeling of arbitrariness to it.</li>
+<li>Chrono lacks a standard timestamp type. You can approximate this with a
+<code>DateTime&lt;Utc&gt;</code>, but it’s a more complicated type that includes a full datetime
+representation. In contrast, Jiff provides a <code>Timestamp</code> type for when you just
+want the number of seconds from the Unix epoch. And then integrates it with the
+rest of the datetime types in a consistent way.</li>
+</ul>
+<h4 id="time"><a class="doc-anchor" href="#time">§</a><code>time</code></h4>
+<p>My main gripe with the <code>time</code> crate is that it has very limited
+<a href="https://en.wikipedia.org/wiki/Tz_database">IANA Time Zone Database</a> support. This means it is difficult to do DST safe
+arithmetic. Consequently, it emphasizes the use of “fixed offset” datetimes
+in a similar fashion as Chrono, except <code>time</code> does not provide any extension
+mechanism like a <code>TimeZone</code> trait. In my view, fixed offset datetimes are
+rarely the right thing to use. In my opinion, this makes writing correct
+datetime code with the <code>time</code> crate rather difficult. In contrast, Jiff
+provides full <a href="https://en.wikipedia.org/wiki/Tz_database">IANA Time Zone Database</a> support, and it should be very
+rare to need fixed offset datetimes (although Jiff does support them via
+<code>TimeZone::fixed</code>).</p>
+<p>(Note that at time of writing, there does exist an unofficial <a href="https://docs.rs/time-tz"><code>time-tz</code></a>
+crate that provides very limited support for time zones in concert with the
+<code>time</code> crate. However, there is no time zone aware datetime type and no way to
+distinguish between calendar arithmetic and time arithmetic across daylight
+saving time boundaries. The <code>time-tz</code> crate borrows the design of <code>chrono-tz</code>,
+and thus has all of its downsides as well.)</p>
+<p>I overall find the API of <code>time</code> to be easier to understand than Chrono, likely
+because there are fewer generics. But <code>time</code> is also supporting a lot less than
+Chrono and Jiff (because of the missing time zone support in <code>time</code> itself).</p>
+<p>As with Chrono, I’ve done a
+<a href="https://docs.rs/jiff/*/jiff/_documentation/comparison/index.html#time-v0336">more detailed comparison between Jiff and <code>time</code></a>.</p>
+<h4 id="hifitime"><a class="doc-anchor" href="#hifitime">§</a><code>hifitime</code></h4>
+<p><code>hifitime</code> is more of a specialized datetime library suited to scientific
+applications, and so while Jiff and <code>hifitime</code> have overlapping use cases,
+<code>hifitime</code> fundamentally has a different target demographic than Jiff. As noted
+in a <a href="https://docs.rs/jiff/*/jiff/_documentation/comparison/index.html#hifitime-v0390">comparison between Jiff and <code>hifitime</code></a>, <code>hifitime</code>
+doesn’t have any time zone support, but it does support conversions between
+many different time scales and leap second support. Leap second support, in
+this context, means that the durations between two points in time take leap
+seconds into account in <code>hifitime</code>, but Jiff pretends as if they don’t exist.</p>
+<p>In terms of building a new datetime library, I felt like <code>hifitime</code> wasn’t
+really targeting the “general purpose datetime library” use case that I felt
+<code>chrono</code> and <code>time</code> were. And so, whether it existed or not didn’t really
+impact whether another <em>general purpose</em> datetime library should be built.</p>
+<h4 id="icu"><a class="doc-anchor" href="#icu">§</a><code>icu</code></h4>
+<p><code>icu</code> is, as I understand it, still under construction with respect to datetime
+support. For example, it doesn’t have <a href="https://en.wikipedia.org/wiki/Tz_database">IANA Time Zone Database</a> support.
+But, it does support locale aware formatting of datetimes and non-Gregorian
+calendars.</p>
+<p>When I started working on Jiff, I didn’t have a good understanding of what the
+<code>icu</code> crate offers. I still don’t really. In part because the API is difficult
+for me to understand and in part because I haven’t dedicated a ton of time to
+studying its API. But either way, I don’t think it is currently in a position
+to be a general purpose datetime library and I wasn’t clear on what its goals
+were.</p>
+<p>Since I haven’t spent a lot of time with <code>icu</code>, I didn’t have much to say about
+it in my <a href="https://docs.rs/jiff/*/jiff/_documentation/comparison/index.html#icu-v150">comparison with it and Jiff</a>.</p>
+<h3 id="why-not-contribute-to-an-existing-library-instead-of-building-a-new-one"><a class="doc-anchor" href="#why-not-contribute-to-an-existing-library-instead-of-building-a-new-one">§</a>Why not contribute to an existing library instead of building a new one?</h3>
+<p>Given that Rust already has at least two prominent datetime libraries, doesn’t
+adding another one just make things worse? And why not contribute to an
+existing library to make it better instead of starting over from scratch?</p>
+<p>I first want to say that I acknowledge that throwing a new crate into the
+ecosystem, and adding yet another choice, does actually come with downsides.
+There is a cost to having too many choices, and when possible, I do believe it
+is better to improve an existing project rather than start a new one.</p>
+<p>Improving existing projects can be difficult. Jiff has a different design than
+both <code>chrono</code> and <code>time</code>. Evolving either one of those crates into what Jiff is
+would, in my view, require a huge amount of resources. Not just in time, but in
+social capital as well. Because it wouldn’t be greenfield development done by
+one person making all of the design choices, but instead someone from outside
+the project trying to convince the maintainers of established projects to move
+in a radically different direction. I know what it’s like to be on the side of
+maintaining an established API for a library with a lot of users. There is a
+huge inertial cost to making sweeping API changes.</p>
+<p>Moreover, when I started Jiff, I was not a domain expert in datetime libraries
+or datetime handling in general. Therefore, my opinion that <code>chrono</code> and <code>time</code>
+<em>could</em> be better would arguably not carry a lot of weight. It was only through
+the process of actually building a datetime library did I learn enough to form
+nuanced opinions about the status quo. When I started, my opinions were much
+more vague (but still strong enough to start this project).</p>
+<p>On top of all of this, I was <em>intrinsically</em> motivated to work on this problem.
+I found it very interesting, and especially because I perceived there to be a
+gap in the ecosystem that I thought I could fill in. I had a vision for what
+a datetime library <em>should</em> look like. And it took a lot of iteration to get
+from my initial vision to something that works in practice. Doing this on an
+existing datetime library with real users would be extremely difficult.</p>
+<p>And speaking as someone who has had folks publish <em>better</em> versions of some of
+my own crates, I know what it’s like to be on the other end of this. Sometimes
+you just have to start fresh.</p>
+<h3 id="are-there-any-published-alternative-perspectives-on-rust-datetime-libraries"><a class="doc-anchor" href="#are-there-any-published-alternative-perspectives-on-rust-datetime-libraries">§</a>Are there any published alternative perspectives on Rust datetime libraries?</h3>
+<p>Here’s a list. More may be added in the future:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/63">Commentary from the original author of the <code>chrono</code> crate.</a></li>
+</ul>
+<h3 id="why-are-there-two-duration-types"><a class="doc-anchor" href="#why-are-there-two-duration-types">§</a>Why are there two duration types?</h3>
+<p>The two duration types provided by Jiff are <code>Span</code> and <code>SignedDuration</code>. A
+<code>SignedDuration</code> is effectively identical to a <code>std::time::Duration</code>, but it’s
+signed instead of unsigned. A <code>Span</code> is also a duration type, but is likely
+different than most other duration types you’ve used before.</p>
+<p>While a <code>SignedDuration</code> can be thought of as a single integer corresponding
+to the number of nanoseconds between two points in time, a <code>Span</code> is a
+collection of individual unit values that combine to represent the difference
+between two point in time. Stated more concretely, while the spans <code>2 hours</code> and <code>120 minutes</code> both correspond to the same duration of time, when
+represented as a Jiff <code>Span</code>, they correspond to two distinct values in
+memory. This is something that is fundamentally not expressible by a type
+like <code>SignedDuration</code>, where <code>2 hours</code> and <code>120 minutes</code> are completely
+indistinguishable.</p>
+<p>One of the key advantages of a <code>Span</code> is that it can represent units of
+non-uniform length. For example, not every month has the same number of days,
+but a <code>Span</code> can still represent units of months because it tracks the values
+of each unit independently. For example, Jiff is smart enough to know that the
+difference between <code>2024-03-01</code> and <code>2024-04-01</code> is the same number of months
+as <code>2024-04-01</code> and <code>2024-05-01</code>, even though the number of days is different:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil::date, ToSpan, Unit};
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="kw">let </span>date1 = date(<span class="number">2024</span>, <span class="number">3</span>, <span class="number">1</span>);
+    <span class="kw">let </span>date2 = date(<span class="number">2024</span>, <span class="number">4</span>, <span class="number">1</span>);
+    <span class="kw">let </span>date3 = date(<span class="number">2024</span>, <span class="number">5</span>, <span class="number">1</span>);
+
+    <span class="comment">// When computing durations between `Date` values,
+    // the spans default to days.
+    </span><span class="macro">assert_eq!</span>(date1.until(date2)<span class="question-mark">?</span>, <span class="number">31</span>.days().fieldwise());
+    <span class="macro">assert_eq!</span>(date2.until(date3)<span class="question-mark">?</span>, <span class="number">30</span>.days().fieldwise());
+
+    <span class="comment">// But we can request bigger units!
+    </span><span class="macro">assert_eq!</span>(date1.until((Unit::Month, date2))<span class="question-mark">?</span>, <span class="number">1</span>.month().fieldwise());
+    <span class="macro">assert_eq!</span>(date2.until((Unit::Month, date3))<span class="question-mark">?</span>, <span class="number">1</span>.month().fieldwise());
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<p>While most folks are very in tune with the fact that years and months have
+non-uniform length, a less obvious truth is that days themselves also have
+non-uniform length in the presence of time zones. For example, <code>2024-03-10</code> in
+<code>America/New_York</code> was only 23 hours long (the region entered daylight saving
+time, creating a gap in time), while <code>2024-11-03</code> was 25 hours long (the region
+left daylight saving time, creating a fold in time). Being unaware of this
+corner case leads to folks assuming that “1 day” and “24 hours” are <em>always</em>
+exactly equivalent. But they aren’t. The design of Jiff leans into this and
+ensures that so long as you’re using <code>Span</code> to encode a concept of days and are
+doing arithmetic with it on <code>ZonedDateTime</code> values, then you can never get it
+wrong. Jiff will always take time zones into account when dealing with units of
+days or bigger.</p>
+<p>The design of <code>Span</code> comes from <a href="https://tc39.es/proposal-temporal/docs/">Temporal</a>, which <a href="https://github.com/tc39/proposal-temporal/issues/2915">uses only one duration
+type</a>. From that issue, there are some significant
+advantages to using a <code>Span</code>. In my own words:</p>
+<ul>
+<li>It more closely lines up with ISO 8601 durations, which themselves combine
+calendar and clock units.</li>
+<li>With a <code>Span</code>, it is very easy to move between <code>5 years 2 months</code> and
+the number of hours in that same span.</li>
+<li>Jiff’s <code>Span</code> type specifically represents each unit as distinct from the
+others. In contrast, most absolute duration types (like <code>std::time::Duration</code>
+and Jiff’s own <code>SignedDuration</code>), are “just” a 96-bit integer number of
+nanoseconds. This means that, for example, <code>1 hour 30 minutes</code> is impossible to
+differentiate from <code>90 minutes</code>. But depending on the use case, you might want
+one or the other. Jiff’s <code>Span</code> design (copied from Temporal) enables users
+to express durations in whatever units they want. And this expression can be
+manipulated via APIs like <code>Span::round</code> in intuitive ways.</li>
+</ul>
+<p>A <code>SignedDuration</code> is still useful in some respects. For example, when you
+need tighter integration with the standard library’s <code>std::time::Duration</code>
+(since a <code>SignedDuration</code> is the same, but just signed), or when you need
+better performance than what <code>Span</code> gives you. In particular, since a <code>Span</code>
+keeps track of the values for each individual unit, it is a much heavier type
+than a <code>SignedDuration</code>. It uses up more stack space and also required more
+computation to do arithmetic with it.</p>
+<h3 id="why-isnt-there-a-timezone-trait"><a class="doc-anchor" href="#why-isnt-there-a-timezone-trait">§</a>Why isn’t there a <code>TimeZone</code> trait?</h3>
+<p>First, let’s start by explaining what a <code>TimeZone</code> is. In Jiff, a <code>TimeZone</code>
+is a concrete type that cannot be extended by users of Jiff. Instead, users of
+Jiff are forced to use one of three different kinds of time zones:</p>
+<ul>
+<li>A “fixed offset” time zone where the civil time for any particular instant
+is computed by simply adding or subtracting a fixed number of seconds from UTC.
+The <code>TimeZone::fixed</code> constructor enables callers to build time zones with any
+offset within the limits imposed by Jiff.</li>
+<li>A <a href="https://pubs.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap08.html">POSIX time zone</a>, typically set via the <code>TZ</code> environment
+variable. These are rarely used by end users, but do provide a way to specify
+a rule for when daylight saving time transitions occur thoughtout the year.
+(But it does not support historical transitions that might not conform to the
+current rule.) The <code>TimeZone::posix</code> constructor enables callers to build a
+<code>TimeZone</code> with a POSIX time zone string.</li>
+<li><a href="https://datatracker.ietf.org/doc/draft-murchison-rfc8536bis/">TZif formatted data</a>, usually from the
+<a href="https://en.wikipedia.org/wiki/Tz_database">IANA Time Zone Database</a>. This data contains historical time zone transitions
+in addition to rules governing the future in the form of POSIX TZ strings.The
+<code>TimeZone::tzif</code> constructor enables callers to build a <code>TimeZone</code> with any
+TZif formatted data.</li>
+</ul>
+<p>The <code>jiff::tz::TimeZoneDatabase</code> automatically looks for TZif formatted
+files in your system’s copy of the IANA Time Zone Database, usually at
+<code>/usr/share/zoneinfo</code>. (On Windows, Jiff embeds a copy of the IANA Time Zone
+Database into the compiled artifact itself.)</p>
+<p>So why isn’t <code>TimeZone</code> a trait? Well, the above formulation should cover the
+<em>vast majority</em> of use cases. And even if that doesn’t cover everything, it
+is possible for callers to use <code>TimeZone::tzif</code> to construct arbitrary time
+zones by building their own TZif data. This is a somewhat large hurdle though,
+so if this is something that is commonly needed, I’m open to exploring other
+options for building custom time zones. For example, perhaps we introduce a way
+to describe time zone transitions in Rust code that can then be used to build a
+<code>TimeZone</code> directly. But, the benefit of TZif is that it is inter-operable and
+a standard. There are tools that can build them.</p>
+<p>An important thing to note here is that I actually approach questions like “Why
+isn’t <code>TimeZone</code> a trait?” as instead “Why <em>should</em> <code>TimeZone</code> be a trait?” In
+particular, I personally perceive costs to introducing generics, especially on
+a fundamental type in the crate. For example, if <code>TimeZone</code> were a trait, then
+<code>ZonedDateTime</code> would not be a concrete type. It would be generic over a type
+parameter that implements the <code>TimeZone</code> trait. This in turn implies that
+anyone <em>using</em> a <code>ZonedDateTime</code> in their own types or APIs needs to think
+about the <code>TimeZone</code> trait and likely incorporate it into their own type
+signatures. This is because a <code>TimeZone</code> trait implies an open system that
+infects everything it touches. The complexity isn’t contained. But a concrete
+<code>TimeZone</code> type, like what Jiff has, encapsulates everything there is about
+time zones.</p>
+<p>(Making <code>ZonedDateTime</code> generic over a type parameter with a <em>default</em> type
+does contain the complexity in some cases, but not all. I explored using
+default type parameters in Jiff for supporting <a href="https://github.com/BurntSushi/jiff/issues/7">leap
+seconds</a>, and it was overall quite awkward in my opinion.)</p>
+<p>The trade off is that we do give up some flexibility. For example, Chrono uses
+a <code>TimeZone</code> trait design. This enables external crates to provide their own
+implementations of the <code>TimeZone</code> trait. But the two principle instances of
+this occurring, <code>chrono-tz</code> and <code>tzfile</code>, are both supported by Jiff itself.
+With that said, one key advantage of Chrono’s design is that it permits its
+zone aware datetime type (<code>DateTime&lt;T&gt;</code>) to be <code>Copy</code> if <code>T</code> is <code>Copy</code>. It is
+somewhat difficult (although not literally impossible) to make a TZif-backed
+time zone implement <code>Copy</code>, but a <em>reference</em> to it is <code>Copy</code> and a reference
+to it can still implement Chrono’s <code>TimeZone</code> trait. (And indeed, this is what
+the <code>tzfile</code> crate does.) This ultimately leads to more flexibility compared to
+Jiff, where its <code>ZonedDateTime</code> type embeds a <code>TimeZone</code> and a <code>TimeZone</code>
+cannot easily be made <code>Copy</code> without giving up something else.</p>
+<p>My opinions on the costs of generics tend to overestimate them compared to many
+others in my experience, so your mileage may vary on where you land on this
+issue. Buy in my opinion, being able to just write <code>ZonedDateTime</code> as a
+concrete type without any generics is a huge win for comprehensibility.</p>
+<h3 id="why-doesnt-timezone-implement-copy"><a class="doc-anchor" href="#why-doesnt-timezone-implement-copy">§</a>Why doesn’t <code>TimeZone</code> implement <code>Copy</code>?</h3>
+<p>When initially setting out to build Jiff, I <em>really</em> wanted the <code>TimeZone</code> type
+to implement <code>Copy</code>. The reason why I wanted it to implement <code>Copy</code> is because
+I wanted all datetime types to have “plain old data” semantics. That is, I want
+callers to think of them as small immutable bits of data that can be freely
+copied without worry. This makes APIs a little nicer because you can ask for a
+<code>ZonedDateTime</code> instead of a <code>&amp;ZonedDateTime</code>, assuming the <code>ZonedDateTime</code>
+type is small enough.</p>
+<p>But, in order for <code>ZonedDateTime</code> to be <code>Copy</code>, it must be the case that
+<code>TimeZone</code> is <code>Copy</code>. This is because <code>ZonedDateTime</code> embeds a <code>TimeZone</code>.
+Indeed, this is the reason for its existence: it couples an instant in time
+with a particular geographic region. This makes it possible to expose very
+ergonomic high level APIs that don’t require the caller to keep passing in a
+<code>TimeZone</code> value repeatedly.</p>
+<p>So, how can a <code>TimeZone</code> be <code>Copy</code>? Well, both fixed offset and POSIX time
+zones could be <code>Copy</code>. There’s no huge challenge in that. (Internally, a POSIX
+time zone is not currently <code>Copy</code> because there’s no reason for it given what
+we’re about to discuss.) The main challenge is the TZif-backed time zone. TZif
+formatted data can contain an arbitrary number of time zone transitions. There
+is just no way to avoid some kind of dynamic memory allocation.</p>
+<p>Since we need dynamic memory allocation, there is really only one way to
+make it <code>Copy</code> at this point: introduce some kind of caching mechanism with
+a small <code>Copy</code> identifier that lets us “look up” the time zone in some kind
+of global or thread-local cache. I thought a lot about how I might wire this
+together, and I could not come up with a satisfactory design. I believe
+garbage collection is the main challenge, but also synchronization overhead
+for accessing a time zone is likely also a problem. The nice benefit of the
+<code>TimeZone</code> type as it exists now is that it’s just data. While <em>getting</em> a
+<code>TimeZone</code> from a <code>TimeZoneDatabase</code> might require synchronization and possibly
+even I/O if the cache for it was invalidated, a <code>TimeZone</code> itself requires no
+synchronization whatsoever to use it. It is just an <code>Arc</code> internally to make it
+pointer-sized.</p>
+<h3 id="why-no-systemzoneddatetime-or-offsetzoneddatetime-types"><a class="doc-anchor" href="#why-no-systemzoneddatetime-or-offsetzoneddatetime-types">§</a>Why no <code>SystemZonedDateTime</code> or <code>OffsetZonedDateTime</code> types?</h3>
+<p>Some datetime libraries have multiple different zone aware datetime types. Jiff
+opts to have just one, and embeds support for the different types of time zones
+that most people will ever need into that one type. Jiff does this via the
+<code>TimeZone</code> type, which can be a fixed offset, a POSIX time zone or TZif-backed
+(usually from the <a href="https://en.wikipedia.org/wiki/Tz_database">IANA Time Zone Database</a>).</p>
+<h3 id="why-doesnt-jiff-support-leap-seconds"><a class="doc-anchor" href="#why-doesnt-jiff-support-leap-seconds">§</a>Why doesn’t Jiff support leap seconds?</h3>
+<p>The short summary is that the use cases for leap second support are rather
+limited, and the effect they have on overall API complexity is quite large.
+That is, I believe they would make the API of Jiff more complicated than the
+value they bring to the domain.</p>
+<p>A standard work-around for <em>part</em> of the leap second problem—and usually the
+one people care about—is to use custom TZif data that describes when each of
+the leap seconds occurs. In effect, you can treat <a href="https://en.wikipedia.org/wiki/International_Atomic_Time">TAI</a> as its own time zone.
+This enables callers to compute accurate durations of time that span a leap
+second (positive or negative). And indeed, so long as you build that TZif
+data, Jiff supports this via <code>TimeZone::tzif</code>.</p>
+<p>I wrote a lot more <a href="https://github.com/BurntSushi/jiff/issues/7">about leap seconds on the issue
+tracker</a>.</p>
+<h3 id="why-isnt-there-any-integration-with-stdtimeduration"><a class="doc-anchor" href="#why-isnt-there-any-integration-with-stdtimeduration">§</a>Why isn’t there any integration with <code>std::time::Duration</code>?</h3>
+<p>The initial release of <code>jiff 0.1</code> originally left out any integration
+points with <code>std::time::Duration</code>. Since then, <code>SignedDuration</code> has
+been added to Jiff. And <code>TryFrom</code> trait implementations have been added
+to both <code>SignedDuration</code> and <code>Span</code> to make conversions between it and
+<code>std::time::Duration</code> easier.</p>
+<h3 id="what-are-the-zonedifference-and-zoneddatetimeround-types-for"><a class="doc-anchor" href="#what-are-the-zonedifference-and-zoneddatetimeround-types-for">§</a>What are the <code>ZoneDifference</code> and <code>ZonedDateTimeRound</code> types for?</h3>
+<p>The <code>ZonedDateTimeDifference</code> and <code>ZonedDateTimeRound</code> are builders for
+expressing the parameters to the functions <code>ZonedDateTime::{since, until}</code> and
+<code>ZonedDateTime::round</code>, respectively. For example, this:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil::date, ToSpan};
+
+<span class="kw">let </span>zdt1 = date(<span class="number">2024</span>, <span class="number">7</span>, <span class="number">16</span>).at(<span class="number">22</span>, <span class="number">3</span>, <span class="number">23</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+<span class="kw">let </span>zdt2 = date(<span class="number">2024</span>, <span class="number">8</span>, <span class="number">16</span>).at(<span class="number">22</span>, <span class="number">3</span>, <span class="number">59</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(zdt1.until(<span class="kw-2">&amp;</span>zdt2)<span class="question-mark">?</span>, <span class="number">744</span>.hours().seconds(<span class="number">36</span>).fieldwise());
+</code></pre></div>
+<p>Is equivalent to:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil::date, ToSpan, ZonedDateTimeDifference};
+
+<span class="kw">let </span>zdt1 = date(<span class="number">2024</span>, <span class="number">7</span>, <span class="number">16</span>).at(<span class="number">22</span>, <span class="number">3</span>, <span class="number">23</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+<span class="kw">let </span>zdt2 = date(<span class="number">2024</span>, <span class="number">8</span>, <span class="number">16</span>).at(<span class="number">22</span>, <span class="number">3</span>, <span class="number">59</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(
+  zdt1.until(ZonedDateTimeDifference::new(<span class="kw-2">&amp;</span>zdt2))<span class="question-mark">?</span>,
+  <span class="number">744</span>.hours().seconds(<span class="number">36</span>).fieldwise(),
+);
+</code></pre></div>
+<p>The point of this is that <code>ZonedDateTimeDifference</code> permits specifying
+additional configuration. For example, rounding the span returned:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil::date, ToSpan, Unit, ZonedDateTimeDifference};
+
+<span class="kw">let </span>zdt1 = date(<span class="number">2024</span>, <span class="number">7</span>, <span class="number">16</span>).at(<span class="number">22</span>, <span class="number">3</span>, <span class="number">23</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+<span class="kw">let </span>zdt2 = date(<span class="number">2024</span>, <span class="number">8</span>, <span class="number">16</span>).at(<span class="number">22</span>, <span class="number">3</span>, <span class="number">59</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(
+    zdt1.until(ZonedDateTimeDifference::new(<span class="kw-2">&amp;</span>zdt2).smallest(Unit::Minute))<span class="question-mark">?</span>,
+    <span class="number">744</span>.hours().fieldwise(),
+);
+</code></pre></div>
+<p>By using a dedicated type to represent the parameters, we can enable ergonomic
+uses of the API for common cases (by using <code>From&lt;&amp;ZonedDateTime&gt; for ZonedDateTimeDifference</code> trait implementations) while still permitting callers
+to provide additional configuration.</p>
+<p>An alternative API would be to remove the additional parameters to
+<code>ZonedDateTime::until</code>, and instead require callers to do span rounding
+themselves explicitly. But this is more verbose and requires repeating the
+correct zoned datetime to indicate how to interpret non-uniform units. For
+example, instead of this:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil::date, ToSpan, Unit, ZonedDateTimeDifference};
+
+<span class="kw">let </span>zdt1 = date(<span class="number">2024</span>, <span class="number">7</span>, <span class="number">16</span>).at(<span class="number">22</span>, <span class="number">3</span>, <span class="number">23</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+<span class="kw">let </span>zdt2 = date(<span class="number">2024</span>, <span class="number">8</span>, <span class="number">16</span>).at(<span class="number">22</span>, <span class="number">3</span>, <span class="number">59</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+<span class="kw">let </span>diff = ZonedDateTimeDifference::new(<span class="kw-2">&amp;</span>zdt2)
+    .largest(Unit::Month)
+    .smallest(Unit::Minute);
+<span class="macro">assert_eq!</span>(zdt1.until(diff)<span class="question-mark">?</span>, <span class="number">1</span>.month().fieldwise());
+</code></pre></div>
+<p>One would need to do this:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil::date, RoundMode, SpanRound, ToSpan, Unit};
+
+<span class="kw">let </span>zdt1 = date(<span class="number">2024</span>, <span class="number">7</span>, <span class="number">16</span>).at(<span class="number">22</span>, <span class="number">3</span>, <span class="number">23</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+<span class="kw">let </span>zdt2 = date(<span class="number">2024</span>, <span class="number">8</span>, <span class="number">16</span>).at(<span class="number">22</span>, <span class="number">3</span>, <span class="number">59</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+<span class="kw">let </span>span = zdt1.until(<span class="kw-2">&amp;</span>zdt2)<span class="question-mark">?</span>;
+<span class="kw">let </span>rounded = span.round(
+    SpanRound::new()
+        .largest(Unit::Month)
+        .smallest(Unit::Minute)
+        .relative(<span class="kw-2">&amp;</span>zdt1)
+        .mode(RoundMode::Trunc),
+)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(rounded, <span class="number">1</span>.month().fieldwise());
+</code></pre></div>
+<p>This is somewhat fiddly and easy to get wrong. Moreover, the
+<code>ZonedDateTime::until</code> API, when rounding is enabled, will automatically use
+<code>RoundMode::Trunc</code>, since this is what usually expects when computing the span
+between two datetimes. But span rounding uses <code>RoundMode::HalfExpand</code> by
+default, corresponding to how you were likely taught to round in school.
+(Rounds to the nearest unit, with ties breaking away from zero.)</p>
+<p>Similar reasoning applies to other “parameter builder” types like
+<code>civil::DateTimeDifference</code> as well.</p>
+<h3 id="why-isnt-timestamp-called-instant"><a class="doc-anchor" href="#why-isnt-timestamp-called-instant">§</a>Why isn’t <code>Timestamp</code> called <code>Instant</code>?</h3>
+<p>The main reason why is because of the existence of <code>std::time::Instant</code>. While
+that doesn’t in and of itself prevent Jiff from using the name <code>Instant</code>, it
+creates a naming clash with something that is <em>similar</em> but different. Namely,
+a Jiff <code>Timestamp</code> corresponds to a time from your system clock, where as an
+<code>Instant</code> represents <em>monotonic</em> time. The system clock might change or even
+go backwards, where as a monotonic instant will always produce time that is
+greater than or equal to a previous time.</p>
+<p>An <code>Instant</code> is, for example, something you might use to measure the time
+something takes in a program. Like in capturing a measurement for a benchmark.
+Conversely, a <code>Timestamp</code> is something you use to represent time as represented
+by the system. In particular, a <code>Timestamp</code> is like a <code>std::time::SystemTime</code>
+and <em>not</em> a <code>std::time::Instant</code>.</p>
+<p>While <a href="https://tc39.es/proposal-temporal/docs/">Temporal</a> uses the name <code>Instant</code> for their equivalent of Jiff’s
+<code>Timestamp</code> type, using the name <code>Instant</code> in Jiff would likely result in
+serious confusion and conflicts in names when someone wants to use both an
+<code>Instant</code> and a <code>Timestamp</code> in the same namespace.</p>
+</div></details></section></div></main></body></html>

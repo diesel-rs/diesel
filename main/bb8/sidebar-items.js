@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["AddError","QueueStrategy","RunError"],"struct":["Builder","NopErrorSink","Pool","PooledConnection","State","Statistics"],"trait":["CustomizeConnection","ErrorSink","ManageConnection"]};

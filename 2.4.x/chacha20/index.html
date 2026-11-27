@@ -1,0 +1,94 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="RustCrypto: ChaCha20"><title>chacha20 - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="chacha20" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../static.files/storage-41dd4d93.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-101b5a15.css"></noscript><link rel="icon" href="https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg"></head><body class="rustdoc mod crate"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Crate chacha20</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><a class="logo-container" href="../chacha20/index.html"><img src="https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg" alt="logo"></a><h2><a href="../chacha20/index.html">chacha20</a><span class="version">0.10.2</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#rustcrypto-chacha20" title="RustCrypto: ChaCha20">RustCrypto: ChaCha20</a><ul><li><a href="#security" title="Security">Security</a></li><li><a href="#examples" title="Examples">Examples</a></li><li><a href="#configuration-flags" title="Configuration Flags">Configuration Flags</a></li><li><a href="#license" title="License">License</a></li></ul></li></ul><h3><a href="#reexports">Crate Items</a></h3><ul class="block"><li><a href="#reexports" title="Re-exports">Re-exports</a></li><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#traits" title="Traits">Traits</a></li><li><a href="#types" title="Type Aliases">Type Aliases</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1>Crate <span>chacha20</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/chacha20/lib.rs.html#1-343">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="rustcrypto-chacha20"><a class="doc-anchor" href="#rustcrypto-chacha20">§</a>RustCrypto: ChaCha20</h2>
+<p><a href="https://crates.io/crates/chacha20"><img src="https://img.shields.io/crates/v/chacha20.svg" alt="Crate" /></a>
+<a href="https://docs.rs/chacha20/"><img src="https://docs.rs/chacha20/badge.svg" alt="Docs" /></a>
+<a href="https://github.com/RustCrypto/stream-ciphers/actions/workflows/chacha20.yml"><img src="https://github.com/RustCrypto/stream-ciphers/actions/workflows/chacha20.yml/badge.svg" alt="Build Status" /></a>
+<img src="https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg" alt="Apache2/MIT licensed" />
+<img src="https://img.shields.io/badge/rustc-1.85+-blue.svg" alt="Rust Version" />
+<a href="https://rustcrypto.zulipchat.com/#narrow/stream/260049-stream-ciphers"><img src="https://img.shields.io/badge/zulip-join_chat-blue.svg" alt="Project Chat" /></a>
+<a href="https://github.com/RustCrypto/meta/blob/master/HAZMAT.md"><img src="https://img.shields.io/badge/crypto-hazmat%E2%9A%A0-red.svg" alt="HAZMAT" /></a></p>
+<p>Implementation of the <a href="https://en.wikipedia.org/wiki/Salsa20#ChaCha_variant">ChaCha</a> family of stream ciphers.</p>
+<p>ChaCha improves upon the previous <a href="https://en.wikipedia.org/wiki/Salsa20">Salsa</a> family of stream ciphers
+with increased per-round diffusion at no cost to performance.</p>
+<p>This crate also contains an implementation of the <a href="https://tools.ietf.org/html/draft-arciszewski-xchacha-02">XChaCha</a> family of stream ciphers
+with an extended 192-bit (24-byte) nonce, gated under the <code>xchacha</code> Cargo feature,
+and “legacy” (a.k.a “djb”) variant with 64-bit nonce, gated under the <code>legacy</code> crate feature.</p>
+<p><strong>WARNING:</strong> This implementation internally uses 32-bit counter,
+while the original “legacy” variant implementation uses 64-bit counter.
+In other words, it does not allow encryption of more than 256 GiB of data.</p>
+<h3 id="security"><a class="doc-anchor" href="#security">§</a>Security</h3><h4 id="-warning-hazmat"><a class="doc-anchor" href="#-warning-hazmat">§</a>⚠️ Warning: <a href="https://github.com/RustCrypto/meta/blob/master/HAZMAT.md">Hazmat!</a></h4>
+<p>This crate does not ensure ciphertexts are authentic (i.e. by using a MAC to
+verify ciphertext integrity), which can lead to serious vulnerabilities
+if used incorrectly!</p>
+<p>To avoid this, use an <a href="https://en.wikipedia.org/wiki/Authenticated_encryption">AEAD</a> mode based on ChaCha20, e.g. <a href="https://docs.rs/chacha20poly1305"><code>chacha20poly1305</code></a>.
+See the <a href="https://github.com/RustCrypto/AEADs">RustCrypto/AEADs</a> repository for more information.</p>
+<p>USE AT YOUR OWN RISK!</p>
+<h4 id="notes"><a class="doc-anchor" href="#notes">§</a>Notes</h4>
+<p>This crate has received one <a href="https://web.archive.org/web/20240108154854/https://research.nccgroup.com/wp-content/uploads/2020/02/NCC_Group_MobileCoin_RustCrypto_AESGCM_ChaCha20Poly1305_Implementation_Review_2020-02-12_v1.0.pdf">security audit by NCC Group</a>, with no significant
+findings. We would like to thank <a href="https://www.mobilecoin.com/">MobileCoin</a> for funding the audit.</p>
+<p>All implementations contained in the crate (along with the underlying ChaCha20
+stream cipher itself) are designed to execute in constant time.</p>
+<h3 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// This example requires `cipher` crate feature
+</span><span class="attr">#[cfg(feature = <span class="string">"cipher"</span>)] </span>{
+
+<span class="kw">use </span>chacha20::ChaCha20;
+<span class="kw">use </span>chacha20::cipher::{KeyIvInit, StreamCipher, StreamCipherSeek};
+<span class="kw">use </span>hex_literal::hex;
+
+<span class="kw">let </span>key = [<span class="number">0x42</span>; <span class="number">32</span>];
+<span class="kw">let </span>nonce = [<span class="number">0x24</span>; <span class="number">12</span>];
+<span class="kw">let </span>plaintext = <span class="macro">hex!</span>(<span class="string">"000102030405060708090A0B0C0D0E0F"</span>);
+<span class="kw">let </span>ciphertext = <span class="macro">hex!</span>(<span class="string">"e405626e4f1236b3670ee428332ea20e"</span>);
+
+<span class="comment">// Key and IV must be references to the `Array` type.
+// Here we use the `Into` trait to convert arrays into it.
+</span><span class="kw">let </span><span class="kw-2">mut </span>cipher = ChaCha20::new(<span class="kw-2">&amp;</span>key.into(), <span class="kw-2">&amp;</span>nonce.into());
+
+<span class="kw">let </span><span class="kw-2">mut </span>buffer = plaintext;
+
+<span class="comment">// apply keystream (encrypt)
+</span>cipher.apply_keystream(<span class="kw-2">&amp;mut </span>buffer);
+<span class="macro">assert_eq!</span>(buffer, ciphertext);
+
+<span class="kw">let </span>ciphertext = buffer;
+
+<span class="comment">// ChaCha ciphers support seeking
+</span>cipher.seek(<span class="number">0u32</span>);
+
+<span class="comment">// decrypt ciphertext by applying keystream again
+</span>cipher.apply_keystream(<span class="kw-2">&amp;mut </span>buffer);
+<span class="macro">assert_eq!</span>(buffer, plaintext);
+
+<span class="comment">// stream ciphers can be used with streaming messages
+</span>cipher.seek(<span class="number">0u32</span>);
+<span class="kw">for </span>chunk <span class="kw">in </span>buffer.chunks_mut(<span class="number">3</span>) {
+    cipher.apply_keystream(chunk);
+}
+<span class="macro">assert_eq!</span>(buffer, ciphertext);
+}</code></pre></div><h3 id="configuration-flags"><a class="doc-anchor" href="#configuration-flags">§</a>Configuration Flags</h3>
+<p>You can modify crate using the following configuration flags:</p>
+<ul>
+<li><code>chacha20_backend="avx2"</code>: force AVX2 backend on x86/x86_64 targets.
+Requires enabled AVX2 target feature. Ignored on non-x86(_64) targets.</li>
+<li><code>chacha20_backend="avx512"</code>: force AVX-512 backend on x86/x86_64 targets.
+Requires enabled AVX-512 target feature (MSRV 1.89). Ignored on non-x86(_64) targets.</li>
+<li><code>chacha20_backend="soft"</code>: force software backend.</li>
+<li><code>chacha20_backend="sse2"</code>: force SSE2 backend on x86/x86_64 targets.
+Requires enabled SSE2 target feature. Ignored on non-x86(-64) targets.</li>
+</ul>
+<p>To use the MSRV 1.89 AVX-512 support with autodetection, you must enable it using
+<code>chacha20_avx512</code> configuration flag.</p>
+<p>The flags can be enabled using <code>RUSTFLAGS</code> environmental variable
+(e.g. <code>RUSTFLAGS='--cfg chacha20_backend="avx2"'</code>) or by modifying <code>.cargo/config.toml</code>.</p>
+<h3 id="license"><a class="doc-anchor" href="#license">§</a>License</h3>
+<p>Licensed under either of:</p>
+<ul>
+<li><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a></li>
+<li><a href="http://opensource.org/licenses/MIT">MIT license</a></li>
+</ul>
+<p>at your option.</p>
+<h4 id="contribution"><a class="doc-anchor" href="#contribution">§</a>Contribution</h4>
+<p>Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
+dual licensed as above, without any additional terms or conditions.</p>
+</div></details><h2 id="reexports" class="section-header">Re-exports<a href="#reexports" class="anchor">§</a></h2><dl class="item-table reexports"><dt id="reexport.rand_core"><code>pub use <a class="mod" href="../rand_core/index.html" title="mod rand_core">rand_core</a>;</code></dt></dl><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="variants/index.html" title="mod chacha20::variants">variants</a></dt><dd>ChaCha variant-specific configurations.</dd></dl><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.ChaCha8Rng.html" title="struct chacha20::ChaCha8Rng">ChaCha8<wbr>Rng</a></dt><dd>A cryptographically secure random number generator that uses the ChaCha stream cipher.</dd><dt><a class="struct" href="struct.ChaCha12Rng.html" title="struct chacha20::ChaCha12Rng">ChaCha12<wbr>Rng</a></dt><dd>A cryptographically secure random number generator that uses the ChaCha stream cipher.</dd><dt><a class="struct" href="struct.ChaCha20Rng.html" title="struct chacha20::ChaCha20Rng">ChaCha20<wbr>Rng</a></dt><dd>A cryptographically secure random number generator that uses the ChaCha stream cipher.</dd><dt><a class="struct" href="struct.ChaChaCore.html" title="struct chacha20::ChaChaCore">ChaCha<wbr>Core</a></dt><dd>The ChaCha core function.</dd><dt><a class="struct" href="struct.R8.html" title="struct chacha20::R8">R8</a></dt><dd>8-rounds</dd><dt><a class="struct" href="struct.R12.html" title="struct chacha20::R12">R12</a></dt><dd>12-rounds</dd><dt><a class="struct" href="struct.R20.html" title="struct chacha20::R20">R20</a></dt><dd>20-rounds</dd></dl><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><dl class="item-table"><dt><a class="trait" href="trait.Rounds.html" title="trait chacha20::Rounds">Rounds</a></dt><dd>Marker type for a number of ChaCha rounds to perform.</dd></dl><h2 id="types" class="section-header">Type Aliases<a href="#types" class="anchor">§</a></h2><dl class="item-table"><dt><a class="type" href="type.Seed.html" title="type chacha20::Seed">Seed</a></dt><dd>Seed value used to initialize ChaCha-based RNGs.</dd><dt><a class="type" href="type.SerializedRngState.html" title="type chacha20::SerializedRngState">Serialized<wbr>RngState</a></dt><dd>Serialized RNG state.</dd></dl></section></div></main></body></html>

@@ -1,0 +1,776 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="A low level representation of a parsed Temporal ISO 8601 datetime string."><title>Pieces in jiff::fmt::temporal - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-1e18a8e7.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="jiff" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (6c709eb42 2026-11-25)" data-channel="nightly" data-search-js="search-085293d4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../../static.files/storage-41dd4d93.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc struct"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Pieces</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../jiff/index.html">jiff</a><span class="version">1.0.3</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Pieces</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#example-distinguishing-between-z-0000-and--0000" title="Example: distinguishing between `Z`, `+00:00` and `-00:00`">Example: distinguishing between <code>Z</code>, <code>+00:00</code> and <code>-00:00</code></a></li><li><a href="#example-it-is-very-easy-to-misuse-pieces" title="Example: it is very easy to misuse `Pieces`">Example: it is very easy to misuse <code>Pieces</code></a></li><li><a href="#case-study-how-to-parse-2025-01-03t1728-05-into-zoneddatetime" title="Case study: how to parse `2025-01-03T17:28-05` into `ZonedDateTime`">Case study: how to parse <code>2025-01-03T17:28-05</code> into <code>ZonedDateTime</code></a></li><li><a href="#case-study-inferring-the-time-zone-of-rfc-3339-timestamps" title="Case study: inferring the time zone of RFC 3339 timestamps">Case study: inferring the time zone of RFC 3339 timestamps</a></li></ul><h3><a href="#implementations">Associated Functions</a></h3><ul class="block method"><li><a href="#method.parse" title="parse">parse</a></li></ul><h3><a href="#implementations">Methods</a></h3><ul class="block method"><li><a href="#method.date" title="date">date</a></li><li><a href="#method.into_owned" title="into_owned">into_owned</a></li><li><a href="#method.offset" title="offset">offset</a></li><li><a href="#method.time" title="time">time</a></li><li><a href="#method.time_zone_annotation" title="time_zone_annotation">time_zone_annotation</a></li><li><a href="#method.to_numeric_offset" title="to_numeric_offset">to_numeric_offset</a></li><li><a href="#method.to_time_zone" title="to_time_zone">to_time_zone</a></li><li><a href="#method.to_time_zone_with" title="to_time_zone_with">to_time_zone_with</a></li><li><a href="#method.with_date" title="with_date">with_date</a></li><li><a href="#method.with_offset" title="with_offset">with_offset</a></li><li><a href="#method.with_time" title="with_time">with_time</a></li><li><a href="#method.with_time_zone_annotation" title="with_time_zone_annotation">with_time_zone_annotation</a></li><li><a href="#method.with_time_zone_name" title="with_time_zone_name">with_time_zone_name</a></li><li><a href="#method.with_time_zone_offset" title="with_time_zone_offset">with_time_zone_offset</a></li></ul><h3><a href="#trait-implementations">Trait Implementations</a></h3><ul class="block trait-implementation"><li><a href="#impl-Clone-for-Pieces%3C'n%3E" title="Clone">Clone</a></li><li><a href="#impl-Debug-for-Pieces%3C'n%3E" title="Debug">Debug</a></li><li><a href="#impl-Display-for-Pieces%3C'n%3E" title="Display">Display</a></li><li><a href="#impl-Eq-for-Pieces%3C'n%3E" title="Eq">Eq</a></li><li><a href="#impl-From%3C%26ZonedDateTime%3E-for-Pieces%3C'a%3E" title="From&#60;&#38;&#39;a ZonedDateTime&#62;">From&#60;&#38;&#39;a ZonedDateTime&#62;</a></li><li><a href="#impl-From%3C(Timestamp,+Offset)%3E-for-Pieces%3C'static%3E" title="From&#60;(Timestamp, Offset)&#62;">From&#60;(Timestamp, Offset)&#62;</a></li><li><a href="#impl-From%3CDate%3E-for-Pieces%3C'static%3E" title="From&#60;Date&#62;">From&#60;Date&#62;</a></li><li><a href="#impl-From%3CDateTime%3E-for-Pieces%3C'static%3E" title="From&#60;DateTime&#62;">From&#60;DateTime&#62;</a></li><li><a href="#impl-From%3CTimestamp%3E-for-Pieces%3C'static%3E" title="From&#60;Timestamp&#62;">From&#60;Timestamp&#62;</a></li><li><a href="#impl-Hash-for-Pieces%3C'n%3E" title="Hash">Hash</a></li><li><a href="#impl-PartialEq-for-Pieces%3C'n%3E" title="PartialEq">PartialEq</a></li><li><a href="#impl-StructuralPartialEq-for-Pieces%3C'n%3E" title="StructuralPartialEq">StructuralPartialEq</a></li></ul><h3><a href="#synthetic-implementations">Auto Trait Implementations</a></h3><ul class="block synthetic-implementation"><li><a href="#impl-Forget-for-Pieces%3C'n%3E" title="Forget">Forget</a></li><li><a href="#impl-Freeze-for-Pieces%3C'n%3E" title="Freeze">Freeze</a></li><li><a href="#impl-Move-for-Pieces%3C'n%3E" title="Move">Move</a></li><li><a href="#impl-RefUnwindSafe-for-Pieces%3C'n%3E" title="RefUnwindSafe">RefUnwindSafe</a></li><li><a href="#impl-Send-for-Pieces%3C'n%3E" title="Send">Send</a></li><li><a href="#impl-Sync-for-Pieces%3C'n%3E" title="Sync">Sync</a></li><li><a href="#impl-Unpin-for-Pieces%3C'n%3E" title="Unpin">Unpin</a></li><li><a href="#impl-UnsafeUnpin-for-Pieces%3C'n%3E" title="UnsafeUnpin">UnsafeUnpin</a></li><li><a href="#impl-UnwindSafe-for-Pieces%3C'n%3E" title="UnwindSafe">UnwindSafe</a></li></ul><h3><a href="#blanket-implementations">Blanket Implementations</a></h3><ul class="block blanket-implementation"><li><a href="#impl-Any-for-T" title="Any">Any</a></li><li><a href="#impl-Borrow%3CT%3E-for-T" title="Borrow&#60;T&#62;">Borrow&#60;T&#62;</a></li><li><a href="#impl-BorrowMut%3CT%3E-for-T" title="BorrowMut&#60;T&#62;">BorrowMut&#60;T&#62;</a></li><li><a href="#impl-CloneToUninit-for-T" title="CloneToUninit">CloneToUninit</a></li><li><a href="#impl-From%3CT%3E-for-T" title="From&#60;T&#62;">From&#60;T&#62;</a></li><li><a href="#impl-Into%3CU%3E-for-T" title="Into&#60;U&#62;">Into&#60;U&#62;</a></li><li><a href="#impl-ToOwned-for-T" title="ToOwned">ToOwned</a></li><li><a href="#impl-ToString-for-T" title="ToString">ToString</a></li><li><a href="#impl-TryFrom%3CU%3E-for-T" title="TryFrom&#60;U&#62;">TryFrom&#60;U&#62;</a></li><li><a href="#impl-TryInto%3CU%3E-for-T" title="TryInto&#60;U&#62;">TryInto&#60;U&#62;</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="index.html">In jiff::<wbr>fmt::<wbr>temporal</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../../index.html">jiff</a>::<wbr><a href="../index.html">fmt</a>::<wbr><a href="index.html">temporal</a></div><h1>Struct <span class="struct">Pieces</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../../src/jiff/fmt/temporal/pieces.rs.html#418-423">Source</a> </span></div><pre class="rust item-decl"><code>pub struct Pieces&lt;'n&gt; { <span class="comment">/* private fields */</span> }</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>A low level representation of a parsed Temporal ISO 8601 datetime string.</p>
+<p>Most users should not need to use or care about this type. Its purpose is
+to represent the individual components of a datetime string for more
+flexible parsing when use cases call for it.</p>
+<p>One can parse into <code>Pieces</code> via <a href="struct.Pieces.html#method.parse" title="associated function jiff::fmt::temporal::Pieces::parse"><code>Pieces::parse</code></a>. Its date, time
+(optional), offset (optional) and time zone annotation (optional) can be
+queried independently. Each component corresponds to the following in a
+datetime string:</p>
+<div class="example-wrap"><pre class="language-text"><code>{date}T{time}{offset}[{time-zone-annotation}]</code></pre></div>
+<p>For example:</p>
+<div class="example-wrap"><pre class="language-text"><code>2025-01-03T19:54-05[America/New_York]</code></pre></div>
+<p>A date is the only required component.</p>
+<p>A <code>Pieces</code> can also be constructed from structured values via its <code>From</code>
+trait implementations. The <code>From</code> trait has the following implementations
+available:</p>
+<ul>
+<li><code>From&lt;Date&gt;</code> creates a <code>Pieces</code> with just a civil <a href="../../civil/struct.Date.html" title="struct jiff::civil::Date"><code>Date</code></a>. All other
+components are left empty.</li>
+<li><code>From&lt;DateTime&gt;</code> creates a <code>Pieces</code> with a civil <a href="../../civil/struct.Date.html" title="struct jiff::civil::Date"><code>Date</code></a> and <a href="../../civil/struct.Time.html" title="struct jiff::civil::Time"><code>Time</code></a>.
+The offset and time zone annotation are left empty.</li>
+<li><code>From&lt;Timestamp&gt;</code> creates a <code>Pieces</code> from a <a href="../../struct.Timestamp.html" title="struct jiff::Timestamp"><code>Timestamp</code></a> using
+a Zulu offset. This signifies that the precise instant is known, but the
+local time’s offset from UTC is unknown. The <a href="../../civil/struct.Date.html" title="struct jiff::civil::Date"><code>Date</code></a> and <a href="../../civil/struct.Time.html" title="struct jiff::civil::Time"><code>Time</code></a> are
+determined via <code>Offset::UTC.to_datetime(timestamp)</code>. The time zone
+annotation is left empty.</li>
+<li><code>From&lt;(Timestamp, Offset)&gt;</code> creates a <code>Pieces</code> from a <a href="../../struct.Timestamp.html" title="struct jiff::Timestamp"><code>Timestamp</code></a> and
+an <a href="../../tz/struct.Offset.html" title="struct jiff::tz::Offset"><code>Offset</code></a>. The <a href="../../civil/struct.Date.html" title="struct jiff::civil::Date"><code>Date</code></a> and <a href="../../civil/struct.Time.html" title="struct jiff::civil::Time"><code>Time</code></a> are determined via
+<code>offset.to_datetime(timestamp)</code>. The time zone annotation is left empty.</li>
+<li><code>From&lt;&amp;ZonedDateTime&gt;</code> creates a <code>Pieces</code> from a <a href="../../struct.ZonedDateTime.html" title="struct jiff::ZonedDateTime"><code>ZonedDateTime</code></a>. This
+populates all fields of a <code>Pieces</code>.</li>
+</ul>
+<p>A <code>Pieces</code> can be converted to a Temporal ISO 8601 string via its <code>Display</code>
+trait implementation.</p>
+<h2 id="example-distinguishing-between-z-0000-and--0000"><a class="doc-anchor" href="#example-distinguishing-between-z-0000-and--0000">§</a>Example: distinguishing between <code>Z</code>, <code>+00:00</code> and <code>-00:00</code></h2>
+<p>With <code>Pieces</code>, it’s possible to parse a datetime string and inspect the
+“type” of its offset when it is zero. This makes use of the
+<a href="enum.PiecesOffset.html" title="enum jiff::fmt::temporal::PiecesOffset"><code>PiecesOffset</code></a> and <a href="struct.PiecesNumericOffset.html" title="struct jiff::fmt::temporal::PiecesNumericOffset"><code>PiecesNumericOffset</code></a> auxiliary types.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{
+    fmt::temporal::{Pieces, PiecesNumericOffset, PiecesOffset},
+    tz::Offset,
+};
+
+<span class="kw">let </span>pieces = Pieces::parse(<span class="string">"1970-01-01T00:00:00Z"</span>)<span class="question-mark">?</span>;
+<span class="kw">let </span>off = pieces.offset().unwrap();
+<span class="comment">// Parsed as Zulu.
+</span><span class="macro">assert_eq!</span>(off, PiecesOffset::Zulu);
+<span class="comment">// Gets converted from Zulu to UTC, i.e., just zero.
+</span><span class="macro">assert_eq!</span>(off.to_numeric_offset(), Offset::UTC);
+
+<span class="kw">let </span>pieces = Pieces::parse(<span class="string">"1970-01-01T00:00:00-00:00"</span>)<span class="question-mark">?</span>;
+<span class="kw">let </span>off = pieces.offset().unwrap();
+<span class="comment">// Parsed as a negative zero.
+</span><span class="macro">assert_eq!</span>(off, PiecesOffset::from(
+    PiecesNumericOffset::from(Offset::UTC).with_negative_zero(),
+));
+<span class="comment">// Gets converted from -00:00 to UTC, i.e., just zero.
+</span><span class="macro">assert_eq!</span>(off.to_numeric_offset(), Offset::UTC);
+
+<span class="kw">let </span>pieces = Pieces::parse(<span class="string">"1970-01-01T00:00:00+00:00"</span>)<span class="question-mark">?</span>;
+<span class="kw">let </span>off = pieces.offset().unwrap();
+<span class="comment">// Parsed as a positive zero.
+</span><span class="macro">assert_eq!</span>(off, PiecesOffset::from(
+    PiecesNumericOffset::from(Offset::UTC),
+));
+<span class="comment">// Gets converted from -00:00 to UTC, i.e., just zero.
+</span><span class="macro">assert_eq!</span>(off.to_numeric_offset(), Offset::UTC);
+</code></pre></div>
+<p>It’s rare to need to care about these differences, but the above example
+demonstrates that <code>Pieces</code> doesn’t try to do any automatic translation for
+you.</p>
+<h2 id="example-it-is-very-easy-to-misuse-pieces"><a class="doc-anchor" href="#example-it-is-very-easy-to-misuse-pieces">§</a>Example: it is very easy to misuse <code>Pieces</code></h2>
+<p>This example shows how easily you can shoot yourself in the foot with
+<code>Pieces</code>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{fmt::temporal::{Pieces, TimeZoneAnnotation}, tz};
+
+<span class="kw">let </span><span class="kw-2">mut </span>pieces = Pieces::parse(<span class="string">"2025-01-03T07:55+02[Africa/Cairo]"</span>)<span class="question-mark">?</span>;
+pieces = pieces.with_offset(tz::offset(-<span class="number">10</span>));
+<span class="comment">// This is nonsense because the offset isn't compatible with the time zone!
+// Moreover, the actual instant that this timestamp represents has changed.
+</span><span class="macro">assert_eq!</span>(pieces.to_string(), <span class="string">"2025-01-03T07:55:00-10:00[Africa/Cairo]"</span>);
+</code></pre></div>
+<p>In the above example, we take a parsed <code>Pieces</code>, change its offset and
+then format it back into a string. There are no speed bumps or errors.
+A <code>Pieces</code> will just blindly follow your instruction, even if it produces
+a nonsense result. Nonsense results are still parsable back into <code>Pieces</code>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil, fmt::temporal::Pieces, tz::{TimeZone, offset}};
+
+<span class="kw">let </span>pieces = Pieces::parse(<span class="string">"2025-01-03T07:55:00-10:00[Africa/Cairo]"</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(pieces.date(), civil::date(<span class="number">2025</span>, <span class="number">1</span>, <span class="number">3</span>));
+<span class="macro">assert_eq!</span>(pieces.time(), <span class="prelude-val">Some</span>(civil::time(<span class="number">7</span>, <span class="number">55</span>, <span class="number">0</span>, <span class="number">0</span>)));
+<span class="macro">assert_eq!</span>(pieces.to_numeric_offset(), <span class="prelude-val">Some</span>(offset(-<span class="number">10</span>)));
+<span class="macro">assert_eq!</span>(pieces.to_time_zone()<span class="question-mark">?</span>, <span class="prelude-val">Some</span>(TimeZone::get(<span class="string">"Africa/Cairo"</span>)<span class="question-mark">?</span>));
+</code></pre></div>
+<p>This exemplifies that <code>Pieces</code> is a mostly “dumb” type that passes
+through the data it contains, even if it doesn’t make sense.</p>
+<h2 id="case-study-how-to-parse-2025-01-03t1728-05-into-zoneddatetime"><a class="doc-anchor" href="#case-study-how-to-parse-2025-01-03t1728-05-into-zoneddatetime">§</a>Case study: how to parse <code>2025-01-03T17:28-05</code> into <code>ZonedDateTime</code></h2>
+<p>One thing in particular that <code>Pieces</code> enables callers to do is side-step
+some of the stricter requirements placed on the higher level parsing
+functions (such as <code>ZonedDateTime</code>’s <code>FromStr</code> trait implementation). For
+example, parsing a datetime string into a <code>ZonedDateTime</code> <em>requires</em> that
+the string contain a time zone annotation. Namely, parsing
+<code>2025-01-03T17:28-05</code> into a <code>ZonedDateTime</code> will fail:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::ZonedDateTime;
+
+<span class="macro">assert_eq!</span>(
+    <span class="string">"2025-01-03T17:28-05"
+        </span>.parse::&lt;ZonedDateTime&gt;()
+        .unwrap_err()
+        .to_string(),
+    <span class="string">"failed to find time zone annotation in square brackets, \
+     which is required for parsing a zoned datetime"</span>,
+);</code></pre></div>
+<p>The above fails because an RFC 3339 timestamp only contains an offset, not
+a time zone, and thus the resulting <code>ZonedDateTime</code> could never do time
+zone aware arithmetic.</p>
+<p>However, in some cases, you might want to bypass these protections and
+creat a <code>ZonedDateTime</code> value with a fixed offset time zone anyway. For
+example, perhaps your use cases don’t need time zone aware arithmetic, but
+want to preserve the offset anyway. This can be accomplished with <code>Pieces</code>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{fmt::temporal::Pieces, tz::TimeZone};
+
+<span class="kw">let </span>pieces = Pieces::parse(<span class="string">"2025-01-03T17:28-05"</span>)<span class="question-mark">?</span>;
+<span class="kw">let </span>time = pieces.time().unwrap_or_else(jiff::civil::Time::midnight);
+<span class="kw">let </span>dt = pieces.date().to_datetime(time);
+<span class="kw">let </span><span class="prelude-val">Some</span>(offset) = pieces.to_numeric_offset() <span class="kw">else </span>{
+    <span class="kw">let </span>msg = <span class="macro">format!</span>(
+        <span class="string">"datetime string has no offset, \
+         and thus cannot be parsed into an instant"</span>,
+    );
+    <span class="kw">return </span><span class="prelude-val">Err</span>(msg.into());
+};
+<span class="kw">let </span>zdt = TimeZone::fixed(offset).to_zoned_datetime(dt)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(zdt.to_string(), <span class="string">"2025-01-03T17:28:00-05:00[-05:00]"</span>);
+</code></pre></div>
+<p>One problem with the above code snippet is that it completely ignores if
+a time zone annotation is present. If it is, it probably makes sense to use
+it, but “fall back” to a fixed offset time zone if it isn’t (which the
+higher level <code>ZonedDateTime</code> parsing function won’t do for you):</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{fmt::temporal::Pieces, tz::TimeZone};
+
+<span class="kw">let </span>timestamp = <span class="string">"2025-01-02T15:13-05"</span>;
+
+<span class="kw">let </span>pieces = Pieces::parse(timestamp)<span class="question-mark">?</span>;
+<span class="kw">let </span>time = pieces.time().unwrap_or_else(jiff::civil::Time::midnight);
+<span class="kw">let </span>dt = pieces.date().to_datetime(time);
+<span class="kw">let </span>tz = <span class="kw">match </span>pieces.to_time_zone()<span class="question-mark">? </span>{
+    <span class="prelude-val">Some</span>(tz) =&gt; tz,
+    <span class="prelude-val">None </span>=&gt; {
+        <span class="kw">let </span><span class="prelude-val">Some</span>(offset) = pieces.to_numeric_offset() <span class="kw">else </span>{
+            <span class="kw">let </span>msg = <span class="macro">format!</span>(
+                <span class="string">"timestamp `{timestamp}` has no time zone \
+                 or offset, and thus cannot be parsed into \
+                 an instant"</span>,
+            );
+            <span class="kw">return </span><span class="prelude-val">Err</span>(msg.into());
+        };
+        TimeZone::fixed(offset)
+    }
+};
+<span class="comment">// We don't bother with offset conflict resolution. And note that
+// this uses automatic "compatible" disambiguation in the case of
+// discontinuities. Of course, this is all moot if `TimeZone` is
+// fixed. The above code handles the case where it isn't!
+</span><span class="kw">let </span>zdt = tz.to_zoned_datetime(dt)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(zdt.to_string(), <span class="string">"2025-01-02T15:13:00-05:00[-05:00]"</span>);
+</code></pre></div>
+<p>This is mostly the same as above, but if an annotation is present, we use
+a <code>TimeZone</code> derived from that over the offset present.</p>
+<p>However, this still doesn’t quite capture what happens when parsing into a
+<code>ZonedDateTime</code> value. In particular, parsing into a <code>ZonedDateTime</code> is
+<em>also</em> doing offset conflict resolution for you. An offset conflict occurs
+when there is a mismatch between the offset in an RFC 3339 timestamp and
+the time zone in an RFC 9557 time zone annotation.</p>
+<p>For example, <code>2024-06-14T17:30-05[America/New_York]</code> has a mismatch
+since the date is in daylight saving time, but the offset, <code>-05</code>, is the
+offset for standard time in <code>America/New_York</code>. If this datetime were
+fed to the above code, then the <code>-05</code> offset would be completely ignored
+and <code>America/New_York</code> would resolve the datetime based on its rules. In
+this case, you’d get <code>2024-06-14T17:30-04</code>, which is a different instant
+than the original datetime!</p>
+<p>You can either implement your own conflict resolution or use
+<a href="../../tz/enum.OffsetConflict.html" title="enum jiff::tz::OffsetConflict"><code>tz::OffsetConflict</code></a> to do it for you.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{fmt::temporal::Pieces, tz::{OffsetConflict, TimeZone}};
+
+<span class="kw">let </span>timestamp = <span class="string">"2024-06-14T17:30-05[America/New_York]"</span>;
+<span class="comment">// The default for conflict resolution when parsing into a `ZonedDateTime`
+// is actually `Reject`, but we use `AlwaysOffset` here to show a different
+// strategy. You'll want to pick the conflict resolution that suits your
+// needs. The `Reject` strategy is what you should pick if you aren't sure.
+</span><span class="kw">let </span>conflict_resolution = OffsetConflict::AlwaysOffset;
+
+<span class="kw">let </span>pieces = Pieces::parse(timestamp)<span class="question-mark">?</span>;
+<span class="kw">let </span>time = pieces.time().unwrap_or_else(jiff::civil::Time::midnight);
+<span class="kw">let </span>dt = pieces.date().to_datetime(time);
+<span class="kw">let </span>ambiguous_zdt = <span class="kw">match </span>pieces.to_time_zone()<span class="question-mark">? </span>{
+    <span class="prelude-val">Some</span>(tz) =&gt; <span class="kw">match </span>pieces.to_numeric_offset() {
+        <span class="prelude-val">None </span>=&gt; tz.into_ambiguous_zoned_datetime(dt),
+        <span class="prelude-val">Some</span>(offset) =&gt; conflict_resolution.resolve(dt, offset, tz)<span class="question-mark">?</span>,
+    },
+    <span class="prelude-val">None </span>=&gt; {
+        <span class="kw">let </span><span class="prelude-val">Some</span>(offset) = pieces.to_numeric_offset() <span class="kw">else </span>{
+            <span class="kw">let </span>msg = <span class="macro">format!</span>(
+                <span class="string">"timestamp `{timestamp}` has no time zone \
+                 or offset, and thus cannot be parsed into \
+                 an instant"</span>,
+            );
+            <span class="kw">return </span><span class="prelude-val">Err</span>(msg.into());
+        };
+        <span class="comment">// Won't even be ambiguous, but gets us the same
+        // type as the branch above.
+        </span>TimeZone::fixed(offset).into_ambiguous_zoned_datetime(dt)
+    }
+};
+<span class="comment">// We do compatible disambiguation here like we do in the previous
+// examples, but you could choose any strategy. As with offset conflict
+// resolution, if you aren't sure what to pick, a safe choice here would
+// be `ambiguous_zdt.unambiguous()`, which will return an error if the
+// datetime is ambiguous in any way. Then, if you ever hit an error, you
+// can examine the case to see if it should be handled in a different way.
+</span><span class="kw">let </span>zdt = ambiguous_zdt.compatible()<span class="question-mark">?</span>;
+<span class="comment">// Notice that we now have a different civil time and offset, but the
+// instant it corresponds to is the same as the one we started with.
+</span><span class="macro">assert_eq!</span>(zdt.to_string(), <span class="string">"2024-06-14T18:30:00-04:00[America/New_York]"</span>);
+</code></pre></div>
+<p>The above has effectively completely rebuilt the higher level
+<code>ZonedDateTime</code> parsing routine, but with a fallback to a fixed time zone
+when a time zone annotation is not present.</p>
+<h2 id="case-study-inferring-the-time-zone-of-rfc-3339-timestamps"><a class="doc-anchor" href="#case-study-inferring-the-time-zone-of-rfc-3339-timestamps">§</a>Case study: inferring the time zone of RFC 3339 timestamps</h2>
+<p>As <a href="https://github.com/BurntSushi/jiff/discussions/181#discussioncomment-11729435">one real world use case details</a>, it might be
+desirable to try and infer the time zone of RFC 3339 timestamps with
+varying offsets. This might be applicable when:</p>
+<ul>
+<li>You have out-of-band information, possibly contextual, that indicates
+the timestamps have to come from a fixed set of time zones.</li>
+<li>The time zones have different standard offsets.</li>
+<li>You have a specific desire or need to use a <a href="../../struct.ZonedDateTime.html" title="struct jiff::ZonedDateTime"><code>ZonedDateTime</code></a> value for
+its ergonomics and time zone aware handling. After all, in this case, you
+believe the timestamps to actually be generated from a specific time zone,
+but the interchange format doesn’t support carrying that information. Or
+the source data simply omits it.</li>
+</ul>
+<p>In other words, you might be trying to make the best of a bad situation.</p>
+<p>A <code>Pieces</code> can help you accomplish this because it gives you access to each
+component of a parsed datetime, and thus lets you implement arbitrary logic
+for how to translate that into a <code>ZonedDateTime</code>. In this case, there is
+contextual information that Jiff can’t possibly know about.</p>
+<p>The general approach we take here is to make use of
+<a href="../../tz/enum.OffsetConflict.html" title="enum jiff::tz::OffsetConflict"><code>tz::OffsetConflict</code></a> to query whether a
+timestamp has a fixed offset compatible with a particular time zone. And if
+so, we can <em>probably</em> assume it comes from that time zone. One hitch is
+that it’s possible for the timestamp to be valid for multiple time zones,
+so we check that as well.</p>
+<p>In the use case linked above, we have fixed offset timestamps from
+<code>America/Chicago</code> and <code>America/New_York</code>. So let’s try implementing the
+above strategy. Note that we assume our inputs are RFC 3339 fixed offset
+timestamps and error otherwise. This is just to keep things simple. To
+handle data that is more varied, see the previous case study where we
+respect a time zone annotation if it’s present, and fall back to a fixed
+offset time zone if it isn’t.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{
+    ZonedDateTime,
+    fmt::temporal::Pieces,
+    tz::{OffsetConflict, TimeZone},
+};
+
+<span class="comment">// The time zones we're allowed to choose from.
+</span><span class="kw">let </span>tzs = <span class="kw-2">&amp;</span>[
+    TimeZone::get(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>,
+    TimeZone::get(<span class="string">"America/Chicago"</span>)<span class="question-mark">?</span>,
+];
+
+<span class="comment">// Here's our data that lacks time zones. The task is to assign a time zone
+// from `tzs` to each below and convert it to a `ZonedDateTime`. If we fail
+// on any one, then we substitute `None`.
+</span><span class="kw">let </span>data = <span class="kw-2">&amp;</span>[
+    <span class="string">"2024-01-13T10:33-05"</span>,
+    <span class="string">"2024-01-25T12:15-06"</span>,
+    <span class="string">"2024-03-10T02:30-05"</span>,
+    <span class="string">"2024-06-08T14:01-05"</span>,
+    <span class="string">"2024-06-12T11:46-04"</span>,
+    <span class="string">"2024-11-03T01:30-05"</span>,
+];
+<span class="comment">// Our answers.
+</span><span class="kw">let </span><span class="kw-2">mut </span>zdts: Vec&lt;<span class="prelude-ty">Option</span>&lt;ZonedDateTime&gt;&gt; = <span class="macro">vec!</span>[];
+<span class="kw">for </span>string <span class="kw">in </span>data {
+    <span class="comment">// Parse and gather up the data that we can from the input.
+    // In this case, that's a civil datetime and an offset from UTC.
+    </span><span class="kw">let </span>pieces = Pieces::parse(string)<span class="question-mark">?</span>;
+    <span class="kw">let </span>time = pieces.time().unwrap_or_else(jiff::civil::Time::midnight);
+    <span class="kw">let </span>dt = pieces.date().to_datetime(time);
+    <span class="kw">let </span><span class="prelude-val">Some</span>(offset) = pieces.to_numeric_offset() <span class="kw">else </span>{
+        <span class="comment">// A robust implementation should use a TZ annotation if present.
+        </span><span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">"missing offset"</span>.into());
+    };
+    <span class="comment">// Now collect all time zones that are valid for this timestamp.
+    </span><span class="kw">let </span><span class="kw-2">mut </span>candidates = <span class="macro">vec!</span>[];
+    <span class="kw">for </span>tz <span class="kw">in </span>tzs {
+        <span class="kw">let </span>result = OffsetConflict::Reject.resolve(dt, offset, tz.clone());
+        <span class="comment">// The parsed offset isn't valid for this time zone, so reject it.
+        </span><span class="kw">let </span><span class="prelude-val">Ok</span>(ambiguous_zdt) = result <span class="kw">else </span>{ <span class="kw">continue </span>};
+        <span class="comment">// This can never fail because we used the "reject" conflict
+        // resolution strategy. It will never return an ambiguous
+        // `ZonedDateTime` since we always have a valid offset that does
+        // disambiguation for us.
+        </span><span class="kw">let </span>zdt = ambiguous_zdt.unambiguous().unwrap();
+        candidates.push(zdt);
+    }
+    <span class="kw">if </span>candidates.len() == <span class="number">1 </span>{
+        zdts.push(<span class="prelude-val">Some</span>(candidates.pop().unwrap()));
+    } <span class="kw">else </span>{
+        zdts.push(<span class="prelude-val">None</span>);
+    }
+}
+<span class="macro">assert_eq!</span>(zdts, <span class="macro">vec!</span>[
+    <span class="prelude-val">Some</span>(<span class="string">"2024-01-13T10:33-05[America/New_York]"</span>.parse()<span class="question-mark">?</span>),
+    <span class="prelude-val">Some</span>(<span class="string">"2024-01-25T12:15-06[America/Chicago]"</span>.parse()<span class="question-mark">?</span>),
+    <span class="comment">// Failed because the clock time falls in a gap in the
+    // transition to daylight saving time, and it could be
+    // valid for either America/New_York or America/Chicago.
+    </span><span class="prelude-val">None</span>,
+    <span class="prelude-val">Some</span>(<span class="string">"2024-06-08T14:01-05[America/Chicago]"</span>.parse()<span class="question-mark">?</span>),
+    <span class="prelude-val">Some</span>(<span class="string">"2024-06-12T11:46-04[America/New_York]"</span>.parse()<span class="question-mark">?</span>),
+    <span class="comment">// Failed because the clock time falls in a fold in the
+    // transition out of daylight saving time, and it could be
+    // valid for either America/New_York or America/Chicago.
+    </span><span class="prelude-val">None</span>,
+]);
+</code></pre></div>
+<p>The one hitch here is that if the time zones are close to each
+geographically and both have daylight saving time, then there are some
+RFC 3339 timestamps that are truly ambiguous. For example,
+<code>2024-11-03T01:30-05</code> is perfectly valid for both <code>America/New_York</code> and
+<code>America/Chicago</code>. In this case, there is no way to tell which time zone
+the timestamp belongs to. It might be reasonable to return an error in
+this case or omit the timestamp. It depends on what you need to do.</p>
+<p>With more effort, it would also be possible to optimize the above routine
+by utilizing <a href="../../tz/struct.TimeZone.html#method.preceding" title="method jiff::tz::TimeZone::preceding"><code>TimeZone::preceding</code></a> and <a href="../../tz/struct.TimeZone.html#method.following" title="method jiff::tz::TimeZone::following"><code>TimeZone::following</code></a> to get
+the exact boundaries of each time zone transition. Then you could use an
+offset lookup table for each range to determine the appropriate time zone.</p>
+</div></details><h2 id="implementations" class="section-header">Implementations<a href="#implementations" class="anchor">§</a></h2><div id="implementations-list"><details class="toggle implementors-toggle" open><summary><section id="impl-Pieces%3C'n%3E" class="impl"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#425-1067">Source</a><a href="#impl-Pieces%3C'n%3E" class="anchor">§</a><h3 class="code-header">impl&lt;'n&gt; <a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'n&gt;</h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.parse" class="method"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#453-458">Source</a><h4 class="code-header">pub fn <a href="#method.parse" class="fn">parse</a>&lt;I: ?<a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html" title="trait core::marker::Sized">Sized</a> + <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.AsRef.html" title="trait core::convert::AsRef">AsRef</a>&lt;[<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>]&gt; + 'n&gt;(
+    input: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;'n I</a>,
+) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'n&gt;, <a class="struct" href="../../struct.Error.html" title="struct jiff::Error">Error</a>&gt;</h4></section></summary><div class="docblock"><p>Parses a Temporal ISO 8601 datetime string into a <code>Pieces</code>.</p>
+<p>This is a convenience routine for
+<a href="struct.DateTimeParser.html#method.parse_pieces" title="method jiff::fmt::temporal::DateTimeParser::parse_pieces"><code>DateTimeParser::parses_pieces</code></a>.</p>
+<p>Note that the <code>Pieces</code> returned is parameterized by the lifetime of
+<code>input</code>. This is because it might borrow a sub-slice of <code>input</code> for
+a time zone annotation name. For example,
+<code>America/Whitehorse</code> in <code>2025-01-03T16:42-07[America/Whitehorse]</code>.</p>
+<h5 id="example"><a class="doc-anchor" href="#example">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil, fmt::temporal::Pieces, tz::TimeZone};
+
+<span class="kw">let </span>pieces = Pieces::parse(<span class="string">"2025-01-03T16:42[America/Whitehorse]"</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(pieces.date(), civil::date(<span class="number">2025</span>, <span class="number">1</span>, <span class="number">3</span>));
+<span class="macro">assert_eq!</span>(pieces.time(), <span class="prelude-val">Some</span>(civil::time(<span class="number">16</span>, <span class="number">42</span>, <span class="number">0</span>, <span class="number">0</span>)));
+<span class="macro">assert_eq!</span>(pieces.to_numeric_offset(), <span class="prelude-val">None</span>);
+<span class="macro">assert_eq!</span>(
+    pieces.to_time_zone()<span class="question-mark">?</span>,
+    <span class="prelude-val">Some</span>(TimeZone::get(<span class="string">"America/Whitehorse"</span>)<span class="question-mark">?</span>),
+);
+</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="method.date" class="method"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#475-477">Source</a><h4 class="code-header">pub fn <a href="#method.date" class="fn">date</a>(&amp;self) -&gt; <a class="struct" href="../../civil/struct.Date.html" title="struct jiff::civil::Date">Date</a></h4></section></summary><div class="docblock"><p>Returns the civil date in this <code>Pieces</code>.</p>
+<p>Note that every <code>Pieces</code> value is guaranteed to have a <code>Date</code>.</p>
+<h5 id="example-1"><a class="doc-anchor" href="#example-1">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil, fmt::temporal::Pieces};
+
+<span class="kw">let </span>pieces = Pieces::parse(<span class="string">"2025-01-03"</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(pieces.date(), civil::date(<span class="number">2025</span>, <span class="number">1</span>, <span class="number">3</span>));
+</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="method.time" class="method"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#511-513">Source</a><h4 class="code-header">pub fn <a href="#method.time" class="fn">time</a>(&amp;self) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="struct" href="../../civil/struct.Time.html" title="struct jiff::civil::Time">Time</a>&gt;</h4></section></summary><div class="docblock"><p>Returns the civil time in this <code>Pieces</code>.</p>
+<p>The time component is optional. In
+<a href="struct.DateTimeParser.html" title="struct jiff::fmt::temporal::DateTimeParser"><code>DateTimeParser</code></a>, parsing
+into types that require a time (like <a href="../../civil/struct.DateTime.html" title="struct jiff::civil::DateTime"><code>DateTime</code></a>) when a time is
+missing automatically set the time to midnight. (Or, more precisely,
+the first instant of the day.)</p>
+<h5 id="example-2"><a class="doc-anchor" href="#example-2">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{ZonedDateTime, civil, fmt::temporal::Pieces};
+
+<span class="kw">let </span>pieces = Pieces::parse(<span class="string">"2025-01-03T14:49:01"</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(pieces.date(), civil::date(<span class="number">2025</span>, <span class="number">1</span>, <span class="number">3</span>));
+<span class="macro">assert_eq!</span>(pieces.time(), <span class="prelude-val">Some</span>(civil::time(<span class="number">14</span>, <span class="number">49</span>, <span class="number">1</span>, <span class="number">0</span>)));
+
+<span class="comment">// tricksy tricksy, the first instant of 2015-10-18 in Sao Paulo is
+// not midnight!
+</span><span class="kw">let </span>pieces = Pieces::parse(<span class="string">"2015-10-18[America/Sao_Paulo]"</span>)<span class="question-mark">?</span>;
+<span class="comment">// Parsing into pieces just gives us the component parts, so no time:
+</span><span class="macro">assert_eq!</span>(pieces.time(), <span class="prelude-val">None</span>);
+
+<span class="comment">// But if this uses higher level routines to parse into a
+// `ZonedDateTime`, then we can see that the missing time implies the
+// first instant of the day:
+</span><span class="kw">let </span>zdt: ZonedDateTime = <span class="string">"2015-10-18[America/Sao_Paulo]"</span>.parse()<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(zdt.time(), jiff::civil::time(<span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>));
+</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="method.offset" class="method"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#562-564">Source</a><h4 class="code-header">pub fn <a href="#method.offset" class="fn">offset</a>(&amp;self) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="enum" href="enum.PiecesOffset.html" title="enum jiff::fmt::temporal::PiecesOffset">PiecesOffset</a>&gt;</h4></section></summary><div class="docblock"><p>Returns the offset in this <code>Pieces</code>.</p>
+<p>The offset returned can be infallibly converted to a numeric offset,
+i.e., <a href="../../tz/struct.Offset.html" title="struct jiff::tz::Offset"><code>Offset</code></a>. But it also includes extra data to indicate whether
+a <code>Z</code> or a <code>-00:00</code> was parsed. (Neither of which are representable by
+an <code>Offset</code>, which doesn’t distinguish between Zulu and UTC and doesn’t
+represent negative and positive zero differently.)</p>
+<h5 id="example-3"><a class="doc-anchor" href="#example-3">§</a>Example</h5>
+<p>This example shows how different flavors of <code>Offset::UTC</code> can be parsed
+and inspected.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{
+    fmt::temporal::{Pieces, PiecesNumericOffset, PiecesOffset},
+    tz::Offset,
+};
+
+<span class="kw">let </span>pieces = Pieces::parse(<span class="string">"1970-01-01T00:00:00Z"</span>)<span class="question-mark">?</span>;
+<span class="kw">let </span>off = pieces.offset().unwrap();
+<span class="comment">// Parsed as Zulu.
+</span><span class="macro">assert_eq!</span>(off, PiecesOffset::Zulu);
+<span class="comment">// Gets converted from Zulu to UTC, i.e., just zero.
+</span><span class="macro">assert_eq!</span>(off.to_numeric_offset(), Offset::UTC);
+
+<span class="kw">let </span>pieces = Pieces::parse(<span class="string">"1970-01-01T00:00:00-00:00"</span>)<span class="question-mark">?</span>;
+<span class="kw">let </span>off = pieces.offset().unwrap();
+<span class="comment">// Parsed as a negative zero.
+</span><span class="macro">assert_eq!</span>(off, PiecesOffset::from(
+    PiecesNumericOffset::from(Offset::UTC).with_negative_zero(),
+));
+<span class="comment">// Gets converted from -00:00 to UTC, i.e., just zero.
+</span><span class="macro">assert_eq!</span>(off.to_numeric_offset(), Offset::UTC);
+
+<span class="kw">let </span>pieces = Pieces::parse(<span class="string">"1970-01-01T00:00:00+00:00"</span>)<span class="question-mark">?</span>;
+<span class="kw">let </span>off = pieces.offset().unwrap();
+<span class="comment">// Parsed as a positive zero.
+</span><span class="macro">assert_eq!</span>(off, PiecesOffset::from(
+    PiecesNumericOffset::from(Offset::UTC),
+));
+<span class="comment">// Gets converted from -00:00 to UTC, i.e., just zero.
+</span><span class="macro">assert_eq!</span>(off.to_numeric_offset(), Offset::UTC);
+</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="method.time_zone_annotation" class="method"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#597-599">Source</a><h4 class="code-header">pub fn <a href="#method.time_zone_annotation" class="fn">time_zone_annotation</a>(&amp;self) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;&amp;<a class="struct" href="struct.TimeZoneAnnotation.html" title="struct jiff::fmt::temporal::TimeZoneAnnotation">TimeZoneAnnotation</a>&lt;'n&gt;&gt;</h4></section></summary><div class="docblock"><p>Returns the time zone annotation in this <code>Pieces</code>.</p>
+<p>A time zone annotation is optional. The higher level
+<a href="struct.DateTimeParser.html" title="struct jiff::fmt::temporal::DateTimeParser"><code>DateTimeParser</code></a>
+requires a time zone annotation when parsing into a <a href="../../struct.ZonedDateTime.html" title="struct jiff::ZonedDateTime"><code>ZonedDateTime</code></a>.</p>
+<p>A time zone annotation is either an offset, or more commonly, an IANA
+time zone identifier.</p>
+<h5 id="example-4"><a class="doc-anchor" href="#example-4">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{fmt::temporal::{Pieces, TimeZoneAnnotation}, tz::offset};
+
+<span class="comment">// A time zone annotation from a name:
+</span><span class="kw">let </span>pieces = Pieces::parse(<span class="string">"2025-01-02T16:47-05[America/New_York]"</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(
+    pieces.time_zone_annotation().unwrap(),
+    <span class="kw-2">&amp;</span>TimeZoneAnnotation::from(<span class="string">"America/New_York"</span>),
+);
+
+<span class="comment">// A time zone annotation from an offset:
+</span><span class="kw">let </span>pieces = Pieces::parse(<span class="string">"2025-01-02T16:47-05[-05:00]"</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(
+    pieces.time_zone_annotation().unwrap(),
+    <span class="kw-2">&amp;</span>TimeZoneAnnotation::from(offset(-<span class="number">5</span>)),
+);
+</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="method.to_numeric_offset" class="method"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#628-630">Source</a><h4 class="code-header">pub fn <a href="#method.to_numeric_offset" class="fn">to_numeric_offset</a>(&amp;self) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="struct" href="../../tz/struct.Offset.html" title="struct jiff::tz::Offset">Offset</a>&gt;</h4></section></summary><div class="docblock"><p>A convenience routine for converting an offset on this <code>Pieces</code>,
+if present, to a numeric <a href="../../tz/struct.Offset.html" title="struct jiff::tz::Offset"><code>Offset</code></a>.</p>
+<p>This collapses the offsets <code>Z</code>, <code>-00:00</code> and <code>+00:00</code> all to
+<a href="../../tz/struct.Offset.html#associatedconstant.UTC" title="associated constant jiff::tz::Offset::UTC"><code>Offset::UTC</code></a>. If you need to distinguish between them, then use
+<a href="struct.Pieces.html#method.offset" title="method jiff::fmt::temporal::Pieces::offset"><code>Pieces::offset</code></a>.</p>
+<h5 id="example-5"><a class="doc-anchor" href="#example-5">§</a>Example</h5>
+<p>This example shows how <code>Z</code>, <code>-00:00</code> and <code>+00:00</code> all map to the same
+<a href="../../tz/struct.Offset.html" title="struct jiff::tz::Offset"><code>Offset</code></a> value:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{fmt::temporal::Pieces, tz::Offset};
+
+<span class="kw">let </span>pieces = Pieces::parse(<span class="string">"1970-01-01T00:00:00Z"</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(pieces.to_numeric_offset(), <span class="prelude-val">Some</span>(Offset::UTC));
+
+<span class="kw">let </span>pieces = Pieces::parse(<span class="string">"1970-01-01T00:00:00-00:00"</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(pieces.to_numeric_offset(), <span class="prelude-val">Some</span>(Offset::UTC));
+
+<span class="kw">let </span>pieces = Pieces::parse(<span class="string">"1970-01-01T00:00:00+00:00"</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(pieces.to_numeric_offset(), <span class="prelude-val">Some</span>(Offset::UTC));
+</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="method.to_time_zone" class="method"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#667-669">Source</a><h4 class="code-header">pub fn <a href="#method.to_time_zone" class="fn">to_time_zone</a>(&amp;self) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="struct" href="../../tz/struct.TimeZone.html" title="struct jiff::tz::TimeZone">TimeZone</a>&gt;, <a class="struct" href="../../struct.Error.html" title="struct jiff::Error">Error</a>&gt;</h4></section></summary><div class="docblock"><p>A convenience routine for converting a time zone annotation, if
+present, into a <a href="../../tz/struct.TimeZone.html" title="struct jiff::tz::TimeZone"><code>TimeZone</code></a>.</p>
+<p>If no annotation is on this <code>Pieces</code>, then this returns <code>Ok(None)</code>.</p>
+<p>This may return an error if the time zone annotation is a name and it
+couldn’t be found in Jiff’s global time zone database.</p>
+<h5 id="example-6"><a class="doc-anchor" href="#example-6">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{fmt::temporal::Pieces, tz::{TimeZone, offset}};
+
+<span class="comment">// No time zone annotations means you get `Ok(None)`:
+</span><span class="kw">let </span>pieces = Pieces::parse(<span class="string">"2025-01-03T17:13-05"</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(pieces.to_time_zone()<span class="question-mark">?</span>, <span class="prelude-val">None</span>);
+
+<span class="comment">// An offset time zone annotation gets you a fixed offset `TimeZone`:
+</span><span class="kw">let </span>pieces = Pieces::parse(<span class="string">"2025-01-03T17:13-05[-05]"</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(pieces.to_time_zone()<span class="question-mark">?</span>, <span class="prelude-val">Some</span>(TimeZone::fixed(offset(-<span class="number">5</span>))));
+
+<span class="comment">// A time zone annotation name gets you a IANA time zone:
+</span><span class="kw">let </span>pieces = Pieces::parse(<span class="string">"2025-01-03T17:13-05[America/New_York]"</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(pieces.to_time_zone()<span class="question-mark">?</span>, <span class="prelude-val">Some</span>(TimeZone::get(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>));
+
+<span class="comment">// A time zone annotation name that doesn't exist gives you an error:
+</span><span class="kw">let </span>pieces = Pieces::parse(<span class="string">"2025-01-03T17:13-05[Australia/Bluey]"</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(
+    pieces.to_time_zone().unwrap_err().to_string(),
+    <span class="string">"failed to find time zone `Australia/Bluey` in time zone database"</span>,
+);
+</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="method.to_time_zone_with" class="method"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#694-700">Source</a><h4 class="code-header">pub fn <a href="#method.to_time_zone_with" class="fn">to_time_zone_with</a>(
+    &amp;self,
+    db: &amp;<a class="struct" href="../../tz/struct.TimeZoneDatabase.html" title="struct jiff::tz::TimeZoneDatabase">TimeZoneDatabase</a>,
+) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="struct" href="../../tz/struct.TimeZone.html" title="struct jiff::tz::TimeZone">TimeZone</a>&gt;, <a class="struct" href="../../struct.Error.html" title="struct jiff::Error">Error</a>&gt;</h4></section></summary><div class="docblock"><p>A convenience routine for converting a time zone annotation, if
+present, into a <a href="../../tz/struct.TimeZone.html" title="struct jiff::tz::TimeZone"><code>TimeZone</code></a> using the given <a href="../../tz/struct.TimeZoneDatabase.html" title="struct jiff::tz::TimeZoneDatabase"><code>TimeZoneDatabase</code></a>.</p>
+<p>If no annotation is on this <code>Pieces</code>, then this returns <code>Ok(None)</code>.</p>
+<p>This may return an error if the time zone annotation is a name and it
+couldn’t be found in Jiff’s global time zone database.</p>
+<h5 id="example-7"><a class="doc-anchor" href="#example-7">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{fmt::temporal::Pieces, tz::TimeZone};
+
+<span class="comment">// A time zone annotation name gets you a IANA time zone:
+</span><span class="kw">let </span>pieces = Pieces::parse(<span class="string">"2025-01-03T17:13-05[America/New_York]"</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(
+    pieces.to_time_zone_with(jiff::tz::db())<span class="question-mark">?</span>,
+    <span class="prelude-val">Some</span>(TimeZone::get(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>),
+);
+</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="method.with_date" class="method"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#724-726">Source</a><h4 class="code-header">pub fn <a href="#method.with_date" class="fn">with_date</a>(self, date: <a class="struct" href="../../civil/struct.Date.html" title="struct jiff::civil::Date">Date</a>) -&gt; <a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'n&gt;</h4></section></summary><div class="docblock"><p>Set the date on this <code>Pieces</code> to the one given.</p>
+<p>A <code>Date</code> is the minimal piece of information necessary to create a
+<code>Pieces</code>. This method will override any previous setting.</p>
+<h5 id="example-8"><a class="doc-anchor" href="#example-8">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil, fmt::temporal::Pieces, Timestamp};
+
+<span class="kw">let </span>pieces = Pieces::from(civil::date(<span class="number">2025</span>, <span class="number">1</span>, <span class="number">3</span>));
+<span class="macro">assert_eq!</span>(pieces.to_string(), <span class="string">"2025-01-03"</span>);
+
+<span class="comment">// Alternatively, build a `Pieces` from another data type, and the
+// date field will be automatically populated.
+</span><span class="kw">let </span>pieces = Pieces::from(Timestamp::from_second(<span class="number">1735930208</span>)<span class="question-mark">?</span>);
+<span class="macro">assert_eq!</span>(pieces.date(), civil::date(<span class="number">2025</span>, <span class="number">1</span>, <span class="number">3</span>));
+<span class="macro">assert_eq!</span>(pieces.to_string(), <span class="string">"2025-01-03T18:50:08Z"</span>);
+</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="method.with_time" class="method"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#749-751">Source</a><h4 class="code-header">pub fn <a href="#method.with_time" class="fn">with_time</a>(self, time: <a class="struct" href="../../civil/struct.Time.html" title="struct jiff::civil::Time">Time</a>) -&gt; <a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'n&gt;</h4></section></summary><div class="docblock"><p>Set the time on this <code>Pieces</code> to the one given.</p>
+<p>Setting a <a href="../../civil/struct.Time.html" title="struct jiff::civil::Time"><code>Time</code></a> on <code>Pieces</code> is optional. When formatting a
+<code>Pieces</code> to a string, a missing <code>Time</code> may be omitted from the datetime
+string in some cases. See <a href="struct.Pieces.html#method.with_offset" title="method jiff::fmt::temporal::Pieces::with_offset"><code>Pieces::with_offset</code></a> for more details.</p>
+<h5 id="example-9"><a class="doc-anchor" href="#example-9">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil, fmt::temporal::Pieces};
+
+<span class="kw">let </span>pieces = Pieces::from(civil::date(<span class="number">2025</span>, <span class="number">1</span>, <span class="number">3</span>))
+    .with_time(civil::time(<span class="number">13</span>, <span class="number">48</span>, <span class="number">0</span>, <span class="number">0</span>));
+<span class="macro">assert_eq!</span>(pieces.to_string(), <span class="string">"2025-01-03T13:48:00"</span>);
+<span class="comment">// Alternatively, build a `Pieces` from a `DateTime` directly:
+</span><span class="kw">let </span>pieces = Pieces::from(civil::date(<span class="number">2025</span>, <span class="number">1</span>, <span class="number">3</span>).at(<span class="number">13</span>, <span class="number">48</span>, <span class="number">0</span>, <span class="number">0</span>));
+<span class="macro">assert_eq!</span>(pieces.to_string(), <span class="string">"2025-01-03T13:48:00"</span>);
+</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="method.with_offset" class="method"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#931-933">Source</a><h4 class="code-header">pub fn <a href="#method.with_offset" class="fn">with_offset</a>&lt;T: <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.Into.html" title="trait core::convert::Into">Into</a>&lt;<a class="enum" href="enum.PiecesOffset.html" title="enum jiff::fmt::temporal::PiecesOffset">PiecesOffset</a>&gt;&gt;(self, offset: T) -&gt; <a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'n&gt;</h4></section></summary><div class="docblock"><p>Set the offset on this <code>Pieces</code> to the one given.</p>
+<p>Setting the offset on <code>Pieces</code> is optional.</p>
+<p>The type of offset is polymorphic, and includes anything that can be
+infallibly converted into a <a href="enum.PiecesOffset.html" title="enum jiff::fmt::temporal::PiecesOffset"><code>PiecesOffset</code></a>. This includes an
+<a href="../../tz/struct.Offset.html" title="struct jiff::tz::Offset"><code>Offset</code></a>.</p>
+<p>This refers to the offset in the <a href="https://www.rfc-editor.org/rfc/rfc3339">RFC 3339</a> component of a Temporal
+ISO 8601 datetime string.</p>
+<p>Since a string like <code>2025-01-03+11</code> is not valid, if a <code>Pieces</code> has
+an offset set but no <a href="../../civil/struct.Time.html" title="struct jiff::civil::Time"><code>Time</code></a> set, then formatting the <code>Pieces</code> will
+write an explicit <code>Time</code> set to midnight.</p>
+<p>Note that this is distinct from <a href="struct.Pieces.html#method.with_time_zone_offset" title="method jiff::fmt::temporal::Pieces::with_time_zone_offset"><code>Pieces::with_time_zone_offset</code></a>.
+This routine sets the offset on the datetime, while
+<code>Pieces::with_time_zone_offset</code> sets the offset inside the time zone
+annotation. When the timestamp offset and the time zone annotation
+offset are both present, then they must be equivalent or else the
+datetime string is not a valid Temporal ISO 8601 string. However, a
+<code>Pieces</code> will let you format a string with mismatching offsets.</p>
+<h5 id="example-10"><a class="doc-anchor" href="#example-10">§</a>Example</h5>
+<p>This example shows how easily you can shoot yourself in the foot with
+this routine:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{fmt::temporal::{Pieces, TimeZoneAnnotation}, tz};
+
+<span class="kw">let </span><span class="kw-2">mut </span>pieces = Pieces::parse(<span class="string">"2025-01-03T07:55+02[+02]"</span>)<span class="question-mark">?</span>;
+pieces = pieces.with_offset(tz::offset(-<span class="number">10</span>));
+<span class="comment">// This is nonsense because the offsets don't match!
+// And notice also that the instant that this timestamp refers to has
+// changed.
+</span><span class="macro">assert_eq!</span>(pieces.to_string(), <span class="string">"2025-01-03T07:55:00-10:00[+02:00]"</span>);
+</code></pre></div>
+<p>This exemplifies that <code>Pieces</code> is a mostly “dumb” type that passes
+through the data it contains, even if it doesn’t make sense.</p>
+<h5 id="example-changing-the-offset-can-change-the-instant"><a class="doc-anchor" href="#example-changing-the-offset-can-change-the-instant">§</a>Example: changing the offset can change the instant</h5>
+<p>Consider this case where a <code>Pieces</code> is created directly from a
+<code>Timestamp</code>, and then the offset is changed.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{fmt::temporal::Pieces, tz, Timestamp};
+
+<span class="kw">let </span>pieces = Pieces::from(Timestamp::UNIX_EPOCH)
+    .with_offset(tz::offset(-<span class="number">5</span>));
+<span class="macro">assert_eq!</span>(pieces.to_string(), <span class="string">"1970-01-01T00:00:00-05:00"</span>);</code></pre></div>
+<p>You might do this naively as a way of printing the timestamp of the
+Unix epoch with an offset of <code>-05</code> from UTC. But the above does not
+correspond to the Unix epoch:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{Timestamp, ToSpan, Unit};
+
+<span class="kw">let </span>ts: Timestamp = <span class="string">"1970-01-01T00:00:00-05:00"</span>.parse()<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(
+    ts.since((Unit::Hour, Timestamp::UNIX_EPOCH))<span class="question-mark">?</span>,
+    <span class="number">5</span>.hours().fieldwise(),
+);
+</code></pre></div>
+<p>This further exemplifies how <code>Pieces</code> is just a “dumb” type that
+passes through the data it contains.</p>
+<p>This specific example is also why <code>Pieces</code> has a <code>From</code> trait
+implementation for <code>(Timestamp, Offset)</code>, which correspond more to
+what you want:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{fmt::temporal::Pieces, tz, Timestamp};
+
+<span class="kw">let </span>pieces = Pieces::from((Timestamp::UNIX_EPOCH, tz::offset(-<span class="number">5</span>)));
+<span class="macro">assert_eq!</span>(pieces.to_string(), <span class="string">"1969-12-31T19:00:00-05:00"</span>);</code></pre></div>
+<p>A decent mental model of <code>Pieces</code> is that setting fields on <code>Pieces</code>
+can’t change the values in memory of other fields.</p>
+<h5 id="example-setting-an-offset-forces-a-time-to-be-written"><a class="doc-anchor" href="#example-setting-an-offset-forces-a-time-to-be-written">§</a>Example: setting an offset forces a time to be written</h5>
+<p>Consider these cases where formatting a <code>Pieces</code> won’t write a
+<a href="../../civil/struct.Time.html" title="struct jiff::civil::Time"><code>Time</code></a>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::fmt::temporal::Pieces;
+
+<span class="kw">let </span>pieces = Pieces::from(jiff::civil::date(<span class="number">2025</span>, <span class="number">1</span>, <span class="number">3</span>));
+<span class="macro">assert_eq!</span>(pieces.to_string(), <span class="string">"2025-01-03"</span>);
+
+<span class="kw">let </span>pieces = Pieces::from(jiff::civil::date(<span class="number">2025</span>, <span class="number">1</span>, <span class="number">3</span>))
+    .with_time_zone_name(<span class="string">"Africa/Cairo"</span>);
+<span class="macro">assert_eq!</span>(pieces.to_string(), <span class="string">"2025-01-03[Africa/Cairo]"</span>);</code></pre></div>
+<p>This works because the resulting strings are valid. In particular, when
+one parses a <code>2025-01-03[Africa/Cairo]</code> into a <code>ZonedDateTime</code>, it
+results in a time component of midnight automatically (or more
+precisely, the first instead of the corresponding day):</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{ZonedDateTime, civil::Time};
+
+<span class="kw">let </span>zdt: ZonedDateTime = <span class="string">"2025-01-03[Africa/Cairo]"</span>.parse()<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(zdt.time(), Time::midnight());
+
+<span class="comment">// tricksy tricksy, the first instant of 2015-10-18 in Sao Paulo is
+// not midnight!
+</span><span class="kw">let </span>zdt: ZonedDateTime = <span class="string">"2015-10-18[America/Sao_Paulo]"</span>.parse()<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(zdt.time(), jiff::civil::time(<span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>));
+<span class="comment">// This happens because midnight didn't appear on the clocks in
+// Sao Paulo on 2015-10-18. So if you try to parse a datetime with
+// midnight, automatic disambiguation kicks in and chooses the time
+// after the gap automatically:
+</span><span class="kw">let </span>zdt: ZonedDateTime =
+    <span class="string">"2015-10-18T00:00:00[America/Sao_Paulo]"</span>.parse()<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(zdt.time(), jiff::civil::time(<span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>));
+</code></pre></div>
+<p>However, if you have a date and an offset, then since things like
+<code>2025-01-03+10</code> aren’t valid Temporal ISO 8601 datetime strings, the
+default midnight time is automatically written:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{fmt::temporal::Pieces, tz};
+
+<span class="kw">let </span>pieces = Pieces::from(jiff::civil::date(<span class="number">2025</span>, <span class="number">1</span>, <span class="number">3</span>))
+    .with_offset(tz::offset(-<span class="number">5</span>));
+<span class="macro">assert_eq!</span>(pieces.to_string(), <span class="string">"2025-01-03T00:00:00-05:00"</span>);
+
+<span class="kw">let </span>pieces = Pieces::from(jiff::civil::date(<span class="number">2025</span>, <span class="number">1</span>, <span class="number">3</span>))
+    .with_offset(tz::offset(<span class="number">2</span>))
+    .with_time_zone_name(<span class="string">"Africa/Cairo"</span>);
+<span class="macro">assert_eq!</span>(pieces.to_string(), <span class="string">"2025-01-03T00:00:00+02:00[Africa/Cairo]"</span>);</code></pre></div><h5 id="example-formatting-a-zulu-or--0000-offset"><a class="doc-anchor" href="#example-formatting-a-zulu-or--0000-offset">§</a>Example: formatting a Zulu or <code>-00:00</code> offset</h5>
+<p>A <a href="enum.PiecesOffset.html" title="enum jiff::fmt::temporal::PiecesOffset"><code>PiecesOffset</code></a> encapsulates not just a numeric offset, but also
+whether a <code>Z</code> or a signed zero are used. While it’s uncommon to need
+this, this permits one to format a <code>Pieces</code> using either of these
+constructs:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{
+    civil,
+    fmt::temporal::{Pieces, PiecesNumericOffset, PiecesOffset},
+    tz::Offset,
+};
+
+<span class="kw">let </span>pieces = Pieces::from(civil::date(<span class="number">1970</span>, <span class="number">1</span>, <span class="number">1</span>).at(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>))
+    .with_offset(Offset::UTC);
+<span class="macro">assert_eq!</span>(pieces.to_string(), <span class="string">"1970-01-01T00:00:00+00:00"</span>);
+
+<span class="kw">let </span>pieces = Pieces::from(civil::date(<span class="number">1970</span>, <span class="number">1</span>, <span class="number">1</span>).at(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>))
+    .with_offset(PiecesOffset::Zulu);
+<span class="macro">assert_eq!</span>(pieces.to_string(), <span class="string">"1970-01-01T00:00:00Z"</span>);
+
+<span class="kw">let </span>pieces = Pieces::from(civil::date(<span class="number">1970</span>, <span class="number">1</span>, <span class="number">1</span>).at(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>))
+    .with_offset(PiecesNumericOffset::from(Offset::UTC).with_negative_zero());
+<span class="macro">assert_eq!</span>(pieces.to_string(), <span class="string">"1970-01-01T00:00:00-00:00"</span>);</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="method.with_time_zone_name" class="method"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#963-965">Source</a><h4 class="code-header">pub fn <a href="#method.with_time_zone_name" class="fn">with_time_zone_name</a>&lt;'a&gt;(self, name: &amp;'a <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>) -&gt; <a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'a&gt;</h4></section></summary><div class="docblock"><p>Sets the time zone annotation on this <code>Pieces</code> to the given time zone
+name.</p>
+<p>Setting a time zone annotation on <code>Pieces</code> is optional.</p>
+<p>This is a convenience routine for using
+<a href="struct.Pieces.html#method.with_time_zone_annotation" title="method jiff::fmt::temporal::Pieces::with_time_zone_annotation"><code>Pieces::with_time_zone_annotation</code></a> with an explicitly constructed
+<a href="struct.TimeZoneAnnotation.html" title="struct jiff::fmt::temporal::TimeZoneAnnotation"><code>TimeZoneAnnotation</code></a> for a time zone name.</p>
+<h5 id="example-11"><a class="doc-anchor" href="#example-11">§</a>Example</h5>
+<p>This example shows how easily you can shoot yourself in the foot with
+this routine:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::fmt::temporal::{Pieces, TimeZoneAnnotation};
+
+<span class="kw">let </span><span class="kw-2">mut </span>pieces = Pieces::parse(<span class="string">"2025-01-03T07:55+02[Africa/Cairo]"</span>)<span class="question-mark">?</span>;
+pieces = pieces.with_time_zone_name(<span class="string">"Australia/Bluey"</span>);
+<span class="comment">// This is nonsense because `Australia/Bluey` isn't a valid time zone!
+</span><span class="macro">assert_eq!</span>(pieces.to_string(), <span class="string">"2025-01-03T07:55:00+02:00[Australia/Bluey]"</span>);
+</code></pre></div>
+<p>This exemplifies that <code>Pieces</code> is a mostly “dumb” type that passes
+through the data it contains, even if it doesn’t make sense.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.with_time_zone_offset" class="method"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#1002-1004">Source</a><h4 class="code-header">pub fn <a href="#method.with_time_zone_offset" class="fn">with_time_zone_offset</a>(self, offset: <a class="struct" href="../../tz/struct.Offset.html" title="struct jiff::tz::Offset">Offset</a>) -&gt; <a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'static&gt;</h4></section></summary><div class="docblock"><p>Sets the time zone annotation on this <code>Pieces</code> to the given offset.</p>
+<p>Setting a time zone annotation on <code>Pieces</code> is optional.</p>
+<p>This is a convenience routine for using
+<a href="struct.Pieces.html#method.with_time_zone_annotation" title="method jiff::fmt::temporal::Pieces::with_time_zone_annotation"><code>Pieces::with_time_zone_annotation</code></a> with an explicitly constructed
+<a href="struct.TimeZoneAnnotation.html" title="struct jiff::fmt::temporal::TimeZoneAnnotation"><code>TimeZoneAnnotation</code></a> for a time zone offset.</p>
+<p>Note that this is distinct from <a href="struct.Pieces.html#method.with_offset" title="method jiff::fmt::temporal::Pieces::with_offset"><code>Pieces::with_offset</code></a>. This
+routine sets the offset inside the time zone annotation, while
+<code>Pieces::with_offset</code> sets the offset on the timestamp itself. When the
+timestamp offset and the time zone annotation offset are both present,
+then they must be equivalent or else the datetime string is not a valid
+Temporal ISO 8601 string. However, a <code>Pieces</code> will let you format a
+string with mismatching offsets.</p>
+<h5 id="example-12"><a class="doc-anchor" href="#example-12">§</a>Example</h5>
+<p>This example shows how easily you can shoot yourself in the foot with
+this routine:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{fmt::temporal::{Pieces, TimeZoneAnnotation}, tz};
+
+<span class="kw">let </span><span class="kw-2">mut </span>pieces = Pieces::parse(<span class="string">"2025-01-03T07:55+02[Africa/Cairo]"</span>)<span class="question-mark">?</span>;
+pieces = pieces.with_time_zone_offset(tz::offset(-<span class="number">7</span>));
+<span class="comment">// This is nonsense because the offset `+02` does not match `-07`.
+</span><span class="macro">assert_eq!</span>(pieces.to_string(), <span class="string">"2025-01-03T07:55:00+02:00[-07:00]"</span>);
+</code></pre></div>
+<p>This exemplifies that <code>Pieces</code> is a mostly “dumb” type that passes
+through the data it contains, even if it doesn’t make sense.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.with_time_zone_annotation" class="method"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#1035-1040">Source</a><h4 class="code-header">pub fn <a href="#method.with_time_zone_annotation" class="fn">with_time_zone_annotation</a>&lt;'a&gt;(
+    self,
+    ann: <a class="struct" href="struct.TimeZoneAnnotation.html" title="struct jiff::fmt::temporal::TimeZoneAnnotation">TimeZoneAnnotation</a>&lt;'a&gt;,
+) -&gt; <a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'a&gt;</h4></section></summary><div class="docblock"><p>Returns a new <code>Pieces</code> with the given time zone annotation.</p>
+<p>Setting a time zone annotation on <code>Pieces</code> is optional.</p>
+<p>You may find it more convenient to use
+<a href="struct.Pieces.html#method.with_time_zone_name" title="method jiff::fmt::temporal::Pieces::with_time_zone_name"><code>Pieces::with_time_zone_name</code></a> or <a href="struct.Pieces.html#method.with_time_zone_offset" title="method jiff::fmt::temporal::Pieces::with_time_zone_offset"><code>Pieces::with_time_zone_offset</code></a>.</p>
+<h5 id="example-13"><a class="doc-anchor" href="#example-13">§</a>Example</h5>
+<p>This example shows how easily you can shoot yourself in the foot with
+this routine:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::fmt::temporal::{Pieces, TimeZoneAnnotation};
+
+<span class="kw">let </span><span class="kw-2">mut </span>pieces = Pieces::parse(<span class="string">"2025-01-03T07:55+02[Africa/Cairo]"</span>)<span class="question-mark">?</span>;
+pieces = pieces.with_time_zone_annotation(
+    TimeZoneAnnotation::from(<span class="string">"Canada/Yukon"</span>),
+);
+<span class="comment">// This is nonsense because the offset `+02` is never valid for the
+// `Canada/Yukon` time zone.
+</span><span class="macro">assert_eq!</span>(pieces.to_string(), <span class="string">"2025-01-03T07:55:00+02:00[Canada/Yukon]"</span>);
+</code></pre></div>
+<p>This exemplifies that <code>Pieces</code> is a mostly “dumb” type that passes
+through the data it contains, even if it doesn’t make sense.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.into_owned" class="method"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#1057-1066">Source</a><h4 class="code-header">pub fn <a href="#method.into_owned" class="fn">into_owned</a>(self) -&gt; <a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'static&gt;</h4></section></summary><div class="docblock"><p>Converts this <code>Pieces</code> into an “owned” value whose lifetime is
+<code>'static</code>.</p>
+<p>The “owned” value in this context refers to the time zone annotation
+name, if present. For example, <code>Canada/Yukon</code> in
+<code>2025-01-03T07:55-07[Canada/Yukon]</code>. When parsing into a <code>Pieces</code>,
+the time zone annotation name is borrowed. But callers may find it more
+convenient to work with an owned value. By calling this method, the
+borrowed string internally will be copied into a new string heap
+allocation.</p>
+<p>If <code>Pieces</code> doesn’t have a time zone annotation, is already owned or
+the time zone annotation is an offset, then this is a no-op.</p>
+</div></details></div></details></div><h2 id="trait-implementations" class="section-header">Trait Implementations<a href="#trait-implementations" class="anchor">§</a></h2><div id="trait-implementations-list"><details class="toggle implementors-toggle" open><summary><section id="impl-Clone-for-Pieces%3C'n%3E" class="impl"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#416">Source</a><a href="#impl-Clone-for-Pieces%3C'n%3E" class="anchor">§</a><h3 class="code-header">impl&lt;'n&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html" title="trait core::clone::Clone">Clone</a> for <a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'n&gt;</h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.clone" class="method trait-impl"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#416">Source</a><a href="#method.clone" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone" class="fn">clone</a>(&amp;self) -&gt; Self</h4></section></summary><div class='docblock'>Returns a duplicate of the value. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">Read more</a></div></details><details class="toggle method-toggle" open><summary><section id="method.clone_from" class="method trait-impl"><span class="rightside"><span class="since" title="Stable since Rust version 1.0.0, const unstable">1.0.0 (const: <a href="https://github.com/rust-lang/rust/issues/142757" title="Tracking issue for const_clone">unstable</a>)</span> · <a class="src" href="https://doc.rust-lang.org/nightly/src/core/clone.rs.html#245-247">Source</a></span><a href="#method.clone_from" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from" class="fn">clone_from</a>(&amp;mut self, source: &amp;Self)</h4></section></summary><div class='docblock'>Performs copy-assignment from <code>source</code>. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from">Read more</a></div></details></div></details><details class="toggle implementors-toggle" open><summary><section id="impl-Debug-for-Pieces%3C'n%3E" class="impl"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#416">Source</a><a href="#impl-Debug-for-Pieces%3C'n%3E" class="anchor">§</a><h3 class="code-header">impl&lt;'n&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html" title="trait core::fmt::Debug">Debug</a> for <a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'n&gt;</h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.fmt" class="method trait-impl"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#416">Source</a><a href="#method.fmt" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#tymethod.fmt" class="fn">fmt</a>(&amp;self, f: &amp;mut <a class="struct" href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html" title="struct core::fmt::Formatter">Formatter</a>&lt;'_&gt;) -&gt; <a class="type" href="https://doc.rust-lang.org/nightly/core/fmt/type.Result.html" title="type core::fmt::Result">Result</a></h4></section></summary><div class='docblock'>Formats the value using the given formatter. <a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#tymethod.fmt">Read more</a></div></details></div></details><details class="toggle implementors-toggle" open><summary><section id="impl-Display-for-Pieces%3C'n%3E" class="impl"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#1112-1123">Source</a><a href="#impl-Display-for-Pieces%3C'n%3E" class="anchor">§</a><h3 class="code-header">impl&lt;'n&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/fmt/trait.Display.html" title="trait core::fmt::Display">Display</a> for <a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'n&gt;</h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.fmt-1" class="method trait-impl"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#1113-1122">Source</a><a href="#method.fmt-1" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Display.html#tymethod.fmt" class="fn">fmt</a>(&amp;self, f: &amp;mut <a class="struct" href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html" title="struct core::fmt::Formatter">Formatter</a>&lt;'_&gt;) -&gt; <a class="type" href="https://doc.rust-lang.org/nightly/core/fmt/type.Result.html" title="type core::fmt::Result">Result</a></h4></section></summary><div class='docblock'>Formats the value using the given formatter. <a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Display.html#tymethod.fmt">Read more</a></div></details></div></details><section id="impl-Eq-for-Pieces%3C'n%3E" class="impl"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#416">Source</a><a href="#impl-Eq-for-Pieces%3C'n%3E" class="anchor">§</a><h3 class="code-header">impl&lt;'n&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html" title="trait core::cmp::Eq">Eq</a> for <a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'n&gt;</h3></section><details class="toggle implementors-toggle" open><summary><section id="impl-From%3C%26ZonedDateTime%3E-for-Pieces%3C'a%3E" class="impl"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#1098-1110">Source</a><a href="#impl-From%3C%26ZonedDateTime%3E-for-Pieces%3C'a%3E" class="anchor">§</a><h3 class="code-header">impl&lt;'a&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html" title="trait core::convert::From">From</a>&lt;&amp;'a <a class="struct" href="../../struct.ZonedDateTime.html" title="struct jiff::ZonedDateTime">ZonedDateTime</a>&gt; for <a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'a&gt;</h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.from" class="method trait-impl"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#1100-1109">Source</a><a href="#method.from" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html#tymethod.from" class="fn">from</a>(zdt: &amp;'a <a class="struct" href="../../struct.ZonedDateTime.html" title="struct jiff::ZonedDateTime">ZonedDateTime</a>) -&gt; <a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'a&gt;</h4></section></summary><div class='docblock'>Converts to this type from the input type.</div></details></div></details><details class="toggle implementors-toggle" open><summary><section id="impl-From%3C(Timestamp,+Offset)%3E-for-Pieces%3C'static%3E" class="impl"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#1091-1096">Source</a><a href="#impl-From%3C(Timestamp,+Offset)%3E-for-Pieces%3C'static%3E" class="anchor">§</a><h3 class="code-header">impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html" title="trait core::convert::From">From</a>&lt;(<a class="struct" href="../../struct.Timestamp.html" title="struct jiff::Timestamp">Timestamp</a>, <a class="struct" href="../../tz/struct.Offset.html" title="struct jiff::tz::Offset">Offset</a>)&gt; for <a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'static&gt;</h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.from-1" class="method trait-impl"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#1093-1095">Source</a><a href="#method.from-1" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html#tymethod.from" class="fn">from</a>((ts, offset): (<a class="struct" href="../../struct.Timestamp.html" title="struct jiff::Timestamp">Timestamp</a>, <a class="struct" href="../../tz/struct.Offset.html" title="struct jiff::tz::Offset">Offset</a>)) -&gt; <a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'static&gt;</h4></section></summary><div class='docblock'>Converts to this type from the input type.</div></details></div></details><details class="toggle implementors-toggle" open><summary><section id="impl-From%3CDate%3E-for-Pieces%3C'static%3E" class="impl"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#1069-1074">Source</a><a href="#impl-From%3CDate%3E-for-Pieces%3C'static%3E" class="anchor">§</a><h3 class="code-header">impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html" title="trait core::convert::From">From</a>&lt;<a class="struct" href="../../civil/struct.Date.html" title="struct jiff::civil::Date">Date</a>&gt; for <a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'static&gt;</h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.from-2" class="method trait-impl"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#1071-1073">Source</a><a href="#method.from-2" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html#tymethod.from" class="fn">from</a>(date: <a class="struct" href="../../civil/struct.Date.html" title="struct jiff::civil::Date">Date</a>) -&gt; <a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'static&gt;</h4></section></summary><div class='docblock'>Converts to this type from the input type.</div></details></div></details><details class="toggle implementors-toggle" open><summary><section id="impl-From%3CDateTime%3E-for-Pieces%3C'static%3E" class="impl"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#1076-1081">Source</a><a href="#impl-From%3CDateTime%3E-for-Pieces%3C'static%3E" class="anchor">§</a><h3 class="code-header">impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html" title="trait core::convert::From">From</a>&lt;<a class="struct" href="../../civil/struct.DateTime.html" title="struct jiff::civil::DateTime">DateTime</a>&gt; for <a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'static&gt;</h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.from-3" class="method trait-impl"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#1078-1080">Source</a><a href="#method.from-3" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html#tymethod.from" class="fn">from</a>(dt: <a class="struct" href="../../civil/struct.DateTime.html" title="struct jiff::civil::DateTime">DateTime</a>) -&gt; <a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'static&gt;</h4></section></summary><div class='docblock'>Converts to this type from the input type.</div></details></div></details><details class="toggle implementors-toggle" open><summary><section id="impl-From%3CTimestamp%3E-for-Pieces%3C'static%3E" class="impl"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#1083-1089">Source</a><a href="#impl-From%3CTimestamp%3E-for-Pieces%3C'static%3E" class="anchor">§</a><h3 class="code-header">impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html" title="trait core::convert::From">From</a>&lt;<a class="struct" href="../../struct.Timestamp.html" title="struct jiff::Timestamp">Timestamp</a>&gt; for <a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'static&gt;</h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.from-4" class="method trait-impl"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#1085-1088">Source</a><a href="#method.from-4" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html#tymethod.from" class="fn">from</a>(ts: <a class="struct" href="../../struct.Timestamp.html" title="struct jiff::Timestamp">Timestamp</a>) -&gt; <a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'static&gt;</h4></section></summary><div class='docblock'>Converts to this type from the input type.</div></details></div></details><details class="toggle implementors-toggle" open><summary><section id="impl-Hash-for-Pieces%3C'n%3E" class="impl"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#416">Source</a><a href="#impl-Hash-for-Pieces%3C'n%3E" class="anchor">§</a><h3 class="code-header">impl&lt;'n&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html" title="trait core::hash::Hash">Hash</a> for <a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'n&gt;</h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.hash" class="method trait-impl"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#416">Source</a><a href="#method.hash" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html#tymethod.hash" class="fn">hash</a>&lt;__H: <a class="trait" href="https://doc.rust-lang.org/nightly/core/hash/trait.Hasher.html" title="trait core::hash::Hasher">Hasher</a>&gt;(&amp;self, state: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;mut __H</a>)</h4></section></summary><div class='docblock'>Feeds this value into the given <a href="https://doc.rust-lang.org/nightly/core/hash/trait.Hasher.html" title="trait core::hash::Hasher"><code>Hasher</code></a>. <a href="https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html#tymethod.hash">Read more</a></div></details><details class="toggle method-toggle" open><summary><section id="method.hash_slice" class="method trait-impl"><span class="rightside"><span class="since" title="Stable since Rust version 1.3.0">1.3.0</span> · <a class="src" href="https://doc.rust-lang.org/nightly/src/core/hash/mod.rs.html#234-236">Source</a></span><a href="#method.hash_slice" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html#method.hash_slice" class="fn">hash_slice</a>&lt;H&gt;(data: &amp;[Self], state: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;mut H</a>)<div class="where">where
+    H: <a class="trait" href="https://doc.rust-lang.org/nightly/core/hash/trait.Hasher.html" title="trait core::hash::Hasher">Hasher</a>,
+    Self: <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html" title="trait core::marker::Sized">Sized</a>,</div></h4></section></summary><div class='docblock'>Feeds a slice of this type into the given <a href="https://doc.rust-lang.org/nightly/core/hash/trait.Hasher.html" title="trait core::hash::Hasher"><code>Hasher</code></a>. <a href="https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html#method.hash_slice">Read more</a></div></details></div></details><details class="toggle implementors-toggle" open><summary><section id="impl-PartialEq-for-Pieces%3C'n%3E" class="impl"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#416">Source</a><a href="#impl-PartialEq-for-Pieces%3C'n%3E" class="anchor">§</a><h3 class="code-header">impl&lt;'n&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html" title="trait core::cmp::PartialEq">PartialEq</a> for <a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'n&gt;</h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.eq" class="method trait-impl"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#416">Source</a><a href="#method.eq" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#tymethod.eq" class="fn">eq</a>(&amp;self, other: &amp;Self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a></h4></section></summary><div class='docblock'>Equality operator <code>==</code>. <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#tymethod.eq">Read more</a></div></details><details class="toggle method-toggle" open><summary><section id="method.ne" class="method trait-impl"><span class="rightside"><span class="since" title="Stable since Rust version 1.0.0, const unstable">1.0.0 (const: <a href="https://github.com/rust-lang/rust/issues/143800" title="Tracking issue for const_cmp">unstable</a>)</span> · <a class="src" href="https://doc.rust-lang.org/nightly/src/core/cmp.rs.html#278">Source</a></span><a href="#method.ne" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#method.ne" class="fn">ne</a>(&amp;self, other: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;Rhs</a>) -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a></h4></section></summary><div class='docblock'>Inequality operator <code>!=</code>. <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#method.ne">Read more</a></div></details></div></details><section id="impl-StructuralPartialEq-for-Pieces%3C'n%3E" class="impl"><a class="src rightside" href="../../../src/jiff/fmt/temporal/pieces.rs.html#416">Source</a><a href="#impl-StructuralPartialEq-for-Pieces%3C'n%3E" class="anchor">§</a><h3 class="code-header">impl&lt;'n&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.StructuralPartialEq.html" title="trait core::marker::StructuralPartialEq">StructuralPartialEq</a> for <a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'n&gt;</h3></section></div><h2 id="synthetic-implementations" class="section-header">Auto Trait Implementations<a href="#synthetic-implementations" class="anchor">§</a></h2><div id="synthetic-implementations-list"><section id="impl-Forget-for-Pieces%3C'n%3E" class="impl"><a href="#impl-Forget-for-Pieces%3C'n%3E" class="anchor">§</a><h3 class="code-header">impl&lt;'n&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Forget.html" title="trait core::marker::Forget">Forget</a> for <a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'n&gt;</h3></section><section id="impl-Freeze-for-Pieces%3C'n%3E" class="impl"><a href="#impl-Freeze-for-Pieces%3C'n%3E" class="anchor">§</a><h3 class="code-header">impl&lt;'n&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Freeze.html" title="trait core::marker::Freeze">Freeze</a> for <a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'n&gt;</h3></section><section id="impl-Move-for-Pieces%3C'n%3E" class="impl"><a href="#impl-Move-for-Pieces%3C'n%3E" class="anchor">§</a><h3 class="code-header">impl&lt;'n&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Move.html" title="trait core::marker::Move">Move</a> for <a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'n&gt;</h3></section><section id="impl-RefUnwindSafe-for-Pieces%3C'n%3E" class="impl"><a href="#impl-RefUnwindSafe-for-Pieces%3C'n%3E" class="anchor">§</a><h3 class="code-header">impl&lt;'n&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/panic/unwind_safe/trait.RefUnwindSafe.html" title="trait core::panic::unwind_safe::RefUnwindSafe">RefUnwindSafe</a> for <a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'n&gt;</h3></section><section id="impl-Send-for-Pieces%3C'n%3E" class="impl"><a href="#impl-Send-for-Pieces%3C'n%3E" class="anchor">§</a><h3 class="code-header">impl&lt;'n&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> for <a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'n&gt;</h3></section><section id="impl-Sync-for-Pieces%3C'n%3E" class="impl"><a href="#impl-Sync-for-Pieces%3C'n%3E" class="anchor">§</a><h3 class="code-header">impl&lt;'n&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Sync.html" title="trait core::marker::Sync">Sync</a> for <a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'n&gt;</h3></section><section id="impl-Unpin-for-Pieces%3C'n%3E" class="impl"><a href="#impl-Unpin-for-Pieces%3C'n%3E" class="anchor">§</a><h3 class="code-header">impl&lt;'n&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Unpin.html" title="trait core::marker::Unpin">Unpin</a> for <a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'n&gt;</h3></section><section id="impl-UnsafeUnpin-for-Pieces%3C'n%3E" class="impl"><a href="#impl-UnsafeUnpin-for-Pieces%3C'n%3E" class="anchor">§</a><h3 class="code-header">impl&lt;'n&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.UnsafeUnpin.html" title="trait core::marker::UnsafeUnpin">UnsafeUnpin</a> for <a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'n&gt;</h3></section><section id="impl-UnwindSafe-for-Pieces%3C'n%3E" class="impl"><a href="#impl-UnwindSafe-for-Pieces%3C'n%3E" class="anchor">§</a><h3 class="code-header">impl&lt;'n&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/panic/unwind_safe/trait.UnwindSafe.html" title="trait core::panic::unwind_safe::UnwindSafe">UnwindSafe</a> for <a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a>&lt;'n&gt;</h3></section></div><h2 id="blanket-implementations" class="section-header">Blanket Implementations<a href="#blanket-implementations" class="anchor">§</a></h2><div id="blanket-implementations-list"><details class="toggle implementors-toggle"><summary><section id="impl-Any-for-T" class="impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/any.rs.html#142">Source</a><a href="#impl-Any-for-T" class="anchor">§</a><h3 class="code-header">impl&lt;T&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/any/trait.Any.html" title="trait core::any::Any">Any</a> for T<div class="where">where
+    T: 'static + ?<a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html" title="trait core::marker::Sized">Sized</a>,</div></h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.type_id" class="method trait-impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/any.rs.html#143">Source</a><a href="#method.type_id" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/any/trait.Any.html#tymethod.type_id" class="fn">type_id</a>(&amp;self) -&gt; <a class="struct" href="https://doc.rust-lang.org/nightly/core/any/struct.TypeId.html" title="struct core::any::TypeId">TypeId</a></h4></section></summary><div class='docblock'>Gets the <code>TypeId</code> of <code>self</code>. <a href="https://doc.rust-lang.org/nightly/core/any/trait.Any.html#tymethod.type_id">Read more</a></div></details></div></details><details class="toggle implementors-toggle"><summary><section id="impl-Borrow%3CT%3E-for-T" class="impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/borrow.rs.html#212">Source</a><a href="#impl-Borrow%3CT%3E-for-T" class="anchor">§</a><h3 class="code-header">impl&lt;T&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/borrow/trait.Borrow.html" title="trait core::borrow::Borrow">Borrow</a>&lt;T&gt; for T<div class="where">where
+    T: ?<a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html" title="trait core::marker::Sized">Sized</a>,</div></h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.borrow" class="method trait-impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/borrow.rs.html#214">Source</a><a href="#method.borrow" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/borrow/trait.Borrow.html#tymethod.borrow" class="fn">borrow</a>(&amp;self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;T</a></h4></section></summary><div class='docblock'>Immutably borrows from an owned value. <a href="https://doc.rust-lang.org/nightly/core/borrow/trait.Borrow.html#tymethod.borrow">Read more</a></div></details></div></details><details class="toggle implementors-toggle"><summary><section id="impl-BorrowMut%3CT%3E-for-T" class="impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/borrow.rs.html#221">Source</a><a href="#impl-BorrowMut%3CT%3E-for-T" class="anchor">§</a><h3 class="code-header">impl&lt;T&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/borrow/trait.BorrowMut.html" title="trait core::borrow::BorrowMut">BorrowMut</a>&lt;T&gt; for T<div class="where">where
+    T: ?<a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html" title="trait core::marker::Sized">Sized</a>,</div></h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.borrow_mut" class="method trait-impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/borrow.rs.html#222">Source</a><a href="#method.borrow_mut" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/borrow/trait.BorrowMut.html#tymethod.borrow_mut" class="fn">borrow_mut</a>(&amp;mut self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;mut T</a></h4></section></summary><div class='docblock'>Mutably borrows from an owned value. <a href="https://doc.rust-lang.org/nightly/core/borrow/trait.BorrowMut.html#tymethod.borrow_mut">Read more</a></div></details></div></details><details class="toggle implementors-toggle"><summary><section id="impl-CloneToUninit-for-T" class="impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/clone.rs.html#648">Source</a><a href="#impl-CloneToUninit-for-T" class="anchor">§</a><h3 class="code-header">impl&lt;T&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/clone/trait.CloneToUninit.html" title="trait core::clone::CloneToUninit">CloneToUninit</a> for T<div class="where">where
+    T: <a class="trait" href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html" title="trait core::clone::Clone">Clone</a>,</div></h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.clone_to_uninit" class="method trait-impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/clone.rs.html#650">Source</a><a href="#method.clone_to_uninit" class="anchor">§</a><h4 class="code-header">unsafe fn <a href="https://doc.rust-lang.org/nightly/core/clone/trait.CloneToUninit.html#tymethod.clone_to_uninit" class="fn">clone_to_uninit</a>(&amp;self, dest: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.pointer.html">*mut </a><a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>)</h4></section></summary><span class="item-info"><div class="stab unstable"><span class="emoji">🔬</span><span>This is a nightly-only experimental API. (<code>clone_to_uninit</code>)</span></div></span><div class='docblock'>Performs copy-assignment from <code>self</code> to <code>dest</code>. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.CloneToUninit.html#tymethod.clone_to_uninit">Read more</a></div></details></div></details><details class="toggle implementors-toggle"><summary><section id="impl-From%3CT%3E-for-T" class="impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/convert/mod.rs.html#787">Source</a><a href="#impl-From%3CT%3E-for-T" class="anchor">§</a><h3 class="code-header">impl&lt;T&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html" title="trait core::convert::From">From</a>&lt;T&gt; for T</h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.from-5" class="method trait-impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/convert/mod.rs.html#790">Source</a><a href="#method.from-5" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html#tymethod.from" class="fn">from</a>(t: T) -&gt; T</h4></section></summary><div class="docblock"><p>Returns the argument unchanged.</p>
+</div></details></div></details><details class="toggle implementors-toggle"><summary><section id="impl-Into%3CU%3E-for-T" class="impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/convert/mod.rs.html#769-771">Source</a><a href="#impl-Into%3CU%3E-for-T" class="anchor">§</a><h3 class="code-header">impl&lt;T, U&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.Into.html" title="trait core::convert::Into">Into</a>&lt;U&gt; for T<div class="where">where
+    U: <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html" title="trait core::convert::From">From</a>&lt;T&gt;,</div></h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.into" class="method trait-impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/convert/mod.rs.html#779">Source</a><a href="#method.into" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/convert/trait.Into.html#tymethod.into" class="fn">into</a>(self) -&gt; U</h4></section></summary><div class="docblock"><p>Calls <code>U::from(self)</code>.</p>
+<p>That is, this conversion is whatever the implementation of
+<code><a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html" title="trait core::convert::From">From</a>&lt;T&gt; for U</code> chooses to do.</p>
+</div></details></div></details><details class="toggle implementors-toggle"><summary><section id="impl-ToOwned-for-T" class="impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/alloc/borrow.rs.html#72-74">Source</a><a href="#impl-ToOwned-for-T" class="anchor">§</a><h3 class="code-header">impl&lt;T&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/alloc/borrow/trait.ToOwned.html" title="trait alloc::borrow::ToOwned">ToOwned</a> for T<div class="where">where
+    T: <a class="trait" href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html" title="trait core::clone::Clone">Clone</a>,</div></h3></section></summary><div class="impl-items"><details class="toggle" open><summary><section id="associatedtype.Owned" class="associatedtype trait-impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/alloc/borrow.rs.html#76">Source</a><a href="#associatedtype.Owned" class="anchor">§</a><h4 class="code-header">type <a href="https://doc.rust-lang.org/nightly/alloc/borrow/trait.ToOwned.html#associatedtype.Owned" class="associatedtype">Owned</a> = T</h4></section></summary><div class='docblock'>The resulting type after obtaining ownership.</div></details><details class="toggle method-toggle" open><summary><section id="method.to_owned" class="method trait-impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/alloc/borrow.rs.html#77">Source</a><a href="#method.to_owned" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/alloc/borrow/trait.ToOwned.html#tymethod.to_owned" class="fn">to_owned</a>(&amp;self) -&gt; T</h4></section></summary><div class='docblock'>Creates owned data from borrowed data, usually by cloning. <a href="https://doc.rust-lang.org/nightly/alloc/borrow/trait.ToOwned.html#tymethod.to_owned">Read more</a></div></details><details class="toggle method-toggle" open><summary><section id="method.clone_into" class="method trait-impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/alloc/borrow.rs.html#81">Source</a><a href="#method.clone_into" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/alloc/borrow/trait.ToOwned.html#method.clone_into" class="fn">clone_into</a>(&amp;self, target: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;mut T</a>)</h4></section></summary><div class='docblock'>Uses borrowed data to replace owned data, usually by cloning. <a href="https://doc.rust-lang.org/nightly/alloc/borrow/trait.ToOwned.html#method.clone_into">Read more</a></div></details></div></details><details class="toggle implementors-toggle"><summary><section id="impl-ToString-for-T" class="impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/alloc/string.rs.html#3013">Source</a><a href="#impl-ToString-for-T" class="anchor">§</a><h3 class="code-header">impl&lt;T&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/alloc/string/trait.ToString.html" title="trait alloc::string::ToString">ToString</a> for T<div class="where">where
+    T: <a class="trait" href="https://doc.rust-lang.org/nightly/core/fmt/trait.Display.html" title="trait core::fmt::Display">Display</a> + ?<a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html" title="trait core::marker::Sized">Sized</a>,</div></h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.to_string" class="method trait-impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/alloc/string.rs.html#3015">Source</a><a href="#method.to_string" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/alloc/string/trait.ToString.html#tymethod.to_string" class="fn">to_string</a>(&amp;self) -&gt; <a class="struct" href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html" title="struct alloc::string::String">String</a></h4></section></summary><div class='docblock'>Converts the given value to a <code>String</code>. <a href="https://doc.rust-lang.org/nightly/alloc/string/trait.ToString.html#tymethod.to_string">Read more</a></div></details></div></details><details class="toggle implementors-toggle"><summary><section id="impl-TryFrom%3CU%3E-for-T" class="impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/convert/mod.rs.html#814-816">Source</a><a href="#impl-TryFrom%3CU%3E-for-T" class="anchor">§</a><h3 class="code-header">impl&lt;T, U&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.TryFrom.html" title="trait core::convert::TryFrom">TryFrom</a>&lt;U&gt; for T<div class="where">where
+    U: <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.Into.html" title="trait core::convert::Into">Into</a>&lt;T&gt;,</div></h3></section></summary><div class="impl-items"><details class="toggle" open><summary><section id="associatedtype.Error" class="associatedtype trait-impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/convert/mod.rs.html#818">Source</a><a href="#associatedtype.Error" class="anchor">§</a><h4 class="code-header">type <a href="https://doc.rust-lang.org/nightly/core/convert/trait.TryFrom.html#associatedtype.Error" class="associatedtype">Error</a> = <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.never.html">!</a></h4></section></summary><div class='docblock'>The type returned in the event of a conversion error.</div></details><details class="toggle method-toggle" open><summary><section id="method.try_from" class="method trait-impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/convert/mod.rs.html#821">Source</a><a href="#method.try_from" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/convert/trait.TryFrom.html#tymethod.try_from" class="fn">try_from</a>(value: U) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;T, <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.never.html">!</a>&gt;</h4></section></summary><div class='docblock'>Performs the conversion.</div></details></div></details><details class="toggle implementors-toggle"><summary><section id="impl-TryInto%3CU%3E-for-T" class="impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/convert/mod.rs.html#798-800">Source</a><a href="#impl-TryInto%3CU%3E-for-T" class="anchor">§</a><h3 class="code-header">impl&lt;T, U&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.TryInto.html" title="trait core::convert::TryInto">TryInto</a>&lt;U&gt; for T<div class="where">where
+    U: <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.TryFrom.html" title="trait core::convert::TryFrom">TryFrom</a>&lt;T&gt;,</div></h3></section></summary><div class="impl-items"><details class="toggle" open><summary><section id="associatedtype.Error-1" class="associatedtype trait-impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/convert/mod.rs.html#802">Source</a><a href="#associatedtype.Error-1" class="anchor">§</a><h4 class="code-header">type <a href="https://doc.rust-lang.org/nightly/core/convert/trait.TryInto.html#associatedtype.Error" class="associatedtype">Error</a> = &lt;U as <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.TryFrom.html" title="trait core::convert::TryFrom">TryFrom</a>&lt;T&gt;&gt;::<a class="associatedtype" href="https://doc.rust-lang.org/nightly/core/convert/trait.TryFrom.html#associatedtype.Error" title="type core::convert::TryFrom::Error">Error</a></h4></section></summary><div class='docblock'>The type returned in the event of a conversion error.</div></details><details class="toggle method-toggle" open><summary><section id="method.try_into" class="method trait-impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/convert/mod.rs.html#805">Source</a><a href="#method.try_into" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/convert/trait.TryInto.html#tymethod.try_into" class="fn">try_into</a>(self) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;U, &lt;U as <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.TryFrom.html" title="trait core::convert::TryFrom">TryFrom</a>&lt;T&gt;&gt;::<a class="associatedtype" href="https://doc.rust-lang.org/nightly/core/convert/trait.TryFrom.html#associatedtype.Error" title="type core::convert::TryFrom::Error">Error</a>&gt;</h4></section></summary><div class='docblock'>Performs the conversion.</div></details></div></details></div></section></div></main></body></html>

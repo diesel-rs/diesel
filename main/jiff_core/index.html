@@ -1,0 +1,55 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="A small collection of datetime primitives to support Jiff."><title>jiff_core - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-1e18a8e7.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="jiff_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (6c709eb42 2026-11-25)" data-channel="nightly" data-search-js="search-085293d4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../static.files/storage-41dd4d93.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Crate jiff_core</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../jiff_core/index.html">jiff_<wbr>core</a><span class="version">1.0.2</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#motivation" title="Motivation">Motivation</a></li><li><a href="#what-does-this-crate-not-do" title="What does this crate not do?">What does this crate not do?</a></li></ul><h3><a href="#modules">Crate Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#structs" title="Structs">Structs</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1>Crate <span>jiff_<wbr>core</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/jiff_core/lib.rs.html#1-95">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>A small collection of datetime primitives to support Jiff.</p>
+<p>The primary motivation of this crate is as an implementation detail for
+the <a href="https://docs.rs/jiff">Jiff</a> crate. Indeed, if you’re seeing this
+documentation, Jiff is probably the crate you want, not this one.</p>
+<h2 id="motivation"><a class="doc-anchor" href="#motivation">§</a>Motivation</h2>
+<p>The primary motivation for this crate’s existence is so that the <code>jiff</code> and
+<code>jiff-static</code> crates can share code. Prior to the birth of <code>jiff-core</code>,
+there were some major hacks involved that permitted code sharing by way of
+duplication. Therefore, some chunk of code was compiled twice if you depended
+on both <code>jiff</code> and <code>jiff-static</code>.</p>
+<p>A secondary motivation is that <code>jiff-core</code> provides a useful set of primitives
+for datetime handling that others may find useful if they don’t want to depend
+on Jiff proper. For example, callers looking to convert between timestamps and
+datetimes may do so with this crate:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff_core::{civil, tz::Offset, Timestamp};
+
+<span class="kw">let </span>ts = Timestamp::UNIX_EPOCH;
+<span class="macro">assert_eq!</span>(ts.to_datetime(Offset::UTC).date(), civil::date(<span class="number">1970</span>, <span class="number">1</span>, <span class="number">1</span>));</code></pre></div>
+<p>Callers can perform the reverse operation too:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff_core::{civil, tz::Offset, Timestamp};
+
+<span class="kw">let </span>datetime = civil::date(<span class="number">1970</span>, <span class="number">1</span>, <span class="number">1</span>).at(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>);
+<span class="macro">assert_eq!</span>(datetime.to_timestamp(Offset::UTC).unwrap(), Timestamp::UNIX_EPOCH);</code></pre></div>
+<p>The above operation is fallible because, like Jiff proper, not all civil
+datetimes can be combined with all offsets to produce an instant within this
+crate’s valid bounds (which it shares with Jiff):</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff_core::{civil, tz::Offset, Timestamp};
+
+<span class="kw">let </span>datetime = civil::date(<span class="number">9999</span>, <span class="number">12</span>, <span class="number">31</span>).at(<span class="number">23</span>, <span class="number">59</span>, <span class="number">59</span>, <span class="number">999_999_999</span>);
+<span class="macro">assert!</span>(datetime.to_timestamp(Offset::UTC).is_err());
+<span class="comment">// The maximum datetime can be used to produce a timestamp only by using the
+// maximum offset from UTC. If any other offset were permitted here, it would
+// imply the ability to get a timestamp corresponding to a civil datetime in
+// the year 10,000 CE. (And similar for the minimal datetime.)
+</span><span class="macro">assert_eq!</span>(datetime.to_timestamp(Offset::MAX).unwrap(), Timestamp::MAX);</code></pre></div><h2 id="what-does-this-crate-not-do"><a class="doc-anchor" href="#what-does-this-crate-not-do">§</a>What does this crate not do?</h2>
+<p>The major missing pieces from this crate are:</p>
+<ul>
+<li>Formatting and parsing, although callers may find the <code>Debug</code> trait
+implementations of types in this crate to be useful.</li>
+<li>Convenient time zone aware handling.</li>
+<li>Platform integration with the <a href="https://www.iana.org/time-zones">Time Zone Database</a>.</li>
+<li>Any kind of duration type.</li>
+<li>Good documentation demonstrating proper usage of the crate.</li>
+<li>Maturity and stability. Users of this crate should expect more breaking
+change releases than Jiff proper.</li>
+<li>There is no way to convert a <code>jiff-core</code> type directly into a <code>jiff</code> type
+or vice versa. You must go through the proper constructors. These conversions
+are intentionally missing so that <code>jiff-core</code> is not a public dependency of
+<code>jiff</code>.</li>
+</ul>
+</div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="bounds/index.html" title="mod jiff_core::bounds">bounds</a></dt><dd>Defines boundary types and their corresponding error values.</dd><dt><a class="mod" href="civil/index.html" title="mod jiff_core::civil">civil</a></dt><dd>Primitives for civil dates and times.</dd><dt><a class="mod" href="constants/index.html" title="mod jiff_core::constants">constants</a></dt><dd>This module defines a smattering of constants used in Jiff.</dd><dt><a class="mod" href="tz/index.html" title="mod jiff_core::tz">tz</a></dt><dd>Building blocks for supporting time zones.</dd><dt><a class="mod" href="util/index.html" title="mod jiff_core::util">util</a></dt><dd>Small shared utilities used by Jiff.</dd></dl><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.Timestamp.html" title="struct jiff_core::Timestamp">Timestamp</a></dt><dd>An instant in time represented as the number of nanoseconds since the Unix
+epoch.</dd></dl></section></div></main></body></html>

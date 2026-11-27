@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["i16","i32","i64","i8"]};

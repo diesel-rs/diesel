@@ -1,0 +1,1 @@
+initSidebarItems({"trait":[["MigrationConnection","A connection which can be passed to the migration methods. This exists only to wrap up some constraints which are meant to hold for all connections. This trait will go away at some point in the future. Any Diesel connection should be useable where this trait is required."]]});

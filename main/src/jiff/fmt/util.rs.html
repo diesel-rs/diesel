@@ -1,0 +1,1061 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/jiff-1.0.3/src/fmt/util.rs`."><title>util.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-1e18a8e7.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="jiff" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (6c709eb42 2026-11-25)" data-channel="nightly" data-search-js="search-085293d4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../../static.files/storage-41dd4d93.js"></script><script defer src="../../../static.files/src-script-813739b1.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">jiff/fmt/</div>util.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-4"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span>jcore::{<a href="../../../jiff_core/bounds/enum.Sign.html">bounds::Sign</a>, <a href="../../../jiff_core/constants/index.html">constants</a> <span class="kw">as </span>c};
+<a href=#2 id=2 data-nosnippet>2</a>
+<a href=#3 id=3 data-nosnippet>3</a><span class="kw">use crate</span>::{
+<a href=#4 id=4 data-nosnippet>4</a>    <a href="../error/mod.rs.html#51-62">Error</a>, <a href="../signed_duration.rs.html#326-329">SignedDuration</a>, <a href="../span.rs.html#708-721">Span</a>, <a href="../span.rs.html#3911-3936">Unit</a>,
+<a href=#5 id=5 data-nosnippet>5</a>    error::{<a href="../error/mod.rs.html#790-814">ErrorContext</a>, <a href="../error/fmt/util.rs.html#5-20">fmt::util::Error</a> <span class="kw">as </span>E},
+<a href=#6 id=6 data-nosnippet>6</a>    <a href="mod.rs.html#196-201">fmt::Parsed</a>,
+<a href=#7 id=7 data-nosnippet>7</a>    util::{<a href="../util/mod.rs.html#1">b</a>, <a href="../util/mod.rs.html#15">parse</a>},
+<a href=#8 id=8 data-nosnippet>8</a>};
+<a href=#9 id=9 data-nosnippet>9</a>
+<a href=#10 id=10 data-nosnippet>10</a><span class="doccomment">/// A container for holding a partially parsed duration.
+<a href=#11 id=11 data-nosnippet>11</a>///
+<a href=#12 id=12 data-nosnippet>12</a>/// This is used for parsing into `Span`, `SignedDuration` and (hopefully
+<a href=#13 id=13 data-nosnippet>13</a>/// soon) `std::time::Duration`. It's _also_ used for both the ISO 8601
+<a href=#14 id=14 data-nosnippet>14</a>/// duration and "friendly" format.
+<a href=#15 id=15 data-nosnippet>15</a>///
+<a href=#16 id=16 data-nosnippet>16</a>/// This replaced a significant chunk of code that was bespoke to each
+<a href=#17 id=17 data-nosnippet>17</a>/// combination of duration type _and_ format.
+<a href=#18 id=18 data-nosnippet>18</a>///
+<a href=#19 id=19 data-nosnippet>19</a>/// The idea behind it is that we parse each duration component as an unsigned
+<a href=#20 id=20 data-nosnippet>20</a>/// 64-bit integer and keep track of the sign separately. This is a critical
+<a href=#21 id=21 data-nosnippet>21</a>/// aspect that was motivated by being able to roundtrip all legal values of
+<a href=#22 id=22 data-nosnippet>22</a>/// a 96-bit signed integer number of nanoseconds (i.e., `SignedDuration`).
+<a href=#23 id=23 data-nosnippet>23</a>/// In particular, if we used `i64` to represent each component, then it
+<a href=#24 id=24 data-nosnippet>24</a>/// makes it much more difficult to parse, e.g., `9223372036854775808
+<a href=#25 id=25 data-nosnippet>25</a>/// seconds ago`. Namely, `9223372036854775808` is not a valid `i64` but
+<a href=#26 id=26 data-nosnippet>26</a>/// `-9223372036854775808` is. Notably, the sign is indicated by a suffix,
+<a href=#27 id=27 data-nosnippet>27</a>/// so we don't know it's negative when parsing the integer itself. So we
+<a href=#28 id=28 data-nosnippet>28</a>/// represent all components as their unsigned absolute value and apply the
+<a href=#29 id=29 data-nosnippet>29</a>/// sign at the end.
+<a href=#30 id=30 data-nosnippet>30</a>///
+<a href=#31 id=31 data-nosnippet>31</a>/// This also centralizes a lot of thorny duration math and opens up the
+<a href=#32 id=32 data-nosnippet>32</a>/// opportunity for tighter optimization.
+<a href=#33 id=33 data-nosnippet>33</a></span><span class="expansion"><input id=expand-33 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>DurationUnits {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::debug_struct_fields_finish(f,
+            <span class="string">"DurationUnits values fraction sign min max any_non_zero_units"</span>,
+            <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="self">self</span>.values, <span class="kw-2">&amp;</span><span class="self">self</span>.fraction, <span class="kw-2">&amp;</span><span class="self">self</span>.sign, <span class="kw-2">&amp;</span><span class="self">self</span>.min, <span class="kw-2">&amp;</span><span class="self">self</span>.max,
+                        &amp;&amp;<span class="self">self</span>.any_non_zero_units])
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::default::Default <span class="kw">for </span>DurationUnits {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
+        DurationUnits {
+            values: ::core::default::Default::default(),
+            fraction: ::core::default::Default::default(),
+            sign: ::core::default::Default::default(),
+            min: ::core::default::Default::default(),
+            max: ::core::default::Default::default(),
+            any_non_zero_units: ::core::default::Default::default(),
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/default/derive.Default.html">Default</a></span></span></span><span class="attr">)]
+<a href=#34 id=34 data-nosnippet>34</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>DurationUnits {
+<a href=#35 id=35 data-nosnippet>35</a>    <span class="doccomment">/// The parsed unit values in descending order. That is, nanoseconds are
+<a href=#36 id=36 data-nosnippet>36</a>    /// at index 0 while years are at index 9.
+<a href=#37 id=37 data-nosnippet>37</a>    </span>values: [<a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>; <span class="number">10</span>],
+<a href=#38 id=38 data-nosnippet>38</a>    <span class="doccomment">/// Any fractional component parsed. The fraction is necessarily a fraction
+<a href=#39 id=39 data-nosnippet>39</a>    /// of the minimum unit if present.
+<a href=#40 id=40 data-nosnippet>40</a>    </span>fraction: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>&gt;,
+<a href=#41 id=41 data-nosnippet>41</a>    <span class="doccomment">/// The sign of the duration. This may be set at any time.
+<a href=#42 id=42 data-nosnippet>42</a>    ///
+<a href=#43 id=43 data-nosnippet>43</a>    /// Note that this defaults to zero! So callers will always want to set
+<a href=#44 id=44 data-nosnippet>44</a>    /// this.
+<a href=#45 id=45 data-nosnippet>45</a>    </span>sign: <a href="../../../jiff_core/bounds/enum.Sign.html">Sign</a>,
+<a href=#46 id=46 data-nosnippet>46</a>    <span class="doccomment">/// The smallest unit value that was explicitly set.
+<a href=#47 id=47 data-nosnippet>47</a>    </span>min: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../span.rs.html#3911-3936">Unit</a>&gt;,
+<a href=#48 id=48 data-nosnippet>48</a>    <span class="doccomment">/// The largest unit value that was explicitly set.
+<a href=#49 id=49 data-nosnippet>49</a>    </span>max: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../span.rs.html#3911-3936">Unit</a>&gt;,
+<a href=#50 id=50 data-nosnippet>50</a>    <span class="doccomment">/// Whether there are any non-zero units.
+<a href=#51 id=51 data-nosnippet>51</a>    </span>any_non_zero_units: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>,
+<a href=#52 id=52 data-nosnippet>52</a>}
+<a href=#53 id=53 data-nosnippet>53</a>
+<a href=#54 id=54 data-nosnippet>54</a><span class="kw">impl </span><a href="#34-52">DurationUnits</a> {
+<a href=#55 id=55 data-nosnippet>55</a>    <span class="doccomment">/// Set the duration component value for the given unit.
+<a href=#56 id=56 data-nosnippet>56</a>    ///
+<a href=#57 id=57 data-nosnippet>57</a>    /// The value here is always unsigned. To deal with negative values, set
+<a href=#58 id=58 data-nosnippet>58</a>    /// the sign independently. It will be accounted for when using one of this
+<a href=#59 id=59 data-nosnippet>59</a>    /// type's methods for converting to a concrete duration type.
+<a href=#60 id=60 data-nosnippet>60</a>    ///
+<a href=#61 id=61 data-nosnippet>61</a>    /// # Panics
+<a href=#62 id=62 data-nosnippet>62</a>    ///
+<a href=#63 id=63 data-nosnippet>63</a>    /// When this is called after `set_fraction`.
+<a href=#64 id=64 data-nosnippet>64</a>    ///
+<a href=#65 id=65 data-nosnippet>65</a>    /// # Errors
+<a href=#66 id=66 data-nosnippet>66</a>    ///
+<a href=#67 id=67 data-nosnippet>67</a>    /// Since this is meant to be used in service of duration parsing and all
+<a href=#68 id=68 data-nosnippet>68</a>    /// duration parsing proceeds from largest to smallest units, this will
+<a href=#69 id=69 data-nosnippet>69</a>    /// return an error if the given unit is bigger than or equal to any
+<a href=#70 id=70 data-nosnippet>70</a>    /// previously set unit. This also implies that this can only be called
+<a href=#71 id=71 data-nosnippet>71</a>    /// at most once for each unit value.
+<a href=#72 id=72 data-nosnippet>72</a>    </span><span class="attr">#[cfg_attr(feature = <span class="string">"perf-inline"</span>, inline(always))]
+<a href=#73 id=73 data-nosnippet>73</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>set_unit_value(
+<a href=#74 id=74 data-nosnippet>74</a>        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+<a href=#75 id=75 data-nosnippet>75</a>        unit: <a href="../span.rs.html#3911-3936">Unit</a>,
+<a href=#76 id=76 data-nosnippet>76</a>        value: <a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>,
+<a href=#77 id=77 data-nosnippet>77</a>    ) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;(), <a href="../error/mod.rs.html#51-62">Error</a>&gt; {
+<a href=#78 id=78 data-nosnippet>78</a><span class="expansion"><input id=expand-78 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        <span class=expanded><span class="kw">if </span>!<span class="self">self</span>.fraction.is_none() {
+    ::core::panicking::panic(<span class="string">"assertion failed: self.fraction.is_none()"</span>)
+};</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.assert.html">assert!</a>(<span class="self">self</span>.fraction.is_none())</span></span>;
+<a href=#79 id=79 data-nosnippet>79</a>
+<a href=#80 id=80 data-nosnippet>80</a>        <span class="kw">if let </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(min) = <a class="self" href="#74">self</a>.min {
+<a href=#81 id=81 data-nosnippet>81</a>            <span class="kw">if </span><a href="#80">min</a> &lt;= <a href="#75">unit</a> {
+<a href=#82 id=82 data-nosnippet>82</a>                <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(<a href="../error/mod.rs.html#51-62">Error</a>::<a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html#tymethod.from">from</a>(E::<a href="../error/fmt/util.rs.html#16">OutOfOrderUnits</a> {
+<a href=#83 id=83 data-nosnippet>83</a>                    found: <a href="#75">unit</a>,
+<a href=#84 id=84 data-nosnippet>84</a>                    previous: <a href="#80">min</a>,
+<a href=#85 id=85 data-nosnippet>85</a>                }));
+<a href=#86 id=86 data-nosnippet>86</a>            }
+<a href=#87 id=87 data-nosnippet>87</a>        }
+<a href=#88 id=88 data-nosnippet>88</a>        <span class="comment">// Given the above check, the given unit must be smaller than any we
+<a href=#89 id=89 data-nosnippet>89</a>        // have seen so far.
+<a href=#90 id=90 data-nosnippet>90</a>        </span><a class="self" href="#74">self</a>.min = <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(<a href="#75">unit</a>);
+<a href=#91 id=91 data-nosnippet>91</a>        <span class="comment">// The maximum unit is always the first unit set, since we can never
+<a href=#92 id=92 data-nosnippet>92</a>        // see a unit bigger than it without an error occurring.
+<a href=#93 id=93 data-nosnippet>93</a>        </span><span class="kw">if </span><a class="self" href="#74">self</a>.max.<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.is_none">is_none</a>() {
+<a href=#94 id=94 data-nosnippet>94</a>            <a class="self" href="#74">self</a>.max = <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(<a href="#75">unit</a>);
+<a href=#95 id=95 data-nosnippet>95</a>        }
+<a href=#96 id=96 data-nosnippet>96</a>        <a class="self" href="#74">self</a>.values[<a href="#75">unit</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] = <a href="#76">value</a>;
+<a href=#97 id=97 data-nosnippet>97</a>        <a class="self" href="#74">self</a>.any_non_zero_units = <a class="self" href="#74">self</a>.any_non_zero_units || <a href="#76">value</a> != <span class="number">0</span>;
+<a href=#98 id=98 data-nosnippet>98</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(())
+<a href=#99 id=99 data-nosnippet>99</a>    }
+<a href=#100 id=100 data-nosnippet>100</a>
+<a href=#101 id=101 data-nosnippet>101</a>    <span class="doccomment">/// A convenience routine for setting values parsed from an `HH:MM:SS`
+<a href=#102 id=102 data-nosnippet>102</a>    /// format (including the fraction).
+<a href=#103 id=103 data-nosnippet>103</a>    ///
+<a href=#104 id=104 data-nosnippet>104</a>    /// # Errors
+<a href=#105 id=105 data-nosnippet>105</a>    ///
+<a href=#106 id=106 data-nosnippet>106</a>    /// This forwards errors from `DurationUnits::set_unit_value`. It will also
+<a href=#107 id=107 data-nosnippet>107</a>    /// return an error is the minimum parsed unit (so far) is smaller than
+<a href=#108 id=108 data-nosnippet>108</a>    /// days. (Since `HH:MM:SS` can only appear after units of years, months,
+<a href=#109 id=109 data-nosnippet>109</a>    /// weeks or days.)
+<a href=#110 id=110 data-nosnippet>110</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>set_hms(
+<a href=#111 id=111 data-nosnippet>111</a>        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+<a href=#112 id=112 data-nosnippet>112</a>        hours: <a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>,
+<a href=#113 id=113 data-nosnippet>113</a>        minutes: <a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>,
+<a href=#114 id=114 data-nosnippet>114</a>        seconds: <a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>,
+<a href=#115 id=115 data-nosnippet>115</a>        fraction: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>&gt;,
+<a href=#116 id=116 data-nosnippet>116</a>    ) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;(), <a href="../error/mod.rs.html#51-62">Error</a>&gt; {
+<a href=#117 id=117 data-nosnippet>117</a>        <span class="kw">if let </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(min) = <a class="self" href="#111">self</a>.min {
+<a href=#118 id=118 data-nosnippet>118</a>            <span class="kw">if </span><a href="#117">min</a> &lt;= Unit::<a href="../span.rs.html#3924">Hour</a> {
+<a href=#119 id=119 data-nosnippet>119</a>                <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(<a href="../error/mod.rs.html#51-62">Error</a>::<a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html#tymethod.from">from</a>(E::<a href="../error/fmt/util.rs.html#15">OutOfOrderHMS</a> { found: <a href="#117">min</a> }));
+<a href=#120 id=120 data-nosnippet>120</a>            }
+<a href=#121 id=121 data-nosnippet>121</a>        }
+<a href=#122 id=122 data-nosnippet>122</a>        <span class="self">self</span>.set_unit_value(Unit::Hour, hours)<span class="question-mark">?</span>;
+<a href=#123 id=123 data-nosnippet>123</a>        <span class="self">self</span>.set_unit_value(Unit::Minute, minutes)<span class="question-mark">?</span>;
+<a href=#124 id=124 data-nosnippet>124</a>        <span class="self">self</span>.set_unit_value(Unit::Second, seconds)<span class="question-mark">?</span>;
+<a href=#125 id=125 data-nosnippet>125</a>        <span class="kw">if let </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(fraction) = <a href="#115">fraction</a> {
+<a href=#126 id=126 data-nosnippet>126</a>            <span class="self">self</span>.set_fraction(fraction)<span class="question-mark">?</span>;
+<a href=#127 id=127 data-nosnippet>127</a>        }
+<a href=#128 id=128 data-nosnippet>128</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(())
+<a href=#129 id=129 data-nosnippet>129</a>    }
+<a href=#130 id=130 data-nosnippet>130</a>
+<a href=#131 id=131 data-nosnippet>131</a>    <span class="doccomment">/// Set the fractional value.
+<a href=#132 id=132 data-nosnippet>132</a>    ///
+<a href=#133 id=133 data-nosnippet>133</a>    /// This is always interpreted as a fraction of the minimal unit.
+<a href=#134 id=134 data-nosnippet>134</a>    ///
+<a href=#135 id=135 data-nosnippet>135</a>    /// Callers must ensure this is called after the last call to
+<a href=#136 id=136 data-nosnippet>136</a>    /// `DurationUnits::set_unit_value`.
+<a href=#137 id=137 data-nosnippet>137</a>    ///
+<a href=#138 id=138 data-nosnippet>138</a>    /// # Panics
+<a href=#139 id=139 data-nosnippet>139</a>    ///
+<a href=#140 id=140 data-nosnippet>140</a>    /// When `fraction` is not in the range `0..=999_999_999`. Callers are
+<a href=#141 id=141 data-nosnippet>141</a>    /// expected to uphold this invariant.
+<a href=#142 id=142 data-nosnippet>142</a>    ///
+<a href=#143 id=143 data-nosnippet>143</a>    /// # Errors
+<a href=#144 id=144 data-nosnippet>144</a>    ///
+<a href=#145 id=145 data-nosnippet>145</a>    /// This will return an error if the minimum unit is `Unit::Nanosecond`.
+<a href=#146 id=146 data-nosnippet>146</a>    /// (Because fractional nanoseconds are not supported.) This will also
+<a href=#147 id=147 data-nosnippet>147</a>    /// return an error if the minimum unit is bigger than `Unit::Hour`.
+<a href=#148 id=148 data-nosnippet>148</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>set_fraction(<span class="kw-2">&amp;mut </span><span class="self">self</span>, fraction: <a href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;(), <a href="../error/mod.rs.html#51-62">Error</a>&gt; {
+<a href=#149 id=149 data-nosnippet>149</a><span class="expansion"><input id=expand-149 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        <span class=expanded><span class="kw">if </span>!(fraction &lt;= <span class="number">999_999_999</span>) {
+    ::core::panicking::panic(<span class="string">"assertion failed: fraction &lt;= 999_999_999"</span>)
+};</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.assert.html">assert!</a>(fraction &lt;= <span class="number">999_999_999</span>)</span></span>;
+<a href=#150 id=150 data-nosnippet>150</a>        <span class="kw">if let </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(min) = <a class="self" href="#148">self</a>.min {
+<a href=#151 id=151 data-nosnippet>151</a>            <span class="kw">if </span><a href="#150">min</a> &gt; Unit::<a href="../span.rs.html#3924">Hour</a> || <a href="#150">min</a> == Unit::<a href="../span.rs.html#3935">Nanosecond</a> {
+<a href=#152 id=152 data-nosnippet>152</a>                <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(<a href="../error/mod.rs.html#51-62">Error</a>::<a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html#tymethod.from">from</a>(E::<a href="../error/fmt/util.rs.html#13">NotAllowedFractionalUnit</a> {
+<a href=#153 id=153 data-nosnippet>153</a>                    found: <a href="#150">min</a>,
+<a href=#154 id=154 data-nosnippet>154</a>                }));
+<a href=#155 id=155 data-nosnippet>155</a>            }
+<a href=#156 id=156 data-nosnippet>156</a>        }
+<a href=#157 id=157 data-nosnippet>157</a>        <a class="self" href="#148">self</a>.fraction = <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(<a href="#148">fraction</a>);
+<a href=#158 id=158 data-nosnippet>158</a>        <a class="self" href="#148">self</a>.any_non_zero_units = <a class="self" href="#148">self</a>.any_non_zero_units || <a href="#148">fraction</a> != <span class="number">0</span>;
+<a href=#159 id=159 data-nosnippet>159</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(())
+<a href=#160 id=160 data-nosnippet>160</a>    }
+<a href=#161 id=161 data-nosnippet>161</a>
+<a href=#162 id=162 data-nosnippet>162</a>    <span class="doccomment">/// Set the sign associated with the components.
+<a href=#163 id=163 data-nosnippet>163</a>    ///
+<a href=#164 id=164 data-nosnippet>164</a>    /// The sign applies to the entire duration. There is no support for
+<a href=#165 id=165 data-nosnippet>165</a>    /// having some components signed and some unsigned.
+<a href=#166 id=166 data-nosnippet>166</a>    ///
+<a href=#167 id=167 data-nosnippet>167</a>    /// If no sign is set, then it is assumed to be zero. Note also that
+<a href=#168 id=168 data-nosnippet>168</a>    /// even if a sign is explicitly set *and* all unit values are zero,
+<a href=#169 id=169 data-nosnippet>169</a>    /// then the sign will be set to zero.
+<a href=#170 id=170 data-nosnippet>170</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>set_sign(<span class="kw-2">&amp;mut </span><span class="self">self</span>, sign: <a href="../../../jiff_core/bounds/enum.Sign.html">Sign</a>) {
+<a href=#171 id=171 data-nosnippet>171</a>        <a class="self" href="#170">self</a>.sign = <a href="#170">sign</a>;
+<a href=#172 id=172 data-nosnippet>172</a>    }
+<a href=#173 id=173 data-nosnippet>173</a>
+<a href=#174 id=174 data-nosnippet>174</a>    <span class="doccomment">/// Convert these duration components to a `Span`.
+<a href=#175 id=175 data-nosnippet>175</a>    ///
+<a href=#176 id=176 data-nosnippet>176</a>    /// # Errors
+<a href=#177 id=177 data-nosnippet>177</a>    ///
+<a href=#178 id=178 data-nosnippet>178</a>    /// If any individual unit exceeds the limits of a `Span`, or if the units
+<a href=#179 id=179 data-nosnippet>179</a>    /// combine to exceed what can be represented by a `Span`, then this
+<a href=#180 id=180 data-nosnippet>180</a>    /// returns an error.
+<a href=#181 id=181 data-nosnippet>181</a>    ///
+<a href=#182 id=182 data-nosnippet>182</a>    /// This also returns an error if no units were set.
+<a href=#183 id=183 data-nosnippet>183</a>    </span><span class="attr">#[cfg_attr(feature = <span class="string">"perf-inline"</span>, inline(always))]
+<a href=#184 id=184 data-nosnippet>184</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>to_span(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<a href="../span.rs.html#708-721">Span</a>, <a href="../error/mod.rs.html#51-62">Error</a>&gt; {
+<a href=#185 id=185 data-nosnippet>185</a>        <span class="comment">// When every unit value is less than this, *and* there is
+<a href=#186 id=186 data-nosnippet>186</a>        // no fractional component, then we trigger a fast path that
+<a href=#187 id=187 data-nosnippet>187</a>        // doesn't need to bother with error handling and careful
+<a href=#188 id=188 data-nosnippet>188</a>        // handling of the sign.
+<a href=#189 id=189 data-nosnippet>189</a>        //
+<a href=#190 id=190 data-nosnippet>190</a>        // Why do we use the maximum year value? Because years are
+<a href=#191 id=191 data-nosnippet>191</a>        // the "biggest" unit, it follows that there can't be any
+<a href=#192 id=192 data-nosnippet>192</a>        // other unit whose limit is smaller than years as a
+<a href=#193 id=193 data-nosnippet>193</a>        // dimenionless quantity. That is, if all parsed unit values
+<a href=#194 id=194 data-nosnippet>194</a>        // are no bigger than the maximum year, then we know all
+<a href=#195 id=195 data-nosnippet>195</a>        // parsed unit values are necessarily within their
+<a href=#196 id=196 data-nosnippet>196</a>        // appropriate limits.
+<a href=#197 id=197 data-nosnippet>197</a>        </span><span class="kw">const </span>LIMIT: <a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a> = b::<a href="../util/b.rs.html#165-275">SpanYears</a>::<a href="../util/b.rs.html#165-275">MAX</a> <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>;
+<a href=#198 id=198 data-nosnippet>198</a>
+<a href=#199 id=199 data-nosnippet>199</a>        <span class="comment">// If we have a fraction or a particularly large unit,
+<a href=#200 id=200 data-nosnippet>200</a>        // bail out to the general case.
+<a href=#201 id=201 data-nosnippet>201</a>        </span><span class="kw">if </span><a class="self" href="#184">self</a>.fraction.<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.is_some">is_some</a>()
+<a href=#202 id=202 data-nosnippet>202</a>            || <a class="self" href="#184">self</a>.values.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.iter">iter</a>().<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.any">any</a>(|<span class="kw-2">&amp;</span>value| <a href="#202">value</a> &gt; <a href="#197">LIMIT</a>)
+<a href=#203 id=203 data-nosnippet>203</a>            <span class="comment">// If no unit was set, it's an error case.
+<a href=#204 id=204 data-nosnippet>204</a>            </span>|| <a class="self" href="#184">self</a>.max.<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.is_none">is_none</a>()
+<a href=#205 id=205 data-nosnippet>205</a>        {
+<a href=#206 id=206 data-nosnippet>206</a>            <span class="kw">return </span><a class="self" href="#184">self</a>.<a href="#249-375">to_span_general</a>();
+<a href=#207 id=207 data-nosnippet>207</a>        }
+<a href=#208 id=208 data-nosnippet>208</a>
+<a href=#209 id=209 data-nosnippet>209</a>        <span class="kw">let </span><span class="kw-2">mut </span>span = <a href="../span.rs.html#708-721">Span</a>::<a href="../span.rs.html#731-733">new</a>();
+<a href=#210 id=210 data-nosnippet>210</a>
+<a href=#211 id=211 data-nosnippet>211</a>        <span class="kw">let </span>years = <a class="self" href="#184">self</a>.values[Unit::<a href="../span.rs.html#3914">Year</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.i16.html">i16</a>;
+<a href=#212 id=212 data-nosnippet>212</a>        <span class="kw">let </span>months = <a class="self" href="#184">self</a>.values[Unit::<a href="../span.rs.html#3917">Month</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.i32.html">i32</a>;
+<a href=#213 id=213 data-nosnippet>213</a>        <span class="kw">let </span>weeks = <a class="self" href="#184">self</a>.values[Unit::<a href="../span.rs.html#3919">Week</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.i32.html">i32</a>;
+<a href=#214 id=214 data-nosnippet>214</a>        <span class="kw">let </span>days = <a class="self" href="#184">self</a>.values[Unit::<a href="../span.rs.html#3922">Day</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.i32.html">i32</a>;
+<a href=#215 id=215 data-nosnippet>215</a>        <span class="kw">let </span>hours = <a class="self" href="#184">self</a>.values[Unit::<a href="../span.rs.html#3924">Hour</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.i32.html">i32</a>;
+<a href=#216 id=216 data-nosnippet>216</a>        <span class="kw">let </span>mins = <a class="self" href="#184">self</a>.values[Unit::<a href="../span.rs.html#3927">Minute</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>;
+<a href=#217 id=217 data-nosnippet>217</a>        <span class="kw">let </span>secs = <a class="self" href="#184">self</a>.values[Unit::<a href="../span.rs.html#3929">Second</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>;
+<a href=#218 id=218 data-nosnippet>218</a>        <span class="kw">let </span>millis = <a class="self" href="#184">self</a>.values[Unit::<a href="../span.rs.html#3931">Millisecond</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>;
+<a href=#219 id=219 data-nosnippet>219</a>        <span class="kw">let </span>micros = <a class="self" href="#184">self</a>.values[Unit::<a href="../span.rs.html#3933">Microsecond</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>;
+<a href=#220 id=220 data-nosnippet>220</a>        <span class="kw">let </span>nanos = <a class="self" href="#184">self</a>.values[Unit::<a href="../span.rs.html#3935">Nanosecond</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>;
+<a href=#221 id=221 data-nosnippet>221</a>
+<a href=#222 id=222 data-nosnippet>222</a>        <a href="#209">span</a> = <a href="#209">span</a>.<a href="../span.rs.html#2614-2618">years_unchecked</a>(<a href="#211">years</a>);
+<a href=#223 id=223 data-nosnippet>223</a>        <a href="#209">span</a> = <a href="#209">span</a>.<a href="../span.rs.html#2621-2625">months_unchecked</a>(<a href="#212">months</a>);
+<a href=#224 id=224 data-nosnippet>224</a>        <a href="#209">span</a> = <a href="#209">span</a>.<a href="../span.rs.html#2628-2632">weeks_unchecked</a>(<a href="#213">weeks</a>);
+<a href=#225 id=225 data-nosnippet>225</a>        <a href="#209">span</a> = <a href="#209">span</a>.<a href="../span.rs.html#2635-2639">days_unchecked</a>(<a href="#214">days</a>);
+<a href=#226 id=226 data-nosnippet>226</a>        <a href="#209">span</a> = <a href="#209">span</a>.<a href="../span.rs.html#2642-2646">hours_unchecked</a>(<a href="#215">hours</a>);
+<a href=#227 id=227 data-nosnippet>227</a>        <a href="#209">span</a> = <a href="#209">span</a>.<a href="../span.rs.html#2649-2653">minutes_unchecked</a>(<a href="#216">mins</a>);
+<a href=#228 id=228 data-nosnippet>228</a>        <a href="#209">span</a> = <a href="#209">span</a>.<a href="../span.rs.html#2656-2660">seconds_unchecked</a>(<a href="#217">secs</a>);
+<a href=#229 id=229 data-nosnippet>229</a>        <a href="#209">span</a> = <a href="#209">span</a>.<a href="../span.rs.html#2663-2667">milliseconds_unchecked</a>(<a href="#218">millis</a>);
+<a href=#230 id=230 data-nosnippet>230</a>        <a href="#209">span</a> = <a href="#209">span</a>.<a href="../span.rs.html#2670-2674">microseconds_unchecked</a>(<a href="#219">micros</a>);
+<a href=#231 id=231 data-nosnippet>231</a>        <a href="#209">span</a> = <a href="#209">span</a>.<a href="../span.rs.html#2677-2681">nanoseconds_unchecked</a>(<a href="#220">nanos</a>);
+<a href=#232 id=232 data-nosnippet>232</a>
+<a href=#233 id=233 data-nosnippet>233</a>        <span class="comment">// The unchecked setters above don't manipulate
+<a href=#234 id=234 data-nosnippet>234</a>        // the sign, which defaults to zero. So we need to
+<a href=#235 id=235 data-nosnippet>235</a>        // set it even when it's positive.
+<a href=#236 id=236 data-nosnippet>236</a>        </span><a href="#209">span</a> = <a href="#209">span</a>.<a href="../span.rs.html#2684-2686">sign_unchecked</a>(<a class="self" href="#184">self</a>.<a href="#706-708">get_sign</a>());
+<a href=#237 id=237 data-nosnippet>237</a>
+<a href=#238 id=238 data-nosnippet>238</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="#209">span</a>)
+<a href=#239 id=239 data-nosnippet>239</a>    }
+<a href=#240 id=240 data-nosnippet>240</a>
+<a href=#241 id=241 data-nosnippet>241</a>    <span class="doccomment">/// The "general" implementation of `DurationUnits::to_span`.
+<a href=#242 id=242 data-nosnippet>242</a>    ///
+<a href=#243 id=243 data-nosnippet>243</a>    /// This handles all possible cases, including fractional units, with good
+<a href=#244 id=244 data-nosnippet>244</a>    /// error handling. Basically, we take this path when we think an error
+<a href=#245 id=245 data-nosnippet>245</a>    /// _could_ occur. But this function is more bloaty and does more work, so
+<a href=#246 id=246 data-nosnippet>246</a>    /// the more it can be avoided, the better.
+<a href=#247 id=247 data-nosnippet>247</a>    </span><span class="attr">#[cold]
+<a href=#248 id=248 data-nosnippet>248</a>    #[inline(never)]
+<a href=#249 id=249 data-nosnippet>249</a>    </span><span class="kw">fn </span>to_span_general(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<a href="../span.rs.html#708-721">Span</a>, <a href="../error/mod.rs.html#51-62">Error</a>&gt; {
+<a href=#250 id=250 data-nosnippet>250</a>        <span class="attr">#[cfg_attr(feature = <span class="string">"perf-inline"</span>, inline(always))]
+<a href=#251 id=251 data-nosnippet>251</a>        </span><span class="kw">fn </span>set_time_unit(
+<a href=#252 id=252 data-nosnippet>252</a>            unit: <a href="../span.rs.html#3911-3936">Unit</a>,
+<a href=#253 id=253 data-nosnippet>253</a>            value: <a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>,
+<a href=#254 id=254 data-nosnippet>254</a>            span: <a href="../span.rs.html#708-721">Span</a>,
+<a href=#255 id=255 data-nosnippet>255</a>            set: <span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/ops/function/trait.FnOnce.html">FnOnce</a>(<a href="../span.rs.html#708-721">Span</a>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<a href="../span.rs.html#708-721">Span</a>, <a href="../error/mod.rs.html#51-62">Error</a>&gt;,
+<a href=#256 id=256 data-nosnippet>256</a>        ) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<a href="../span.rs.html#708-721">Span</a>, <a href="../error/mod.rs.html#51-62">Error</a>&gt; {
+<a href=#257 id=257 data-nosnippet>257</a>            <span class="attr">#[cold]
+<a href=#258 id=258 data-nosnippet>258</a>            #[inline(never)]
+<a href=#259 id=259 data-nosnippet>259</a>            </span><span class="kw">fn </span>fractional_fallback(
+<a href=#260 id=260 data-nosnippet>260</a>                err: <a href="../error/mod.rs.html#51-62">Error</a>,
+<a href=#261 id=261 data-nosnippet>261</a>                unit: <a href="../span.rs.html#3911-3936">Unit</a>,
+<a href=#262 id=262 data-nosnippet>262</a>                value: <a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>,
+<a href=#263 id=263 data-nosnippet>263</a>                span: <a href="../span.rs.html#708-721">Span</a>,
+<a href=#264 id=264 data-nosnippet>264</a>            ) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<a href="../span.rs.html#708-721">Span</a>, <a href="../error/mod.rs.html#51-62">Error</a>&gt; {
+<a href=#265 id=265 data-nosnippet>265</a>                <span class="comment">// Fractional calendar units aren't supported. Neither are
+<a href=#266 id=266 data-nosnippet>266</a>                // fractional nanoseconds. So there's nothing we can do in
+<a href=#267 id=267 data-nosnippet>267</a>                // this case.
+<a href=#268 id=268 data-nosnippet>268</a>                </span><span class="kw">if </span><a href="#261">unit</a> &gt; Unit::<a href="../span.rs.html#3924">Hour</a> || <a href="#261">unit</a> == Unit::<a href="../span.rs.html#3935">Nanosecond</a> {
+<a href=#269 id=269 data-nosnippet>269</a>                    <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(<a href="#260">err</a>)
+<a href=#270 id=270 data-nosnippet>270</a>                } <span class="kw">else </span>{
+<a href=#271 id=271 data-nosnippet>271</a>                    <span class="comment">// This is annoying, but because we can write out a larger
+<a href=#272 id=272 data-nosnippet>272</a>                    // number of hours/minutes/seconds than what we actually
+<a href=#273 id=273 data-nosnippet>273</a>                    // support, we need to be prepared to parse an unbalanced
+<a href=#274 id=274 data-nosnippet>274</a>                    // span if our time units are too big here. In essence,
+<a href=#275 id=275 data-nosnippet>275</a>                    // this lets a single time unit "overflow" into smaller
+<a href=#276 id=276 data-nosnippet>276</a>                    // units if it exceeds the limits.
+<a href=#277 id=277 data-nosnippet>277</a>                    </span><a href="#811-930">fractional_time_to_span</a>(<a href="#261">unit</a>, <a href="#262">value</a>, <span class="number">0</span>, <a href="#263">span</a>)
+<a href=#278 id=278 data-nosnippet>278</a>                }
+<a href=#279 id=279 data-nosnippet>279</a>            }
+<a href=#280 id=280 data-nosnippet>280</a>
+<a href=#281 id=281 data-nosnippet>281</a>            <a href="#255">set</a>(<a href="#254">span</a>)
+<a href=#282 id=282 data-nosnippet>282</a>                .<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.or_else">or_else</a>(|err| <a href="#259-279">fractional_fallback</a>(<a href="#282">err</a>, <a href="#252">unit</a>, <a href="#253">value</a>, <a href="#254">span</a>))
+<a href=#283 id=283 data-nosnippet>283</a>                .<a href="../error/mod.rs.html#799">context</a>(E::<a href="../error/fmt/util.rs.html#8">FailedValueSet</a> { <a href="#252">unit</a> })
+<a href=#284 id=284 data-nosnippet>284</a>        }
+<a href=#285 id=285 data-nosnippet>285</a>
+<a href=#286 id=286 data-nosnippet>286</a>        <span class="kw">let </span>(min, <span class="kw">_</span>) = <span class="self">self</span>.get_min_max_units()<span class="question-mark">?</span>;
+<a href=#287 id=287 data-nosnippet>287</a>        <span class="kw">let </span><span class="kw-2">mut </span>span = <a href="../span.rs.html#708-721">Span</a>::<a href="../span.rs.html#731-733">new</a>();
+<a href=#288 id=288 data-nosnippet>288</a>
+<a href=#289 id=289 data-nosnippet>289</a>        <span class="kw">if </span><a class="self" href="#249">self</a>.values[Unit::<a href="../span.rs.html#3914">Year</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] != <span class="number">0 </span>{
+<a href=#290 id=290 data-nosnippet>290</a>            <span class="kw">let </span>value = <span class="self">self</span>.get_unit_value(Unit::Year)<span class="question-mark">?</span>;
+<a href=#291 id=291 data-nosnippet>291</a>            <a href="#287">span</a> = span
+<a href=#292 id=292 data-nosnippet>292</a>                .try_years(value)
+<a href=#293 id=293 data-nosnippet>293</a>                .context(E::FailedValueSet { unit: Unit::Year })<span class="question-mark">?</span>;
+<a href=#294 id=294 data-nosnippet>294</a>        }
+<a href=#295 id=295 data-nosnippet>295</a>        <span class="kw">if </span><a class="self" href="#249">self</a>.values[Unit::<a href="../span.rs.html#3917">Month</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] != <span class="number">0 </span>{
+<a href=#296 id=296 data-nosnippet>296</a>            <span class="kw">let </span>value = <span class="self">self</span>.get_unit_value(Unit::Month)<span class="question-mark">?</span>;
+<a href=#297 id=297 data-nosnippet>297</a>            <a href="#287">span</a> = span
+<a href=#298 id=298 data-nosnippet>298</a>                .try_months(value)
+<a href=#299 id=299 data-nosnippet>299</a>                .context(E::FailedValueSet { unit: Unit::Month })<span class="question-mark">?</span>;
+<a href=#300 id=300 data-nosnippet>300</a>        }
+<a href=#301 id=301 data-nosnippet>301</a>        <span class="kw">if </span><a class="self" href="#249">self</a>.values[Unit::<a href="../span.rs.html#3919">Week</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] != <span class="number">0 </span>{
+<a href=#302 id=302 data-nosnippet>302</a>            <span class="kw">let </span>value = <span class="self">self</span>.get_unit_value(Unit::Week)<span class="question-mark">?</span>;
+<a href=#303 id=303 data-nosnippet>303</a>            <a href="#287">span</a> = span
+<a href=#304 id=304 data-nosnippet>304</a>                .try_weeks(value)
+<a href=#305 id=305 data-nosnippet>305</a>                .context(E::FailedValueSet { unit: Unit::Week })<span class="question-mark">?</span>;
+<a href=#306 id=306 data-nosnippet>306</a>        }
+<a href=#307 id=307 data-nosnippet>307</a>        <span class="kw">if </span><a class="self" href="#249">self</a>.values[Unit::<a href="../span.rs.html#3922">Day</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] != <span class="number">0 </span>{
+<a href=#308 id=308 data-nosnippet>308</a>            <span class="kw">let </span>value = <span class="self">self</span>.get_unit_value(Unit::Day)<span class="question-mark">?</span>;
+<a href=#309 id=309 data-nosnippet>309</a>            <a href="#287">span</a> = span
+<a href=#310 id=310 data-nosnippet>310</a>                .try_days(value)
+<a href=#311 id=311 data-nosnippet>311</a>                .context(E::FailedValueSet { unit: Unit::Day })<span class="question-mark">?</span>;
+<a href=#312 id=312 data-nosnippet>312</a>        }
+<a href=#313 id=313 data-nosnippet>313</a>        <span class="kw">if </span><a class="self" href="#249">self</a>.values[Unit::<a href="../span.rs.html#3924">Hour</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] != <span class="number">0 </span>{
+<a href=#314 id=314 data-nosnippet>314</a>            <span class="kw">let </span>value = <span class="self">self</span>.get_unit_value(Unit::Hour)<span class="question-mark">?</span>;
+<a href=#315 id=315 data-nosnippet>315</a>            <a href="#287">span</a> = set_time_unit(Unit::Hour, value, span, |span| {
+<a href=#316 id=316 data-nosnippet>316</a>                span.try_hours(value)
+<a href=#317 id=317 data-nosnippet>317</a>            })<span class="question-mark">?</span>;
+<a href=#318 id=318 data-nosnippet>318</a>        }
+<a href=#319 id=319 data-nosnippet>319</a>        <span class="comment">// For the units below, a bigger unit may have exceeded its limit and
+<a href=#320 id=320 data-nosnippet>320</a>        // overflowed into them. So we need to add to whatever is already on
+<a href=#321 id=321 data-nosnippet>321</a>        // the span. Otherwise, we'd clobber the excess from the bigger unit.
+<a href=#322 id=322 data-nosnippet>322</a>        </span><span class="kw">if </span><a class="self" href="#249">self</a>.values[Unit::<a href="../span.rs.html#3927">Minute</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] != <span class="number">0 </span>{
+<a href=#323 id=323 data-nosnippet>323</a>            <span class="kw">let </span>value = <span class="self">self</span>.get_unit_value(Unit::Minute)<span class="question-mark">?</span>;
+<a href=#324 id=324 data-nosnippet>324</a>            <a href="#287">span</a> = set_time_unit(Unit::Minute, value, span, |span| {
+<a href=#325 id=325 data-nosnippet>325</a>                <span class="kw">let </span>value =
+<a href=#326 id=326 data-nosnippet>326</a>                    b::SpanMinutes::checked_add(value, span.get_minutes())<span class="question-mark">?</span>;
+<a href=#327 id=327 data-nosnippet>327</a>                span.try_minutes(value)
+<a href=#328 id=328 data-nosnippet>328</a>            })<span class="question-mark">?</span>;
+<a href=#329 id=329 data-nosnippet>329</a>        }
+<a href=#330 id=330 data-nosnippet>330</a>        <span class="kw">if </span><a class="self" href="#249">self</a>.values[Unit::<a href="../span.rs.html#3929">Second</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] != <span class="number">0 </span>{
+<a href=#331 id=331 data-nosnippet>331</a>            <span class="kw">let </span>value = <span class="self">self</span>.get_unit_value(Unit::Second)<span class="question-mark">?</span>;
+<a href=#332 id=332 data-nosnippet>332</a>            <a href="#287">span</a> = set_time_unit(Unit::Second, value, span, |span| {
+<a href=#333 id=333 data-nosnippet>333</a>                <span class="kw">let </span>value =
+<a href=#334 id=334 data-nosnippet>334</a>                    b::SpanSeconds::checked_add(value, span.get_seconds())<span class="question-mark">?</span>;
+<a href=#335 id=335 data-nosnippet>335</a>                span.try_seconds(value)
+<a href=#336 id=336 data-nosnippet>336</a>            })<span class="question-mark">?</span>;
+<a href=#337 id=337 data-nosnippet>337</a>        }
+<a href=#338 id=338 data-nosnippet>338</a>        <span class="kw">if </span><a class="self" href="#249">self</a>.values[Unit::<a href="../span.rs.html#3931">Millisecond</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] != <span class="number">0 </span>{
+<a href=#339 id=339 data-nosnippet>339</a>            <span class="kw">let </span>value = <span class="self">self</span>.get_unit_value(Unit::Millisecond)<span class="question-mark">?</span>;
+<a href=#340 id=340 data-nosnippet>340</a>            <a href="#287">span</a> = set_time_unit(Unit::Millisecond, value, span, |span| {
+<a href=#341 id=341 data-nosnippet>341</a>                <span class="kw">let </span>value = b::SpanMilliseconds::checked_add(
+<a href=#342 id=342 data-nosnippet>342</a>                    value,
+<a href=#343 id=343 data-nosnippet>343</a>                    span.get_milliseconds(),
+<a href=#344 id=344 data-nosnippet>344</a>                )<span class="question-mark">?</span>;
+<a href=#345 id=345 data-nosnippet>345</a>                span.try_milliseconds(value)
+<a href=#346 id=346 data-nosnippet>346</a>            })<span class="question-mark">?</span>;
+<a href=#347 id=347 data-nosnippet>347</a>        }
+<a href=#348 id=348 data-nosnippet>348</a>        <span class="kw">if </span><a class="self" href="#249">self</a>.values[Unit::<a href="../span.rs.html#3933">Microsecond</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] != <span class="number">0 </span>{
+<a href=#349 id=349 data-nosnippet>349</a>            <span class="kw">let </span>value = <span class="self">self</span>.get_unit_value(Unit::Microsecond)<span class="question-mark">?</span>;
+<a href=#350 id=350 data-nosnippet>350</a>            <a href="#287">span</a> = set_time_unit(Unit::Microsecond, value, span, |span| {
+<a href=#351 id=351 data-nosnippet>351</a>                <span class="kw">let </span>value = b::SpanMicroseconds::checked_add(
+<a href=#352 id=352 data-nosnippet>352</a>                    value,
+<a href=#353 id=353 data-nosnippet>353</a>                    span.get_microseconds(),
+<a href=#354 id=354 data-nosnippet>354</a>                )<span class="question-mark">?</span>;
+<a href=#355 id=355 data-nosnippet>355</a>                span.try_microseconds(value)
+<a href=#356 id=356 data-nosnippet>356</a>            })<span class="question-mark">?</span>;
+<a href=#357 id=357 data-nosnippet>357</a>        }
+<a href=#358 id=358 data-nosnippet>358</a>        <span class="kw">if </span><a class="self" href="#249">self</a>.values[Unit::<a href="../span.rs.html#3935">Nanosecond</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] != <span class="number">0 </span>{
+<a href=#359 id=359 data-nosnippet>359</a>            <span class="kw">let </span>value = <span class="self">self</span>.get_unit_value(Unit::Nanosecond)<span class="question-mark">?</span>;
+<a href=#360 id=360 data-nosnippet>360</a>            <a href="#287">span</a> = set_time_unit(Unit::Nanosecond, value, span, |span| {
+<a href=#361 id=361 data-nosnippet>361</a>                <span class="kw">let </span>value = b::SpanNanoseconds::checked_add(
+<a href=#362 id=362 data-nosnippet>362</a>                    value,
+<a href=#363 id=363 data-nosnippet>363</a>                    span.get_nanoseconds(),
+<a href=#364 id=364 data-nosnippet>364</a>                )<span class="question-mark">?</span>;
+<a href=#365 id=365 data-nosnippet>365</a>                span.try_nanoseconds(value)
+<a href=#366 id=366 data-nosnippet>366</a>            })<span class="question-mark">?</span>;
+<a href=#367 id=367 data-nosnippet>367</a>        }
+<a href=#368 id=368 data-nosnippet>368</a>
+<a href=#369 id=369 data-nosnippet>369</a>        <span class="kw">if let </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(fraction) = <span class="self">self</span>.get_fraction()<span class="question-mark">? </span>{
+<a href=#370 id=370 data-nosnippet>370</a>            <span class="comment">// The whole number part of `min` was already set above.
+<a href=#371 id=371 data-nosnippet>371</a>            </span><a href="#287">span</a> = fractional_time_to_span(min, <span class="number">0</span>, fraction, span)<span class="question-mark">?</span>;
+<a href=#372 id=372 data-nosnippet>372</a>        }
+<a href=#373 id=373 data-nosnippet>373</a>
+<a href=#374 id=374 data-nosnippet>374</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="#287">span</a>)
+<a href=#375 id=375 data-nosnippet>375</a>    }
+<a href=#376 id=376 data-nosnippet>376</a>
+<a href=#377 id=377 data-nosnippet>377</a>    <span class="doccomment">/// Convert these duration components to a `SignedDuration`.
+<a href=#378 id=378 data-nosnippet>378</a>    ///
+<a href=#379 id=379 data-nosnippet>379</a>    /// # Errors
+<a href=#380 id=380 data-nosnippet>380</a>    ///
+<a href=#381 id=381 data-nosnippet>381</a>    /// If the total number of nanoseconds represented by all units combined
+<a href=#382 id=382 data-nosnippet>382</a>    /// exceeds what can bit in a 96-bit signed integer, then an error is
+<a href=#383 id=383 data-nosnippet>383</a>    /// returned.
+<a href=#384 id=384 data-nosnippet>384</a>    ///
+<a href=#385 id=385 data-nosnippet>385</a>    /// An error is also returned if any calendar units (days or greater) were
+<a href=#386 id=386 data-nosnippet>386</a>    /// set or if no units were set.
+<a href=#387 id=387 data-nosnippet>387</a>    </span><span class="attr">#[cfg_attr(feature = <span class="string">"perf-inline"</span>, inline(always))]
+<a href=#388 id=388 data-nosnippet>388</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>to_signed_duration(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<a href="../signed_duration.rs.html#326-329">SignedDuration</a>, <a href="../error/mod.rs.html#51-62">Error</a>&gt; {
+<a href=#389 id=389 data-nosnippet>389</a>        <span class="comment">// When every unit value is less than this, *and* there is
+<a href=#390 id=390 data-nosnippet>390</a>        // no fractional component, then we trigger a fast path that
+<a href=#391 id=391 data-nosnippet>391</a>        // doesn't need to bother with error handling and careful
+<a href=#392 id=392 data-nosnippet>392</a>        // handling of the sign.
+<a href=#393 id=393 data-nosnippet>393</a>        //
+<a href=#394 id=394 data-nosnippet>394</a>        // Why `999`? Well, I think it's nice to use one limit for all
+<a href=#395 id=395 data-nosnippet>395</a>        // units to make the comparisons simpler (although we could
+<a href=#396 id=396 data-nosnippet>396</a>        // use more targeted values to admit more cases, I didn't try
+<a href=#397 id=397 data-nosnippet>397</a>        // that). But specifically, this means we can have `999ms 999us
+<a href=#398 id=398 data-nosnippet>398</a>        // 999ns` as a maximal subsecond value without overflowing
+<a href=#399 id=399 data-nosnippet>399</a>        // the nanosecond component of a `SignedDuration`. This lets
+<a href=#400 id=400 data-nosnippet>400</a>        // us "just do math" without needing to check each result and
+<a href=#401 id=401 data-nosnippet>401</a>        // handle errors.
+<a href=#402 id=402 data-nosnippet>402</a>        </span><span class="kw">const </span>LIMIT: <a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a> = <span class="number">999</span>;
+<a href=#403 id=403 data-nosnippet>403</a>
+<a href=#404 id=404 data-nosnippet>404</a>        <span class="kw">if </span><a class="self" href="#388">self</a>.fraction.<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.is_some">is_some</a>()
+<a href=#405 id=405 data-nosnippet>405</a>            || <a class="self" href="#388">self</a>.values[..Unit::Day.as_usize()]
+<a href=#406 id=406 data-nosnippet>406</a>                .<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.iter">iter</a>()
+<a href=#407 id=407 data-nosnippet>407</a>                .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.any">any</a>(|<span class="kw-2">&amp;</span>value| <a href="#407">value</a> &gt; <a href="#402">LIMIT</a>)
+<a href=#408 id=408 data-nosnippet>408</a>            || <a class="self" href="#388">self</a>.max.<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.map_or">map_or</a>(<span class="bool-val">true</span>, |max| <a href="#408">max</a> &gt; Unit::<a href="../span.rs.html#3924">Hour</a>)
+<a href=#409 id=409 data-nosnippet>409</a>        {
+<a href=#410 id=410 data-nosnippet>410</a>            <span class="kw">return </span><a class="self" href="#388">self</a>.<a href="#438-489">to_signed_duration_general</a>();
+<a href=#411 id=411 data-nosnippet>411</a>        }
+<a href=#412 id=412 data-nosnippet>412</a>
+<a href=#413 id=413 data-nosnippet>413</a>        <span class="kw">let </span>hours = <a class="self" href="#388">self</a>.values[Unit::<a href="../span.rs.html#3924">Hour</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>;
+<a href=#414 id=414 data-nosnippet>414</a>        <span class="kw">let </span>mins = <a class="self" href="#388">self</a>.values[Unit::<a href="../span.rs.html#3927">Minute</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>;
+<a href=#415 id=415 data-nosnippet>415</a>        <span class="kw">let </span>secs = <a class="self" href="#388">self</a>.values[Unit::<a href="../span.rs.html#3929">Second</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>;
+<a href=#416 id=416 data-nosnippet>416</a>        <span class="kw">let </span>millis = <a class="self" href="#388">self</a>.values[Unit::<a href="../span.rs.html#3931">Millisecond</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.i32.html">i32</a>;
+<a href=#417 id=417 data-nosnippet>417</a>        <span class="kw">let </span>micros = <a class="self" href="#388">self</a>.values[Unit::<a href="../span.rs.html#3933">Microsecond</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.i32.html">i32</a>;
+<a href=#418 id=418 data-nosnippet>418</a>        <span class="kw">let </span>nanos = <a class="self" href="#388">self</a>.values[Unit::<a href="../span.rs.html#3935">Nanosecond</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.i32.html">i32</a>;
+<a href=#419 id=419 data-nosnippet>419</a>
+<a href=#420 id=420 data-nosnippet>420</a>        <span class="kw">let </span>total_secs = (<a href="#413">hours</a> * <span class="number">3600</span>) + (<a href="#414">mins</a> * <span class="number">60</span>) + <a href="#415">secs</a>;
+<a href=#421 id=421 data-nosnippet>421</a>        <span class="kw">let </span>total_nanos = (<a href="#416">millis</a> * <span class="number">1_000_000</span>) + (<a href="#417">micros</a> * <span class="number">1_000</span>) + <a href="#418">nanos</a>;
+<a href=#422 id=422 data-nosnippet>422</a>        <span class="kw">let </span><span class="kw-2">mut </span>sdur = <a href="../signed_duration.rs.html#326-329">SignedDuration</a>::<a href="../signed_duration.rs.html#469-481">new_unchecked</a>(<a href="#420">total_secs</a>, <a href="#421">total_nanos</a>);
+<a href=#423 id=423 data-nosnippet>423</a>        <span class="kw">if </span><a class="self" href="#388">self</a>.<a href="#706-708">get_sign</a>().<a href="../../../jiff_core/bounds/enum.Sign.html#method.is_negative">is_negative</a>() {
+<a href=#424 id=424 data-nosnippet>424</a>            <a href="#422">sdur</a> = -<a href="#422">sdur</a>;
+<a href=#425 id=425 data-nosnippet>425</a>        }
+<a href=#426 id=426 data-nosnippet>426</a>
+<a href=#427 id=427 data-nosnippet>427</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="#422">sdur</a>)
+<a href=#428 id=428 data-nosnippet>428</a>    }
+<a href=#429 id=429 data-nosnippet>429</a>
+<a href=#430 id=430 data-nosnippet>430</a>    <span class="doccomment">/// The "general" implementation of `DurationUnits::to_signed_duration`.
+<a href=#431 id=431 data-nosnippet>431</a>    ///
+<a href=#432 id=432 data-nosnippet>432</a>    /// This handles all possible cases, including fractional units, with good
+<a href=#433 id=433 data-nosnippet>433</a>    /// error handling. Basically, we take this path when we think an error
+<a href=#434 id=434 data-nosnippet>434</a>    /// _could_ occur. But this function is more bloaty and does more work, so
+<a href=#435 id=435 data-nosnippet>435</a>    /// the more it can be avoided, the better.
+<a href=#436 id=436 data-nosnippet>436</a>    </span><span class="attr">#[cold]
+<a href=#437 id=437 data-nosnippet>437</a>    #[inline(never)]
+<a href=#438 id=438 data-nosnippet>438</a>    </span><span class="kw">fn </span>to_signed_duration_general(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<a href="../signed_duration.rs.html#326-329">SignedDuration</a>, <a href="../error/mod.rs.html#51-62">Error</a>&gt; {
+<a href=#439 id=439 data-nosnippet>439</a>        <span class="kw">let </span>(min, max) = <span class="self">self</span>.get_min_max_units()<span class="question-mark">?</span>;
+<a href=#440 id=440 data-nosnippet>440</a>        <span class="kw">if </span><a href="#439">max</a> &gt; Unit::<a href="../span.rs.html#3924">Hour</a> {
+<a href=#441 id=441 data-nosnippet>441</a>            <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(<a href="../error/mod.rs.html#51-62">Error</a>::<a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html#tymethod.from">from</a>(E::<a href="../error/fmt/util.rs.html#12">NotAllowedCalendarUnit</a> { unit: <a href="#439">max</a> }));
+<a href=#442 id=442 data-nosnippet>442</a>        }
+<a href=#443 id=443 data-nosnippet>443</a>
+<a href=#444 id=444 data-nosnippet>444</a>        <span class="kw">let </span><span class="kw-2">mut </span>sdur = <a href="../signed_duration.rs.html#326-329">SignedDuration</a>::<a href="../signed_duration.rs.html#344">ZERO</a>;
+<a href=#445 id=445 data-nosnippet>445</a>        <span class="kw">if </span><a class="self" href="#438">self</a>.values[Unit::<a href="../span.rs.html#3924">Hour</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] != <span class="number">0 </span>{
+<a href=#446 id=446 data-nosnippet>446</a>            <span class="kw">let </span>value = <span class="self">self</span>.get_unit_value(Unit::Hour)<span class="question-mark">?</span>;
+<a href=#447 id=447 data-nosnippet>447</a>            <a href="#444">sdur</a> = SignedDuration::try_from_hours(value)
+<a href=#448 id=448 data-nosnippet>448</a>                .and_then(|nanos| sdur.checked_add(nanos))
+<a href=#449 id=449 data-nosnippet>449</a>                .ok_or(E::OverflowForUnit { unit: Unit::Hour })<span class="question-mark">?</span>;
+<a href=#450 id=450 data-nosnippet>450</a>        }
+<a href=#451 id=451 data-nosnippet>451</a>        <span class="kw">if </span><a class="self" href="#438">self</a>.values[Unit::<a href="../span.rs.html#3927">Minute</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] != <span class="number">0 </span>{
+<a href=#452 id=452 data-nosnippet>452</a>            <span class="kw">let </span>value = <span class="self">self</span>.get_unit_value(Unit::Minute)<span class="question-mark">?</span>;
+<a href=#453 id=453 data-nosnippet>453</a>            <a href="#444">sdur</a> = SignedDuration::try_from_mins(value)
+<a href=#454 id=454 data-nosnippet>454</a>                .and_then(|nanos| sdur.checked_add(nanos))
+<a href=#455 id=455 data-nosnippet>455</a>                .ok_or(E::OverflowForUnit { unit: Unit::Minute })<span class="question-mark">?</span>;
+<a href=#456 id=456 data-nosnippet>456</a>        }
+<a href=#457 id=457 data-nosnippet>457</a>        <span class="kw">if </span><a class="self" href="#438">self</a>.values[Unit::<a href="../span.rs.html#3929">Second</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] != <span class="number">0 </span>{
+<a href=#458 id=458 data-nosnippet>458</a>            <span class="kw">let </span>value = <span class="self">self</span>.get_unit_value(Unit::Second)<span class="question-mark">?</span>;
+<a href=#459 id=459 data-nosnippet>459</a>            <a href="#444">sdur</a> = SignedDuration::from_secs(value)
+<a href=#460 id=460 data-nosnippet>460</a>                .checked_add(sdur)
+<a href=#461 id=461 data-nosnippet>461</a>                .ok_or(E::OverflowForUnit { unit: Unit::Second })<span class="question-mark">?</span>;
+<a href=#462 id=462 data-nosnippet>462</a>        }
+<a href=#463 id=463 data-nosnippet>463</a>        <span class="kw">if </span><a class="self" href="#438">self</a>.values[Unit::<a href="../span.rs.html#3931">Millisecond</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] != <span class="number">0 </span>{
+<a href=#464 id=464 data-nosnippet>464</a>            <span class="kw">let </span>value = <span class="self">self</span>.get_unit_value(Unit::Millisecond)<span class="question-mark">?</span>;
+<a href=#465 id=465 data-nosnippet>465</a>            <a href="#444">sdur</a> = SignedDuration::from_millis(value)
+<a href=#466 id=466 data-nosnippet>466</a>                .checked_add(sdur)
+<a href=#467 id=467 data-nosnippet>467</a>                .ok_or(E::OverflowForUnit { unit: Unit::Millisecond })<span class="question-mark">?</span>;
+<a href=#468 id=468 data-nosnippet>468</a>        }
+<a href=#469 id=469 data-nosnippet>469</a>        <span class="kw">if </span><a class="self" href="#438">self</a>.values[Unit::<a href="../span.rs.html#3933">Microsecond</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] != <span class="number">0 </span>{
+<a href=#470 id=470 data-nosnippet>470</a>            <span class="kw">let </span>value = <span class="self">self</span>.get_unit_value(Unit::Microsecond)<span class="question-mark">?</span>;
+<a href=#471 id=471 data-nosnippet>471</a>            <a href="#444">sdur</a> = SignedDuration::from_micros(value)
+<a href=#472 id=472 data-nosnippet>472</a>                .checked_add(sdur)
+<a href=#473 id=473 data-nosnippet>473</a>                .ok_or(E::OverflowForUnit { unit: Unit::Microsecond })<span class="question-mark">?</span>;
+<a href=#474 id=474 data-nosnippet>474</a>        }
+<a href=#475 id=475 data-nosnippet>475</a>        <span class="kw">if </span><a class="self" href="#438">self</a>.values[Unit::<a href="../span.rs.html#3935">Nanosecond</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] != <span class="number">0 </span>{
+<a href=#476 id=476 data-nosnippet>476</a>            <span class="kw">let </span>value = <span class="self">self</span>.get_unit_value(Unit::Nanosecond)<span class="question-mark">?</span>;
+<a href=#477 id=477 data-nosnippet>477</a>            <a href="#444">sdur</a> = SignedDuration::from_nanos(value)
+<a href=#478 id=478 data-nosnippet>478</a>                .checked_add(sdur)
+<a href=#479 id=479 data-nosnippet>479</a>                .ok_or(E::OverflowForUnit { unit: Unit::Nanosecond })<span class="question-mark">?</span>;
+<a href=#480 id=480 data-nosnippet>480</a>        }
+<a href=#481 id=481 data-nosnippet>481</a>
+<a href=#482 id=482 data-nosnippet>482</a>        <span class="kw">if let </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(fraction) = <span class="self">self</span>.get_fraction()<span class="question-mark">? </span>{
+<a href=#483 id=483 data-nosnippet>483</a>            <a href="#444">sdur</a> = sdur
+<a href=#484 id=484 data-nosnippet>484</a>                .checked_add(fractional_duration(min, fraction)<span class="question-mark">?</span>)
+<a href=#485 id=485 data-nosnippet>485</a>                .ok_or(E::OverflowForUnitFractional { unit: min })<span class="question-mark">?</span>;
+<a href=#486 id=486 data-nosnippet>486</a>        }
+<a href=#487 id=487 data-nosnippet>487</a>
+<a href=#488 id=488 data-nosnippet>488</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="#444">sdur</a>)
+<a href=#489 id=489 data-nosnippet>489</a>    }
+<a href=#490 id=490 data-nosnippet>490</a>
+<a href=#491 id=491 data-nosnippet>491</a>    <span class="doccomment">/// Convert these duration components to a `core::time::Duration`.
+<a href=#492 id=492 data-nosnippet>492</a>    ///
+<a href=#493 id=493 data-nosnippet>493</a>    /// # Errors
+<a href=#494 id=494 data-nosnippet>494</a>    ///
+<a href=#495 id=495 data-nosnippet>495</a>    /// If the total number of nanoseconds represented by all units combined
+<a href=#496 id=496 data-nosnippet>496</a>    /// exceeds what can bit in a 96-bit signed integer, then an error is
+<a href=#497 id=497 data-nosnippet>497</a>    /// returned.
+<a href=#498 id=498 data-nosnippet>498</a>    ///
+<a href=#499 id=499 data-nosnippet>499</a>    /// An error is also returned if any calendar units (days or greater) were
+<a href=#500 id=500 data-nosnippet>500</a>    /// set or if no units were set.
+<a href=#501 id=501 data-nosnippet>501</a>    </span><span class="attr">#[cfg_attr(feature = <span class="string">"perf-inline"</span>, inline(always))]
+<a href=#502 id=502 data-nosnippet>502</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>to_unsigned_duration(
+<a href=#503 id=503 data-nosnippet>503</a>        <span class="kw-2">&amp;</span><span class="self">self</span>,
+<a href=#504 id=504 data-nosnippet>504</a>    ) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;core::time::<a href="https://doc.rust-lang.org/nightly/core/time/struct.Duration.html">Duration</a>, <a href="../error/mod.rs.html#51-62">Error</a>&gt; {
+<a href=#505 id=505 data-nosnippet>505</a>        <span class="comment">// When every unit value is less than this, *and* there is
+<a href=#506 id=506 data-nosnippet>506</a>        // no fractional component, then we trigger a fast path that
+<a href=#507 id=507 data-nosnippet>507</a>        // doesn't need to bother with error handling and careful
+<a href=#508 id=508 data-nosnippet>508</a>        // handling of the sign.
+<a href=#509 id=509 data-nosnippet>509</a>        //
+<a href=#510 id=510 data-nosnippet>510</a>        // Why `999`? Well, I think it's nice to use one limit for all
+<a href=#511 id=511 data-nosnippet>511</a>        // units to make the comparisons simpler (although we could
+<a href=#512 id=512 data-nosnippet>512</a>        // use more targeted values to admit more cases, I didn't try
+<a href=#513 id=513 data-nosnippet>513</a>        // that). But specifically, this means we can have `999ms 999us
+<a href=#514 id=514 data-nosnippet>514</a>        // 999ns` as a maximal subsecond value without overflowing
+<a href=#515 id=515 data-nosnippet>515</a>        // the nanosecond component of a `core::time::Duration`. This lets
+<a href=#516 id=516 data-nosnippet>516</a>        // us "just do math" without needing to check each result and
+<a href=#517 id=517 data-nosnippet>517</a>        // handle errors.
+<a href=#518 id=518 data-nosnippet>518</a>        </span><span class="kw">const </span>LIMIT: <a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a> = <span class="number">999</span>;
+<a href=#519 id=519 data-nosnippet>519</a>
+<a href=#520 id=520 data-nosnippet>520</a>        <span class="kw">if </span><a class="self" href="#503">self</a>.fraction.<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.is_some">is_some</a>()
+<a href=#521 id=521 data-nosnippet>521</a>            || <a class="self" href="#503">self</a>.values[..Unit::Day.as_usize()]
+<a href=#522 id=522 data-nosnippet>522</a>                .<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.iter">iter</a>()
+<a href=#523 id=523 data-nosnippet>523</a>                .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.any">any</a>(|<span class="kw-2">&amp;</span>value| <a href="#523">value</a> &gt; <a href="#518">LIMIT</a>)
+<a href=#524 id=524 data-nosnippet>524</a>            || <a class="self" href="#503">self</a>.max.<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.map_or">map_or</a>(<span class="bool-val">true</span>, |max| <a href="#524">max</a> &gt; Unit::<a href="../span.rs.html#3924">Hour</a>)
+<a href=#525 id=525 data-nosnippet>525</a>            || <a class="self" href="#503">self</a>.sign.<a href="../../../jiff_core/bounds/enum.Sign.html#method.is_negative">is_negative</a>()
+<a href=#526 id=526 data-nosnippet>526</a>        {
+<a href=#527 id=527 data-nosnippet>527</a>            <span class="kw">return </span><a class="self" href="#503">self</a>.<a href="#552-631">to_unsigned_duration_general</a>();
+<a href=#528 id=528 data-nosnippet>528</a>        }
+<a href=#529 id=529 data-nosnippet>529</a>
+<a href=#530 id=530 data-nosnippet>530</a>        <span class="kw">let </span>hours = <a class="self" href="#503">self</a>.values[Unit::<a href="../span.rs.html#3924">Hour</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()];
+<a href=#531 id=531 data-nosnippet>531</a>        <span class="kw">let </span>mins = <a class="self" href="#503">self</a>.values[Unit::<a href="../span.rs.html#3927">Minute</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()];
+<a href=#532 id=532 data-nosnippet>532</a>        <span class="kw">let </span>secs = <a class="self" href="#503">self</a>.values[Unit::<a href="../span.rs.html#3929">Second</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()];
+<a href=#533 id=533 data-nosnippet>533</a>        <span class="kw">let </span>millis = <a class="self" href="#503">self</a>.values[Unit::<a href="../span.rs.html#3931">Millisecond</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>;
+<a href=#534 id=534 data-nosnippet>534</a>        <span class="kw">let </span>micros = <a class="self" href="#503">self</a>.values[Unit::<a href="../span.rs.html#3933">Microsecond</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>;
+<a href=#535 id=535 data-nosnippet>535</a>        <span class="kw">let </span>nanos = <a class="self" href="#503">self</a>.values[Unit::<a href="../span.rs.html#3935">Nanosecond</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>;
+<a href=#536 id=536 data-nosnippet>536</a>
+<a href=#537 id=537 data-nosnippet>537</a>        <span class="kw">let </span>total_secs = (<a href="#530">hours</a> * <span class="number">3600</span>) + (<a href="#531">mins</a> * <span class="number">60</span>) + <a href="#532">secs</a>;
+<a href=#538 id=538 data-nosnippet>538</a>        <span class="kw">let </span>total_nanos = (<a href="#533">millis</a> * <span class="number">1_000_000</span>) + (<a href="#534">micros</a> * <span class="number">1_000</span>) + <a href="#535">nanos</a>;
+<a href=#539 id=539 data-nosnippet>539</a>        <span class="kw">let </span>sdur = core::time::<a href="https://doc.rust-lang.org/nightly/core/time/struct.Duration.html">Duration</a>::<a href="https://doc.rust-lang.org/nightly/core/time/struct.Duration.html#method.new">new</a>(<a href="#537">total_secs</a>, <a href="#538">total_nanos</a>);
+<a href=#540 id=540 data-nosnippet>540</a>
+<a href=#541 id=541 data-nosnippet>541</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="#539">sdur</a>)
+<a href=#542 id=542 data-nosnippet>542</a>    }
+<a href=#543 id=543 data-nosnippet>543</a>
+<a href=#544 id=544 data-nosnippet>544</a>    <span class="doccomment">/// The "general" implementation of `DurationUnits::to_unsigned_duration`.
+<a href=#545 id=545 data-nosnippet>545</a>    ///
+<a href=#546 id=546 data-nosnippet>546</a>    /// This handles all possible cases, including fractional units, with good
+<a href=#547 id=547 data-nosnippet>547</a>    /// error handling. Basically, we take this path when we think an error
+<a href=#548 id=548 data-nosnippet>548</a>    /// _could_ occur. But this function is more bloaty and does more work, so
+<a href=#549 id=549 data-nosnippet>549</a>    /// the more it can be avoided, the better.
+<a href=#550 id=550 data-nosnippet>550</a>    </span><span class="attr">#[cold]
+<a href=#551 id=551 data-nosnippet>551</a>    #[inline(never)]
+<a href=#552 id=552 data-nosnippet>552</a>    </span><span class="kw">fn </span>to_unsigned_duration_general(
+<a href=#553 id=553 data-nosnippet>553</a>        <span class="kw-2">&amp;</span><span class="self">self</span>,
+<a href=#554 id=554 data-nosnippet>554</a>    ) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;core::time::<a href="https://doc.rust-lang.org/nightly/core/time/struct.Duration.html">Duration</a>, <a href="../error/mod.rs.html#51-62">Error</a>&gt; {
+<a href=#555 id=555 data-nosnippet>555</a>        <span class="attr">#[inline]
+<a href=#556 id=556 data-nosnippet>556</a>        </span><span class="kw">const fn </span>try_from_hours(hours: <a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;core::time::<a href="https://doc.rust-lang.org/nightly/core/time/struct.Duration.html">Duration</a>&gt; {
+<a href=#557 id=557 data-nosnippet>557</a>            <span class="comment">// OK because (SECS_PER_MINUTE*MINS_PER_HOUR)!={-1,0}.
+<a href=#558 id=558 data-nosnippet>558</a>            </span><span class="kw">const </span>MAX_HOUR: <a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a> = <a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>::<a href="https://doc.rust-lang.org/nightly/core/primitive.u64.html#associatedconstant.MAX">MAX</a> / (<span class="number">60 </span>* <span class="number">60</span>);
+<a href=#559 id=559 data-nosnippet>559</a>            <span class="kw">if </span><a href="#556">hours</a> &gt; <a href="#558">MAX_HOUR</a> {
+<a href=#560 id=560 data-nosnippet>560</a>                <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>;
+<a href=#561 id=561 data-nosnippet>561</a>            }
+<a href=#562 id=562 data-nosnippet>562</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(core::time::<a href="https://doc.rust-lang.org/nightly/core/time/struct.Duration.html">Duration</a>::<a href="https://doc.rust-lang.org/nightly/core/time/struct.Duration.html#method.from_secs">from_secs</a>(<a href="#556">hours</a> * <span class="number">60 </span>* <span class="number">60</span>))
+<a href=#563 id=563 data-nosnippet>563</a>        }
+<a href=#564 id=564 data-nosnippet>564</a>
+<a href=#565 id=565 data-nosnippet>565</a>        <span class="attr">#[inline]
+<a href=#566 id=566 data-nosnippet>566</a>        </span><span class="kw">const fn </span>try_from_mins(mins: <a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;core::time::<a href="https://doc.rust-lang.org/nightly/core/time/struct.Duration.html">Duration</a>&gt; {
+<a href=#567 id=567 data-nosnippet>567</a>            <span class="comment">// OK because SECS_PER_MINUTE!={-1,0}.
+<a href=#568 id=568 data-nosnippet>568</a>            </span><span class="kw">const </span>MAX_MINUTE: <a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a> = <a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>::<a href="https://doc.rust-lang.org/nightly/core/primitive.u64.html#associatedconstant.MAX">MAX</a> / <span class="number">60</span>;
+<a href=#569 id=569 data-nosnippet>569</a>            <span class="kw">if </span><a href="#566">mins</a> &gt; <a href="#568">MAX_MINUTE</a> {
+<a href=#570 id=570 data-nosnippet>570</a>                <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>;
+<a href=#571 id=571 data-nosnippet>571</a>            }
+<a href=#572 id=572 data-nosnippet>572</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(core::time::<a href="https://doc.rust-lang.org/nightly/core/time/struct.Duration.html">Duration</a>::<a href="https://doc.rust-lang.org/nightly/core/time/struct.Duration.html#method.from_secs">from_secs</a>(<a href="#566">mins</a> * <span class="number">60</span>))
+<a href=#573 id=573 data-nosnippet>573</a>        }
+<a href=#574 id=574 data-nosnippet>574</a>
+<a href=#575 id=575 data-nosnippet>575</a>        <span class="kw">if </span><a class="self" href="#553">self</a>.sign.<a href="../../../jiff_core/bounds/enum.Sign.html#method.is_negative">is_negative</a>() {
+<a href=#576 id=576 data-nosnippet>576</a>            <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(<a href="../error/mod.rs.html#51-62">Error</a>::<a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html#tymethod.from">from</a>(E::<a href="../error/fmt/util.rs.html#14">NotAllowedNegative</a>));
+<a href=#577 id=577 data-nosnippet>577</a>        }
+<a href=#578 id=578 data-nosnippet>578</a>
+<a href=#579 id=579 data-nosnippet>579</a>        <span class="kw">let </span>(min, max) = <span class="self">self</span>.get_min_max_units()<span class="question-mark">?</span>;
+<a href=#580 id=580 data-nosnippet>580</a>        <span class="kw">if </span><a href="#579">max</a> &gt; Unit::<a href="../span.rs.html#3924">Hour</a> {
+<a href=#581 id=581 data-nosnippet>581</a>            <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(<a href="../error/mod.rs.html#51-62">Error</a>::<a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html#tymethod.from">from</a>(E::<a href="../error/fmt/util.rs.html#12">NotAllowedCalendarUnit</a> { unit: <a href="#579">max</a> }));
+<a href=#582 id=582 data-nosnippet>582</a>        }
+<a href=#583 id=583 data-nosnippet>583</a>
+<a href=#584 id=584 data-nosnippet>584</a>        <span class="kw">let </span><span class="kw-2">mut </span>sdur = core::time::<a href="https://doc.rust-lang.org/nightly/core/time/struct.Duration.html">Duration</a>::<a href="https://doc.rust-lang.org/nightly/core/time/struct.Duration.html#associatedconstant.ZERO">ZERO</a>;
+<a href=#585 id=585 data-nosnippet>585</a>        <span class="kw">if </span><a class="self" href="#553">self</a>.values[Unit::<a href="../span.rs.html#3924">Hour</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] != <span class="number">0 </span>{
+<a href=#586 id=586 data-nosnippet>586</a>            <span class="kw">let </span>value = <a class="self" href="#553">self</a>.values[Unit::<a href="../span.rs.html#3924">Hour</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()];
+<a href=#587 id=587 data-nosnippet>587</a>            <a href="#584">sdur</a> = try_from_hours(value)
+<a href=#588 id=588 data-nosnippet>588</a>                .and_then(|nanos| sdur.checked_add(nanos))
+<a href=#589 id=589 data-nosnippet>589</a>                .ok_or(E::OverflowForUnit { unit: Unit::Hour })<span class="question-mark">?</span>;
+<a href=#590 id=590 data-nosnippet>590</a>        }
+<a href=#591 id=591 data-nosnippet>591</a>        <span class="kw">if </span><a class="self" href="#553">self</a>.values[Unit::<a href="../span.rs.html#3927">Minute</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] != <span class="number">0 </span>{
+<a href=#592 id=592 data-nosnippet>592</a>            <span class="kw">let </span>value = <a class="self" href="#553">self</a>.values[Unit::<a href="../span.rs.html#3927">Minute</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()];
+<a href=#593 id=593 data-nosnippet>593</a>            <a href="#584">sdur</a> = try_from_mins(value)
+<a href=#594 id=594 data-nosnippet>594</a>                .and_then(|nanos| sdur.checked_add(nanos))
+<a href=#595 id=595 data-nosnippet>595</a>                .ok_or(E::OverflowForUnit { unit: Unit::Minute })<span class="question-mark">?</span>;
+<a href=#596 id=596 data-nosnippet>596</a>        }
+<a href=#597 id=597 data-nosnippet>597</a>        <span class="kw">if </span><a class="self" href="#553">self</a>.values[Unit::<a href="../span.rs.html#3929">Second</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] != <span class="number">0 </span>{
+<a href=#598 id=598 data-nosnippet>598</a>            <span class="kw">let </span>value = <a class="self" href="#553">self</a>.values[Unit::<a href="../span.rs.html#3929">Second</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()];
+<a href=#599 id=599 data-nosnippet>599</a>            <a href="#584">sdur</a> = core::time::Duration::from_secs(value)
+<a href=#600 id=600 data-nosnippet>600</a>                .checked_add(sdur)
+<a href=#601 id=601 data-nosnippet>601</a>                .ok_or(E::OverflowForUnit { unit: Unit::Second })<span class="question-mark">?</span>;
+<a href=#602 id=602 data-nosnippet>602</a>        }
+<a href=#603 id=603 data-nosnippet>603</a>        <span class="kw">if </span><a class="self" href="#553">self</a>.values[Unit::<a href="../span.rs.html#3931">Millisecond</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] != <span class="number">0 </span>{
+<a href=#604 id=604 data-nosnippet>604</a>            <span class="kw">let </span>value = <a class="self" href="#553">self</a>.values[Unit::<a href="../span.rs.html#3931">Millisecond</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()];
+<a href=#605 id=605 data-nosnippet>605</a>            <a href="#584">sdur</a> = core::time::Duration::from_millis(value)
+<a href=#606 id=606 data-nosnippet>606</a>                .checked_add(sdur)
+<a href=#607 id=607 data-nosnippet>607</a>                .ok_or(E::OverflowForUnit { unit: Unit::Millisecond })<span class="question-mark">?</span>;
+<a href=#608 id=608 data-nosnippet>608</a>        }
+<a href=#609 id=609 data-nosnippet>609</a>        <span class="kw">if </span><a class="self" href="#553">self</a>.values[Unit::<a href="../span.rs.html#3933">Microsecond</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] != <span class="number">0 </span>{
+<a href=#610 id=610 data-nosnippet>610</a>            <span class="kw">let </span>value = <a class="self" href="#553">self</a>.values[Unit::<a href="../span.rs.html#3933">Microsecond</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()];
+<a href=#611 id=611 data-nosnippet>611</a>            <a href="#584">sdur</a> = core::time::Duration::from_micros(value)
+<a href=#612 id=612 data-nosnippet>612</a>                .checked_add(sdur)
+<a href=#613 id=613 data-nosnippet>613</a>                .ok_or(E::OverflowForUnit { unit: Unit::Microsecond })<span class="question-mark">?</span>;
+<a href=#614 id=614 data-nosnippet>614</a>        }
+<a href=#615 id=615 data-nosnippet>615</a>        <span class="kw">if </span><a class="self" href="#553">self</a>.values[Unit::<a href="../span.rs.html#3935">Nanosecond</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()] != <span class="number">0 </span>{
+<a href=#616 id=616 data-nosnippet>616</a>            <span class="kw">let </span>value = <a class="self" href="#553">self</a>.values[Unit::<a href="../span.rs.html#3935">Nanosecond</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()];
+<a href=#617 id=617 data-nosnippet>617</a>            <a href="#584">sdur</a> = core::time::Duration::from_nanos(value)
+<a href=#618 id=618 data-nosnippet>618</a>                .checked_add(sdur)
+<a href=#619 id=619 data-nosnippet>619</a>                .ok_or(E::OverflowForUnit { unit: Unit::Nanosecond })<span class="question-mark">?</span>;
+<a href=#620 id=620 data-nosnippet>620</a>        }
+<a href=#621 id=621 data-nosnippet>621</a>
+<a href=#622 id=622 data-nosnippet>622</a>        <span class="kw">if let </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(fraction) = <span class="self">self</span>.get_fraction()<span class="question-mark">? </span>{
+<a href=#623 id=623 data-nosnippet>623</a>            <a href="#584">sdur</a> = sdur
+<a href=#624 id=624 data-nosnippet>624</a>                .checked_add(
+<a href=#625 id=625 data-nosnippet>625</a>                    fractional_duration(min, fraction)<span class="question-mark">?</span>.unsigned_abs(),
+<a href=#626 id=626 data-nosnippet>626</a>                )
+<a href=#627 id=627 data-nosnippet>627</a>                .ok_or(E::OverflowForUnitFractional { unit: Unit::Hour })<span class="question-mark">?</span>;
+<a href=#628 id=628 data-nosnippet>628</a>        }
+<a href=#629 id=629 data-nosnippet>629</a>
+<a href=#630 id=630 data-nosnippet>630</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="#584">sdur</a>)
+<a href=#631 id=631 data-nosnippet>631</a>    }
+<a href=#632 id=632 data-nosnippet>632</a>
+<a href=#633 id=633 data-nosnippet>633</a>    <span class="doccomment">/// Returns the minimum unit set.
+<a href=#634 id=634 data-nosnippet>634</a>    ///
+<a href=#635 id=635 data-nosnippet>635</a>    /// This only returns `None` when no units have been set.
+<a href=#636 id=636 data-nosnippet>636</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>get_min(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../span.rs.html#3911-3936">Unit</a>&gt; {
+<a href=#637 id=637 data-nosnippet>637</a>        <a class="self" href="#636">self</a>.min
+<a href=#638 id=638 data-nosnippet>638</a>    }
+<a href=#639 id=639 data-nosnippet>639</a>
+<a href=#640 id=640 data-nosnippet>640</a>    <span class="doccomment">/// Returns the minimum and maximum units set.
+<a href=#641 id=641 data-nosnippet>641</a>    ///
+<a href=#642 id=642 data-nosnippet>642</a>    /// This returns an error if no units were set. (Since this means there
+<a href=#643 id=643 data-nosnippet>643</a>    /// were no parsed duration components.)
+<a href=#644 id=644 data-nosnippet>644</a>    </span><span class="kw">fn </span>get_min_max_units(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;(<a href="../span.rs.html#3911-3936">Unit</a>, <a href="../span.rs.html#3911-3936">Unit</a>), <a href="../error/mod.rs.html#51-62">Error</a>&gt; {
+<a href=#645 id=645 data-nosnippet>645</a>        <span class="kw">let </span>(<a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(min), <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(max)) = (<a class="self" href="#644">self</a>.min, <a class="self" href="#644">self</a>.max) <span class="kw">else </span>{
+<a href=#646 id=646 data-nosnippet>646</a>            <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(<a href="../error/mod.rs.html#51-62">Error</a>::<a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html#tymethod.from">from</a>(E::<a href="../error/fmt/util.rs.html#7">EmptyDuration</a>));
+<a href=#647 id=647 data-nosnippet>647</a>        };
+<a href=#648 id=648 data-nosnippet>648</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>((<a href="#645">min</a>, <a href="#645">max</a>))
+<a href=#649 id=649 data-nosnippet>649</a>    }
+<a href=#650 id=650 data-nosnippet>650</a>
+<a href=#651 id=651 data-nosnippet>651</a>    <span class="doccomment">/// Returns the corresponding unit value using the set signed-ness.
+<a href=#652 id=652 data-nosnippet>652</a>    </span><span class="attr">#[cfg_attr(feature = <span class="string">"perf-inline"</span>, inline(always))]
+<a href=#653 id=653 data-nosnippet>653</a>    </span><span class="kw">fn </span>get_unit_value(<span class="kw-2">&amp;</span><span class="self">self</span>, unit: <a href="../span.rs.html#3911-3936">Unit</a>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>, <a href="../error/mod.rs.html#51-62">Error</a>&gt; {
+<a href=#654 id=654 data-nosnippet>654</a>        <span class="kw">const </span>I64_MIN_ABS: <a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a> = <a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>::<a href="https://doc.rust-lang.org/nightly/core/primitive.i64.html#associatedconstant.MIN">MIN</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.i64.html#method.unsigned_abs">unsigned_abs</a>();
+<a href=#655 id=655 data-nosnippet>655</a>
+<a href=#656 id=656 data-nosnippet>656</a>        <span class="attr">#[cold]
+<a href=#657 id=657 data-nosnippet>657</a>        #[inline(never)]
+<a href=#658 id=658 data-nosnippet>658</a>        </span><span class="kw">fn </span>general(unit: <a href="../span.rs.html#3911-3936">Unit</a>, value: <a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>, sign: <a href="../../../jiff_core/bounds/enum.Sign.html">Sign</a>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>, <a href="../error/mod.rs.html#51-62">Error</a>&gt; {
+<a href=#659 id=659 data-nosnippet>659</a>            <span class="comment">// As a weird special case, when we need to represent i64::MIN,
+<a href=#660 id=660 data-nosnippet>660</a>            // we'll have a unit value of `|i64::MIN|` as a `u64`. We can't
+<a href=#661 id=661 data-nosnippet>661</a>            // convert that to a positive `i64` first, since it will overflow.
+<a href=#662 id=662 data-nosnippet>662</a>            </span><span class="kw">if </span><a href="#658">sign</a>.<a href="../../../jiff_core/bounds/enum.Sign.html#method.is_negative">is_negative</a>() &amp;&amp; <a href="#658">value</a> == <a href="#654">I64_MIN_ABS</a> {
+<a href=#663 id=663 data-nosnippet>663</a>                <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>::<a href="https://doc.rust-lang.org/nightly/core/primitive.i64.html#associatedconstant.MIN">MIN</a>);
+<a href=#664 id=664 data-nosnippet>664</a>            }
+<a href=#665 id=665 data-nosnippet>665</a>            <span class="comment">// Otherwise, if a conversion to `i64` fails, then that failure
+<a href=#666 id=666 data-nosnippet>666</a>            // is correct.
+<a href=#667 id=667 data-nosnippet>667</a>            </span><span class="kw">let </span><span class="kw-2">mut </span>value = i64::try_from(value)
+<a href=#668 id=668 data-nosnippet>668</a>                .map_err(|<span class="kw">_</span>| E::SignedOverflowForUnit { unit })<span class="question-mark">?</span>;
+<a href=#669 id=669 data-nosnippet>669</a>            <span class="kw">if </span><a href="#658">sign</a>.<a href="../../../jiff_core/bounds/enum.Sign.html#method.is_negative">is_negative</a>() {
+<a href=#670 id=670 data-nosnippet>670</a>                <a href="#667">value</a> = value
+<a href=#671 id=671 data-nosnippet>671</a>                    .checked_neg()
+<a href=#672 id=672 data-nosnippet>672</a>                    .ok_or(E::SignedOverflowForUnit { unit })<span class="question-mark">?</span>;
+<a href=#673 id=673 data-nosnippet>673</a>            }
+<a href=#674 id=674 data-nosnippet>674</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="#667">value</a>)
+<a href=#675 id=675 data-nosnippet>675</a>        }
+<a href=#676 id=676 data-nosnippet>676</a>
+<a href=#677 id=677 data-nosnippet>677</a>        <span class="kw">let </span>sign = <a class="self" href="#653">self</a>.<a href="#706-708">get_sign</a>();
+<a href=#678 id=678 data-nosnippet>678</a>        <span class="kw">let </span>value = <a class="self" href="#653">self</a>.values[<a href="#653">unit</a>.<a href="../span.rs.html#4038-4040">as_usize</a>()];
+<a href=#679 id=679 data-nosnippet>679</a>        <span class="kw">if </span><a href="#678">value</a> &gt;= <a href="#654">I64_MIN_ABS</a> {
+<a href=#680 id=680 data-nosnippet>680</a>            <span class="kw">return </span><a href="#658-675">general</a>(<a href="#653">unit</a>, <a href="#678">value</a>, <a href="#677">sign</a>);
+<a href=#681 id=681 data-nosnippet>681</a>        }
+<a href=#682 id=682 data-nosnippet>682</a>        <span class="kw">let </span><span class="kw-2">mut </span>value = <a href="#678">value</a> <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>;
+<a href=#683 id=683 data-nosnippet>683</a>        <span class="kw">if </span><a href="#677">sign</a>.<a href="../../../jiff_core/bounds/enum.Sign.html#method.is_negative">is_negative</a>() {
+<a href=#684 id=684 data-nosnippet>684</a>            <a href="#682">value</a> = -<a href="#682">value</a>;
+<a href=#685 id=685 data-nosnippet>685</a>        }
+<a href=#686 id=686 data-nosnippet>686</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="#682">value</a>)
+<a href=#687 id=687 data-nosnippet>687</a>    }
+<a href=#688 id=688 data-nosnippet>688</a>
+<a href=#689 id=689 data-nosnippet>689</a>    <span class="doccomment">/// Returns the fraction using the set signed-ness.
+<a href=#690 id=690 data-nosnippet>690</a>    ///
+<a href=#691 id=691 data-nosnippet>691</a>    /// This returns `None` when no fraction has been set.
+<a href=#692 id=692 data-nosnippet>692</a>    </span><span class="kw">fn </span>get_fraction(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.i32.html">i32</a>&gt;, <a href="../error/mod.rs.html#51-62">Error</a>&gt; {
+<a href=#693 id=693 data-nosnippet>693</a>        <span class="kw">let </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(fraction) = <a class="self" href="#692">self</a>.fraction <span class="kw">else </span>{
+<a href=#694 id=694 data-nosnippet>694</a>            <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>);
+<a href=#695 id=695 data-nosnippet>695</a>        };
+<a href=#696 id=696 data-nosnippet>696</a>        <span class="comment">// OK because `set_fraction` guarantees `0..=999_999_999`.
+<a href=#697 id=697 data-nosnippet>697</a>        </span><span class="kw">let </span><span class="kw-2">mut </span>fraction = <a href="#693">fraction</a> <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.i32.html">i32</a>;
+<a href=#698 id=698 data-nosnippet>698</a>        <span class="kw">if </span><a class="self" href="#692">self</a>.<a href="#706-708">get_sign</a>().<a href="../../../jiff_core/bounds/enum.Sign.html#method.is_negative">is_negative</a>() {
+<a href=#699 id=699 data-nosnippet>699</a>            <span class="comment">// OK because `set_fraction` guarantees `0..=999_999_999`.
+<a href=#700 id=700 data-nosnippet>700</a>            </span><a href="#697">fraction</a> = -<a href="#697">fraction</a>;
+<a href=#701 id=701 data-nosnippet>701</a>        }
+<a href=#702 id=702 data-nosnippet>702</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(<a href="#697">fraction</a>))
+<a href=#703 id=703 data-nosnippet>703</a>    }
+<a href=#704 id=704 data-nosnippet>704</a>
+<a href=#705 id=705 data-nosnippet>705</a>    <span class="doccomment">/// Returns the sign that should be applied to each individual unit.
+<a href=#706 id=706 data-nosnippet>706</a>    </span><span class="kw">fn </span>get_sign(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a href="../../../jiff_core/bounds/enum.Sign.html">Sign</a> {
+<a href=#707 id=707 data-nosnippet>707</a>        <span class="kw">if </span><a class="self" href="#706">self</a>.any_non_zero_units { <a class="self" href="#706">self</a>.sign } <span class="kw">else </span>{ Sign::<a href="../../../jiff_core/bounds/enum.Sign.html#variant.Zero">Zero</a> }
+<a href=#708 id=708 data-nosnippet>708</a>    }
+<a href=#709 id=709 data-nosnippet>709</a>}
+<a href=#710 id=710 data-nosnippet>710</a>
+<a href=#711 id=711 data-nosnippet>711</a><span class="doccomment">/// Parses an optional fractional number from the start of `input`.
+<a href=#712 id=712 data-nosnippet>712</a>///
+<a href=#713 id=713 data-nosnippet>713</a>/// If `input` does not begin with a `.` (or a `,`), then this returns `None`
+<a href=#714 id=714 data-nosnippet>714</a>/// and no input is consumed. Otherwise, up to 9 ASCII digits are parsed after
+<a href=#715 id=715 data-nosnippet>715</a>/// the decimal separator.
+<a href=#716 id=716 data-nosnippet>716</a>///
+<a href=#717 id=717 data-nosnippet>717</a>/// While this is most typically used to parse the fractional component of
+<a href=#718 id=718 data-nosnippet>718</a>/// second units, it is also used to parse the fractional component of hours or
+<a href=#719 id=719 data-nosnippet>719</a>/// minutes in ISO 8601 duration parsing, and milliseconds and microseconds in
+<a href=#720 id=720 data-nosnippet>720</a>/// the "friendly" duration format. The return type in that case is obviously a
+<a href=#721 id=721 data-nosnippet>721</a>/// misnomer, but the range of possible values is still correct. (That is, the
+<a href=#722 id=722 data-nosnippet>722</a>/// fractional component of an hour is still limited to 9 decimal places per
+<a href=#723 id=723 data-nosnippet>723</a>/// the Temporal spec.)
+<a href=#724 id=724 data-nosnippet>724</a>///
+<a href=#725 id=725 data-nosnippet>725</a>/// The number returned is guaranteed to be in the range `0..=999_999_999`.
+<a href=#726 id=726 data-nosnippet>726</a></span><span class="attr">#[cfg_attr(feature = <span class="string">"perf-inline"</span>, inline(always))]
+<a href=#727 id=727 data-nosnippet>727</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>parse_temporal_fraction&lt;<span class="lifetime">'i</span>&gt;(
+<a href=#728 id=728 data-nosnippet>728</a>    input: <span class="kw-2">&amp;</span><span class="lifetime">'i </span>[<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>],
+<a href=#729 id=729 data-nosnippet>729</a>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<a href="mod.rs.html#196-201">Parsed</a>&lt;<span class="lifetime">'i</span>, <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>&gt;&gt;, <a href="../error/mod.rs.html#51-62">Error</a>&gt; {
+<a href=#730 id=730 data-nosnippet>730</a>    <span class="comment">// TimeFraction :::
+<a href=#731 id=731 data-nosnippet>731</a>    //   TemporalDecimalFraction
+<a href=#732 id=732 data-nosnippet>732</a>    //
+<a href=#733 id=733 data-nosnippet>733</a>    // TemporalDecimalFraction :::
+<a href=#734 id=734 data-nosnippet>734</a>    //   TemporalDecimalSeparator DecimalDigit
+<a href=#735 id=735 data-nosnippet>735</a>    //   TemporalDecimalSeparator DecimalDigit DecimalDigit
+<a href=#736 id=736 data-nosnippet>736</a>    //   TemporalDecimalSeparator DecimalDigit DecimalDigit DecimalDigit
+<a href=#737 id=737 data-nosnippet>737</a>    //   TemporalDecimalSeparator DecimalDigit DecimalDigit DecimalDigit
+<a href=#738 id=738 data-nosnippet>738</a>    //                            DecimalDigit
+<a href=#739 id=739 data-nosnippet>739</a>    //   TemporalDecimalSeparator DecimalDigit DecimalDigit DecimalDigit
+<a href=#740 id=740 data-nosnippet>740</a>    //                            DecimalDigit DecimalDigit
+<a href=#741 id=741 data-nosnippet>741</a>    //   TemporalDecimalSeparator DecimalDigit DecimalDigit DecimalDigit
+<a href=#742 id=742 data-nosnippet>742</a>    //                            DecimalDigit DecimalDigit DecimalDigit
+<a href=#743 id=743 data-nosnippet>743</a>    //   TemporalDecimalSeparator DecimalDigit DecimalDigit DecimalDigit
+<a href=#744 id=744 data-nosnippet>744</a>    //                            DecimalDigit DecimalDigit DecimalDigit
+<a href=#745 id=745 data-nosnippet>745</a>    //                            DecimalDigit
+<a href=#746 id=746 data-nosnippet>746</a>    //   TemporalDecimalSeparator DecimalDigit DecimalDigit DecimalDigit
+<a href=#747 id=747 data-nosnippet>747</a>    //                            DecimalDigit DecimalDigit DecimalDigit
+<a href=#748 id=748 data-nosnippet>748</a>    //                            DecimalDigit DecimalDigit
+<a href=#749 id=749 data-nosnippet>749</a>    //   TemporalDecimalSeparator DecimalDigit DecimalDigit DecimalDigit
+<a href=#750 id=750 data-nosnippet>750</a>    //                            DecimalDigit DecimalDigit DecimalDigit
+<a href=#751 id=751 data-nosnippet>751</a>    //                            DecimalDigit DecimalDigit DecimalDigit
+<a href=#752 id=752 data-nosnippet>752</a>    //
+<a href=#753 id=753 data-nosnippet>753</a>    // TemporalDecimalSeparator ::: one of
+<a href=#754 id=754 data-nosnippet>754</a>    //   . ,
+<a href=#755 id=755 data-nosnippet>755</a>    //
+<a href=#756 id=756 data-nosnippet>756</a>    // DecimalDigit :: one of
+<a href=#757 id=757 data-nosnippet>757</a>    //   0 1 2 3 4 5 6 7 8 9
+<a href=#758 id=758 data-nosnippet>758</a>
+<a href=#759 id=759 data-nosnippet>759</a>    </span><span class="attr">#[inline(never)]
+<a href=#760 id=760 data-nosnippet>760</a>    </span><span class="kw">fn </span>imp&lt;<span class="lifetime">'i</span>&gt;(<span class="kw-2">mut </span>input: <span class="kw-2">&amp;</span><span class="lifetime">'i </span>[<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>]) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<a href="mod.rs.html#196-201">Parsed</a>&lt;<span class="lifetime">'i</span>, <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>&gt;&gt;, <a href="../error/mod.rs.html#51-62">Error</a>&gt; {
+<a href=#761 id=761 data-nosnippet>761</a>        <span class="kw">let </span>mkdigits = parse::<a href="../util/parse.rs.html#196-204">slicer</a>(<a href="#760">input</a>);
+<a href=#762 id=762 data-nosnippet>762</a>        <span class="kw">while </span>mkdigits(input).len() &lt;= <span class="number">8
+<a href=#763 id=763 data-nosnippet>763</a>            </span>&amp;&amp; input.first().map_or(<span class="bool-val">false</span>, u8::is_ascii_digit)
+<a href=#764 id=764 data-nosnippet>764</a>        {
+<a href=#765 id=765 data-nosnippet>765</a>            input = <span class="kw-2">&amp;</span>input[<span class="number">1</span>..];
+<a href=#766 id=766 data-nosnippet>766</a>        }
+<a href=#767 id=767 data-nosnippet>767</a>        <span class="kw">let </span>digits = <a href="#761">mkdigits</a>(<a href="#760">input</a>);
+<a href=#768 id=768 data-nosnippet>768</a>        <span class="kw">if </span><a href="#767">digits</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.is_empty">is_empty</a>() {
+<a href=#769 id=769 data-nosnippet>769</a>            <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(<a href="../error/mod.rs.html#51-62">Error</a>::<a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html#tymethod.from">from</a>(E::<a href="../error/fmt/util.rs.html#11">MissingFractionalDigits</a>));
+<a href=#770 id=770 data-nosnippet>770</a>        }
+<a href=#771 id=771 data-nosnippet>771</a>        <span class="comment">// I believe this error can never happen, since we know we have no more
+<a href=#772 id=772 data-nosnippet>772</a>        // than 9 ASCII digits. Any sequence of 9 ASCII digits can be parsed
+<a href=#773 id=773 data-nosnippet>773</a>        // into an `i64`.
+<a href=#774 id=774 data-nosnippet>774</a>        </span><span class="kw">let </span>nanoseconds =
+<a href=#775 id=775 data-nosnippet>775</a>            parse::fraction(digits).context(E::InvalidFraction)<span class="question-mark">?</span>;
+<a href=#776 id=776 data-nosnippet>776</a>        <span class="comment">// OK because parsing is forcefully limited to 9 digits,
+<a href=#777 id=777 data-nosnippet>777</a>        // which can never be greater than `999_999_99`,
+<a href=#778 id=778 data-nosnippet>778</a>        // which is less than `u32::MAX`.
+<a href=#779 id=779 data-nosnippet>779</a>        </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="mod.rs.html#196-201">Parsed</a> { value: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(<a href="#774">nanoseconds</a>), <a href="#760">input</a> })
+<a href=#780 id=780 data-nosnippet>780</a>    }
+<a href=#781 id=781 data-nosnippet>781</a>
+<a href=#782 id=782 data-nosnippet>782</a>    <span class="kw">if </span><a href="#728">input</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.is_empty">is_empty</a>() || (<a href="#728">input</a>[<span class="number">0</span>] != <span class="string">b'.' </span>&amp;&amp; <a href="#728">input</a>[<span class="number">0</span>] != <span class="string">b','</span>) {
+<a href=#783 id=783 data-nosnippet>783</a>        <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="mod.rs.html#196-201">Parsed</a> { value: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>, <a href="#728">input</a> });
+<a href=#784 id=784 data-nosnippet>784</a>    }
+<a href=#785 id=785 data-nosnippet>785</a>    <a href="#760-780">imp</a>(<span class="kw-2">&amp;</span><a href="#728">input</a>[<span class="number">1</span>..])
+<a href=#786 id=786 data-nosnippet>786</a>}
+<a href=#787 id=787 data-nosnippet>787</a>
+<a href=#788 id=788 data-nosnippet>788</a><span class="doccomment">/// This routine returns a span based on the given unit and value with
+<a href=#789 id=789 data-nosnippet>789</a>/// fractional time applied to it.
+<a href=#790 id=790 data-nosnippet>790</a>///
+<a href=#791 id=791 data-nosnippet>791</a>/// For example, given a span like `P1dT1.5h`, the `unit` would be
+<a href=#792 id=792 data-nosnippet>792</a>/// `Unit::Hour`, the `value` would be `1` and the `fraction` would be
+<a href=#793 id=793 data-nosnippet>793</a>/// `500_000_000`. The span given would just be `1d`. The span returned would
+<a href=#794 id=794 data-nosnippet>794</a>/// be `P1dT1h30m`.
+<a href=#795 id=795 data-nosnippet>795</a>///
+<a href=#796 id=796 data-nosnippet>796</a>/// The time is added to whatever is already in the span given. For example,
+<a href=#797 id=797 data-nosnippet>797</a>/// if the span given above were `P1dT5m`, then the span returned would be
+<a href=#798 id=798 data-nosnippet>798</a>/// `P1dT1h35m`.
+<a href=#799 id=799 data-nosnippet>799</a>///
+<a href=#800 id=800 data-nosnippet>800</a>/// Note that `fraction` can be a fractional hour, minute, second, millisecond
+<a href=#801 id=801 data-nosnippet>801</a>/// or microsecond (even though its type suggests its only a fraction of a
+<a href=#802 id=802 data-nosnippet>802</a>/// second). When milliseconds or microseconds, the given fraction has any
+<a href=#803 id=803 data-nosnippet>803</a>/// sub-nanosecond precision truncated.
+<a href=#804 id=804 data-nosnippet>804</a>///
+<a href=#805 id=805 data-nosnippet>805</a>/// # Errors
+<a href=#806 id=806 data-nosnippet>806</a>///
+<a href=#807 id=807 data-nosnippet>807</a>/// This can error if the resulting units would be too large for the limits on
+<a href=#808 id=808 data-nosnippet>808</a>/// a `span`. This also errors if `unit` is not `Hour`, `Minute`, `Second`,
+<a href=#809 id=809 data-nosnippet>809</a>/// `Millisecond` or `Microsecond`.
+<a href=#810 id=810 data-nosnippet>810</a></span><span class="attr">#[inline(never)]
+<a href=#811 id=811 data-nosnippet>811</a></span><span class="kw">fn </span>fractional_time_to_span(
+<a href=#812 id=812 data-nosnippet>812</a>    unit: <a href="../span.rs.html#3911-3936">Unit</a>,
+<a href=#813 id=813 data-nosnippet>813</a>    value: <a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>,
+<a href=#814 id=814 data-nosnippet>814</a>    fraction: <a href="https://doc.rust-lang.org/nightly/std/primitive.i32.html">i32</a>,
+<a href=#815 id=815 data-nosnippet>815</a>    <span class="kw-2">mut </span>span: <a href="../span.rs.html#708-721">Span</a>,
+<a href=#816 id=816 data-nosnippet>816</a>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<a href="../span.rs.html#708-721">Span</a>, <a href="../error/mod.rs.html#51-62">Error</a>&gt; {
+<a href=#817 id=817 data-nosnippet>817</a>    <span class="kw">const </span>MAX_HOURS: <a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a> = b::<a href="../util/b.rs.html#165-275">SpanHours</a>::<a href="../util/b.rs.html#165-275">MAX</a> <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>;
+<a href=#818 id=818 data-nosnippet>818</a>    <span class="kw">const </span>MAX_MINS: <a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a> = b::<a href="../util/b.rs.html#165-275">SpanMinutes</a>::<a href="../util/b.rs.html#165-275">MAX</a>;
+<a href=#819 id=819 data-nosnippet>819</a>    <span class="kw">const </span>MAX_SECS: <a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a> = b::<a href="../util/b.rs.html#165-275">SpanSeconds</a>::<a href="../util/b.rs.html#165-275">MAX</a>;
+<a href=#820 id=820 data-nosnippet>820</a>    <span class="kw">const </span>MAX_MILLIS: <a href="https://doc.rust-lang.org/nightly/std/primitive.i128.html">i128</a> = b::<a href="../util/b.rs.html#165-275">SpanMilliseconds</a>::<a href="../util/b.rs.html#165-275">MAX</a> <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.i128.html">i128</a>;
+<a href=#821 id=821 data-nosnippet>821</a>    <span class="kw">const </span>MAX_MICROS: <a href="https://doc.rust-lang.org/nightly/std/primitive.i128.html">i128</a> = b::<a href="../util/b.rs.html#165-275">SpanMicroseconds</a>::<a href="../util/b.rs.html#165-275">MAX</a> <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.i128.html">i128</a>;
+<a href=#822 id=822 data-nosnippet>822</a>    <span class="kw">const </span>MIN_HOURS: <a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a> = b::<a href="../util/b.rs.html#165-275">SpanHours</a>::<a href="../util/b.rs.html#165-275">MIN</a> <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>;
+<a href=#823 id=823 data-nosnippet>823</a>    <span class="kw">const </span>MIN_MINS: <a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a> = b::<a href="../util/b.rs.html#165-275">SpanMinutes</a>::<a href="../util/b.rs.html#165-275">MIN</a>;
+<a href=#824 id=824 data-nosnippet>824</a>    <span class="kw">const </span>MIN_SECS: <a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a> = b::<a href="../util/b.rs.html#165-275">SpanSeconds</a>::<a href="../util/b.rs.html#165-275">MIN</a>;
+<a href=#825 id=825 data-nosnippet>825</a>    <span class="kw">const </span>MIN_MILLIS: <a href="https://doc.rust-lang.org/nightly/std/primitive.i128.html">i128</a> = b::<a href="../util/b.rs.html#165-275">SpanMilliseconds</a>::<a href="../util/b.rs.html#165-275">MIN</a> <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.i128.html">i128</a>;
+<a href=#826 id=826 data-nosnippet>826</a>    <span class="kw">const </span>MIN_MICROS: <a href="https://doc.rust-lang.org/nightly/std/primitive.i128.html">i128</a> = b::<a href="../util/b.rs.html#165-275">SpanMicroseconds</a>::<a href="../util/b.rs.html#165-275">MIN</a> <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.i128.html">i128</a>;
+<a href=#827 id=827 data-nosnippet>827</a>
+<a href=#828 id=828 data-nosnippet>828</a>    <span class="comment">// We switch everything over to nanoseconds and then divy that up as
+<a href=#829 id=829 data-nosnippet>829</a>    // appropriate. In general, we always create a balanced span, but there
+<a href=#830 id=830 data-nosnippet>830</a>    // are some cases where we can't. For example, if one serializes a span
+<a href=#831 id=831 data-nosnippet>831</a>    // with both the maximum number of seconds and the maximum number of
+<a href=#832 id=832 data-nosnippet>832</a>    // milliseconds, then this just can't be balanced due to the limits on
+<a href=#833 id=833 data-nosnippet>833</a>    // each of the units. When this kind of span is serialized to a string,
+<a href=#834 id=834 data-nosnippet>834</a>    // it results in a second value that is actually bigger than the maximum
+<a href=#835 id=835 data-nosnippet>835</a>    // allowed number of seconds in a span. So here, we have to reverse that
+<a href=#836 id=836 data-nosnippet>836</a>    // operation and spread the seconds over smaller units. This in turn
+<a href=#837 id=837 data-nosnippet>837</a>    // creates an unbalanced span. Annoying.
+<a href=#838 id=838 data-nosnippet>838</a>    //
+<a href=#839 id=839 data-nosnippet>839</a>    // The above is why we have `if unit_value &gt; MAX { &lt;do adjustments&gt; }` in
+<a href=#840 id=840 data-nosnippet>840</a>    // the balancing code below. Basically, if we overshoot our limit, we back
+<a href=#841 id=841 data-nosnippet>841</a>    // out anything over the limit and carry it over to the lesser units. If
+<a href=#842 id=842 data-nosnippet>842</a>    // our value is truly too big, then the final call to set nanoseconds will
+<a href=#843 id=843 data-nosnippet>843</a>    // fail.
+<a href=#844 id=844 data-nosnippet>844</a>    //
+<a href=#845 id=845 data-nosnippet>845</a>    // Each unit is added to whatever is already in the span. We use saturating
+<a href=#846 id=846 data-nosnippet>846</a>    // arithmetic for this so that overflow is never a concern. In practice,
+<a href=#847 id=847 data-nosnippet>847</a>    // only seconds can saturate, and when they do, our value is truly too big.
+<a href=#848 id=848 data-nosnippet>848</a>    </span><span class="kw">let </span><span class="kw-2">mut </span>sdur = fractional_time_to_duration(unit, value, fraction)<span class="question-mark">?</span>;
+<a href=#849 id=849 data-nosnippet>849</a>
+<a href=#850 id=850 data-nosnippet>850</a>    <span class="kw">if </span><a href="#812">unit</a> &gt;= Unit::<a href="../span.rs.html#3924">Hour</a> &amp;&amp; !<a href="#848">sdur</a>.<a href="../signed_duration.rs.html#808-810">is_zero</a>() {
+<a href=#851 id=851 data-nosnippet>851</a>        <span class="kw">let </span>(<span class="kw-2">mut </span>hours, rem) = <a href="#848">sdur</a>.<a href="../signed_duration.rs.html#2415-2420">as_hours_with_remainder</a>();
+<a href=#852 id=852 data-nosnippet>852</a>        <a href="#848">sdur</a> = <a href="#851">rem</a>;
+<a href=#853 id=853 data-nosnippet>853</a>        <a href="#851">hours</a> = <a href="#851">hours</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.i64.html#method.saturating_add">saturating_add</a>(<a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>::<a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html#tymethod.from">from</a>(<a href="#815">span</a>.<a href="../span.rs.html#1191-1193">get_hours</a>()));
+<a href=#854 id=854 data-nosnippet>854</a>        <span class="kw">if </span><a href="#851">hours</a> &gt; <a href="#817">MAX_HOURS</a> {
+<a href=#855 id=855 data-nosnippet>855</a>            <a href="#848">sdur</a> += <a href="../signed_duration.rs.html#326-329">SignedDuration</a>::<a href="../signed_duration.rs.html#750-760">from_hours</a>(<a href="#851">hours</a> - <a href="#817">MAX_HOURS</a>);
+<a href=#856 id=856 data-nosnippet>856</a>            <a href="#851">hours</a> = <a href="#817">MAX_HOURS</a>;
+<a href=#857 id=857 data-nosnippet>857</a>        } <span class="kw">else if </span><a href="#851">hours</a> &lt; <a href="#822">MIN_HOURS</a> {
+<a href=#858 id=858 data-nosnippet>858</a>            <a href="#848">sdur</a> += <a href="../signed_duration.rs.html#326-329">SignedDuration</a>::<a href="../signed_duration.rs.html#750-760">from_hours</a>(<a href="#851">hours</a> - <a href="#822">MIN_HOURS</a>);
+<a href=#859 id=859 data-nosnippet>859</a>            <a href="#851">hours</a> = <a href="#822">MIN_HOURS</a>;
+<a href=#860 id=860 data-nosnippet>860</a>        }
+<a href=#861 id=861 data-nosnippet>861</a>        <span class="comment">// OK because we just checked that our units are in range.
+<a href=#862 id=862 data-nosnippet>862</a>        </span><a href="#815">span</a> = <a href="#815">span</a>.<a href="../span.rs.html#801-803">hours</a>(<a href="#851">hours</a>);
+<a href=#863 id=863 data-nosnippet>863</a>    }
+<a href=#864 id=864 data-nosnippet>864</a>    <span class="kw">if </span><a href="#812">unit</a> &gt;= Unit::<a href="../span.rs.html#3927">Minute</a> &amp;&amp; !<a href="#848">sdur</a>.<a href="../signed_duration.rs.html#808-810">is_zero</a>() {
+<a href=#865 id=865 data-nosnippet>865</a>        <span class="kw">let </span>(<span class="kw-2">mut </span>mins, rem) = <a href="#848">sdur</a>.<a href="../signed_duration.rs.html#2426-2431">as_mins_with_remainder</a>();
+<a href=#866 id=866 data-nosnippet>866</a>        <a href="#848">sdur</a> = <a href="#865">rem</a>;
+<a href=#867 id=867 data-nosnippet>867</a>        <a href="#865">mins</a> = <a href="#865">mins</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.i64.html#method.saturating_add">saturating_add</a>(<a href="#815">span</a>.<a href="../span.rs.html#1213-1215">get_minutes</a>());
+<a href=#868 id=868 data-nosnippet>868</a>        <span class="kw">if </span><a href="#865">mins</a> &gt; <a href="#818">MAX_MINS</a> {
+<a href=#869 id=869 data-nosnippet>869</a>            <a href="#848">sdur</a> += <a href="../signed_duration.rs.html#326-329">SignedDuration</a>::<a href="../signed_duration.rs.html#784-794">from_mins</a>(<a href="#865">mins</a> - <a href="#818">MAX_MINS</a>);
+<a href=#870 id=870 data-nosnippet>870</a>            <a href="#865">mins</a> = <a href="#818">MAX_MINS</a>;
+<a href=#871 id=871 data-nosnippet>871</a>        } <span class="kw">else if </span><a href="#865">mins</a> &lt; <a href="#823">MIN_MINS</a> {
+<a href=#872 id=872 data-nosnippet>872</a>            <a href="#848">sdur</a> += <a href="../signed_duration.rs.html#326-329">SignedDuration</a>::<a href="../signed_duration.rs.html#784-794">from_mins</a>(<a href="#865">mins</a> - <a href="#823">MIN_MINS</a>);
+<a href=#873 id=873 data-nosnippet>873</a>            <a href="#865">mins</a> = <a href="#823">MIN_MINS</a>;
+<a href=#874 id=874 data-nosnippet>874</a>        }
+<a href=#875 id=875 data-nosnippet>875</a>        <span class="comment">// OK because we just checked that our units are in range.
+<a href=#876 id=876 data-nosnippet>876</a>        </span><a href="#815">span</a> = <a href="#815">span</a>.<a href="../span.rs.html#815-817">minutes</a>(<a href="#865">mins</a>);
+<a href=#877 id=877 data-nosnippet>877</a>    }
+<a href=#878 id=878 data-nosnippet>878</a>    <span class="kw">if </span><a href="#812">unit</a> &gt;= Unit::<a href="../span.rs.html#3929">Second</a> &amp;&amp; !<a href="#848">sdur</a>.<a href="../signed_duration.rs.html#808-810">is_zero</a>() {
+<a href=#879 id=879 data-nosnippet>879</a>        <span class="kw">let </span>(<span class="kw-2">mut </span>secs, rem) = <a href="#848">sdur</a>.<a href="../signed_duration.rs.html#2437-2441">as_secs_with_remainder</a>();
+<a href=#880 id=880 data-nosnippet>880</a>        <a href="#848">sdur</a> = <a href="#879">rem</a>;
+<a href=#881 id=881 data-nosnippet>881</a>        <a href="#879">secs</a> = <a href="#879">secs</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.i64.html#method.saturating_add">saturating_add</a>(<a href="#815">span</a>.<a href="../span.rs.html#1235-1237">get_seconds</a>());
+<a href=#882 id=882 data-nosnippet>882</a>        <span class="kw">if </span><a href="#879">secs</a> &gt; <a href="#819">MAX_SECS</a> {
+<a href=#883 id=883 data-nosnippet>883</a>            <a href="#848">sdur</a> += <a href="../signed_duration.rs.html#326-329">SignedDuration</a>::<a href="../signed_duration.rs.html#495-497">from_secs</a>(<a href="#879">secs</a> - <a href="#819">MAX_SECS</a>);
+<a href=#884 id=884 data-nosnippet>884</a>            <a href="#879">secs</a> = <a href="#819">MAX_SECS</a>;
+<a href=#885 id=885 data-nosnippet>885</a>        } <span class="kw">else if </span><a href="#879">secs</a> &lt; <a href="#824">MIN_SECS</a> {
+<a href=#886 id=886 data-nosnippet>886</a>            <a href="#848">sdur</a> += <a href="../signed_duration.rs.html#326-329">SignedDuration</a>::<a href="../signed_duration.rs.html#495-497">from_secs</a>(<a href="#879">secs</a> - <a href="#824">MIN_SECS</a>);
+<a href=#887 id=887 data-nosnippet>887</a>            <a href="#879">secs</a> = <a href="#824">MIN_SECS</a>;
+<a href=#888 id=888 data-nosnippet>888</a>        }
+<a href=#889 id=889 data-nosnippet>889</a>        <span class="comment">// OK because we just checked that our units are in range.
+<a href=#890 id=890 data-nosnippet>890</a>        </span><a href="#815">span</a> = <a href="#815">span</a>.<a href="../span.rs.html#829-831">seconds</a>(<a href="#879">secs</a>);
+<a href=#891 id=891 data-nosnippet>891</a>    }
+<a href=#892 id=892 data-nosnippet>892</a>    <span class="kw">if </span><a href="#812">unit</a> &gt;= Unit::<a href="../span.rs.html#3931">Millisecond</a> &amp;&amp; !<a href="#848">sdur</a>.<a href="../signed_duration.rs.html#808-810">is_zero</a>() {
+<a href=#893 id=893 data-nosnippet>893</a>        <span class="kw">let </span>(<span class="kw-2">mut </span>millis, rem) = <a href="#848">sdur</a>.<a href="../signed_duration.rs.html#2447-2452">as_millis_with_remainder</a>();
+<a href=#894 id=894 data-nosnippet>894</a>        <a href="#848">sdur</a> = <a href="#893">rem</a>;
+<a href=#895 id=895 data-nosnippet>895</a>        <a href="#893">millis</a> = <a href="#893">millis</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.i128.html#method.saturating_add">saturating_add</a>(<a href="https://doc.rust-lang.org/nightly/std/primitive.i128.html">i128</a>::<a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html#tymethod.from">from</a>(<a href="#815">span</a>.<a href="../span.rs.html#1257-1259">get_milliseconds</a>()));
+<a href=#896 id=896 data-nosnippet>896</a>        <span class="kw">if </span><a href="#893">millis</a> &gt; <a href="#820">MAX_MILLIS</a> {
+<a href=#897 id=897 data-nosnippet>897</a>            <a href="#848">sdur</a> += <a href="../signed_duration.rs.html#326-329">SignedDuration</a>::<a href="../signed_duration.rs.html#563-573">from_millis_i128</a>(<a href="#893">millis</a> - <a href="#820">MAX_MILLIS</a>);
+<a href=#898 id=898 data-nosnippet>898</a>            <a href="#893">millis</a> = <a href="#820">MAX_MILLIS</a>;
+<a href=#899 id=899 data-nosnippet>899</a>        } <span class="kw">else if </span><a href="#893">millis</a> &lt; <a href="#825">MIN_MILLIS</a> {
+<a href=#900 id=900 data-nosnippet>900</a>            <a href="#848">sdur</a> += <a href="../signed_duration.rs.html#326-329">SignedDuration</a>::<a href="../signed_duration.rs.html#563-573">from_millis_i128</a>(<a href="#893">millis</a> - <a href="#825">MIN_MILLIS</a>);
+<a href=#901 id=901 data-nosnippet>901</a>            <a href="#893">millis</a> = <a href="#825">MIN_MILLIS</a>;
+<a href=#902 id=902 data-nosnippet>902</a>        }
+<a href=#903 id=903 data-nosnippet>903</a>        <span class="comment">// OK because we just checked that our units are in range.
+<a href=#904 id=904 data-nosnippet>904</a>        </span><a href="#815">span</a> = <a href="#815">span</a>.<a href="../span.rs.html#843-846">milliseconds</a>(<a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>::<a href="https://doc.rust-lang.org/nightly/core/convert/trait.TryFrom.html#tymethod.try_from">try_from</a>(<a href="#893">millis</a>).<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.unwrap">unwrap</a>());
+<a href=#905 id=905 data-nosnippet>905</a>    }
+<a href=#906 id=906 data-nosnippet>906</a>    <span class="kw">if </span><a href="#812">unit</a> &gt;= Unit::<a href="../span.rs.html#3933">Microsecond</a> &amp;&amp; !<a href="#848">sdur</a>.<a href="../signed_duration.rs.html#808-810">is_zero</a>() {
+<a href=#907 id=907 data-nosnippet>907</a>        <span class="kw">let </span>(<span class="kw-2">mut </span>micros, rem) = <a href="#848">sdur</a>.<a href="../signed_duration.rs.html#2458-2463">as_micros_with_remainder</a>();
+<a href=#908 id=908 data-nosnippet>908</a>        <a href="#848">sdur</a> = <a href="#907">rem</a>;
+<a href=#909 id=909 data-nosnippet>909</a>        <a href="#907">micros</a> = <a href="#907">micros</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.i128.html#method.saturating_add">saturating_add</a>(<a href="https://doc.rust-lang.org/nightly/std/primitive.i128.html">i128</a>::<a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html#tymethod.from">from</a>(<a href="#815">span</a>.<a href="../span.rs.html#1280-1282">get_microseconds</a>()));
+<a href=#910 id=910 data-nosnippet>910</a>        <span class="kw">if </span><a href="#907">micros</a> &gt; <a href="#821">MAX_MICROS</a> {
+<a href=#911 id=911 data-nosnippet>911</a>            <a href="#848">sdur</a> += <a href="../signed_duration.rs.html#326-329">SignedDuration</a>::<a href="../signed_duration.rs.html#639-649">from_micros_i128</a>(<a href="#907">micros</a> - <a href="#821">MAX_MICROS</a>);
+<a href=#912 id=912 data-nosnippet>912</a>            <a href="#907">micros</a> = <a href="#821">MAX_MICROS</a>;
+<a href=#913 id=913 data-nosnippet>913</a>        } <span class="kw">else if </span><a href="#907">micros</a> &lt; <a href="#826">MIN_MICROS</a> {
+<a href=#914 id=914 data-nosnippet>914</a>            <a href="#848">sdur</a> += <a href="../signed_duration.rs.html#326-329">SignedDuration</a>::<a href="../signed_duration.rs.html#639-649">from_micros_i128</a>(<a href="#907">micros</a> - <a href="#826">MIN_MICROS</a>);
+<a href=#915 id=915 data-nosnippet>915</a>            <a href="#907">micros</a> = <a href="#826">MIN_MICROS</a>;
+<a href=#916 id=916 data-nosnippet>916</a>        }
+<a href=#917 id=917 data-nosnippet>917</a>        <span class="comment">// OK because we just checked that our units are in range.
+<a href=#918 id=918 data-nosnippet>918</a>        </span><a href="#815">span</a> = <a href="#815">span</a>.<a href="../span.rs.html#858-861">microseconds</a>(<a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>::<a href="https://doc.rust-lang.org/nightly/core/convert/trait.TryFrom.html#tymethod.try_from">try_from</a>(<a href="#907">micros</a>).<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.unwrap">unwrap</a>());
+<a href=#919 id=919 data-nosnippet>919</a>    }
+<a href=#920 id=920 data-nosnippet>920</a>    <span class="kw">if </span>!<a href="#848">sdur</a>.<a href="../signed_duration.rs.html#808-810">is_zero</a>() {
+<a href=#921 id=921 data-nosnippet>921</a>        <span class="kw">let </span>nanos =
+<a href=#922 id=922 data-nosnippet>922</a>            <a href="#848">sdur</a>.<a href="../signed_duration.rs.html#990-996">as_nanos</a>().<a href="https://doc.rust-lang.org/nightly/core/primitive.i128.html#method.saturating_add">saturating_add</a>(<a href="https://doc.rust-lang.org/nightly/std/primitive.i128.html">i128</a>::<a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html#tymethod.from">from</a>(<a href="#815">span</a>.<a href="../span.rs.html#1302-1304">get_nanoseconds</a>()));
+<a href=#923 id=923 data-nosnippet>923</a>        <span class="kw">let </span>nanos64 =
+<a href=#924 id=924 data-nosnippet>924</a>            i64::try_from(nanos).map_err(|<span class="kw">_</span>| E::InvalidFractionNanos)<span class="question-mark">?</span>;
+<a href=#925 id=925 data-nosnippet>925</a>        <a href="#815">span</a> =
+<a href=#926 id=926 data-nosnippet>926</a>            span.try_nanoseconds(nanos64).context(E::InvalidFractionNanos)<span class="question-mark">?</span>;
+<a href=#927 id=927 data-nosnippet>927</a>    }
+<a href=#928 id=928 data-nosnippet>928</a>
+<a href=#929 id=929 data-nosnippet>929</a>    <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="#815">span</a>)
+<a href=#930 id=930 data-nosnippet>930</a>}
+<a href=#931 id=931 data-nosnippet>931</a>
+<a href=#932 id=932 data-nosnippet>932</a><span class="doccomment">/// Like `fractional_time_to_span`, but just converts the fraction of the given
+<a href=#933 id=933 data-nosnippet>933</a>/// unit to a signed duration.
+<a href=#934 id=934 data-nosnippet>934</a>///
+<a href=#935 id=935 data-nosnippet>935</a>/// Since a signed duration doesn't keep track of individual units, there is
+<a href=#936 id=936 data-nosnippet>936</a>/// no loss of fidelity between it and ISO 8601 durations like there is for
+<a href=#937 id=937 data-nosnippet>937</a>/// `Span`.
+<a href=#938 id=938 data-nosnippet>938</a>///
+<a href=#939 id=939 data-nosnippet>939</a>/// Note that `fraction` can be a fractional hour, minute, second, millisecond
+<a href=#940 id=940 data-nosnippet>940</a>/// or microsecond (even though its type suggests it's only a fraction of a
+<a href=#941 id=941 data-nosnippet>941</a>/// second). When milliseconds or microseconds, the given fraction has any
+<a href=#942 id=942 data-nosnippet>942</a>/// sub-nanosecond precision truncated.
+<a href=#943 id=943 data-nosnippet>943</a>///
+<a href=#944 id=944 data-nosnippet>944</a>/// # Errors
+<a href=#945 id=945 data-nosnippet>945</a>///
+<a href=#946 id=946 data-nosnippet>946</a>/// This returns an error if `unit` is not `Hour`, `Minute`, `Second`,
+<a href=#947 id=947 data-nosnippet>947</a>/// `Millisecond` or `Microsecond`.
+<a href=#948 id=948 data-nosnippet>948</a></span><span class="attr">#[inline(never)]
+<a href=#949 id=949 data-nosnippet>949</a></span><span class="kw">fn </span>fractional_time_to_duration(
+<a href=#950 id=950 data-nosnippet>950</a>    unit: <a href="../span.rs.html#3911-3936">Unit</a>,
+<a href=#951 id=951 data-nosnippet>951</a>    value: <a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>,
+<a href=#952 id=952 data-nosnippet>952</a>    fraction: <a href="https://doc.rust-lang.org/nightly/std/primitive.i32.html">i32</a>,
+<a href=#953 id=953 data-nosnippet>953</a>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<a href="../signed_duration.rs.html#326-329">SignedDuration</a>, <a href="../error/mod.rs.html#51-62">Error</a>&gt; {
+<a href=#954 id=954 data-nosnippet>954</a>    <span class="kw">let </span>sdur = duration_unit_value(unit, value)<span class="question-mark">?</span>;
+<a href=#955 id=955 data-nosnippet>955</a>    <span class="kw">let </span>fraction_dur = fractional_duration(unit, fraction)<span class="question-mark">?</span>;
+<a href=#956 id=956 data-nosnippet>956</a>    <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(sdur
+<a href=#957 id=957 data-nosnippet>957</a>        .checked_add(fraction_dur)
+<a href=#958 id=958 data-nosnippet>958</a>        .ok_or(E::OverflowForUnitFractional { unit })<span class="question-mark">?</span>)
+<a href=#959 id=959 data-nosnippet>959</a>}
+<a href=#960 id=960 data-nosnippet>960</a>
+<a href=#961 id=961 data-nosnippet>961</a><span class="doccomment">/// Converts the fraction of the given unit to a signed duration.
+<a href=#962 id=962 data-nosnippet>962</a>///
+<a href=#963 id=963 data-nosnippet>963</a>/// Since a signed duration doesn't keep track of individual units, there is
+<a href=#964 id=964 data-nosnippet>964</a>/// no loss of fidelity between it and ISO 8601 durations like there is for
+<a href=#965 id=965 data-nosnippet>965</a>/// `Span`. Thus, we can do something far less complicated.
+<a href=#966 id=966 data-nosnippet>966</a>///
+<a href=#967 id=967 data-nosnippet>967</a>/// # Panics
+<a href=#968 id=968 data-nosnippet>968</a>///
+<a href=#969 id=969 data-nosnippet>969</a>/// When `fraction` isn't in the range `-999_999_999..=999_999_999`.
+<a href=#970 id=970 data-nosnippet>970</a>///
+<a href=#971 id=971 data-nosnippet>971</a>/// # Errors
+<a href=#972 id=972 data-nosnippet>972</a>///
+<a href=#973 id=973 data-nosnippet>973</a>/// This returns an error if `unit` is not `Hour`, `Minute`, `Second`,
+<a href=#974 id=974 data-nosnippet>974</a>/// `Millisecond` or `Microsecond`.
+<a href=#975 id=975 data-nosnippet>975</a></span><span class="attr">#[inline(never)]
+<a href=#976 id=976 data-nosnippet>976</a></span><span class="kw">fn </span>fractional_duration(
+<a href=#977 id=977 data-nosnippet>977</a>    unit: <a href="../span.rs.html#3911-3936">Unit</a>,
+<a href=#978 id=978 data-nosnippet>978</a>    fraction: <a href="https://doc.rust-lang.org/nightly/std/primitive.i32.html">i32</a>,
+<a href=#979 id=979 data-nosnippet>979</a>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<a href="../signed_duration.rs.html#326-329">SignedDuration</a>, <a href="../error/mod.rs.html#51-62">Error</a>&gt; {
+<a href=#980 id=980 data-nosnippet>980</a>    <span class="kw">let </span>fraction = <a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>::<a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html#tymethod.from">from</a>(<a href="#978">fraction</a>);
+<a href=#981 id=981 data-nosnippet>981</a>    <span class="kw">let </span>nanos = <span class="kw">match </span><a href="#977">unit</a> {
+<a href=#982 id=982 data-nosnippet>982</a>        Unit::<a href="../span.rs.html#3924">Hour</a> =&gt; <a href="#980">fraction</a> * c::<a href="../../../jiff_core/constants/constant.SECS_PER_HOUR.html">SECS_PER_HOUR</a>,
+<a href=#983 id=983 data-nosnippet>983</a>        Unit::<a href="../span.rs.html#3927">Minute</a> =&gt; <a href="#980">fraction</a> * c::<a href="../../../jiff_core/constants/constant.SECS_PER_MIN.html">SECS_PER_MIN</a>,
+<a href=#984 id=984 data-nosnippet>984</a>        Unit::<a href="../span.rs.html#3929">Second</a> =&gt; <a href="#980">fraction</a>,
+<a href=#985 id=985 data-nosnippet>985</a>        Unit::<a href="../span.rs.html#3931">Millisecond</a> =&gt; <a href="#980">fraction</a> / c::<a href="../../../jiff_core/constants/constant.NANOS_PER_MICRO.html">NANOS_PER_MICRO</a>,
+<a href=#986 id=986 data-nosnippet>986</a>        Unit::<a href="../span.rs.html#3933">Microsecond</a> =&gt; <a href="#980">fraction</a> / c::<a href="../../../jiff_core/constants/constant.NANOS_PER_MILLI.html">NANOS_PER_MILLI</a>,
+<a href=#987 id=987 data-nosnippet>987</a>        unit =&gt; {
+<a href=#988 id=988 data-nosnippet>988</a>            <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(<a href="../error/mod.rs.html#51-62">Error</a>::<a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html#tymethod.from">from</a>(E::<a href="../error/fmt/util.rs.html#13">NotAllowedFractionalUnit</a> {
+<a href=#989 id=989 data-nosnippet>989</a>                found: <a href="#987">unit</a>,
+<a href=#990 id=990 data-nosnippet>990</a>            }));
+<a href=#991 id=991 data-nosnippet>991</a>        }
+<a href=#992 id=992 data-nosnippet>992</a>    };
+<a href=#993 id=993 data-nosnippet>993</a>    <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="../signed_duration.rs.html#326-329">SignedDuration</a>::<a href="../signed_duration.rs.html#675-682">from_nanos</a>(<a href="#981">nanos</a>))
+<a href=#994 id=994 data-nosnippet>994</a>}
+<a href=#995 id=995 data-nosnippet>995</a>
+<a href=#996 id=996 data-nosnippet>996</a><span class="doccomment">/// Returns the given parsed value, interpreted as the given unit, as a
+<a href=#997 id=997 data-nosnippet>997</a>/// `SignedDuration`.
+<a href=#998 id=998 data-nosnippet>998</a>///
+<a href=#999 id=999 data-nosnippet>999</a>/// If the given unit is not supported for signed durations (i.e., calendar
+<a href=#1000 id=1000 data-nosnippet>1000</a>/// units), or if converting the given value to a `SignedDuration` for the
+<a href=#1001 id=1001 data-nosnippet>1001</a>/// given units overflows, then an error is returned.
+<a href=#1002 id=1002 data-nosnippet>1002</a></span><span class="attr">#[cfg_attr(feature = <span class="string">"perf-inline"</span>, inline(always))]
+<a href=#1003 id=1003 data-nosnippet>1003</a></span><span class="kw">fn </span>duration_unit_value(
+<a href=#1004 id=1004 data-nosnippet>1004</a>    unit: <a href="../span.rs.html#3911-3936">Unit</a>,
+<a href=#1005 id=1005 data-nosnippet>1005</a>    value: <a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>,
+<a href=#1006 id=1006 data-nosnippet>1006</a>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<a href="../signed_duration.rs.html#326-329">SignedDuration</a>, <a href="../error/mod.rs.html#51-62">Error</a>&gt; {
+<a href=#1007 id=1007 data-nosnippet>1007</a>    <span class="comment">// Convert our parsed unit into a number of nanoseconds.
+<a href=#1008 id=1008 data-nosnippet>1008</a>    //
+<a href=#1009 id=1009 data-nosnippet>1009</a>    // Note also that overflow isn't possible here for units less than minutes,
+<a href=#1010 id=1010 data-nosnippet>1010</a>    // since a `SignedDuration` supports all `i64` second values.
+<a href=#1011 id=1011 data-nosnippet>1011</a>    </span><span class="kw">let </span>sdur = <span class="kw">match </span><a href="#1004">unit</a> {
+<a href=#1012 id=1012 data-nosnippet>1012</a>        Unit::<a href="../span.rs.html#3924">Hour</a> =&gt; {
+<a href=#1013 id=1013 data-nosnippet>1013</a>            <span class="kw">let </span>seconds = value
+<a href=#1014 id=1014 data-nosnippet>1014</a>                .checked_mul(c::SECS_PER_HOUR)
+<a href=#1015 id=1015 data-nosnippet>1015</a>                .ok_or(E::ConversionToSecondsFailed { unit: Unit::Hour })<span class="question-mark">?</span>;
+<a href=#1016 id=1016 data-nosnippet>1016</a>            <a href="../signed_duration.rs.html#326-329">SignedDuration</a>::<a href="../signed_duration.rs.html#495-497">from_secs</a>(<a href="#1013">seconds</a>)
+<a href=#1017 id=1017 data-nosnippet>1017</a>        }
+<a href=#1018 id=1018 data-nosnippet>1018</a>        Unit::<a href="../span.rs.html#3927">Minute</a> =&gt; {
+<a href=#1019 id=1019 data-nosnippet>1019</a>            <span class="kw">let </span>seconds = value
+<a href=#1020 id=1020 data-nosnippet>1020</a>                .checked_mul(c::SECS_PER_MIN)
+<a href=#1021 id=1021 data-nosnippet>1021</a>                .ok_or(E::ConversionToSecondsFailed { unit: Unit::Minute })<span class="question-mark">?</span>;
+<a href=#1022 id=1022 data-nosnippet>1022</a>            <a href="../signed_duration.rs.html#326-329">SignedDuration</a>::<a href="../signed_duration.rs.html#495-497">from_secs</a>(<a href="#1019">seconds</a>)
+<a href=#1023 id=1023 data-nosnippet>1023</a>        }
+<a href=#1024 id=1024 data-nosnippet>1024</a>        Unit::<a href="../span.rs.html#3929">Second</a> =&gt; <a href="../signed_duration.rs.html#326-329">SignedDuration</a>::<a href="../signed_duration.rs.html#495-497">from_secs</a>(<a href="#1005">value</a>),
+<a href=#1025 id=1025 data-nosnippet>1025</a>        Unit::<a href="../span.rs.html#3931">Millisecond</a> =&gt; <a href="../signed_duration.rs.html#326-329">SignedDuration</a>::<a href="../signed_duration.rs.html#521-529">from_millis</a>(<a href="#1005">value</a>),
+<a href=#1026 id=1026 data-nosnippet>1026</a>        Unit::<a href="../span.rs.html#3933">Microsecond</a> =&gt; <a href="../signed_duration.rs.html#326-329">SignedDuration</a>::<a href="../signed_duration.rs.html#597-605">from_micros</a>(<a href="#1005">value</a>),
+<a href=#1027 id=1027 data-nosnippet>1027</a>        Unit::<a href="../span.rs.html#3935">Nanosecond</a> =&gt; <a href="../signed_duration.rs.html#326-329">SignedDuration</a>::<a href="../signed_duration.rs.html#675-682">from_nanos</a>(<a href="#1005">value</a>),
+<a href=#1028 id=1028 data-nosnippet>1028</a>        unsupported =&gt; {
+<a href=#1029 id=1029 data-nosnippet>1029</a>            <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(<a href="../error/mod.rs.html#51-62">Error</a>::<a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html#tymethod.from">from</a>(E::<a href="../error/fmt/util.rs.html#12">NotAllowedCalendarUnit</a> {
+<a href=#1030 id=1030 data-nosnippet>1030</a>                unit: <a href="#1028">unsupported</a>,
+<a href=#1031 id=1031 data-nosnippet>1031</a>            }));
+<a href=#1032 id=1032 data-nosnippet>1032</a>        }
+<a href=#1033 id=1033 data-nosnippet>1033</a>    };
+<a href=#1034 id=1034 data-nosnippet>1034</a>    <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="#1011">sdur</a>)
+<a href=#1035 id=1035 data-nosnippet>1035</a>}
+</code></pre></div></section></main></body></html>

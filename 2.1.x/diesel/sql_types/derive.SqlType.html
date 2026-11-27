@@ -1,0 +1,42 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Implement necessary traits for adding a new sql type"><title>SqlType in diesel::sql_types - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-081576b923113409.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.79.0-nightly (e3181b091 2024-04-18)" data-channel="nightly" data-search-js="search-5b46ae87cc198d72.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-e32f0c247825364d.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-09095024cf37855e.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc derive"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../diesel/index.html">diesel</a><span class="version">2.1.6</span></h2></div><div class="sidebar-elems"><h2><a href="index.html">In diesel::sql_types</a></h2></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../diesel/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Type ‘S’ or ‘/’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings">Settings</a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Derive Macro <a href="../index.html">diesel</a>::<wbr><a href="index.html">sql_types</a>::<wbr><a class="derive" href="#">SqlType</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../../src/diesel_derives/lib.rs.html#942">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>#[derive(SqlType)]
+{
+    <span class="comment">// Attributes available to this derive:</span>
+    #[diesel]
+    #[postgres]
+    #[sqlite_type]
+    #[mysql_type]
+}
+</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Implement necessary traits for adding a new sql type</p>
+<p>This trait implements all necessary traits to define a
+new sql type. This is useful for adding support for unsupported
+or custom types on the sql side. The sql type will be usable for
+all backends you specified via the attributes listed below.</p>
+<p>This derive will implement <code>NotNull</code>, <code>HasSqlType</code> and <code>SingleValue</code>.
+When using this derive macro,
+you need to specify how the type is represented on various backends.
+You don’t need to specify every backend,
+only the ones supported by your type.</p>
+<p>For PostgreSQL, add <code>#[diesel(postgres_type(name = &quot;pg_type_name&quot;, schema = &quot;pg_schema_name&quot;))]</code>
+or <code>#[diesel(postgres_type(oid = &quot;some_oid&quot;, array_oid = &quot;some_oid&quot;))]</code> for
+builtin types.
+For MySQL, specify which variant of <code>MysqlType</code> should be used
+by adding <code>#[diesel(mysql_type(name = &quot;Variant&quot;))]</code>.
+For SQLite, specify which variant of <code>SqliteType</code> should be used
+by adding <code>#[diesel(sqlite_type(name = &quot;Variant&quot;))]</code>.</p>
+<h2 id="attributes"><a class="doc-anchor" href="#attributes">§</a>Attributes</h2><h3 id="type-attributes"><a class="doc-anchor" href="#type-attributes">§</a>Type attributes</h3>
+<ul>
+<li><code>#[diesel(postgres_type(name = &quot;TypeName&quot;, schema = &quot;public&quot;))]</code> specifies support for
+a postgresql type with the name <code>TypeName</code> in the schema <code>public</code>. Prefer this variant
+for types with no stable OID (== everything but the builtin types). It is possible to leaf
+of the <code>schema</code> part. In that case, Diesel defaults to the default postgres search path.</li>
+<li><code>#[diesel(postgres_type(oid = 42, array_oid = 142))]</code>, specifies support for a
+postgresql type with the given <code>oid</code> and <code>array_oid</code>. This variant
+should only be used with types that have a stable OID.</li>
+<li><code>#[diesel(sqlite_type(name = &quot;TypeName&quot;))]</code>, specifies support for a sqlite type
+with the given name. <code>TypeName</code> needs to be one of the possible values
+in <code>SqliteType</code></li>
+<li><code>#[diesel(mysql_type(name = &quot;TypeName&quot;))]</code>, specifies support for a mysql type
+with the given name. <code>TypeName</code> needs to be one of the possible values
+in <code>MysqlType</code></li>
+</ul>
+</div></details></section></div></main></body></html>

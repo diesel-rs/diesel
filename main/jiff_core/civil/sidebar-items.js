@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Weekday"],"fn":["date","datetime","days_in_month","days_in_year","is_leap_year","is_long_iso_week_year","time","weeks_in_iso_week_year"],"struct":["Date","DateTime","ISOWeekDate","Time","TimeNanosecond","TimeSecond","UnixEpochDay","WeekdaysForward","WeekdaysReverse"]};

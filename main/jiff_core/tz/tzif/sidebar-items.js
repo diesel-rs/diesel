@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Indicator","TransitionKind"],"fn":["is_possibly_tzif"],"struct":["DateTime","LocalTimeType","MaybeNamedTimeZone","ParseError","TimeZone","Timestamp","TransitionInfo","Transitions"]};

@@ -1,0 +1,515 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/x509-cert-0.2.5/src/ext/pkix/crl.rs`."><title>crl.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="x509_cert" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../../../static.files/storage-41dd4d93.js"></script><script defer src="../../../../static.files/src-script-813739b1.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-101b5a15.css"></noscript><link rel="icon" href="https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">x509_cert/ext/pkix/</div>crl.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! PKIX Certificate Revocation List extensions
+<a href=#2 id=2 data-nosnippet>2</a>
+<a href=#3 id=3 data-nosnippet>3</a></span><span class="kw">pub mod </span><a href="crl/dp.rs.html#1-127">dp</a>;
+<a href=#4 id=4 data-nosnippet>4</a>
+<a href=#5 id=5 data-nosnippet>5</a><span class="kw">use </span>const_oid::db::rfc5280::{
+<a href=#6 id=6 data-nosnippet>6</a>    <a href="../../../../const_oid/db/gen/rfc5280/constant.ID_CE_CRL_DISTRIBUTION_POINTS.html">ID_CE_CRL_DISTRIBUTION_POINTS</a>, <a href="../../../../const_oid/db/gen/rfc5280/constant.ID_CE_CRL_NUMBER.html">ID_CE_CRL_NUMBER</a>, <a href="../../../../const_oid/db/gen/rfc5280/constant.ID_CE_CRL_REASONS.html">ID_CE_CRL_REASONS</a>, <a href="../../../../const_oid/db/gen/rfc5280/constant.ID_CE_DELTA_CRL_INDICATOR.html">ID_CE_DELTA_CRL_INDICATOR</a>,
+<a href=#7 id=7 data-nosnippet>7</a>    <a href="../../../../const_oid/db/gen/rfc5280/constant.ID_CE_FRESHEST_CRL.html">ID_CE_FRESHEST_CRL</a>,
+<a href=#8 id=8 data-nosnippet>8</a>};
+<a href=#9 id=9 data-nosnippet>9</a><span class="kw">use </span>const_oid::{<a href="../../../../const_oid/trait.AssociatedOid.html">AssociatedOid</a>, <a href="../../../../const_oid/struct.ObjectIdentifier.html">ObjectIdentifier</a>};
+<a href=#10 id=10 data-nosnippet>10</a><span class="kw">pub use </span><a href="crl/dp.rs.html#27-61">dp::IssuingDistributionPoint</a>;
+<a href=#11 id=11 data-nosnippet>11</a>
+<a href=#12 id=12 data-nosnippet>12</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">alloc::vec::Vec</a>;
+<a href=#13 id=13 data-nosnippet>13</a>
+<a href=#14 id=14 data-nosnippet>14</a><span class="kw">use </span>der::{<a href="../../../../der/asn1/integer/uint/allocating/struct.Uint.html">asn1::Uint</a>, <a href="../../../../der_derive/derive.Enumerated.html">Enumerated</a>};
+<a href=#15 id=15 data-nosnippet>15</a>
+<a href=#16 id=16 data-nosnippet>16</a><span class="doccomment">/// CrlNumber as defined in [RFC 5280 Section 5.2.3].
+<a href=#17 id=17 data-nosnippet>17</a>///
+<a href=#18 id=18 data-nosnippet>18</a>/// ```text
+<a href=#19 id=19 data-nosnippet>19</a>/// CRLNumber ::= INTEGER (0..MAX)
+<a href=#20 id=20 data-nosnippet>20</a>/// ```
+<a href=#21 id=21 data-nosnippet>21</a>///
+<a href=#22 id=22 data-nosnippet>22</a>/// [RFC 5280 Section 5.2.3]: https://datatracker.ietf.org/doc/html/rfc5280#section-5.2.3
+<a href=#23 id=23 data-nosnippet>23</a></span><span class="expansion"><input id=expand-23 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>CrlNumber {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
+        CrlNumber(::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>))
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>CrlNumber {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::debug_struct_field1_finish(f, <span class="string">"CrlNumber"</span>,
+            &amp;&amp;<span class="self">self</span>.<span class="number">0</span>)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::marker::StructuralPartialEq <span class="kw">for </span>CrlNumber
+    {
+}
+<span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::cmp::PartialEq <span class="kw">for </span>CrlNumber {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; bool { <span class="self">self</span>.<span class="number">0 </span>== other.<span class="number">0 </span>}
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.PartialEq.html">PartialEq</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::cmp::Eq <span class="kw">for </span>CrlNumber {
+    <span class="attr">#[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    </span><span class="kw">fn </span>assert_fields_are_eq(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;Uint&gt;;
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.Eq.html">Eq</a></span></span></span><span class="attr">)]
+<a href=#24 id=24 data-nosnippet>24</a></span><span class="kw">pub struct </span><a href="../../../../x509_cert/ext/pkix/crl/struct.CrlNumber.html">CrlNumber</a>(<span class="kw">pub </span><a href="../../../../der/asn1/integer/uint/allocating/struct.Uint.html">Uint</a>);
+<a href=#25 id=25 data-nosnippet>25</a>
+<a href=#26 id=26 data-nosnippet>26</a><span class="kw">impl </span><a href="../../../../const_oid/trait.AssociatedOid.html">AssociatedOid</a> <span class="kw">for </span><a href="#24">CrlNumber</a> {
+<a href=#27 id=27 data-nosnippet>27</a>    <span class="kw">const </span>OID: <a href="../../../../const_oid/struct.ObjectIdentifier.html">ObjectIdentifier</a> = <a href="../../../../const_oid/db/gen/rfc5280/constant.ID_CE_CRL_NUMBER.html">ID_CE_CRL_NUMBER</a>;
+<a href=#28 id=28 data-nosnippet>28</a>}
+<a href=#29 id=29 data-nosnippet>29</a>
+<a href=#30 id=30 data-nosnippet>30</a><span class="expansion"><input id=expand-30 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class=expanded><span class="attr">#[allow(unused_lifetimes)]
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; From&lt;Uint&gt; <span class="kw">for </span>CrlNumber {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>from(value: Uint) -&gt; <span class="self">Self </span>{ <span class="self">Self</span>(value) }
+}
+<span class="attr">#[allow(unused_lifetimes)]
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; From&lt;CrlNumber&gt; <span class="kw">for </span>Uint {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>from(value: CrlNumber) -&gt; <span class="self">Self </span>{ value.<span class="number">0 </span>}
+}
+<span class="attr">#[allow(unused_lifetimes)]
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; AsRef&lt;Uint&gt; <span class="kw">for </span>CrlNumber {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>as_ref(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>Uint { <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0 </span>}
+}
+<span class="attr">#[allow(unused_lifetimes)]
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; AsMut&lt;Uint&gt; <span class="kw">for </span>CrlNumber {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>as_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span>Uint { <span class="kw-2">&amp;mut </span><span class="self">self</span>.<span class="number">0 </span>}
+}
+<span class="attr">#[allow(unused_lifetimes)]
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; ::der::FixedTag <span class="kw">for </span>CrlNumber {
+    <span class="kw">const </span>TAG: ::der::Tag = &lt;Uint <span class="kw">as </span>::der::FixedTag&gt;::TAG;
+}
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; ::der::DecodeValue&lt;<span class="lifetime">'a</span>&gt; <span class="kw">for </span>CrlNumber {
+    <span class="kw">fn </span>decode_value&lt;R: ::der::Reader&lt;<span class="lifetime">'a</span>&gt;&gt;(decoder: <span class="kw-2">&amp;mut </span>R,
+        header: ::der::Header) -&gt; ::der::Result&lt;<span class="self">Self</span>&gt; {
+        <span class="prelude-val">Ok</span>(<span class="self">Self</span>(&lt;Uint <span class="kw">as </span>::der::DecodeValue&gt;::decode_value(decoder, header)<span class="question-mark">?</span>))
+    }
+}
+<span class="attr">#[allow(unused_lifetimes)]
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; ::der::EncodeValue <span class="kw">for </span>CrlNumber {
+    <span class="kw">fn </span>encode_value(<span class="kw-2">&amp;</span><span class="self">self</span>, encoder: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>::der::Writer)
+        -&gt; ::der::Result&lt;()&gt; {
+        <span class="self">self</span>.<span class="number">0</span>.encode_value(encoder)
+    }
+    <span class="kw">fn </span>value_len(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ::der::Result&lt;::der::Length&gt; { <span class="self">self</span>.<span class="number">0</span>.value_len() }
+}
+<span class="attr">#[allow(unused_lifetimes)]
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; ::der::ValueOrd <span class="kw">for </span>CrlNumber {
+    <span class="kw">fn </span>value_cmp(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>)
+        -&gt; ::der::Result&lt;::core::cmp::Ordering&gt; {
+        <span class="self">self</span>.<span class="number">0</span>.value_cmp(<span class="kw-2">&amp;</span>other.<span class="number">0</span>)
+    }
+}</span><span class="original"><a href="../../macros.rs.html#12-80">impl_newtype!</a>(<a href="#24">CrlNumber</a>, <a href="../../../../der/asn1/integer/uint/allocating/struct.Uint.html">Uint</a>)</span></span>;
+<a href=#31 id=31 data-nosnippet>31</a><span class="expansion"><input id=expand-31 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class=expanded><span class="kw">impl </span><span class="kw">crate</span>::ext::AsExtension <span class="kw">for </span>CrlNumber {
+    <span class="kw">fn </span>critical(<span class="kw-2">&amp;</span><span class="self">self</span>, _subject: <span class="kw-2">&amp;</span><span class="kw">crate</span>::name::Name,
+        _extensions: <span class="kw-2">&amp;</span>[<span class="kw">crate</span>::ext::Extension]) -&gt; bool {
+        <span class="bool-val">false
+    </span>}
+}</span><span class="original"><a href="../../macros.rs.html#83-98">impl_extension!</a>(<a href="#24">CrlNumber</a>, critical = <span class="bool-val">false</span>)</span></span>;
+<a href=#32 id=32 data-nosnippet>32</a>
+<a href=#33 id=33 data-nosnippet>33</a><span class="doccomment">/// BaseCRLNumber as defined in [RFC 5280 Section 5.2.4].
+<a href=#34 id=34 data-nosnippet>34</a>///
+<a href=#35 id=35 data-nosnippet>35</a>/// ```text
+<a href=#36 id=36 data-nosnippet>36</a>/// BaseCRLNumber ::= CRLNumber
+<a href=#37 id=37 data-nosnippet>37</a>/// ```
+<a href=#38 id=38 data-nosnippet>38</a>///
+<a href=#39 id=39 data-nosnippet>39</a>/// [RFC 5280 Section 5.2.4]: https://datatracker.ietf.org/doc/html/rfc5280#section-5.2.4
+<a href=#40 id=40 data-nosnippet>40</a></span><span class="expansion"><input id=expand-40 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>BaseCrlNumber {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
+        BaseCrlNumber(::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>))
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>BaseCrlNumber {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::debug_struct_field1_finish(f, <span class="string">"BaseCrlNumber"</span>,
+            &amp;&amp;<span class="self">self</span>.<span class="number">0</span>)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::marker::StructuralPartialEq <span class="kw">for
+    </span>BaseCrlNumber {
+}
+<span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::cmp::PartialEq <span class="kw">for </span>BaseCrlNumber {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; bool { <span class="self">self</span>.<span class="number">0 </span>== other.<span class="number">0 </span>}
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.PartialEq.html">PartialEq</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::cmp::Eq <span class="kw">for </span>BaseCrlNumber {
+    <span class="attr">#[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    </span><span class="kw">fn </span>assert_fields_are_eq(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;Uint&gt;;
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.Eq.html">Eq</a></span></span></span><span class="attr">)]
+<a href=#41 id=41 data-nosnippet>41</a></span><span class="kw">pub struct </span><a href="../../../../x509_cert/ext/pkix/crl/struct.BaseCrlNumber.html">BaseCrlNumber</a>(<span class="kw">pub </span><a href="../../../../der/asn1/integer/uint/allocating/struct.Uint.html">Uint</a>);
+<a href=#42 id=42 data-nosnippet>42</a>
+<a href=#43 id=43 data-nosnippet>43</a><span class="kw">impl </span><a href="../../../../const_oid/trait.AssociatedOid.html">AssociatedOid</a> <span class="kw">for </span><a href="#41">BaseCrlNumber</a> {
+<a href=#44 id=44 data-nosnippet>44</a>    <span class="kw">const </span>OID: <a href="../../../../const_oid/struct.ObjectIdentifier.html">ObjectIdentifier</a> = <a href="../../../../const_oid/db/gen/rfc5280/constant.ID_CE_DELTA_CRL_INDICATOR.html">ID_CE_DELTA_CRL_INDICATOR</a>;
+<a href=#45 id=45 data-nosnippet>45</a>}
+<a href=#46 id=46 data-nosnippet>46</a>
+<a href=#47 id=47 data-nosnippet>47</a><span class="expansion"><input id=expand-47 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class=expanded><span class="attr">#[allow(unused_lifetimes)]
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; From&lt;Uint&gt; <span class="kw">for </span>BaseCrlNumber {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>from(value: Uint) -&gt; <span class="self">Self </span>{ <span class="self">Self</span>(value) }
+}
+<span class="attr">#[allow(unused_lifetimes)]
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; From&lt;BaseCrlNumber&gt; <span class="kw">for </span>Uint {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>from(value: BaseCrlNumber) -&gt; <span class="self">Self </span>{ value.<span class="number">0 </span>}
+}
+<span class="attr">#[allow(unused_lifetimes)]
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; AsRef&lt;Uint&gt; <span class="kw">for </span>BaseCrlNumber {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>as_ref(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>Uint { <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0 </span>}
+}
+<span class="attr">#[allow(unused_lifetimes)]
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; AsMut&lt;Uint&gt; <span class="kw">for </span>BaseCrlNumber {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>as_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span>Uint { <span class="kw-2">&amp;mut </span><span class="self">self</span>.<span class="number">0 </span>}
+}
+<span class="attr">#[allow(unused_lifetimes)]
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; ::der::FixedTag <span class="kw">for </span>BaseCrlNumber {
+    <span class="kw">const </span>TAG: ::der::Tag = &lt;Uint <span class="kw">as </span>::der::FixedTag&gt;::TAG;
+}
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; ::der::DecodeValue&lt;<span class="lifetime">'a</span>&gt; <span class="kw">for </span>BaseCrlNumber {
+    <span class="kw">fn </span>decode_value&lt;R: ::der::Reader&lt;<span class="lifetime">'a</span>&gt;&gt;(decoder: <span class="kw-2">&amp;mut </span>R,
+        header: ::der::Header) -&gt; ::der::Result&lt;<span class="self">Self</span>&gt; {
+        <span class="prelude-val">Ok</span>(<span class="self">Self</span>(&lt;Uint <span class="kw">as </span>::der::DecodeValue&gt;::decode_value(decoder, header)<span class="question-mark">?</span>))
+    }
+}
+<span class="attr">#[allow(unused_lifetimes)]
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; ::der::EncodeValue <span class="kw">for </span>BaseCrlNumber {
+    <span class="kw">fn </span>encode_value(<span class="kw-2">&amp;</span><span class="self">self</span>, encoder: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>::der::Writer)
+        -&gt; ::der::Result&lt;()&gt; {
+        <span class="self">self</span>.<span class="number">0</span>.encode_value(encoder)
+    }
+    <span class="kw">fn </span>value_len(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ::der::Result&lt;::der::Length&gt; { <span class="self">self</span>.<span class="number">0</span>.value_len() }
+}
+<span class="attr">#[allow(unused_lifetimes)]
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; ::der::ValueOrd <span class="kw">for </span>BaseCrlNumber {
+    <span class="kw">fn </span>value_cmp(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>)
+        -&gt; ::der::Result&lt;::core::cmp::Ordering&gt; {
+        <span class="self">self</span>.<span class="number">0</span>.value_cmp(<span class="kw-2">&amp;</span>other.<span class="number">0</span>)
+    }
+}</span><span class="original"><a href="../../macros.rs.html#12-80">impl_newtype!</a>(<a href="#41">BaseCrlNumber</a>, <a href="../../../../der/asn1/integer/uint/allocating/struct.Uint.html">Uint</a>)</span></span>;
+<a href=#48 id=48 data-nosnippet>48</a><span class="expansion"><input id=expand-48 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class=expanded><span class="kw">impl </span><span class="kw">crate</span>::ext::AsExtension <span class="kw">for </span>BaseCrlNumber {
+    <span class="kw">fn </span>critical(<span class="kw-2">&amp;</span><span class="self">self</span>, _subject: <span class="kw-2">&amp;</span><span class="kw">crate</span>::name::Name,
+        _extensions: <span class="kw-2">&amp;</span>[<span class="kw">crate</span>::ext::Extension]) -&gt; bool {
+        <span class="bool-val">true
+    </span>}
+}</span><span class="original"><a href="../../macros.rs.html#83-98">impl_extension!</a>(<a href="#41">BaseCrlNumber</a>, critical = <span class="bool-val">true</span>)</span></span>;
+<a href=#49 id=49 data-nosnippet>49</a>
+<a href=#50 id=50 data-nosnippet>50</a><span class="doccomment">/// CrlDistributionPoints as defined in [RFC 5280 Section 4.2.1.13].
+<a href=#51 id=51 data-nosnippet>51</a>///
+<a href=#52 id=52 data-nosnippet>52</a>/// ```text
+<a href=#53 id=53 data-nosnippet>53</a>/// CRLDistributionPoints ::= SEQUENCE SIZE (1..MAX) OF DistributionPoint
+<a href=#54 id=54 data-nosnippet>54</a>/// ```
+<a href=#55 id=55 data-nosnippet>55</a>///
+<a href=#56 id=56 data-nosnippet>56</a>/// [RFC 5280 Section 4.2.1.13]: https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.1.13
+<a href=#57 id=57 data-nosnippet>57</a></span><span class="expansion"><input id=expand-57 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>CrlDistributionPoints {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
+        CrlDistributionPoints(::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>))
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>CrlDistributionPoints {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::debug_struct_field1_finish(f,
+            <span class="string">"CrlDistributionPoints"</span>, &amp;&amp;<span class="self">self</span>.<span class="number">0</span>)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::default::Default <span class="kw">for
+    </span>CrlDistributionPoints {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
+        CrlDistributionPoints(::core::default::Default::default())
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/default/derive.Default.html">Default</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::marker::StructuralPartialEq <span class="kw">for
+    </span>CrlDistributionPoints {
+}
+<span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::cmp::PartialEq <span class="kw">for </span>CrlDistributionPoints
+    {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; bool { <span class="self">self</span>.<span class="number">0 </span>== other.<span class="number">0 </span>}
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.PartialEq.html">PartialEq</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::cmp::Eq <span class="kw">for </span>CrlDistributionPoints {
+    <span class="attr">#[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    </span><span class="kw">fn </span>assert_fields_are_eq(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;Vec&lt;dp::DistributionPoint&gt;&gt;;
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.Eq.html">Eq</a></span></span></span><span class="attr">)]
+<a href=#58 id=58 data-nosnippet>58</a></span><span class="kw">pub struct </span><a href="../../../../x509_cert/ext/pkix/crl/struct.CrlDistributionPoints.html">CrlDistributionPoints</a>(<span class="kw">pub </span><a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;dp::<a href="crl/dp.rs.html#81-90">DistributionPoint</a>&gt;);
+<a href=#59 id=59 data-nosnippet>59</a>
+<a href=#60 id=60 data-nosnippet>60</a><span class="kw">impl </span><a href="../../../../const_oid/trait.AssociatedOid.html">AssociatedOid</a> <span class="kw">for </span><a href="#58">CrlDistributionPoints</a> {
+<a href=#61 id=61 data-nosnippet>61</a>    <span class="kw">const </span>OID: <a href="../../../../const_oid/struct.ObjectIdentifier.html">ObjectIdentifier</a> = <a href="../../../../const_oid/db/gen/rfc5280/constant.ID_CE_CRL_DISTRIBUTION_POINTS.html">ID_CE_CRL_DISTRIBUTION_POINTS</a>;
+<a href=#62 id=62 data-nosnippet>62</a>}
+<a href=#63 id=63 data-nosnippet>63</a>
+<a href=#64 id=64 data-nosnippet>64</a><span class="expansion"><input id=expand-64 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class=expanded><span class="attr">#[allow(unused_lifetimes)]
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; From&lt;Vec&lt;dp::DistributionPoint&gt;&gt; <span class="kw">for </span>CrlDistributionPoints {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>from(value: Vec&lt;dp::DistributionPoint&gt;) -&gt; <span class="self">Self </span>{ <span class="self">Self</span>(value) }
+}
+<span class="attr">#[allow(unused_lifetimes)]
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; From&lt;CrlDistributionPoints&gt; <span class="kw">for </span>Vec&lt;dp::DistributionPoint&gt; {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>from(value: CrlDistributionPoints) -&gt; <span class="self">Self </span>{ value.<span class="number">0 </span>}
+}
+<span class="attr">#[allow(unused_lifetimes)]
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; AsRef&lt;Vec&lt;dp::DistributionPoint&gt;&gt; <span class="kw">for </span>CrlDistributionPoints {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>as_ref(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>Vec&lt;dp::DistributionPoint&gt; { <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0 </span>}
+}
+<span class="attr">#[allow(unused_lifetimes)]
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; AsMut&lt;Vec&lt;dp::DistributionPoint&gt;&gt; <span class="kw">for </span>CrlDistributionPoints {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>as_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span>Vec&lt;dp::DistributionPoint&gt; { <span class="kw-2">&amp;mut </span><span class="self">self</span>.<span class="number">0 </span>}
+}
+<span class="attr">#[allow(unused_lifetimes)]
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; ::der::FixedTag <span class="kw">for </span>CrlDistributionPoints {
+    <span class="kw">const </span>TAG: ::der::Tag =
+        &lt;Vec&lt;dp::DistributionPoint&gt; <span class="kw">as </span>::der::FixedTag&gt;::TAG;
+}
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; ::der::DecodeValue&lt;<span class="lifetime">'a</span>&gt; <span class="kw">for </span>CrlDistributionPoints {
+    <span class="kw">fn </span>decode_value&lt;R: ::der::Reader&lt;<span class="lifetime">'a</span>&gt;&gt;(decoder: <span class="kw-2">&amp;mut </span>R,
+        header: ::der::Header) -&gt; ::der::Result&lt;<span class="self">Self</span>&gt; {
+        <span class="prelude-val">Ok</span>(<span class="self">Self</span>(&lt;Vec&lt;dp::DistributionPoint&gt; <span class="kw">as
+                            </span>::der::DecodeValue&gt;::decode_value(decoder, header)<span class="question-mark">?</span>))
+    }
+}
+<span class="attr">#[allow(unused_lifetimes)]
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; ::der::EncodeValue <span class="kw">for </span>CrlDistributionPoints {
+    <span class="kw">fn </span>encode_value(<span class="kw-2">&amp;</span><span class="self">self</span>, encoder: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>::der::Writer)
+        -&gt; ::der::Result&lt;()&gt; {
+        <span class="self">self</span>.<span class="number">0</span>.encode_value(encoder)
+    }
+    <span class="kw">fn </span>value_len(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ::der::Result&lt;::der::Length&gt; { <span class="self">self</span>.<span class="number">0</span>.value_len() }
+}
+<span class="attr">#[allow(unused_lifetimes)]
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; ::der::ValueOrd <span class="kw">for </span>CrlDistributionPoints {
+    <span class="kw">fn </span>value_cmp(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>)
+        -&gt; ::der::Result&lt;::core::cmp::Ordering&gt; {
+        <span class="self">self</span>.<span class="number">0</span>.value_cmp(<span class="kw-2">&amp;</span>other.<span class="number">0</span>)
+    }
+}</span><span class="original"><a href="../../macros.rs.html#12-80">impl_newtype!</a>(<a href="#58">CrlDistributionPoints</a>, <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;dp::<a href="crl/dp.rs.html#81-90">DistributionPoint</a>&gt;)</span></span>;
+<a href=#65 id=65 data-nosnippet>65</a><span class="expansion"><input id=expand-65 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class=expanded><span class="kw">impl </span><span class="kw">crate</span>::ext::AsExtension <span class="kw">for </span>CrlDistributionPoints {
+    <span class="kw">fn </span>critical(<span class="kw-2">&amp;</span><span class="self">self</span>, _subject: <span class="kw-2">&amp;</span><span class="kw">crate</span>::name::Name,
+        _extensions: <span class="kw-2">&amp;</span>[<span class="kw">crate</span>::ext::Extension]) -&gt; bool {
+        <span class="bool-val">false
+    </span>}
+}</span><span class="original"><a href="../../macros.rs.html#83-98">impl_extension!</a>(<a href="#58">CrlDistributionPoints</a>, critical = <span class="bool-val">false</span>)</span></span>;
+<a href=#66 id=66 data-nosnippet>66</a>
+<a href=#67 id=67 data-nosnippet>67</a><span class="doccomment">/// FreshestCrl as defined in [RFC 5280 Section 5.2.6].
+<a href=#68 id=68 data-nosnippet>68</a>///
+<a href=#69 id=69 data-nosnippet>69</a>/// ```text
+<a href=#70 id=70 data-nosnippet>70</a>/// FreshestCRL ::= CRLDistributionPoints
+<a href=#71 id=71 data-nosnippet>71</a>/// ```
+<a href=#72 id=72 data-nosnippet>72</a>///
+<a href=#73 id=73 data-nosnippet>73</a>/// [RFC 5280 Section 5.2.6]: https://datatracker.ietf.org/doc/html/rfc5280#section-5.2.6
+<a href=#74 id=74 data-nosnippet>74</a></span><span class="expansion"><input id=expand-74 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>FreshestCrl {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
+        FreshestCrl(::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>))
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>FreshestCrl {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::debug_struct_field1_finish(f, <span class="string">"FreshestCrl"</span>,
+            &amp;&amp;<span class="self">self</span>.<span class="number">0</span>)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::default::Default <span class="kw">for </span>FreshestCrl {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{ FreshestCrl(::core::default::Default::default()) }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/default/derive.Default.html">Default</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::marker::StructuralPartialEq <span class="kw">for
+    </span>FreshestCrl {
+}
+<span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::cmp::PartialEq <span class="kw">for </span>FreshestCrl {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; bool { <span class="self">self</span>.<span class="number">0 </span>== other.<span class="number">0 </span>}
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.PartialEq.html">PartialEq</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::cmp::Eq <span class="kw">for </span>FreshestCrl {
+    <span class="attr">#[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    </span><span class="kw">fn </span>assert_fields_are_eq(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;Vec&lt;dp::DistributionPoint&gt;&gt;;
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.Eq.html">Eq</a></span></span></span><span class="attr">)]
+<a href=#75 id=75 data-nosnippet>75</a></span><span class="kw">pub struct </span><a href="../../../../x509_cert/ext/pkix/crl/struct.FreshestCrl.html">FreshestCrl</a>(<span class="kw">pub </span><a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;dp::<a href="crl/dp.rs.html#81-90">DistributionPoint</a>&gt;);
+<a href=#76 id=76 data-nosnippet>76</a>
+<a href=#77 id=77 data-nosnippet>77</a><span class="kw">impl </span><a href="../../../../const_oid/trait.AssociatedOid.html">AssociatedOid</a> <span class="kw">for </span><a href="#75">FreshestCrl</a> {
+<a href=#78 id=78 data-nosnippet>78</a>    <span class="kw">const </span>OID: <a href="../../../../const_oid/struct.ObjectIdentifier.html">ObjectIdentifier</a> = <a href="../../../../const_oid/db/gen/rfc5280/constant.ID_CE_FRESHEST_CRL.html">ID_CE_FRESHEST_CRL</a>;
+<a href=#79 id=79 data-nosnippet>79</a>}
+<a href=#80 id=80 data-nosnippet>80</a>
+<a href=#81 id=81 data-nosnippet>81</a><span class="expansion"><input id=expand-81 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class=expanded><span class="attr">#[allow(unused_lifetimes)]
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; From&lt;Vec&lt;dp::DistributionPoint&gt;&gt; <span class="kw">for </span>FreshestCrl {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>from(value: Vec&lt;dp::DistributionPoint&gt;) -&gt; <span class="self">Self </span>{ <span class="self">Self</span>(value) }
+}
+<span class="attr">#[allow(unused_lifetimes)]
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; From&lt;FreshestCrl&gt; <span class="kw">for </span>Vec&lt;dp::DistributionPoint&gt; {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>from(value: FreshestCrl) -&gt; <span class="self">Self </span>{ value.<span class="number">0 </span>}
+}
+<span class="attr">#[allow(unused_lifetimes)]
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; AsRef&lt;Vec&lt;dp::DistributionPoint&gt;&gt; <span class="kw">for </span>FreshestCrl {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>as_ref(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>Vec&lt;dp::DistributionPoint&gt; { <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0 </span>}
+}
+<span class="attr">#[allow(unused_lifetimes)]
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; AsMut&lt;Vec&lt;dp::DistributionPoint&gt;&gt; <span class="kw">for </span>FreshestCrl {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>as_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span>Vec&lt;dp::DistributionPoint&gt; { <span class="kw-2">&amp;mut </span><span class="self">self</span>.<span class="number">0 </span>}
+}
+<span class="attr">#[allow(unused_lifetimes)]
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; ::der::FixedTag <span class="kw">for </span>FreshestCrl {
+    <span class="kw">const </span>TAG: ::der::Tag =
+        &lt;Vec&lt;dp::DistributionPoint&gt; <span class="kw">as </span>::der::FixedTag&gt;::TAG;
+}
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; ::der::DecodeValue&lt;<span class="lifetime">'a</span>&gt; <span class="kw">for </span>FreshestCrl {
+    <span class="kw">fn </span>decode_value&lt;R: ::der::Reader&lt;<span class="lifetime">'a</span>&gt;&gt;(decoder: <span class="kw-2">&amp;mut </span>R,
+        header: ::der::Header) -&gt; ::der::Result&lt;<span class="self">Self</span>&gt; {
+        <span class="prelude-val">Ok</span>(<span class="self">Self</span>(&lt;Vec&lt;dp::DistributionPoint&gt; <span class="kw">as
+                            </span>::der::DecodeValue&gt;::decode_value(decoder, header)<span class="question-mark">?</span>))
+    }
+}
+<span class="attr">#[allow(unused_lifetimes)]
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; ::der::EncodeValue <span class="kw">for </span>FreshestCrl {
+    <span class="kw">fn </span>encode_value(<span class="kw-2">&amp;</span><span class="self">self</span>, encoder: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>::der::Writer)
+        -&gt; ::der::Result&lt;()&gt; {
+        <span class="self">self</span>.<span class="number">0</span>.encode_value(encoder)
+    }
+    <span class="kw">fn </span>value_len(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ::der::Result&lt;::der::Length&gt; { <span class="self">self</span>.<span class="number">0</span>.value_len() }
+}
+<span class="attr">#[allow(unused_lifetimes)]
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; ::der::ValueOrd <span class="kw">for </span>FreshestCrl {
+    <span class="kw">fn </span>value_cmp(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>)
+        -&gt; ::der::Result&lt;::core::cmp::Ordering&gt; {
+        <span class="self">self</span>.<span class="number">0</span>.value_cmp(<span class="kw-2">&amp;</span>other.<span class="number">0</span>)
+    }
+}</span><span class="original"><a href="../../macros.rs.html#12-80">impl_newtype!</a>(<a href="#75">FreshestCrl</a>, <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;dp::<a href="crl/dp.rs.html#81-90">DistributionPoint</a>&gt;)</span></span>;
+<a href=#82 id=82 data-nosnippet>82</a><span class="expansion"><input id=expand-82 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class=expanded><span class="kw">impl </span><span class="kw">crate</span>::ext::AsExtension <span class="kw">for </span>FreshestCrl {
+    <span class="kw">fn </span>critical(<span class="kw-2">&amp;</span><span class="self">self</span>, _subject: <span class="kw-2">&amp;</span><span class="kw">crate</span>::name::Name,
+        _extensions: <span class="kw-2">&amp;</span>[<span class="kw">crate</span>::ext::Extension]) -&gt; bool {
+        <span class="bool-val">false
+    </span>}
+}</span><span class="original"><a href="../../macros.rs.html#83-98">impl_extension!</a>(<a href="#75">FreshestCrl</a>, critical = <span class="bool-val">false</span>)</span></span>;
+<a href=#83 id=83 data-nosnippet>83</a>
+<a href=#84 id=84 data-nosnippet>84</a><span class="doccomment">/// CRLReason as defined in [RFC 5280 Section 5.3.1].
+<a href=#85 id=85 data-nosnippet>85</a>///
+<a href=#86 id=86 data-nosnippet>86</a>/// ```text
+<a href=#87 id=87 data-nosnippet>87</a>/// CRLReason ::= ENUMERATED {
+<a href=#88 id=88 data-nosnippet>88</a>///     unspecified             (0),
+<a href=#89 id=89 data-nosnippet>89</a>///     keyCompromise           (1),
+<a href=#90 id=90 data-nosnippet>90</a>///     cACompromise            (2),
+<a href=#91 id=91 data-nosnippet>91</a>///     affiliationChanged      (3),
+<a href=#92 id=92 data-nosnippet>92</a>///     superseded              (4),
+<a href=#93 id=93 data-nosnippet>93</a>///     cessationOfOperation    (5),
+<a href=#94 id=94 data-nosnippet>94</a>///     certificateHold         (6),
+<a href=#95 id=95 data-nosnippet>95</a>///     removeFromCRL           (8),
+<a href=#96 id=96 data-nosnippet>96</a>///     privilegeWithdrawn      (9),
+<a href=#97 id=97 data-nosnippet>97</a>///     aACompromise           (10)
+<a href=#98 id=98 data-nosnippet>98</a>/// }
+<a href=#99 id=99 data-nosnippet>99</a>/// ```
+<a href=#100 id=100 data-nosnippet>100</a>///
+<a href=#101 id=101 data-nosnippet>101</a>/// [RFC 5280 Section 5.3.1]: https://datatracker.ietf.org/doc/html/rfc5280#section-5.3.1
+<a href=#102 id=102 data-nosnippet>102</a></span><span class="expansion"><input id=expand-102 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::marker::Copy <span class="kw">for </span>CrlReason { }</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/marker/derive.Copy.html">Copy</a></span>, <span class=expanded><span class="attr">#[automatically_derived]#[doc(hidden)]#[allow(missing_docs)]
+</span><span class="kw">unsafe impl </span>::core::clone::TrivialClone <span class="kw">for </span>CrlReason { }
+<span class="attr">#[automatically_derived]#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>CrlReason {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{ <span class="kw-2">*</span><span class="self">self </span>}
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[automatically_derived]#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>CrlReason {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::debug_c_like_enum_write_str(f,
+            <span class="string">"Unspecified KeyCompromise CaCompromise AffiliationChanged Superseded CessationOfOperation CertificateHold RemoveFromCRL PrivilegeWithdrawn AaCompromise"</span>,
+            <span class="kw">match </span><span class="self">self </span>{
+                CrlReason::Unspecified =&gt; <span class="number">0usize</span>,
+                CrlReason::KeyCompromise =&gt; <span class="number">12usize</span>,
+                CrlReason::CaCompromise =&gt; <span class="number">26usize</span>,
+                CrlReason::AffiliationChanged =&gt; <span class="number">39usize</span>,
+                CrlReason::Superseded =&gt; <span class="number">58usize</span>,
+                CrlReason::CessationOfOperation =&gt; <span class="number">69usize</span>,
+                CrlReason::CertificateHold =&gt; <span class="number">90usize</span>,
+                CrlReason::RemoveFromCRL =&gt; <span class="number">106usize</span>,
+                CrlReason::PrivilegeWithdrawn =&gt; <span class="number">120usize</span>,
+                CrlReason::AaCompromise =&gt; <span class="number">139usize</span>,
+            })
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[automatically_derived]#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::cmp::Eq <span class="kw">for </span>CrlReason { }</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.Eq.html">Eq</a></span>, <span class=expanded><span class="attr">#[automatically_derived]#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::marker::StructuralPartialEq <span class="kw">for </span>CrlReason { }
+<span class="attr">#[automatically_derived]#[allow(missing_docs)]
+</span><span class="kw">impl </span>::core::cmp::PartialEq <span class="kw">for </span>CrlReason {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; bool {
+        ::core::intrinsics::discriminant_value(<span class="self">self</span>) ==
+            ::core::intrinsics::discriminant_value(other)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.PartialEq.html">PartialEq</a></span>, <span class=expanded><span class="kw">impl</span>&lt;<span class="lifetime">'__der_lifetime</span>&gt; ::der::DecodeValue&lt;<span class="lifetime">'__der_lifetime</span>&gt; <span class="kw">for </span>CrlReason {
+    <span class="kw">fn </span>decode_value&lt;R: ::der::Reader&lt;<span class="lifetime">'__der_lifetime</span>&gt;&gt;(reader: <span class="kw-2">&amp;mut </span>R,
+        header: ::der::Header) -&gt; ::der::Result&lt;<span class="self">Self</span>&gt; {
+        &lt;u32 <span class="kw">as </span>::der::DecodeValue&gt;::decode_value(reader, header)<span class="question-mark">?</span>.try_into()
+    }
+}
+<span class="kw">impl </span>::der::EncodeValue <span class="kw">for </span>CrlReason {
+    <span class="kw">fn </span>value_len(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ::der::Result&lt;::der::Length&gt; {
+        ::der::EncodeValue::value_len(<span class="kw-2">&amp;</span>(<span class="kw-2">*</span><span class="self">self </span><span class="kw">as </span>u32))
+    }
+    <span class="kw">fn </span>encode_value(<span class="kw-2">&amp;</span><span class="self">self</span>, encoder: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>::der::Writer)
+        -&gt; ::der::Result&lt;()&gt; {
+        ::der::EncodeValue::encode_value(<span class="kw-2">&amp;</span>(<span class="kw-2">*</span><span class="self">self </span><span class="kw">as </span>u32), encoder)
+    }
+}
+<span class="kw">impl </span>::der::FixedTag <span class="kw">for </span>CrlReason {
+    <span class="kw">const </span>TAG: ::der::Tag = ::der::Tag::Enumerated;
+}
+<span class="kw">impl </span>TryFrom&lt;u32&gt; <span class="kw">for </span>CrlReason {
+    <span class="kw">type </span>Error = ::der::Error;
+    <span class="kw">fn </span>try_from(n: u32) -&gt; ::der::Result&lt;<span class="self">Self</span>&gt; {
+        <span class="kw">match </span>n {
+            <span class="number">0 </span>=&gt; <span class="prelude-val">Ok</span>(<span class="self">Self</span>::Unspecified),
+            <span class="number">1 </span>=&gt; <span class="prelude-val">Ok</span>(<span class="self">Self</span>::KeyCompromise),
+            <span class="number">2 </span>=&gt; <span class="prelude-val">Ok</span>(<span class="self">Self</span>::CaCompromise),
+            <span class="number">3 </span>=&gt; <span class="prelude-val">Ok</span>(<span class="self">Self</span>::AffiliationChanged),
+            <span class="number">4 </span>=&gt; <span class="prelude-val">Ok</span>(<span class="self">Self</span>::Superseded),
+            <span class="number">5 </span>=&gt; <span class="prelude-val">Ok</span>(<span class="self">Self</span>::CessationOfOperation),
+            <span class="number">6 </span>=&gt; <span class="prelude-val">Ok</span>(<span class="self">Self</span>::CertificateHold),
+            <span class="number">8 </span>=&gt; <span class="prelude-val">Ok</span>(<span class="self">Self</span>::RemoveFromCRL),
+            <span class="number">9 </span>=&gt; <span class="prelude-val">Ok</span>(<span class="self">Self</span>::PrivilegeWithdrawn),
+            <span class="number">10 </span>=&gt; <span class="prelude-val">Ok</span>(<span class="self">Self</span>::AaCompromise),
+            <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(::der::Tag::Enumerated.value_error()),
+        }
+    }
+}</span><span class="original"><a href="../../../../der_derive/derive.Enumerated.html">Enumerated</a></span></span></span><span class="attr">)]
+<a href=#103 id=103 data-nosnippet>103</a>#[allow(missing_docs)]
+<a href=#104 id=104 data-nosnippet>104</a>#[repr(<a href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>)]
+<a href=#105 id=105 data-nosnippet>105</a></span><span class="kw">pub enum </span><a href="#105-116">CrlReason</a> {
+<a href=#106 id=106 data-nosnippet>106</a>    Unspecified = <span class="number">0</span>,
+<a href=#107 id=107 data-nosnippet>107</a>    KeyCompromise = <span class="number">1</span>,
+<a href=#108 id=108 data-nosnippet>108</a>    CaCompromise = <span class="number">2</span>,
+<a href=#109 id=109 data-nosnippet>109</a>    AffiliationChanged = <span class="number">3</span>,
+<a href=#110 id=110 data-nosnippet>110</a>    Superseded = <span class="number">4</span>,
+<a href=#111 id=111 data-nosnippet>111</a>    CessationOfOperation = <span class="number">5</span>,
+<a href=#112 id=112 data-nosnippet>112</a>    CertificateHold = <span class="number">6</span>,
+<a href=#113 id=113 data-nosnippet>113</a>    RemoveFromCRL = <span class="number">8</span>,
+<a href=#114 id=114 data-nosnippet>114</a>    PrivilegeWithdrawn = <span class="number">9</span>,
+<a href=#115 id=115 data-nosnippet>115</a>    AaCompromise = <span class="number">10</span>,
+<a href=#116 id=116 data-nosnippet>116</a>}
+<a href=#117 id=117 data-nosnippet>117</a>
+<a href=#118 id=118 data-nosnippet>118</a><span class="kw">impl </span><a href="../../../../const_oid/trait.AssociatedOid.html">AssociatedOid</a> <span class="kw">for </span><a href="#105-116">CrlReason</a> {
+<a href=#119 id=119 data-nosnippet>119</a>    <span class="kw">const </span>OID: <a href="../../../../const_oid/struct.ObjectIdentifier.html">ObjectIdentifier</a> = <a href="../../../../const_oid/db/gen/rfc5280/constant.ID_CE_CRL_REASONS.html">ID_CE_CRL_REASONS</a>;
+<a href=#120 id=120 data-nosnippet>120</a>}
+<a href=#121 id=121 data-nosnippet>121</a>
+<a href=#122 id=122 data-nosnippet>122</a><span class="expansion"><input id=expand-122 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class=expanded><span class="kw">impl </span><span class="kw">crate</span>::ext::AsExtension <span class="kw">for </span>CrlReason {
+    <span class="kw">fn </span>critical(<span class="kw-2">&amp;</span><span class="self">self</span>, _subject: <span class="kw-2">&amp;</span><span class="kw">crate</span>::name::Name,
+        _extensions: <span class="kw-2">&amp;</span>[<span class="kw">crate</span>::ext::Extension]) -&gt; bool {
+        <span class="bool-val">false
+    </span>}
+}</span><span class="original"><a href="../../macros.rs.html#83-98">impl_extension!</a>(<a href="#105-116">CrlReason</a>, critical = <span class="bool-val">false</span>)</span></span>;
+</code></pre></div></section></main></body></html>

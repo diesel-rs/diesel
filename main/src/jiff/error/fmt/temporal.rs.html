@@ -1,0 +1,535 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/jiff-1.0.3/src/error/fmt/temporal.rs`."><title>temporal.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-1e18a8e7.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="jiff" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (6c709eb42 2026-11-25)" data-channel="nightly" data-search-js="search-085293d4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../../../static.files/storage-41dd4d93.js"></script><script defer src="../../../../static.files/src-script-813739b1.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">jiff/error/fmt/</div>temporal.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use crate</span>::{<a href="../../lib.rs.html#790">error</a>, <a href="../../tz/offset.rs.html#130-132">tz::Offset</a>, <a href="../../util/mod.rs.html#10">util::escape</a>};
+<a href=#2 id=2 data-nosnippet>2</a>
+<a href=#3 id=3 data-nosnippet>3</a><span class="expansion"><input id=expand-3 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>Error {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
+        <span class="kw">match </span><span class="self">self </span>{
+            <span class="self">Self</span>::AmbiguousTimeMonthDay =&gt; Error::AmbiguousTimeMonthDay,
+            <span class="self">Self</span>::AmbiguousTimeYearMonth =&gt; Error::AmbiguousTimeYearMonth,
+            <span class="self">Self</span>::CivilDateTimeZulu =&gt; Error::CivilDateTimeZulu,
+            <span class="self">Self</span>::ConvertDateTimeToTimestamp { offset: __self_0 } =&gt;
+                Error::ConvertDateTimeToTimestamp {
+                    offset: ::core::clone::Clone::clone(__self_0),
+                },
+            <span class="self">Self</span>::EmptyTimeZone =&gt; Error::EmptyTimeZone,
+            <span class="self">Self</span>::ExpectedDateDesignatorFoundByte { byte: __self_0 } =&gt;
+                Error::ExpectedDateDesignatorFoundByte {
+                    byte: ::core::clone::Clone::clone(__self_0),
+                },
+            <span class="self">Self</span>::ExpectedDateDesignatorFoundEndOfInput =&gt;
+                Error::ExpectedDateDesignatorFoundEndOfInput,
+            <span class="self">Self</span>::ExpectedDurationDesignatorFoundByte { byte: __self_0 } =&gt;
+                Error::ExpectedDurationDesignatorFoundByte {
+                    byte: ::core::clone::Clone::clone(__self_0),
+                },
+            <span class="self">Self</span>::ExpectedDurationDesignatorFoundEndOfInput =&gt;
+                Error::ExpectedDurationDesignatorFoundEndOfInput,
+            <span class="self">Self</span>::ExpectedFourDigitYear =&gt; Error::ExpectedFourDigitYear,
+            <span class="self">Self</span>::ExpectedNoSeparator =&gt; Error::ExpectedNoSeparator,
+            <span class="self">Self</span>::ExpectedOneDigitWeekday =&gt; Error::ExpectedOneDigitWeekday,
+            <span class="self">Self</span>::ExpectedSeparatorFoundByte { byte: __self_0 } =&gt;
+                Error::ExpectedSeparatorFoundByte {
+                    byte: ::core::clone::Clone::clone(__self_0),
+                },
+            <span class="self">Self</span>::ExpectedSeparatorFoundEndOfInput =&gt;
+                Error::ExpectedSeparatorFoundEndOfInput,
+            <span class="self">Self</span>::ExpectedSixDigitYear =&gt; Error::ExpectedSixDigitYear,
+            <span class="self">Self</span>::ExpectedTimeDesignator =&gt; Error::ExpectedTimeDesignator,
+            <span class="self">Self</span>::ExpectedTimeDesignatorFoundByte { byte: __self_0 } =&gt;
+                Error::ExpectedTimeDesignatorFoundByte {
+                    byte: ::core::clone::Clone::clone(__self_0),
+                },
+            <span class="self">Self</span>::ExpectedTimeDesignatorFoundEndOfInput =&gt;
+                Error::ExpectedTimeDesignatorFoundEndOfInput,
+            <span class="self">Self</span>::ExpectedTimeUnits =&gt; Error::ExpectedTimeUnits,
+            <span class="self">Self</span>::ExpectedTwoDigitDay =&gt; Error::ExpectedTwoDigitDay,
+            <span class="self">Self</span>::ExpectedTwoDigitHour =&gt; Error::ExpectedTwoDigitHour,
+            <span class="self">Self</span>::ExpectedTwoDigitMinute =&gt; Error::ExpectedTwoDigitMinute,
+            <span class="self">Self</span>::ExpectedTwoDigitMonth =&gt; Error::ExpectedTwoDigitMonth,
+            <span class="self">Self</span>::ExpectedTwoDigitSecond =&gt; Error::ExpectedTwoDigitSecond,
+            <span class="self">Self</span>::ExpectedTwoDigitWeekNumber =&gt;
+                Error::ExpectedTwoDigitWeekNumber,
+            <span class="self">Self</span>::ExpectedWeekPrefixFoundByte { byte: __self_0 } =&gt;
+                Error::ExpectedWeekPrefixFoundByte {
+                    byte: ::core::clone::Clone::clone(__self_0),
+                },
+            <span class="self">Self</span>::ExpectedWeekPrefixFoundEndOfInput =&gt;
+                Error::ExpectedWeekPrefixFoundEndOfInput,
+            <span class="self">Self</span>::FailedFractionalSecondInTime =&gt;
+                Error::FailedFractionalSecondInTime,
+            <span class="self">Self</span>::FailedOffsetNumeric =&gt; Error::FailedOffsetNumeric,
+            <span class="self">Self</span>::FailedSeparatorAfterMonth =&gt;
+                Error::FailedSeparatorAfterMonth,
+            <span class="self">Self</span>::FailedSeparatorAfterWeekNumber =&gt;
+                Error::FailedSeparatorAfterWeekNumber,
+            <span class="self">Self</span>::FailedSeparatorAfterYear =&gt; Error::FailedSeparatorAfterYear,
+            <span class="self">Self</span>::FailedTzdbLookup =&gt; Error::FailedTzdbLookup,
+            <span class="self">Self</span>::FailedWeekNumberPrefixInDate =&gt;
+                Error::FailedWeekNumberPrefixInDate,
+            <span class="self">Self</span>::InvalidDate =&gt; Error::InvalidDate,
+            <span class="self">Self</span>::InvalidMonthDay =&gt; Error::InvalidMonthDay,
+            <span class="self">Self</span>::InvalidTimeZoneUtf8 =&gt; Error::InvalidTimeZoneUtf8,
+            <span class="self">Self</span>::InvalidWeekDate =&gt; Error::InvalidWeekDate,
+            <span class="self">Self</span>::InvalidYearMonth =&gt; Error::InvalidYearMonth,
+            <span class="self">Self</span>::InvalidYearZero =&gt; Error::InvalidYearZero,
+            <span class="self">Self</span>::MissingOffsetInTimestamp =&gt; Error::MissingOffsetInTimestamp,
+            <span class="self">Self</span>::MissingTimeInDate =&gt; Error::MissingTimeInDate,
+            <span class="self">Self</span>::MissingTimeInTimestamp =&gt; Error::MissingTimeInTimestamp,
+            <span class="self">Self</span>::MissingTimeZoneAnnotation =&gt;
+                Error::MissingTimeZoneAnnotation,
+            <span class="self">Self</span>::ParseDayTwoDigit =&gt; Error::ParseDayTwoDigit,
+            <span class="self">Self</span>::ParseHourTwoDigit =&gt; Error::ParseHourTwoDigit,
+            <span class="self">Self</span>::ParseMinuteTwoDigit =&gt; Error::ParseMinuteTwoDigit,
+            <span class="self">Self</span>::ParseMonthTwoDigit =&gt; Error::ParseMonthTwoDigit,
+            <span class="self">Self</span>::ParseSecondTwoDigit =&gt; Error::ParseSecondTwoDigit,
+            <span class="self">Self</span>::ParseWeekNumberTwoDigit =&gt; Error::ParseWeekNumberTwoDigit,
+            <span class="self">Self</span>::ParseWeekdayOneDigit =&gt; Error::ParseWeekdayOneDigit,
+            <span class="self">Self</span>::ParseYearFourDigit =&gt; Error::ParseYearFourDigit,
+            <span class="self">Self</span>::ParseYearSixDigit =&gt; Error::ParseYearSixDigit,
+            <span class="self">Self</span>::PrintTimeZoneFailure =&gt; Error::PrintTimeZoneFailure,
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>Error {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        <span class="kw">match </span><span class="self">self </span>{
+            <span class="self">Self</span>::AmbiguousTimeMonthDay =&gt;
+                ::core::fmt::Formatter::write_str(f, <span class="string">"AmbiguousTimeMonthDay"</span>),
+            <span class="self">Self</span>::AmbiguousTimeYearMonth =&gt;
+                ::core::fmt::Formatter::write_str(f,
+                    <span class="string">"AmbiguousTimeYearMonth"</span>),
+            <span class="self">Self</span>::CivilDateTimeZulu =&gt;
+                ::core::fmt::Formatter::write_str(f, <span class="string">"CivilDateTimeZulu"</span>),
+            <span class="self">Self</span>::ConvertDateTimeToTimestamp { offset: __self_0 } =&gt;
+                ::core::fmt::Formatter::debug_struct_field1_finish(f,
+                    <span class="string">"ConvertDateTimeToTimestamp offset"</span>, <span class="kw-2">&amp;</span>__self_0),
+            <span class="self">Self</span>::EmptyTimeZone =&gt;
+                ::core::fmt::Formatter::write_str(f, <span class="string">"EmptyTimeZone"</span>),
+            <span class="self">Self</span>::ExpectedDateDesignatorFoundByte { byte: __self_0 } =&gt;
+                ::core::fmt::Formatter::debug_struct_field1_finish(f,
+                    <span class="string">"ExpectedDateDesignatorFoundByte byte"</span>, <span class="kw-2">&amp;</span>__self_0),
+            <span class="self">Self</span>::ExpectedDateDesignatorFoundEndOfInput =&gt;
+                ::core::fmt::Formatter::write_str(f,
+                    <span class="string">"ExpectedDateDesignatorFoundEndOfInput"</span>),
+            <span class="self">Self</span>::ExpectedDurationDesignatorFoundByte { byte: __self_0 } =&gt;
+                ::core::fmt::Formatter::debug_struct_field1_finish(f,
+                    <span class="string">"ExpectedDurationDesignatorFoundByte byte"</span>, <span class="kw-2">&amp;</span>__self_0),
+            <span class="self">Self</span>::ExpectedDurationDesignatorFoundEndOfInput =&gt;
+                ::core::fmt::Formatter::write_str(f,
+                    <span class="string">"ExpectedDurationDesignatorFoundEndOfInput"</span>),
+            <span class="self">Self</span>::ExpectedFourDigitYear =&gt;
+                ::core::fmt::Formatter::write_str(f, <span class="string">"ExpectedFourDigitYear"</span>),
+            <span class="self">Self</span>::ExpectedNoSeparator =&gt;
+                ::core::fmt::Formatter::write_str(f, <span class="string">"ExpectedNoSeparator"</span>),
+            <span class="self">Self</span>::ExpectedOneDigitWeekday =&gt;
+                ::core::fmt::Formatter::write_str(f,
+                    <span class="string">"ExpectedOneDigitWeekday"</span>),
+            <span class="self">Self</span>::ExpectedSeparatorFoundByte { byte: __self_0 } =&gt;
+                ::core::fmt::Formatter::debug_struct_field1_finish(f,
+                    <span class="string">"ExpectedSeparatorFoundByte byte"</span>, <span class="kw-2">&amp;</span>__self_0),
+            <span class="self">Self</span>::ExpectedSeparatorFoundEndOfInput =&gt;
+                ::core::fmt::Formatter::write_str(f,
+                    <span class="string">"ExpectedSeparatorFoundEndOfInput"</span>),
+            <span class="self">Self</span>::ExpectedSixDigitYear =&gt;
+                ::core::fmt::Formatter::write_str(f, <span class="string">"ExpectedSixDigitYear"</span>),
+            <span class="self">Self</span>::ExpectedTimeDesignator =&gt;
+                ::core::fmt::Formatter::write_str(f,
+                    <span class="string">"ExpectedTimeDesignator"</span>),
+            <span class="self">Self</span>::ExpectedTimeDesignatorFoundByte { byte: __self_0 } =&gt;
+                ::core::fmt::Formatter::debug_struct_field1_finish(f,
+                    <span class="string">"ExpectedTimeDesignatorFoundByte byte"</span>, <span class="kw-2">&amp;</span>__self_0),
+            <span class="self">Self</span>::ExpectedTimeDesignatorFoundEndOfInput =&gt;
+                ::core::fmt::Formatter::write_str(f,
+                    <span class="string">"ExpectedTimeDesignatorFoundEndOfInput"</span>),
+            <span class="self">Self</span>::ExpectedTimeUnits =&gt;
+                ::core::fmt::Formatter::write_str(f, <span class="string">"ExpectedTimeUnits"</span>),
+            <span class="self">Self</span>::ExpectedTwoDigitDay =&gt;
+                ::core::fmt::Formatter::write_str(f, <span class="string">"ExpectedTwoDigitDay"</span>),
+            <span class="self">Self</span>::ExpectedTwoDigitHour =&gt;
+                ::core::fmt::Formatter::write_str(f, <span class="string">"ExpectedTwoDigitHour"</span>),
+            <span class="self">Self</span>::ExpectedTwoDigitMinute =&gt;
+                ::core::fmt::Formatter::write_str(f,
+                    <span class="string">"ExpectedTwoDigitMinute"</span>),
+            <span class="self">Self</span>::ExpectedTwoDigitMonth =&gt;
+                ::core::fmt::Formatter::write_str(f, <span class="string">"ExpectedTwoDigitMonth"</span>),
+            <span class="self">Self</span>::ExpectedTwoDigitSecond =&gt;
+                ::core::fmt::Formatter::write_str(f,
+                    <span class="string">"ExpectedTwoDigitSecond"</span>),
+            <span class="self">Self</span>::ExpectedTwoDigitWeekNumber =&gt;
+                ::core::fmt::Formatter::write_str(f,
+                    <span class="string">"ExpectedTwoDigitWeekNumber"</span>),
+            <span class="self">Self</span>::ExpectedWeekPrefixFoundByte { byte: __self_0 } =&gt;
+                ::core::fmt::Formatter::debug_struct_field1_finish(f,
+                    <span class="string">"ExpectedWeekPrefixFoundByte byte"</span>, <span class="kw-2">&amp;</span>__self_0),
+            <span class="self">Self</span>::ExpectedWeekPrefixFoundEndOfInput =&gt;
+                ::core::fmt::Formatter::write_str(f,
+                    <span class="string">"ExpectedWeekPrefixFoundEndOfInput"</span>),
+            <span class="self">Self</span>::FailedFractionalSecondInTime =&gt;
+                ::core::fmt::Formatter::write_str(f,
+                    <span class="string">"FailedFractionalSecondInTime"</span>),
+            <span class="self">Self</span>::FailedOffsetNumeric =&gt;
+                ::core::fmt::Formatter::write_str(f, <span class="string">"FailedOffsetNumeric"</span>),
+            <span class="self">Self</span>::FailedSeparatorAfterMonth =&gt;
+                ::core::fmt::Formatter::write_str(f,
+                    <span class="string">"FailedSeparatorAfterMonth"</span>),
+            <span class="self">Self</span>::FailedSeparatorAfterWeekNumber =&gt;
+                ::core::fmt::Formatter::write_str(f,
+                    <span class="string">"FailedSeparatorAfterWeekNumber"</span>),
+            <span class="self">Self</span>::FailedSeparatorAfterYear =&gt;
+                ::core::fmt::Formatter::write_str(f,
+                    <span class="string">"FailedSeparatorAfterYear"</span>),
+            <span class="self">Self</span>::FailedTzdbLookup =&gt;
+                ::core::fmt::Formatter::write_str(f, <span class="string">"FailedTzdbLookup"</span>),
+            <span class="self">Self</span>::FailedWeekNumberPrefixInDate =&gt;
+                ::core::fmt::Formatter::write_str(f,
+                    <span class="string">"FailedWeekNumberPrefixInDate"</span>),
+            <span class="self">Self</span>::InvalidDate =&gt;
+                ::core::fmt::Formatter::write_str(f, <span class="string">"InvalidDate"</span>),
+            <span class="self">Self</span>::InvalidMonthDay =&gt;
+                ::core::fmt::Formatter::write_str(f, <span class="string">"InvalidMonthDay"</span>),
+            <span class="self">Self</span>::InvalidTimeZoneUtf8 =&gt;
+                ::core::fmt::Formatter::write_str(f, <span class="string">"InvalidTimeZoneUtf8"</span>),
+            <span class="self">Self</span>::InvalidWeekDate =&gt;
+                ::core::fmt::Formatter::write_str(f, <span class="string">"InvalidWeekDate"</span>),
+            <span class="self">Self</span>::InvalidYearMonth =&gt;
+                ::core::fmt::Formatter::write_str(f, <span class="string">"InvalidYearMonth"</span>),
+            <span class="self">Self</span>::InvalidYearZero =&gt;
+                ::core::fmt::Formatter::write_str(f, <span class="string">"InvalidYearZero"</span>),
+            <span class="self">Self</span>::MissingOffsetInTimestamp =&gt;
+                ::core::fmt::Formatter::write_str(f,
+                    <span class="string">"MissingOffsetInTimestamp"</span>),
+            <span class="self">Self</span>::MissingTimeInDate =&gt;
+                ::core::fmt::Formatter::write_str(f, <span class="string">"MissingTimeInDate"</span>),
+            <span class="self">Self</span>::MissingTimeInTimestamp =&gt;
+                ::core::fmt::Formatter::write_str(f,
+                    <span class="string">"MissingTimeInTimestamp"</span>),
+            <span class="self">Self</span>::MissingTimeZoneAnnotation =&gt;
+                ::core::fmt::Formatter::write_str(f,
+                    <span class="string">"MissingTimeZoneAnnotation"</span>),
+            <span class="self">Self</span>::ParseDayTwoDigit =&gt;
+                ::core::fmt::Formatter::write_str(f, <span class="string">"ParseDayTwoDigit"</span>),
+            <span class="self">Self</span>::ParseHourTwoDigit =&gt;
+                ::core::fmt::Formatter::write_str(f, <span class="string">"ParseHourTwoDigit"</span>),
+            <span class="self">Self</span>::ParseMinuteTwoDigit =&gt;
+                ::core::fmt::Formatter::write_str(f, <span class="string">"ParseMinuteTwoDigit"</span>),
+            <span class="self">Self</span>::ParseMonthTwoDigit =&gt;
+                ::core::fmt::Formatter::write_str(f, <span class="string">"ParseMonthTwoDigit"</span>),
+            <span class="self">Self</span>::ParseSecondTwoDigit =&gt;
+                ::core::fmt::Formatter::write_str(f, <span class="string">"ParseSecondTwoDigit"</span>),
+            <span class="self">Self</span>::ParseWeekNumberTwoDigit =&gt;
+                ::core::fmt::Formatter::write_str(f,
+                    <span class="string">"ParseWeekNumberTwoDigit"</span>),
+            <span class="self">Self</span>::ParseWeekdayOneDigit =&gt;
+                ::core::fmt::Formatter::write_str(f, <span class="string">"ParseWeekdayOneDigit"</span>),
+            <span class="self">Self</span>::ParseYearFourDigit =&gt;
+                ::core::fmt::Formatter::write_str(f, <span class="string">"ParseYearFourDigit"</span>),
+            <span class="self">Self</span>::ParseYearSixDigit =&gt;
+                ::core::fmt::Formatter::write_str(f, <span class="string">"ParseYearSixDigit"</span>),
+            <span class="self">Self</span>::PrintTimeZoneFailure =&gt;
+                ::core::fmt::Formatter::write_str(f, <span class="string">"PrintTimeZoneFailure"</span>),
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span></span></span><span class="attr">)]
+<a href=#4 id=4 data-nosnippet>4</a>#[cfg_attr(feature = <span class="string">"defmt"</span>, derive(defmt::Format))]
+<a href=#5 id=5 data-nosnippet>5</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">enum </span>Error {
+<a href=#6 id=6 data-nosnippet>6</a>    <span class="attr">#[cfg(not(feature = <span class="string">"alloc"</span>))]
+<a href=#7 id=7 data-nosnippet>7</a>    </span>AllocPosixTimeZone,
+<a href=#8 id=8 data-nosnippet>8</a>    AmbiguousTimeMonthDay,
+<a href=#9 id=9 data-nosnippet>9</a>    AmbiguousTimeYearMonth,
+<a href=#10 id=10 data-nosnippet>10</a>    CivilDateTimeZulu,
+<a href=#11 id=11 data-nosnippet>11</a>    ConvertDateTimeToTimestamp {
+<a href=#12 id=12 data-nosnippet>12</a>        offset: <a href="../../tz/offset.rs.html#130-132">Offset</a>,
+<a href=#13 id=13 data-nosnippet>13</a>    },
+<a href=#14 id=14 data-nosnippet>14</a>    EmptyTimeZone,
+<a href=#15 id=15 data-nosnippet>15</a>    ExpectedDateDesignatorFoundByte {
+<a href=#16 id=16 data-nosnippet>16</a>        byte: <a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>,
+<a href=#17 id=17 data-nosnippet>17</a>    },
+<a href=#18 id=18 data-nosnippet>18</a>    ExpectedDateDesignatorFoundEndOfInput,
+<a href=#19 id=19 data-nosnippet>19</a>    ExpectedDurationDesignatorFoundByte {
+<a href=#20 id=20 data-nosnippet>20</a>        byte: <a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>,
+<a href=#21 id=21 data-nosnippet>21</a>    },
+<a href=#22 id=22 data-nosnippet>22</a>    ExpectedDurationDesignatorFoundEndOfInput,
+<a href=#23 id=23 data-nosnippet>23</a>    ExpectedFourDigitYear,
+<a href=#24 id=24 data-nosnippet>24</a>    ExpectedNoSeparator,
+<a href=#25 id=25 data-nosnippet>25</a>    ExpectedOneDigitWeekday,
+<a href=#26 id=26 data-nosnippet>26</a>    ExpectedSeparatorFoundByte {
+<a href=#27 id=27 data-nosnippet>27</a>        byte: <a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>,
+<a href=#28 id=28 data-nosnippet>28</a>    },
+<a href=#29 id=29 data-nosnippet>29</a>    ExpectedSeparatorFoundEndOfInput,
+<a href=#30 id=30 data-nosnippet>30</a>    ExpectedSixDigitYear,
+<a href=#31 id=31 data-nosnippet>31</a>    ExpectedTimeDesignator,
+<a href=#32 id=32 data-nosnippet>32</a>    ExpectedTimeDesignatorFoundByte {
+<a href=#33 id=33 data-nosnippet>33</a>        byte: <a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>,
+<a href=#34 id=34 data-nosnippet>34</a>    },
+<a href=#35 id=35 data-nosnippet>35</a>    ExpectedTimeDesignatorFoundEndOfInput,
+<a href=#36 id=36 data-nosnippet>36</a>    ExpectedTimeUnits,
+<a href=#37 id=37 data-nosnippet>37</a>    ExpectedTwoDigitDay,
+<a href=#38 id=38 data-nosnippet>38</a>    ExpectedTwoDigitHour,
+<a href=#39 id=39 data-nosnippet>39</a>    ExpectedTwoDigitMinute,
+<a href=#40 id=40 data-nosnippet>40</a>    ExpectedTwoDigitMonth,
+<a href=#41 id=41 data-nosnippet>41</a>    ExpectedTwoDigitSecond,
+<a href=#42 id=42 data-nosnippet>42</a>    ExpectedTwoDigitWeekNumber,
+<a href=#43 id=43 data-nosnippet>43</a>    ExpectedWeekPrefixFoundByte {
+<a href=#44 id=44 data-nosnippet>44</a>        byte: <a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>,
+<a href=#45 id=45 data-nosnippet>45</a>    },
+<a href=#46 id=46 data-nosnippet>46</a>    ExpectedWeekPrefixFoundEndOfInput,
+<a href=#47 id=47 data-nosnippet>47</a>    FailedFractionalSecondInTime,
+<a href=#48 id=48 data-nosnippet>48</a>    FailedOffsetNumeric,
+<a href=#49 id=49 data-nosnippet>49</a>    FailedSeparatorAfterMonth,
+<a href=#50 id=50 data-nosnippet>50</a>    FailedSeparatorAfterWeekNumber,
+<a href=#51 id=51 data-nosnippet>51</a>    FailedSeparatorAfterYear,
+<a href=#52 id=52 data-nosnippet>52</a>    FailedTzdbLookup,
+<a href=#53 id=53 data-nosnippet>53</a>    FailedWeekNumberPrefixInDate,
+<a href=#54 id=54 data-nosnippet>54</a>    InvalidDate,
+<a href=#55 id=55 data-nosnippet>55</a>    InvalidMonthDay,
+<a href=#56 id=56 data-nosnippet>56</a>    InvalidTimeZoneUtf8,
+<a href=#57 id=57 data-nosnippet>57</a>    InvalidWeekDate,
+<a href=#58 id=58 data-nosnippet>58</a>    InvalidYearMonth,
+<a href=#59 id=59 data-nosnippet>59</a>    InvalidYearZero,
+<a href=#60 id=60 data-nosnippet>60</a>    MissingOffsetInTimestamp,
+<a href=#61 id=61 data-nosnippet>61</a>    MissingTimeInDate,
+<a href=#62 id=62 data-nosnippet>62</a>    MissingTimeInTimestamp,
+<a href=#63 id=63 data-nosnippet>63</a>    MissingTimeZoneAnnotation,
+<a href=#64 id=64 data-nosnippet>64</a>    ParseDayTwoDigit,
+<a href=#65 id=65 data-nosnippet>65</a>    ParseHourTwoDigit,
+<a href=#66 id=66 data-nosnippet>66</a>    ParseMinuteTwoDigit,
+<a href=#67 id=67 data-nosnippet>67</a>    ParseMonthTwoDigit,
+<a href=#68 id=68 data-nosnippet>68</a>    ParseSecondTwoDigit,
+<a href=#69 id=69 data-nosnippet>69</a>    ParseWeekNumberTwoDigit,
+<a href=#70 id=70 data-nosnippet>70</a>    ParseWeekdayOneDigit,
+<a href=#71 id=71 data-nosnippet>71</a>    ParseYearFourDigit,
+<a href=#72 id=72 data-nosnippet>72</a>    ParseYearSixDigit,
+<a href=#73 id=73 data-nosnippet>73</a>    <span class="comment">// This is the only error for formatting a Temporal value. And
+<a href=#74 id=74 data-nosnippet>74</a>    // actually, it's not even part of Temporal, but just lives in that
+<a href=#75 id=75 data-nosnippet>75</a>    // module (for convenience reasons).
+<a href=#76 id=76 data-nosnippet>76</a>    </span>PrintTimeZoneFailure,
+<a href=#77 id=77 data-nosnippet>77</a>}
+<a href=#78 id=78 data-nosnippet>78</a>
+<a href=#79 id=79 data-nosnippet>79</a><span class="kw">impl </span><a href="../mod.rs.html#763-765">error::IntoError</a> <span class="kw">for </span><a href="#5-77">Error</a> {
+<a href=#80 id=80 data-nosnippet>80</a>    <span class="kw">fn </span>into_error(<span class="self">self</span>) -&gt; error::<a href="../mod.rs.html#51-62">Error</a> {
+<a href=#81 id=81 data-nosnippet>81</a>        <a class="self" href="#80">self</a>.<a href="https://doc.rust-lang.org/nightly/core/convert/trait.Into.html#tymethod.into">into</a>()
+<a href=#82 id=82 data-nosnippet>82</a>    }
+<a href=#83 id=83 data-nosnippet>83</a>}
+<a href=#84 id=84 data-nosnippet>84</a>
+<a href=#85 id=85 data-nosnippet>85</a><span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html">From</a>&lt;<a href="#5-77">Error</a>&gt; <span class="kw">for </span>error::<a href="../mod.rs.html#51-62">Error</a> {
+<a href=#86 id=86 data-nosnippet>86</a>    <span class="attr">#[cold]
+<a href=#87 id=87 data-nosnippet>87</a>    #[inline(never)]
+<a href=#88 id=88 data-nosnippet>88</a>    </span><span class="kw">fn </span>from(err: <a href="#5-77">Error</a>) -&gt; error::<a href="../mod.rs.html#51-62">Error</a> {
+<a href=#89 id=89 data-nosnippet>89</a>        error::ErrorKind::<a href="../mod.rs.html#462">FmtTemporal</a>(<a href="#88">err</a>).<a href="https://doc.rust-lang.org/nightly/core/convert/trait.Into.html#tymethod.into">into</a>()
+<a href=#90 id=90 data-nosnippet>90</a>    }
+<a href=#91 id=91 data-nosnippet>91</a>}
+<a href=#92 id=92 data-nosnippet>92</a>
+<a href=#93 id=93 data-nosnippet>93</a><span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Display.html">core::fmt::Display</a> <span class="kw">for </span><a href="#5-77">Error</a> {
+<a href=#94 id=94 data-nosnippet>94</a>    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>core::fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html">Formatter</a>) -&gt; core::fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/type.Result.html">Result</a> {
+<a href=#95 id=95 data-nosnippet>95</a>        <span class="kw">use </span><a href="#5-77"><span class="self">self</span>::Error</a>::<span class="kw-2">*</span>;
+<a href=#96 id=96 data-nosnippet>96</a>
+<a href=#97 id=97 data-nosnippet>97</a>        <span class="kw">match </span><span class="kw-2">*</span><a class="self" href="#94">self</a> {
+<a href=#98 id=98 data-nosnippet>98</a>            <span class="attr">#[cfg(not(feature = <span class="string">"alloc"</span>))]
+<a href=#99 id=99 data-nosnippet>99</a>            </span>AllocPosixTimeZone =&gt; f.write_str(
+<a href=#100 id=100 data-nosnippet>100</a>                <span class="string">"cannot parsed time zones other than IANA time zone \
+<a href=#101 id=101 data-nosnippet>101</a>                 identifiers or fixed offsets \
+<a href=#102 id=102 data-nosnippet>102</a>                 without the `alloc` crate feature enabled for `jiff`"</span>,
+<a href=#103 id=103 data-nosnippet>103</a>            ),
+<a href=#104 id=104 data-nosnippet>104</a>            <a href="#8">AmbiguousTimeMonthDay</a> =&gt; {
+<a href=#105 id=105 data-nosnippet>105</a>                <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(<span class="string">"parsed time is ambiguous with a month-day date"</span>)
+<a href=#106 id=106 data-nosnippet>106</a>            }
+<a href=#107 id=107 data-nosnippet>107</a>            <a href="#9">AmbiguousTimeYearMonth</a> =&gt; {
+<a href=#108 id=108 data-nosnippet>108</a>                <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(<span class="string">"parsed time is ambiguous with a year-month date"</span>)
+<a href=#109 id=109 data-nosnippet>109</a>            }
+<a href=#110 id=110 data-nosnippet>110</a>            <a href="#10">CivilDateTimeZulu</a> =&gt; <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(
+<a href=#111 id=111 data-nosnippet>111</a>                <span class="string">"cannot parse civil date/time from string with a Zulu \
+<a href=#112 id=112 data-nosnippet>112</a>                 offset, parse as a `jiff::Timestamp` first \
+<a href=#113 id=113 data-nosnippet>113</a>                 and convert to a civil date/time instead"</span>,
+<a href=#114 id=114 data-nosnippet>114</a>            ),
+<a href=#115 id=115 data-nosnippet>115</a><span class="expansion"><input id=expand-115 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">            <a href="#11-13">ConvertDateTimeToTimestamp</a> { offset } =&gt; <span class=expanded>f.write_fmt(<span class="macro">format_args!</span>(<span class="string">"failed to convert civil datetime to timestamp with offset {0}"</span>,
+        offset))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(
+<a href=#116 id=116 data-nosnippet>116</a>                <a href="#94">f</a>,
+<a href=#117 id=117 data-nosnippet>117</a>                <span class="string">"failed to convert civil datetime to timestamp \
+<a href=#118 id=118 data-nosnippet>118</a>                 with offset {offset}"</span>,
+<a href=#119 id=119 data-nosnippet>119</a>            )</span></span>,
+<a href=#120 id=120 data-nosnippet>120</a>            <a href="#14">EmptyTimeZone</a> =&gt; {
+<a href=#121 id=121 data-nosnippet>121</a>                <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(<span class="string">"an empty string is not a valid time zone"</span>)
+<a href=#122 id=122 data-nosnippet>122</a>            }
+<a href=#123 id=123 data-nosnippet>123</a><span class="expansion"><input id=expand-123 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">            <a href="#15-17">ExpectedDateDesignatorFoundByte</a> { byte } =&gt; <span class=expanded>f.write_fmt(<span class="macro">format_args!</span>(<span class="string">"expected to find date unit designator suffix (`Y`, `M`, `W` or `D`), but found `{0}` instead"</span>,
+        escape::Byte(byte)))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(
+<a href=#124 id=124 data-nosnippet>124</a>                <a href="#94">f</a>,
+<a href=#125 id=125 data-nosnippet>125</a>                <span class="string">"expected to find date unit designator suffix \
+<a href=#126 id=126 data-nosnippet>126</a>                 (`Y`, `M`, `W` or `D`), but found `{byte}` instead"</span>,
+<a href=#127 id=127 data-nosnippet>127</a>                byte = escape::Byte(byte),
+<a href=#128 id=128 data-nosnippet>128</a>            )</span></span>,
+<a href=#129 id=129 data-nosnippet>129</a>            <a href="#18">ExpectedDateDesignatorFoundEndOfInput</a> =&gt; <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(
+<a href=#130 id=130 data-nosnippet>130</a>                <span class="string">"expected to find date unit designator suffix \
+<a href=#131 id=131 data-nosnippet>131</a>                 (`Y`, `M`, `W` or `D`), but found end of input"</span>,
+<a href=#132 id=132 data-nosnippet>132</a>            ),
+<a href=#133 id=133 data-nosnippet>133</a><span class="expansion"><input id=expand-133 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">            <a href="#19-21">ExpectedDurationDesignatorFoundByte</a> { byte } =&gt; <span class=expanded>f.write_fmt(<span class="macro">format_args!</span>(<span class="string">"expected to find duration beginning with `P` or `p`, but found `{0}` instead"</span>,
+        escape::Byte(byte)))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(
+<a href=#134 id=134 data-nosnippet>134</a>                <a href="#94">f</a>,
+<a href=#135 id=135 data-nosnippet>135</a>                <span class="string">"expected to find duration beginning with `P` or `p`, \
+<a href=#136 id=136 data-nosnippet>136</a>                 but found `{byte}` instead"</span>,
+<a href=#137 id=137 data-nosnippet>137</a>                byte = escape::Byte(byte),
+<a href=#138 id=138 data-nosnippet>138</a>            )</span></span>,
+<a href=#139 id=139 data-nosnippet>139</a>            <a href="#22">ExpectedDurationDesignatorFoundEndOfInput</a> =&gt; <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(
+<a href=#140 id=140 data-nosnippet>140</a>                <span class="string">"expected to find duration beginning with `P` or `p`, \
+<a href=#141 id=141 data-nosnippet>141</a>                 but found end of input"</span>,
+<a href=#142 id=142 data-nosnippet>142</a>            ),
+<a href=#143 id=143 data-nosnippet>143</a>            <a href="#23">ExpectedFourDigitYear</a> =&gt; <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(
+<a href=#144 id=144 data-nosnippet>144</a>                <span class="string">"expected four digit year (or leading sign for \
+<a href=#145 id=145 data-nosnippet>145</a>                 six digit year), but found end of input"</span>,
+<a href=#146 id=146 data-nosnippet>146</a>            ),
+<a href=#147 id=147 data-nosnippet>147</a>            <a href="#24">ExpectedNoSeparator</a> =&gt; <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(
+<a href=#148 id=148 data-nosnippet>148</a>                <span class="string">"expected no separator since none was \
+<a href=#149 id=149 data-nosnippet>149</a>                 found after the year, but found a `-` separator"</span>,
+<a href=#150 id=150 data-nosnippet>150</a>            ),
+<a href=#151 id=151 data-nosnippet>151</a>            <a href="#25">ExpectedOneDigitWeekday</a> =&gt; <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(
+<a href=#152 id=152 data-nosnippet>152</a>                <span class="string">"expected one digit weekday, but found end of input"</span>,
+<a href=#153 id=153 data-nosnippet>153</a>            ),
+<a href=#154 id=154 data-nosnippet>154</a><span class="expansion"><input id=expand-154 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">            <a href="#26-28">ExpectedSeparatorFoundByte</a> { byte } =&gt; <span class=expanded>f.write_fmt(<span class="macro">format_args!</span>(<span class="string">"expected `-` separator, but found `{0}`"</span>,
+        escape::Byte(byte)))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(
+<a href=#155 id=155 data-nosnippet>155</a>                <a href="#94">f</a>,
+<a href=#156 id=156 data-nosnippet>156</a>                <span class="string">"expected `-` separator, but found `{byte}`"</span>,
+<a href=#157 id=157 data-nosnippet>157</a>                byte = escape::Byte(byte),
+<a href=#158 id=158 data-nosnippet>158</a>            )</span></span>,
+<a href=#159 id=159 data-nosnippet>159</a>            <a href="#29">ExpectedSeparatorFoundEndOfInput</a> =&gt; {
+<a href=#160 id=160 data-nosnippet>160</a>                <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(<span class="string">"expected `-` separator, but found end of input"</span>)
+<a href=#161 id=161 data-nosnippet>161</a>            }
+<a href=#162 id=162 data-nosnippet>162</a>            <a href="#30">ExpectedSixDigitYear</a> =&gt; <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(
+<a href=#163 id=163 data-nosnippet>163</a>                <span class="string">"expected six digit year (because of a leading sign), \
+<a href=#164 id=164 data-nosnippet>164</a>                 but found end of input"</span>,
+<a href=#165 id=165 data-nosnippet>165</a>            ),
+<a href=#166 id=166 data-nosnippet>166</a>            <a href="#31">ExpectedTimeDesignator</a> =&gt; <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(
+<a href=#167 id=167 data-nosnippet>167</a>                <span class="string">"parsing ISO 8601 duration in this context requires \
+<a href=#168 id=168 data-nosnippet>168</a>                 that the duration contain a time component and no \
+<a href=#169 id=169 data-nosnippet>169</a>                 components of days or greater"</span>,
+<a href=#170 id=170 data-nosnippet>170</a>            ),
+<a href=#171 id=171 data-nosnippet>171</a><span class="expansion"><input id=expand-171 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">            <a href="#32-34">ExpectedTimeDesignatorFoundByte</a> { byte } =&gt; <span class=expanded>f.write_fmt(<span class="macro">format_args!</span>(<span class="string">"expected to find time unit designator suffix (`H`, `M` or `S`), but found `{0}` instead"</span>,
+        escape::Byte(byte)))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(
+<a href=#172 id=172 data-nosnippet>172</a>                <a href="#94">f</a>,
+<a href=#173 id=173 data-nosnippet>173</a>                <span class="string">"expected to find time unit designator suffix \
+<a href=#174 id=174 data-nosnippet>174</a>                 (`H`, `M` or `S`), but found `{byte}` instead"</span>,
+<a href=#175 id=175 data-nosnippet>175</a>                byte = escape::Byte(byte),
+<a href=#176 id=176 data-nosnippet>176</a>            )</span></span>,
+<a href=#177 id=177 data-nosnippet>177</a>            <a href="#35">ExpectedTimeDesignatorFoundEndOfInput</a> =&gt; <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(
+<a href=#178 id=178 data-nosnippet>178</a>                <span class="string">"expected to find time unit designator suffix \
+<a href=#179 id=179 data-nosnippet>179</a>                 (`H`, `M` or `S`), but found end of input"</span>,
+<a href=#180 id=180 data-nosnippet>180</a>            ),
+<a href=#181 id=181 data-nosnippet>181</a>            <a href="#36">ExpectedTimeUnits</a> =&gt; <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(
+<a href=#182 id=182 data-nosnippet>182</a>                <span class="string">"found a time designator (`T` or `t`) in an ISO 8601 \
+<a href=#183 id=183 data-nosnippet>183</a>                 duration string, but did not find any time units"</span>,
+<a href=#184 id=184 data-nosnippet>184</a>            ),
+<a href=#185 id=185 data-nosnippet>185</a>            <a href="#37">ExpectedTwoDigitDay</a> =&gt; {
+<a href=#186 id=186 data-nosnippet>186</a>                <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(<span class="string">"expected two digit day, but found end of input"</span>)
+<a href=#187 id=187 data-nosnippet>187</a>            }
+<a href=#188 id=188 data-nosnippet>188</a>            <a href="#38">ExpectedTwoDigitHour</a> =&gt; {
+<a href=#189 id=189 data-nosnippet>189</a>                <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(<span class="string">"expected two digit hour, but found end of input"</span>)
+<a href=#190 id=190 data-nosnippet>190</a>            }
+<a href=#191 id=191 data-nosnippet>191</a>            <a href="#39">ExpectedTwoDigitMinute</a> =&gt; <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(
+<a href=#192 id=192 data-nosnippet>192</a>                <span class="string">"expected two digit minute, but found end of input"</span>,
+<a href=#193 id=193 data-nosnippet>193</a>            ),
+<a href=#194 id=194 data-nosnippet>194</a>            <a href="#40">ExpectedTwoDigitMonth</a> =&gt; {
+<a href=#195 id=195 data-nosnippet>195</a>                <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(<span class="string">"expected two digit month, but found end of input"</span>)
+<a href=#196 id=196 data-nosnippet>196</a>            }
+<a href=#197 id=197 data-nosnippet>197</a>            <a href="#41">ExpectedTwoDigitSecond</a> =&gt; <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(
+<a href=#198 id=198 data-nosnippet>198</a>                <span class="string">"expected two digit second, but found end of input"</span>,
+<a href=#199 id=199 data-nosnippet>199</a>            ),
+<a href=#200 id=200 data-nosnippet>200</a>            <a href="#42">ExpectedTwoDigitWeekNumber</a> =&gt; <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(
+<a href=#201 id=201 data-nosnippet>201</a>                <span class="string">"expected two digit week number, but found end of input"</span>,
+<a href=#202 id=202 data-nosnippet>202</a>            ),
+<a href=#203 id=203 data-nosnippet>203</a><span class="expansion"><input id=expand-203 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">            <a href="#43-45">ExpectedWeekPrefixFoundByte</a> { byte } =&gt; <span class=expanded>f.write_fmt(<span class="macro">format_args!</span>(<span class="string">"expected `W` or `w`, but found `{0}` instead"</span>,
+        escape::Byte(byte)))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(
+<a href=#204 id=204 data-nosnippet>204</a>                <a href="#94">f</a>,
+<a href=#205 id=205 data-nosnippet>205</a>                <span class="string">"expected `W` or `w`, but found `{byte}` instead"</span>,
+<a href=#206 id=206 data-nosnippet>206</a>                byte = escape::Byte(byte),
+<a href=#207 id=207 data-nosnippet>207</a>            )</span></span>,
+<a href=#208 id=208 data-nosnippet>208</a>            <a href="#46">ExpectedWeekPrefixFoundEndOfInput</a> =&gt; {
+<a href=#209 id=209 data-nosnippet>209</a>                <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(<span class="string">"expected `W` or `w`, but found end of input"</span>)
+<a href=#210 id=210 data-nosnippet>210</a>            }
+<a href=#211 id=211 data-nosnippet>211</a>            <a href="#47">FailedFractionalSecondInTime</a> =&gt; {
+<a href=#212 id=212 data-nosnippet>212</a>                <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(<span class="string">"failed to parse fractional seconds in time"</span>)
+<a href=#213 id=213 data-nosnippet>213</a>            }
+<a href=#214 id=214 data-nosnippet>214</a>            <a href="#48">FailedOffsetNumeric</a> =&gt; <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(
+<a href=#215 id=215 data-nosnippet>215</a>                <span class="string">"offset successfully parsed, \
+<a href=#216 id=216 data-nosnippet>216</a>                 but failed to convert to numeric `jiff::tz::Offset`"</span>,
+<a href=#217 id=217 data-nosnippet>217</a>            ),
+<a href=#218 id=218 data-nosnippet>218</a>            <a href="#49">FailedSeparatorAfterMonth</a> =&gt; {
+<a href=#219 id=219 data-nosnippet>219</a>                <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(<span class="string">"failed to parse separator after month"</span>)
+<a href=#220 id=220 data-nosnippet>220</a>            }
+<a href=#221 id=221 data-nosnippet>221</a>            <a href="#50">FailedSeparatorAfterWeekNumber</a> =&gt; {
+<a href=#222 id=222 data-nosnippet>222</a>                <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(<span class="string">"failed to parse separator after week number"</span>)
+<a href=#223 id=223 data-nosnippet>223</a>            }
+<a href=#224 id=224 data-nosnippet>224</a>            <a href="#51">FailedSeparatorAfterYear</a> =&gt; {
+<a href=#225 id=225 data-nosnippet>225</a>                <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(<span class="string">"failed to parse separator after year"</span>)
+<a href=#226 id=226 data-nosnippet>226</a>            }
+<a href=#227 id=227 data-nosnippet>227</a>            <a href="#52">FailedTzdbLookup</a> =&gt; <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(
+<a href=#228 id=228 data-nosnippet>228</a>                <span class="string">"parsed apparent IANA time zone identifier, \
+<a href=#229 id=229 data-nosnippet>229</a>                 but the tzdb lookup failed"</span>,
+<a href=#230 id=230 data-nosnippet>230</a>            ),
+<a href=#231 id=231 data-nosnippet>231</a>            <a href="#53">FailedWeekNumberPrefixInDate</a> =&gt; {
+<a href=#232 id=232 data-nosnippet>232</a>                <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(<span class="string">"failed to parse week number prefix in date"</span>)
+<a href=#233 id=233 data-nosnippet>233</a>            }
+<a href=#234 id=234 data-nosnippet>234</a>            <a href="#54">InvalidDate</a> =&gt; <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(<span class="string">"parsed date is not valid"</span>),
+<a href=#235 id=235 data-nosnippet>235</a>            <a href="#55">InvalidMonthDay</a> =&gt; <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(<span class="string">"parsed month-day is not valid"</span>),
+<a href=#236 id=236 data-nosnippet>236</a>            <a href="#56">InvalidTimeZoneUtf8</a> =&gt; <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(
+<a href=#237 id=237 data-nosnippet>237</a>                <span class="string">"found plausible IANA time zone identifier, \
+<a href=#238 id=238 data-nosnippet>238</a>                 but it is not valid UTF-8"</span>,
+<a href=#239 id=239 data-nosnippet>239</a>            ),
+<a href=#240 id=240 data-nosnippet>240</a>            <a href="#57">InvalidWeekDate</a> =&gt; <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(<span class="string">"parsed week date is not valid"</span>),
+<a href=#241 id=241 data-nosnippet>241</a>            <a href="#58">InvalidYearMonth</a> =&gt; <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(<span class="string">"parsed year-month is not valid"</span>),
+<a href=#242 id=242 data-nosnippet>242</a>            <a href="#59">InvalidYearZero</a> =&gt; <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(
+<a href=#243 id=243 data-nosnippet>243</a>                <span class="string">"year zero must be written without a sign or a \
+<a href=#244 id=244 data-nosnippet>244</a>                 positive sign, but not a negative sign"</span>,
+<a href=#245 id=245 data-nosnippet>245</a>            ),
+<a href=#246 id=246 data-nosnippet>246</a>            <a href="#60">MissingOffsetInTimestamp</a> =&gt; <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(
+<a href=#247 id=247 data-nosnippet>247</a>                <span class="string">"failed to find offset component, \
+<a href=#248 id=248 data-nosnippet>248</a>                 which is required for parsing a timestamp"</span>,
+<a href=#249 id=249 data-nosnippet>249</a>            ),
+<a href=#250 id=250 data-nosnippet>250</a>            <a href="#61">MissingTimeInDate</a> =&gt; <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(
+<a href=#251 id=251 data-nosnippet>251</a>                <span class="string">"successfully parsed date, but no time component was found"</span>,
+<a href=#252 id=252 data-nosnippet>252</a>            ),
+<a href=#253 id=253 data-nosnippet>253</a>            <a href="#62">MissingTimeInTimestamp</a> =&gt; <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(
+<a href=#254 id=254 data-nosnippet>254</a>                <span class="string">"failed to find time component, \
+<a href=#255 id=255 data-nosnippet>255</a>                 which is required for parsing a timestamp"</span>,
+<a href=#256 id=256 data-nosnippet>256</a>            ),
+<a href=#257 id=257 data-nosnippet>257</a>            <a href="#63">MissingTimeZoneAnnotation</a> =&gt; <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(
+<a href=#258 id=258 data-nosnippet>258</a>                <span class="string">"failed to find time zone annotation in square brackets, \
+<a href=#259 id=259 data-nosnippet>259</a>                 which is required for parsing a zoned datetime"</span>,
+<a href=#260 id=260 data-nosnippet>260</a>            ),
+<a href=#261 id=261 data-nosnippet>261</a>            <a href="#64">ParseDayTwoDigit</a> =&gt; {
+<a href=#262 id=262 data-nosnippet>262</a>                <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(<span class="string">"failed to parse two digit integer as day"</span>)
+<a href=#263 id=263 data-nosnippet>263</a>            }
+<a href=#264 id=264 data-nosnippet>264</a>            <a href="#65">ParseHourTwoDigit</a> =&gt; {
+<a href=#265 id=265 data-nosnippet>265</a>                <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(<span class="string">"failed to parse two digit integer as hour"</span>)
+<a href=#266 id=266 data-nosnippet>266</a>            }
+<a href=#267 id=267 data-nosnippet>267</a>            <a href="#66">ParseMinuteTwoDigit</a> =&gt; {
+<a href=#268 id=268 data-nosnippet>268</a>                <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(<span class="string">"failed to parse two digit integer as minute"</span>)
+<a href=#269 id=269 data-nosnippet>269</a>            }
+<a href=#270 id=270 data-nosnippet>270</a>            <a href="#67">ParseMonthTwoDigit</a> =&gt; {
+<a href=#271 id=271 data-nosnippet>271</a>                <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(<span class="string">"failed to parse two digit integer as month"</span>)
+<a href=#272 id=272 data-nosnippet>272</a>            }
+<a href=#273 id=273 data-nosnippet>273</a>            <a href="#68">ParseSecondTwoDigit</a> =&gt; {
+<a href=#274 id=274 data-nosnippet>274</a>                <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(<span class="string">"failed to parse two digit integer as second"</span>)
+<a href=#275 id=275 data-nosnippet>275</a>            }
+<a href=#276 id=276 data-nosnippet>276</a>            <a href="#69">ParseWeekNumberTwoDigit</a> =&gt; {
+<a href=#277 id=277 data-nosnippet>277</a>                <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(<span class="string">"failed to parse two digit integer as week number"</span>)
+<a href=#278 id=278 data-nosnippet>278</a>            }
+<a href=#279 id=279 data-nosnippet>279</a>            <a href="#70">ParseWeekdayOneDigit</a> =&gt; {
+<a href=#280 id=280 data-nosnippet>280</a>                <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(<span class="string">"failed to parse one digit integer as weekday"</span>)
+<a href=#281 id=281 data-nosnippet>281</a>            }
+<a href=#282 id=282 data-nosnippet>282</a>            <a href="#71">ParseYearFourDigit</a> =&gt; {
+<a href=#283 id=283 data-nosnippet>283</a>                <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(<span class="string">"failed to parse four digit integer as year"</span>)
+<a href=#284 id=284 data-nosnippet>284</a>            }
+<a href=#285 id=285 data-nosnippet>285</a>            <a href="#72">ParseYearSixDigit</a> =&gt; {
+<a href=#286 id=286 data-nosnippet>286</a>                <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(<span class="string">"failed to parse six digit integer as year"</span>)
+<a href=#287 id=287 data-nosnippet>287</a>            }
+<a href=#288 id=288 data-nosnippet>288</a>            <a href="#76">PrintTimeZoneFailure</a> =&gt; <a href="#94">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(
+<a href=#289 id=289 data-nosnippet>289</a>                <span class="string">"time zones without IANA identifiers that aren't either \
+<a href=#290 id=290 data-nosnippet>290</a>                 fixed offsets or a POSIX time zone can't be serialized \
+<a href=#291 id=291 data-nosnippet>291</a>                 (this typically occurs when this is a system time zone \
+<a href=#292 id=292 data-nosnippet>292</a>                  derived from `/etc/localtime` on Unix systems that \
+<a href=#293 id=293 data-nosnippet>293</a>                  isn't symlinked to an entry in `/usr/share/zoneinfo`)"</span>,
+<a href=#294 id=294 data-nosnippet>294</a>            ),
+<a href=#295 id=295 data-nosnippet>295</a>        }
+<a href=#296 id=296 data-nosnippet>296</a>    }
+<a href=#297 id=297 data-nosnippet>297</a>}
+</code></pre></div></section></main></body></html>

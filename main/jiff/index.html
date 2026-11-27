@@ -1,0 +1,527 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Jiff is a datetime library for Rust that encourages you to jump into the pit of success. The focus of this library is providing high level datetime primitives that are difficult to misuse and have reasonable performance."><title>jiff - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-1e18a8e7.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="jiff" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (6c709eb42 2026-11-25)" data-channel="nightly" data-search-js="search-085293d4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../static.files/storage-41dd4d93.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Crate jiff</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../jiff/index.html">jiff</a><span class="version">1.0.3</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#overview" title="Overview">Overview</a></li><li><a href="#features" title="Features">Features</a></li><li><a href="#usage" title="Usage">Usage</a></li><li><a href="#examples" title="Examples">Examples</a><ul><li><a href="#get-the-current-time-in-your-systems-time-zone" title="Get the current time in your system’s time zone">Get the current time in your system’s time zone</a></li><li><a href="#print-the-current-time-rounded-to-the-nearest-second" title="Print the current time rounded to the nearest second">Print the current time rounded to the nearest second</a></li><li><a href="#print-todays-date-at-a-specific-time" title="Print today’s date at a specific time">Print today’s date at a specific time</a></li><li><a href="#print-the-current-unix-timestamp" title="Print the current Unix timestamp">Print the current Unix timestamp</a></li><li><a href="#print-the-datetime-for-a-timestamp" title="Print the datetime for a timestamp">Print the datetime for a timestamp</a></li><li><a href="#create-a-zoned-datetime-from-civil-time" title="Create a zoned datetime from civil time">Create a zoned datetime from civil time</a></li><li><a href="#change-an-instant-from-one-time-zone-to-another" title="Change an instant from one time zone to another">Change an instant from one time zone to another</a></li><li><a href="#find-the-duration-between-two-zoned-datetimes" title="Find the duration between two zoned datetimes">Find the duration between two zoned datetimes</a></li><li><a href="#add-a-duration-to-a-zoned-datetime" title="Add a duration to a zoned datetime">Add a duration to a zoned datetime</a></li><li><a href="#dealing-with-ambiguity" title="Dealing with ambiguity">Dealing with ambiguity</a></li><li><a href="#parsing-a-span" title="Parsing a span">Parsing a span</a></li><li><a href="#parsing-an-rfc-2822-datetime-string" title="Parsing an RFC 2822 datetime string">Parsing an RFC 2822 datetime string</a></li><li><a href="#using-strftime-and-strptime-for-formatting-and-parsing" title="Using `strftime` and `strptime` for formatting and parsing">Using <code>strftime</code> and <code>strptime</code> for formatting and parsing</a></li><li><a href="#serializing-and-deserializing-integer-timestamps-with-serde" title="Serializing and deserializing integer timestamps with Serde">Serializing and deserializing integer timestamps with Serde</a></li></ul></li><li><a href="#crate-features" title="Crate features">Crate features</a><ul><li><a href="#ecosystem-features" title="Ecosystem features">Ecosystem features</a></li><li><a href="#time-zone-features" title="Time zone features">Time zone features</a></li><li><a href="#performance-features" title="Performance features">Performance features</a></li></ul></li></ul><h3><a href="#modules">Crate Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#traits" title="Traits">Traits</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1>Crate <span>jiff</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/jiff/lib.rs.html#1-879">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Jiff is a datetime library for Rust that encourages you to jump into the pit
+of success. The focus of this library is providing high level datetime
+primitives that are difficult to misuse and have reasonable performance.</p>
+<p>Jiff takes enormous inspiration from <a href="https://tc39.es/proposal-temporal/docs/index.html">Temporal</a>, which is a <a href="https://tc39.es/">TC39</a> proposal to
+improve datetime handling in JavaScript.</p>
+<p>Here is a quick example that shows how to parse a typical RFC 3339 instant,
+convert it to a zone aware datetime, add a span of time and losslessly print
+it:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{Timestamp, ToSpan};
+
+<span class="kw">let </span>time: Timestamp = <span class="string">"2024-07-11T01:14:00Z"</span>.parse()<span class="question-mark">?</span>;
+<span class="kw">let </span>zoned = time.in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>.checked_add(<span class="number">1</span>.month().hours(<span class="number">2</span>))<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(zoned.to_string(), <span class="string">"2024-08-10T23:14:00-04:00[America/New_York]"</span>);
+<span class="comment">// Or, if you want an RFC3339 formatted string:
+</span><span class="macro">assert_eq!</span>(zoned.timestamp().to_string(), <span class="string">"2024-08-11T03:14:00Z"</span>);
+</code></pre></div><h2 id="overview"><a class="doc-anchor" href="#overview">§</a>Overview</h2>
+<p>The primary type in this crate is <a href="struct.ZonedDateTime.html" title="struct jiff::ZonedDateTime"><code>ZonedDateTime</code></a>. A <code>ZonedDateTime</code> value is
+a datetime that corresponds to a precise instant in time in a particular
+geographic region. Users of this crate may find it helpful to think of a
+<code>ZonedDateTime</code> as a triple of the following components:</p>
+<ul>
+<li>A <a href="struct.Timestamp.html" title="struct jiff::Timestamp"><code>Timestamp</code></a> is a 96-bit integer of nanoseconds since the <a href="https://en.wikipedia.org/wiki/Unix_time">Unix epoch</a>.
+A timestamp is a precise instant in time.</li>
+<li>A <a href="civil/struct.DateTime.html" title="struct jiff::civil::DateTime"><code>civil::DateTime</code></a> is an inexact calendar date and clock time in the
+proleptic Gregorian calendar. The terms “civil”, “local”, “plain” and “naive”
+are all used in various places to describe this same concept.</li>
+<li>A <a href="tz/struct.TimeZone.html" title="struct jiff::tz::TimeZone"><code>tz::TimeZone</code></a> is a set of rules for determining the civil time, via an
+offset from <a href="https://en.wikipedia.org/wiki/Coordinated_Universal_Time">UTC</a>, in a particular geographic region.</li>
+</ul>
+<p>All three of these components are used to provide convenient high level
+operations on <code>ZonedDateTime</code> such as computing durations, adding durations and
+rounding.</p>
+<p>A <a href="struct.Span.html" title="struct jiff::Span"><code>Span</code></a> is this crate’s primary duration type. It mixes calendar and clock
+units into a single type. Jiff also provides <a href="struct.SignedDuration.html" title="struct jiff::SignedDuration"><code>SignedDuration</code></a>, which is like
+<a href="https://doc.rust-lang.org/nightly/core/time/struct.Duration.html" title="struct core::time::Duration"><code>std::time::Duration</code></a>, but signed. Users should default to a <code>Span</code> for
+representing durations when using Jiff.</p>
+<p>The remainder of this documentation is organized as follows:</p>
+<ul>
+<li><a href="#features">Features</a> gives a very brief summary of the features Jiff does
+and does not support.</li>
+<li><a href="#usage">Usage</a> shows how to add Jiff to your Rust project.</li>
+<li><a href="#examples">Examples</a> shows a small cookbook of programs for common tasks.</li>
+<li><a href="#crate-features">Crate features</a> documents the Cargo features that can be
+enabled or disabled for this crate.</li>
+</ul>
+<p>Also, the <code>_documentation</code> sub-module serves to provide longer form
+documentation:</p>
+<ul>
+<li><a href="_documentation/comparison/index.html" title="mod jiff::_documentation::comparison">Comparison with other Rust datetime crates</a></li>
+<li><a href="_documentation/design/index.html" title="mod jiff::_documentation::design">The API design rationale for Jiff</a></li>
+<li><a href="_documentation/platform/index.html" title="mod jiff::_documentation::platform">Platform support</a></li>
+<li><a href="_documentation/changelog/index.html" title="mod jiff::_documentation::changelog">CHANGELOG</a></li>
+</ul>
+<h2 id="features"><a class="doc-anchor" href="#features">§</a>Features</h2>
+<p>Here is a non-exhaustive list of the things that Jiff supports:</p>
+<ul>
+<li>Automatic and seamless integration with your system’s copy of the
+<a href="https://en.wikipedia.org/wiki/Tz_database">IANA Time Zone Database</a>. When a platform doesn’t have a time zone database,
+Jiff automatically embeds a copy of it.</li>
+<li>A separation of datetime types between absolute times (<a href="struct.Timestamp.html" title="struct jiff::Timestamp"><code>Timestamp</code></a> and
+<a href="struct.ZonedDateTime.html" title="struct jiff::ZonedDateTime"><code>ZonedDateTime</code></a>) and civil times (<a href="civil/struct.DateTime.html" title="struct jiff::civil::DateTime"><code>civil::DateTime</code></a>).</li>
+<li>Nanosecond precision.</li>
+<li>Time zone and daylight saving time aware arithmetic.</li>
+<li>The primary duration type, <a href="struct.Span.html" title="struct jiff::Span"><code>Span</code></a>, mixes calendar and clock
+units to provide an all-in-one human friendly experience that is time zone
+aware.</li>
+<li>An “absolute” duration type, <a href="struct.SignedDuration.html" title="struct jiff::SignedDuration"><code>SignedDuration</code></a>, is like
+<a href="https://doc.rust-lang.org/nightly/core/time/struct.Duration.html" title="struct core::time::Duration"><code>std::time::Duration</code></a> but signed.</li>
+<li>Datetime rounding.</li>
+<li>Span rounding, including calendar units and including taking time zones into
+account.</li>
+<li>Formatting and parsing datetimes via a Temporal-specified hybrid format
+that takes the best parts of <a href="https://www.rfc-editor.org/rfc/rfc3339">RFC 3339</a>, <a href="https://www.rfc-editor.org/rfc/rfc9557.html">RFC 9557</a> and <a href="https://www.iso.org/iso-8601-date-and-time-format.html">ISO 8601</a>. This
+includes lossless round tripping of IANA time zone aware datetimes and
+durations.</li>
+<li>Formatting and parsing according to <a href="https://datatracker.ietf.org/doc/html/rfc2822">RFC 2822</a>.</li>
+<li>Formatting and parsing via routines similar to <a href="https://pubs.opengroup.org/onlinepubs/009695399/functions/strftime.html"><code>strftime</code></a> and <a href="https://pubs.opengroup.org/onlinepubs/009695399/functions/strptime.html"><code>strptime</code></a>.</li>
+<li>Formatting and parsing durations via a bespoke
+<a href="fmt/friendly/index.html" title="mod jiff::fmt::friendly">“friendly” format</a>, with Serde support, that is meant
+to service the <a href="https://docs.rs/humantime"><code>humantime</code></a> use cases.</li>
+<li>Opt-in Serde integration.</li>
+<li>Full support for dealing with ambiguous civil datetimes.</li>
+<li>Protection against deserializing datetimes in the future with an offset
+different than what is possible with your copy of the Time Zone Database.
+(This is done via <a href="tz/enum.OffsetConflict.html" title="enum jiff::tz::OffsetConflict"><code>tz::OffsetConflict</code></a>.)</li>
+<li>APIs that panic by design are clearly documented as such and few in number.
+Otherwise, all operations that can fail, including because of overflow,
+return a <code>Result</code>.</li>
+</ul>
+<p>Here is also a list of things that Jiff doesn’t currently support, along with
+a link to a relevant issue (if one exists).</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/7">Leap seconds</a>. (Jiff will automatically constrain times like <code>23:59:60</code> to
+<code>23:59:59</code>.)</li>
+<li>Time scales other than Unix.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/6">Calendars other than the proleptic Gregorian calendar</a>.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/4">Localization</a>.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/3">Changing the representation size, precision or limits on the minimum and
+maximum datetime values.</a></li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/17">Jiff aims to have reasonable performance and may not be capable of doing the
+fastest possible thing.</a></li>
+</ul>
+<p>At present, it is recommended to use the <a href="https://docs.rs/icu"><code>icu</code></a> crate via <a href="https://docs.rs/jiff-icu"><code>jiff-icu</code></a> for
+localization and non-Gregorian use cases.</p>
+<p>Please file an issue if you can think of more (substantial) things to add to
+the above list.</p>
+<h2 id="usage"><a class="doc-anchor" href="#usage">§</a>Usage</h2>
+<p>Jiff is <a href="https://crates.io/crates/jiff">on crates.io</a> and can be
+used by adding <code>jiff</code> to your dependencies in your project’s <code>Cargo.toml</code>.
+Or more simply, just run <code>cargo add jiff</code>.</p>
+<p>Here is a complete example that creates a new Rust project, adds a dependency
+on <code>jiff</code>, creates the source code for a simple datetime program and then runs
+it.</p>
+<p>First, create the project in a new directory:</p>
+<div class="example-wrap"><pre class="language-text"><code>$ cargo new jiff-example
+$ cd jiff-example</code></pre></div>
+<p>Second, add a dependency on <code>jiff</code>:</p>
+<div class="example-wrap"><pre class="language-text"><code>$ cargo add jiff</code></pre></div>
+<p>Third, edit <code>src/main.rs</code>. Delete what’s there and replace it with this:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{Unit, ZonedDateTime};
+
+<span class="kw">fn </span>main() -&gt; <span class="prelude-ty">Result</span>&lt;(), jiff::Error&gt; {
+    <span class="kw">let </span>now = ZonedDateTime::now().round(Unit::Second)<span class="question-mark">?</span>;
+    <span class="macro">println!</span>(<span class="string">"{now}"</span>);
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<p>Fourth, run it with <code>cargo run</code>:</p>
+<div class="example-wrap"><pre class="language-text"><code>$ cargo run
+   Compiling jiff v0.2.0 (/home/andrew/rust/jiff)
+   Compiling jiff-play v0.2.0 (/home/andrew/tmp/scratch/rust/jiff-play)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.37s
+     Running `target/debug/jiff-play`
+2024-07-10T19:54:20-04:00[America/New_York]</code></pre></div>
+<p>The first time you run the program will show more output like above. But
+subsequent runs shouldn’t have to re-compile the dependencies.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<ul>
+<li><a href="#get-the-current-time-in-your-systems-time-zone">Get the current time in your system’s time zone</a></li>
+<li><a href="#print-the-current-time-rounded-to-the-nearest-second">Print the current time rounded to the nearest second</a></li>
+<li><a href="#print-todays-date-at-a-specific-time">Print today’s date at a specific time</a></li>
+<li><a href="#print-the-current-unix-timestamp">Print the current Unix timestamp</a></li>
+<li><a href="#print-the-datetime-for-a-timestamp">Print the datetime for a timestamp</a></li>
+<li><a href="#create-a-zoned-datetime-from-civil-time">Create a zoned datetime from civil time</a></li>
+<li><a href="#change-an-instant-from-one-time-zone-to-another">Change an instant from one time zone to another</a></li>
+<li><a href="#find-the-duration-between-two-zoned-datetimes">Find the duration between two zoned datetimes</a></li>
+<li><a href="#add-a-duration-to-a-zoned-datetime">Add a duration to a zoned datetime</a></li>
+<li><a href="#dealing-with-ambiguity">Dealing with ambiguity</a></li>
+<li><a href="#parsing-a-span">Parsing a span</a></li>
+<li><a href="#parsing-an-rfc-2822-datetime-string">Parsing an RFC 2822 datetime string</a></li>
+<li><a href="#using-strftime-and-strptime-for-formatting-and-parsing">Using <code>strftime</code> and <code>strptime</code> for formatting and parsing</a></li>
+<li><a href="#serializing-and-deserializing-integer-timestamps-with-serde">Serializing and deserializing integer timestamps with Serde</a></li>
+</ul>
+<h4 id="get-the-current-time-in-your-systems-time-zone"><a class="doc-anchor" href="#get-the-current-time-in-your-systems-time-zone">§</a>Get the current time in your system’s time zone</h4>
+<p>The <a href="struct.ZonedDateTime.html#method.now" title="associated function jiff::ZonedDateTime::now"><code>ZonedDateTime::now</code></a> returns your system’s time and also attempts
+to automatically find your system’s default time zone via
+<a href="tz/struct.TimeZone.html#method.system" title="associated function jiff::tz::TimeZone::system"><code>tz::TimeZone::system</code></a>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::ZonedDateTime;
+
+<span class="kw">let </span>now = ZonedDateTime::now();
+<span class="macro">println!</span>(<span class="string">"{now}"</span>);
+<span class="comment">// Output: 2024-07-10T17:09:28.168146054-04:00[America/New_York]</span></code></pre></div><h4 id="print-the-current-time-rounded-to-the-nearest-second"><a class="doc-anchor" href="#print-the-current-time-rounded-to-the-nearest-second">§</a>Print the current time rounded to the nearest second</h4>
+<p>This uses the <a href="struct.ZonedDateTime.html#method.round" title="method jiff::ZonedDateTime::round"><code>ZonedDateTime::round</code></a> API to round a zoned datetime to the
+nearest second. This is useful, for example, if you don’t care about fractional
+seconds:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{Unit, ZonedDateTime};
+
+<span class="kw">let </span>now = ZonedDateTime::now().round(Unit::Second)<span class="question-mark">?</span>;
+<span class="macro">println!</span>(<span class="string">"{now}"</span>);
+<span class="comment">// Output: 2024-07-10T17:09:28-04:00[America/New_York]</span></code></pre></div><h4 id="print-todays-date-at-a-specific-time"><a class="doc-anchor" href="#print-todays-date-at-a-specific-time">§</a>Print today’s date at a specific time</h4>
+<p>Let’s say you want to get the current date at 2pm. Here’s one way of doing it
+that makes use of <a href="struct.ZonedDateTime.html#method.with" title="method jiff::ZonedDateTime::with"><code>ZonedDateTime::with</code></a>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::ZonedDateTime;
+
+<span class="kw">let </span>zdt = ZonedDateTime::now().with()
+    .hour(<span class="number">14</span>)
+    .minute(<span class="number">0</span>)
+    .second(<span class="number">0</span>)
+    .subsec_nanosecond(<span class="number">0</span>)
+    .build()<span class="question-mark">?</span>;
+<span class="macro">println!</span>(<span class="string">"{zdt}"</span>);
+<span class="comment">// Output: 2024-07-12T14:00:00-04:00[America/New_York]</span></code></pre></div>
+<p>Or, if the time is known to be valid, you can use the infallible
+<a href="civil/fn.time.html" title="fn jiff::civil::time"><code>civil::time</code></a> convenience constructor:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil::time, ZonedDateTime};
+
+<span class="kw">let </span>zdt = ZonedDateTime::now().with().time(time(<span class="number">14</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>)).build()<span class="question-mark">?</span>;
+<span class="macro">println!</span>(<span class="string">"{zdt}"</span>);
+<span class="comment">// Output: 2024-07-12T14:00:00-04:00[America/New_York]</span></code></pre></div>
+<p>You can eliminate the possibility of a panic at runtime by using <code>time</code> in
+a <code>const</code> block:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{ZonedDateTime, civil::time};
+
+<span class="kw">let </span>zdt =
+    ZonedDateTime::now().with().time(<span class="kw">const </span>{ time(<span class="number">14</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>) }).build()<span class="question-mark">?</span>;
+<span class="macro">println!</span>(<span class="string">"{zdt}"</span>);
+<span class="comment">// Output: 2024-07-12T14:00:00-04:00[America/New_York]</span></code></pre></div><h4 id="print-the-current-unix-timestamp"><a class="doc-anchor" href="#print-the-current-unix-timestamp">§</a>Print the current Unix timestamp</h4>
+<p>This prints a Unix timestamp as the number of seconds since the Unix epoch
+via <a href="struct.Timestamp.html#method.now" title="associated function jiff::Timestamp::now"><code>Timestamp::now</code></a>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::Timestamp;
+
+<span class="kw">let </span>now = Timestamp::now();
+<span class="macro">println!</span>(<span class="string">"{}"</span>, now.as_second());
+<span class="comment">// Output: 1720646365</span></code></pre></div>
+<p>Or print the current timestamp to nanosecond precision (which is the maximum
+supported by Jiff):</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::Timestamp;
+
+<span class="kw">let </span>now = Timestamp::now();
+<span class="macro">println!</span>(<span class="string">"{}"</span>, now.as_nanosecond());
+<span class="comment">// Output: 1720646414218901664</span></code></pre></div><h4 id="print-the-datetime-for-a-timestamp"><a class="doc-anchor" href="#print-the-datetime-for-a-timestamp">§</a>Print the datetime for a timestamp</h4>
+<p>This example shows how to convert a Unix timestamp, in milliseconds, to a zoned
+datetime in the system’s current time zone. This utilizes the
+<a href="struct.Timestamp.html#method.from_millisecond" title="associated function jiff::Timestamp::from_millisecond"><code>Timestamp::from_millisecond</code></a> constructor, <a href="tz/struct.TimeZone.html#method.system" title="associated function jiff::tz::TimeZone::system"><code>tz::TimeZone::system</code></a> to get
+the default time zone and the <a href="struct.Timestamp.html#method.to_zoned_datetime" title="method jiff::Timestamp::to_zoned_datetime"><code>Timestamp::to_zoned_datetime</code></a> routine to
+convert a timestamp to a zoned datetime.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{tz::TimeZone, Timestamp};
+
+<span class="kw">let </span>ts = Timestamp::from_millisecond(<span class="number">1_720_646_365_567</span>)<span class="question-mark">?</span>;
+<span class="kw">let </span>zdt = ts.to_zoned_datetime(TimeZone::system());
+<span class="macro">println!</span>(<span class="string">"{zdt}"</span>);
+<span class="comment">// Output: 2024-07-10T17:19:25.567-04:00[America/New_York]
+// Or if you just want the RFC 3339 time without bothering with time zones:
+</span><span class="macro">assert_eq!</span>(ts.to_string(), <span class="string">"2024-07-10T21:19:25.567Z"</span>);
+</code></pre></div><h4 id="create-a-zoned-datetime-from-civil-time"><a class="doc-anchor" href="#create-a-zoned-datetime-from-civil-time">§</a>Create a zoned datetime from civil time</h4>
+<p>This example demonstrates the convenience constructor, <a href="civil/fn.date.html" title="fn jiff::civil::date"><code>civil::date</code></a>,
+for a <a href="civil/struct.Date.html" title="struct jiff::civil::Date"><code>civil::Date</code></a>. And use the <a href="civil/struct.Date.html#method.at" title="method jiff::civil::Date::at"><code>civil::Date::at</code></a> method to create
+a <a href="civil/struct.DateTime.html" title="struct jiff::civil::DateTime"><code>civil::DateTime</code></a>. Once we have a civil datetime, we can use
+<a href="civil/struct.DateTime.html#method.in_tz" title="method jiff::civil::DateTime::in_tz"><code>civil::DateTime::in_tz</code></a> to do a time zone lookup and convert it to a precise
+instant in time:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::civil::date;
+
+<span class="kw">let </span>zdt = date(<span class="number">2023</span>, <span class="number">12</span>, <span class="number">31</span>).at(<span class="number">18</span>, <span class="number">30</span>, <span class="number">0</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(zdt.to_string(), <span class="string">"2023-12-31T18:30:00-05:00[America/New_York]"</span>);
+</code></pre></div>
+<p>Note that <a href="civil/fn.date.html" title="fn jiff::civil::date"><code>civil::date</code></a> should only be used for inputs that are known to be
+correct since it panics for an invalid date. If your date isn’t known to be
+valid, then use the fallible <a href="civil/struct.Date.html#method.new" title="associated function jiff::civil::Date::new"><code>civil::Date::new</code></a> constructor.</p>
+<h4 id="change-an-instant-from-one-time-zone-to-another"><a class="doc-anchor" href="#change-an-instant-from-one-time-zone-to-another">§</a>Change an instant from one time zone to another</h4>
+<p>This shows how to find the civil time, in New York, when World War 1 ended:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::civil::date;
+
+<span class="kw">let </span>zdt1 = date(<span class="number">1918</span>, <span class="number">11</span>, <span class="number">11</span>).at(<span class="number">11</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>).in_tz(<span class="string">"Europe/Paris"</span>)<span class="question-mark">?</span>;
+<span class="kw">let </span>zdt2 = zdt1.in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(
+    zdt2.to_string(),
+    <span class="string">"1918-11-11T06:00:00-05:00[America/New_York]"</span>,
+);
+</code></pre></div><h4 id="find-the-duration-between-two-zoned-datetimes"><a class="doc-anchor" href="#find-the-duration-between-two-zoned-datetimes">§</a>Find the duration between two zoned datetimes</h4>
+<p>This shows how to compute a span between two zoned datetimes. This utilizes a
+<a href="struct.ZonedDateTime.html" title="struct jiff::ZonedDateTime"><code>ZonedDateTime</code></a>’s implementation for <code>Sub</code>, permitting one to subtract two
+zoned datetimes via the <code>-</code> operator:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::civil::date;
+
+<span class="kw">let </span>zdt1 = date(<span class="number">2020</span>, <span class="number">8</span>, <span class="number">26</span>).at(<span class="number">6</span>, <span class="number">27</span>, <span class="number">0</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+<span class="kw">let </span>zdt2 = date(<span class="number">2023</span>, <span class="number">12</span>, <span class="number">31</span>).at(<span class="number">18</span>, <span class="number">30</span>, <span class="number">0</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+<span class="kw">let </span>span = zdt2 - zdt1;
+<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{span:#}"</span>), <span class="string">"29341h 3m"</span>);
+</code></pre></div>
+<p>The above returns no units bigger than hours because it makes the operation
+reversible in all cases. But if you don’t need reversibility (i.e., adding the
+span returned to <code>zdt1</code> gives you <code>zdt2</code>), then you can ask for bigger units
+via <a href="struct.ZonedDateTime.html#method.until" title="method jiff::ZonedDateTime::until"><code>ZonedDateTime::until</code></a> to make the span more comprehensible:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil::date, Unit};
+
+<span class="kw">let </span>zdt1 = date(<span class="number">2020</span>, <span class="number">8</span>, <span class="number">26</span>).at(<span class="number">6</span>, <span class="number">27</span>, <span class="number">0</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+<span class="kw">let </span>zdt2 = date(<span class="number">2023</span>, <span class="number">12</span>, <span class="number">31</span>).at(<span class="number">18</span>, <span class="number">30</span>, <span class="number">0</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+<span class="kw">let </span>span = zdt1.until((Unit::Year, <span class="kw-2">&amp;</span>zdt2))<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{span:#}"</span>), <span class="string">"3y 4mo 5d 12h 3m"</span>);
+</code></pre></div><h4 id="add-a-duration-to-a-zoned-datetime"><a class="doc-anchor" href="#add-a-duration-to-a-zoned-datetime">§</a>Add a duration to a zoned datetime</h4>
+<p>This example shows how one can add a <a href="struct.Span.html" title="struct jiff::Span"><code>Span</code></a> to a <a href="struct.ZonedDateTime.html" title="struct jiff::ZonedDateTime"><code>ZonedDateTime</code></a> via
+<a href="struct.ZonedDateTime.html#method.checked_add" title="method jiff::ZonedDateTime::checked_add"><code>ZonedDateTime::checked_add</code></a> to get a new <code>ZonedDateTime</code> value. We utilize
+the <a href="trait.ToSpan.html" title="trait jiff::ToSpan"><code>ToSpan</code></a> trait for convenience construction of <code>Span</code> values.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil::date, ToSpan};
+
+<span class="kw">let </span>zdt1 = date(<span class="number">2020</span>, <span class="number">8</span>, <span class="number">26</span>).at(<span class="number">6</span>, <span class="number">27</span>, <span class="number">0</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+<span class="kw">let </span>span = <span class="number">3</span>.years().months(<span class="number">4</span>).days(<span class="number">5</span>).hours(<span class="number">12</span>).minutes(<span class="number">3</span>);
+<span class="kw">let </span>zdt2 = zdt1.checked_add(span)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(zdt2.to_string(), <span class="string">"2023-12-31T18:30:00-05:00[America/New_York]"</span>);
+</code></pre></div>
+<p>As with <a href="civil/fn.date.html" title="fn jiff::civil::date"><code>civil::date</code></a>, the <a href="trait.ToSpan.html" title="trait jiff::ToSpan"><code>ToSpan</code></a> trait should only be used with inputs
+that are known to be valid. If you aren’t sure whether the inputs are valid,
+then use <a href="struct.Span.html#method.new" title="associated function jiff::Span::new"><code>Span::new</code></a> and its fallible mutators like <a href="struct.Span.html#method.try_years" title="method jiff::Span::try_years"><code>Span::try_years</code></a>.</p>
+<h4 id="dealing-with-ambiguity"><a class="doc-anchor" href="#dealing-with-ambiguity">§</a>Dealing with ambiguity</h4>
+<p>In some cases, civil datetimes either don’t exist in a particular time zone or
+are repeated. By default, Jiff automatically uses the
+<a href="tz/enum.Disambiguation.html#variant.Compatible" title="variant jiff::tz::Disambiguation::Compatible"><code>tz::Disambiguation::Compatible</code></a> strategy for choosing an instant in all
+cases:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::civil::date;
+
+<span class="comment">// 2:30 on 2024-03-10 in New York didn't exist. It's a "gap."
+// The compatible strategy selects the datetime after the gap.
+</span><span class="kw">let </span>zdt = date(<span class="number">2024</span>, <span class="number">3</span>, <span class="number">10</span>).at(<span class="number">2</span>, <span class="number">30</span>, <span class="number">0</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(zdt.to_string(), <span class="string">"2024-03-10T03:30:00-04:00[America/New_York]"</span>);
+
+<span class="comment">// 1:30 on 2024-11-03 in New York appeared twice. It's a "fold."
+// The compatible strategy selects the datetime before the fold.
+</span><span class="kw">let </span>zdt = date(<span class="number">2024</span>, <span class="number">11</span>, <span class="number">3</span>).at(<span class="number">1</span>, <span class="number">30</span>, <span class="number">0</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(zdt.to_string(), <span class="string">"2024-11-03T01:30:00-04:00[America/New_York]"</span>);
+</code></pre></div>
+<p>For more control over disambiguation, see
+<a href="tz/struct.TimeZone.html#method.to_ambiguous_zoned_datetime" title="method jiff::tz::TimeZone::to_ambiguous_zoned_datetime"><code>tz::TimeZone::to_ambiguous_zoned_datetime</code></a>. Or
+<a href="fmt/temporal/struct.DateTimeParser.html#method.disambiguation" title="method jiff::fmt::temporal::DateTimeParser::disambiguation"><code>fmt::temporal::DateTimeParser::disambiguation</code></a>
+if you’re parsing zoned datetimes.</p>
+<h4 id="parsing-a-span"><a class="doc-anchor" href="#parsing-a-span">§</a>Parsing a span</h4>
+<p>Jiff supports parsing ISO 8601 duration strings:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::Span;
+
+<span class="kw">let </span>span: Span = <span class="string">"P5y1w10dT5h59m"</span>.parse()<span class="question-mark">?</span>;
+<span class="kw">let </span>expected = Span::new().years(<span class="number">5</span>).weeks(<span class="number">1</span>).days(<span class="number">10</span>).hours(<span class="number">5</span>).minutes(<span class="number">59</span>);
+<span class="macro">assert_eq!</span>(span, expected.fieldwise());
+</code></pre></div>
+<p>The same format is used for serializing and deserializing <code>Span</code> values when
+the <code>serde</code> feature is enabled.</p>
+<p>Jiff also supports a bespoke <a href="fmt/friendly/index.html" title="mod jiff::fmt::friendly">“friendly” format</a> as
+well:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::Span;
+
+<span class="kw">let </span>expected = Span::new().years(<span class="number">5</span>).weeks(<span class="number">1</span>).days(<span class="number">10</span>).hours(<span class="number">5</span>).minutes(<span class="number">59</span>);
+<span class="kw">let </span>span: Span = <span class="string">"5 years, 1 week, 10 days, 5 hours, 59 minutes"</span>.parse()<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(span, expected.fieldwise());
+<span class="kw">let </span>span: Span = <span class="string">"5yrs 1wk 10d 5hrs 59mins"</span>.parse()<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(span, expected.fieldwise());
+<span class="kw">let </span>span: Span = <span class="string">"5y 1w 10d 5h 59m"</span>.parse()<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(span, expected.fieldwise());
+</code></pre></div><h4 id="parsing-an-rfc-2822-datetime-string"><a class="doc-anchor" href="#parsing-an-rfc-2822-datetime-string">§</a>Parsing an RFC 2822 datetime string</h4>
+<p>While you probably shouldn’t pick <a href="https://datatracker.ietf.org/doc/html/rfc2822">RFC 2822</a> as a format for new things, it is
+sometimes necessary to use it when something else requires it (like HTTP
+or email). Parsing and printing of RFC 2822 datetimes is done via the
+<a href="fmt/rfc2822/index.html" title="mod jiff::fmt::rfc2822"><code>fmt::rfc2822</code></a> module:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::fmt::rfc2822;
+
+<span class="kw">let </span>zdt1 = rfc2822::parse(<span class="string">"Thu, 29 Feb 2024 05:34 -0500"</span>)<span class="question-mark">?</span>;
+<span class="kw">let </span>zdt2 = zdt1.in_tz(<span class="string">"Australia/Hobart"</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(rfc2822::to_string(<span class="kw-2">&amp;</span>zdt2)<span class="question-mark">?</span>, <span class="string">"Thu, 29 Feb 2024 21:34:00 +1100"</span>);
+<span class="kw">let </span>zdt3 = zdt1.in_tz(<span class="string">"Asia/Kolkata"</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(rfc2822::to_string(<span class="kw-2">&amp;</span>zdt3)<span class="question-mark">?</span>, <span class="string">"Thu, 29 Feb 2024 16:04:00 +0530"</span>);
+</code></pre></div><h4 id="using-strftime-and-strptime-for-formatting-and-parsing"><a class="doc-anchor" href="#using-strftime-and-strptime-for-formatting-and-parsing">§</a>Using <code>strftime</code> and <code>strptime</code> for formatting and parsing</h4>
+<p>Jiff has support for the C style <a href="https://pubs.opengroup.org/onlinepubs/009695399/functions/strftime.html"><code>strftime</code></a> and <a href="https://pubs.opengroup.org/onlinepubs/009695399/functions/strptime.html"><code>strptime</code></a> functions for
+formatting and parsing datetime types. All of Jiff’s datetime types having a
+<code>strptime</code> constructor for parsing, and a <code>strftime</code> method for formatting. For
+example, this shows how to use <a href="struct.ZonedDateTime.html#method.strptime" title="associated function jiff::ZonedDateTime::strptime"><code>ZonedDateTime::strptime</code></a> to parsed a string
+in a “odd” custom format into a zoned datetime:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::ZonedDateTime;
+
+<span class="kw">let </span>zdt = ZonedDateTime::strptime(
+    <span class="string">"%A, %B %d, %Y at %I:%M%p %Q"</span>,
+    <span class="string">"Monday, July 15, 2024 at 5:30pm America/New_York"</span>,
+)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(zdt.to_string(), <span class="string">"2024-07-15T17:30:00-04:00[America/New_York]"</span>);
+</code></pre></div>
+<p>And this shows how to use <a href="struct.ZonedDateTime.html#method.strftime" title="method jiff::ZonedDateTime::strftime"><code>ZonedDateTime::strftime</code></a> to format a zoned
+datetime. Note the use of <code>%Z</code>, which will print a time zone abbreviation (when
+one is available) instead of an offset (<code>%Z</code> can’t be used for parsing):</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::civil::date;
+
+<span class="kw">let </span>zdt = date(<span class="number">2024</span>, <span class="number">7</span>, <span class="number">15</span>).at(<span class="number">17</span>, <span class="number">30</span>, <span class="number">59</span>, <span class="number">0</span>).in_tz(<span class="string">"Australia/Hobart"</span>)<span class="question-mark">?</span>;
+<span class="comment">// %-I instead of %I means no padding.
+</span><span class="kw">let </span>string = zdt.strftime(<span class="string">"%A, %B %d, %Y at %-I:%M%P %Z"</span>).to_string();
+<span class="macro">assert_eq!</span>(string, <span class="string">"Monday, July 15, 2024 at 5:30pm AEST"</span>);
+</code></pre></div>
+<p>However, time zone abbreviations aren’t parsable because they are ambiguous.
+For example, <code>CST</code> can stand for <code>Central Standard Time</code>, <code>Cuba Standard Time</code>
+or <code>China Standard Time</code>. Instead, it is recommended to use <code>%Q</code> to format an
+IANA time zone identifier (which can be parsed, as shown above):</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::civil::date;
+
+<span class="kw">let </span>zdt = date(<span class="number">2024</span>, <span class="number">7</span>, <span class="number">15</span>).at(<span class="number">17</span>, <span class="number">30</span>, <span class="number">59</span>, <span class="number">0</span>).in_tz(<span class="string">"Australia/Hobart"</span>)<span class="question-mark">?</span>;
+<span class="comment">// %-I instead of %I means no padding.
+</span><span class="kw">let </span>string = zdt.strftime(<span class="string">"%A, %B %d, %Y at %-I:%M%P %Q"</span>).to_string();
+<span class="macro">assert_eq!</span>(string, <span class="string">"Monday, July 15, 2024 at 5:30pm Australia/Hobart"</span>);
+</code></pre></div>
+<p>See the <a href="fmt/strtime/index.html" title="mod jiff::fmt::strtime"><code>fmt::strtime</code></a> module documentation for supported conversion
+specifiers and other APIs.</p>
+<h4 id="serializing-and-deserializing-integer-timestamps-with-serde"><a class="doc-anchor" href="#serializing-and-deserializing-integer-timestamps-with-serde">§</a>Serializing and deserializing integer timestamps with Serde</h4>
+<p>Sometimes you need to interact with external services that use integer timestamps
+instead of something more civilized like RFC 3339. Since <a href="struct.Timestamp.html" title="struct jiff::Timestamp"><code>Timestamp</code></a>’s
+Serde integration uses RFC 3339, you’ll need to override the default. While
+you could hand-write this, Jiff provides convenience routines that do this
+for you. But you do need to wire it up via <a href="https://serde.rs/field-attrs.html#with">Serde’s <code>with</code> attribute</a>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::Timestamp;
+
+<span class="attr">#[derive(Debug, serde::Deserialize, serde::Serialize)]
+</span><span class="kw">struct </span>Record {
+    <span class="attr">#[serde(with = <span class="string">"jiff::fmt::serde::timestamp::second::required"</span>)]
+    </span>timestamp: Timestamp,
+}
+
+<span class="kw">let </span>json = <span class="string">r#"{"timestamp":1517644800}"#</span>;
+<span class="kw">let </span>got: Record = serde_json::from_str(<span class="kw-2">&amp;</span>json)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(got.timestamp, Timestamp::from_second(<span class="number">1517644800</span>)<span class="question-mark">?</span>);
+<span class="macro">assert_eq!</span>(serde_json::to_string(<span class="kw-2">&amp;</span>got)<span class="question-mark">?</span>, json);
+</code></pre></div>
+<p>If you need to support optional timestamps via <code>Option&lt;Timestamp&gt;</code>, then use
+<code>jiff::fmt::serde::timestamp::second::optional</code> instead.</p>
+<p>For more, see the [<code>fmt::serde</code>] sub-module. (This requires enabling Jiff’s
+<code>serde</code> crate feature.)</p>
+<h2 id="crate-features"><a class="doc-anchor" href="#crate-features">§</a>Crate features</h2><h4 id="ecosystem-features"><a class="doc-anchor" href="#ecosystem-features">§</a>Ecosystem features</h4>
+<ul>
+<li><strong>std</strong> (enabled by default) -
+When enabled, Jiff will depend on Rust’s standard library. This is needed
+for things that require interacting with your system, such as reading
+<code>/usr/share/zoneinfo</code> on Unix systems for time zone information, or for
+finding your system’s default time zone. But if you don’t need that (or can
+bundle the Time Zone Database), then Jiff has nearly full functionality
+without <code>std</code> enabled.</li>
+<li><strong>alloc</strong> (enabled by default) -
+When enabled, Jiff will depend on the <code>alloc</code> crate. In particular, this
+enables functionality that requires or greatly benefits from dynamic memory
+allocation. If you can enable this, it is strongly encouraged that you do so.
+Without it, only fixed time zones are supported and error messages are
+significantly degraded. Also, the sizes of some types get bigger. If you
+have use cases for Jiff in a no-std and no-alloc context, I would love
+feedback on the issue tracker about your use cases.</li>
+<li><strong>logging</strong> -
+When enabled, the <code>log</code> crate is used to emit messages where appropriate.
+Generally speaking, this is reserved for system interaction points, such as
+finding the system copy of the Time Zone Database or finding the system’s
+default time zone.</li>
+<li><strong>serde</strong> -
+When enabled, all of the datetime and span types in Jiff implement
+serde’s <code>Serialize</code> and <code>Deserialize</code> traits. The format used is specified by
+Temporal, but it’s a mix of the “best” parts of RFC 3339, RFC 9557 and
+ISO 8601. See the <a href="fmt/temporal/index.html" title="mod jiff::fmt::temporal"><code>fmt::temporal</code></a> module for more details on the format
+used.</li>
+<li><strong>js</strong> -
+On <em>only</em> the <code>wasm32-unknown-unknown</code> and <code>wasm64-unknown-unknown</code> targets,
+the <code>js</code> feature will add dependencies on <code>js-sys</code> and <code>wasm-bindgen</code>.
+These dependencies are used to determine the current datetime and time
+zone from the web browser. On these targets without the <code>js</code> feature
+enabled, getting the current datetime will panic (because that’s what
+<code>std::time::SystemTime::now()</code> does), and it won’t be possible to determine
+the time zone. This feature is disabled by default because not all uses
+of <code>wasm{32,64}-unknown-unknown</code> are in a web context, although <em>many</em> are
+(for example, when using <code>wasm-pack</code>). Only binary, tests and benchmarks
+should enable this feature. See
+<a href="_documentation/platform/index.html" title="mod jiff::_documentation::platform">Platform support</a> for more details.</li>
+<li><strong>defmt</strong> -
+When enabled, Jiff will implement the [<code>defmt::Format</code>] trait for many
+of its types. This is useful for embedded environments where the usual
+<code>core::fmt</code> machinery is not practical to use. Note that, at time of writing
+(2026-06-12), not all public types in this crate implement [<code>defmt::Format</code>].
+If there are types for which you need <code>defmt</code> support but don’t have it in
+Jiff, then please <a href="https://github.com/BurntSushi/jiff/issues/new">open a new issue</a>.</li>
+<li><strong>arbitrary</strong> -
+When enabled, <code>Arbitrary</code> trait implementations (for the <code>arbitrary</code> crate)
+are provided for many of Jiff’s core datetime primitives.</li>
+</ul>
+<h4 id="time-zone-features"><a class="doc-anchor" href="#time-zone-features">§</a>Time zone features</h4>
+<ul>
+<li><strong>tz-system</strong> (enabled by default) -
+When enabled, Jiff will include code that attempts to determine the “system”
+time zone. For example, on Unix systems, this is usually determined by
+looking at the symlink information on <code>/etc/localtime</code>. But in general, it’s
+very platform specific and heuristic oriented.</li>
+<li><strong>tz-fat</strong> (enabled by default) -
+When enabled, Jiff will “fatten” time zone data with extra transitions to
+make time zone lookups faster. This may result in increased heap memory
+(when loading time zones from <code>/usr/share/zoneinfo</code>) or increased binary
+size (when using the <code>jiff-static</code> proc macros). Note that this doesn’t add
+more transitions than are likely already in <code>/usr/share/zoneinfo</code>, depending
+on how it was generated.</li>
+<li><strong>tzdb-bundle-always</strong> -
+When enabled, Jiff will forcefully depend on the <code>jiff-tzdb</code> crate, which
+embeds an entire copy of the Time Zone Database. You should avoid this unless
+you have a specific need for it, since it is better to rely on your system’s
+copy of time zone information. (Which may be updated multiple times per
+year.)</li>
+<li><strong>tzdb-bundle-platform</strong> (enabled by default) -
+When enabled, Jiff will depend on <code>jiff-tzdb</code> only for platforms where it is
+known that there is no canonical copy of the Time Zone Database. For example,
+Windows.</li>
+<li><strong>tzdb-zoneinfo</strong> (enabled by default) -
+When enabled, Jiff will attempt to look for your system’s copy of the Time
+Zone Database.</li>
+<li><strong>tzdb-concatenated</strong> (enabled by default) -
+When enabled, Jiff will attempt to look for a system copy of the
+<a href="https://android.googlesource.com/platform/libcore/+/jb-mr2-release/luni/src/main/java/libcore/util/ZoneInfoDB.java">Concatenated Time Zone Database</a>. This is primarily meant for reading time
+zone information on Android platforms. The <code>ANDROID_ROOT</code> and <code>ANDROID_DATA</code>
+environment variables (with sensible default fallbacks) are used to construct
+candidate paths to look for this database. For more on this, see the
+<a href="_documentation/platform/index.html#android" title="mod jiff::_documentation::platform">Android section of the platform support documentation</a>.</li>
+<li><strong>static</strong> -
+When enabled, new procedural macros will be added to the <code>tz</code> sub-module for
+creating static <code>TimeZone</code> values at compile-time. This adds a dependency on
+<a href="https://docs.rs/jiff-static"><code>jiff-static</code></a> and <a href="https://docs.rs/jiff-tzdb"><code>jiff-tzdb</code></a>. <code>jiff-static</code> defines the macros, and Jiff
+re-exports them. This also enables <code>static-tz</code>.</li>
+<li><strong>static-tz</strong> -
+When enabled, a <code>jiff::tz::include</code> procedural macro will become available.
+This takes a TZif file path, like <code>/usr/share/zoneinfo/Asia/Jerusalem</code>, as
+input and returns a <code>TimeZone</code> value at compile time.</li>
+</ul>
+<h4 id="performance-features"><a class="doc-anchor" href="#performance-features">§</a>Performance features</h4>
+<ul>
+<li><strong>perf-inline</strong> (enabled by default) -
+When enabled, a number of <code>inline(always)</code> annotations are used inside of
+Jiff to improve performance. This can especially impact formatting and
+parsing of datetimes. If the extra performance isn’t needed or if you want
+to prioritize smaller binary sizes and shorter compilation times over
+runtime performance, then it can be useful to disable this feature.</li>
+</ul>
+</div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="_documentation/index.html" title="mod jiff::_documentation">_documentation</a></dt><dd>Longer form documentation for Jiff.</dd><dt><a class="mod" href="civil/index.html" title="mod jiff::civil">civil</a></dt><dd>Facilities for dealing with inexact dates and times.</dd><dt><a class="mod" href="fmt/index.html" title="mod jiff::fmt">fmt</a></dt><dd>Configurable support for printing and parsing datetimes and durations.</dd><dt><a class="mod" href="tz/index.html" title="mod jiff::tz">tz</a></dt><dd>Routines for interacting with time zones and the zoneinfo database.</dd></dl><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.Error.html" title="struct jiff::Error">Error</a></dt><dd>An error that can occur in this crate.</dd><dt><a class="struct" href="struct.SignedDuration.html" title="struct jiff::SignedDuration">Signed<wbr>Duration</a></dt><dd>A signed duration of time represented as a 96-bit integer of nanoseconds.</dd><dt><a class="struct" href="struct.SignedDurationRound.html" title="struct jiff::SignedDurationRound">Signed<wbr>Duration<wbr>Round</a></dt><dd>Options for <a href="struct.SignedDuration.html#method.round" title="method jiff::SignedDuration::round"><code>SignedDuration::round</code></a>.</dd><dt><a class="struct" href="struct.Span.html" title="struct jiff::Span">Span</a></dt><dd>A span of time represented via a mixture of calendar and clock units.</dd><dt><a class="struct" href="struct.SpanArithmetic.html" title="struct jiff::SpanArithmetic">Span<wbr>Arithmetic</a></dt><dd>Options for <a href="struct.Span.html#method.checked_add" title="method jiff::Span::checked_add"><code>Span::checked_add</code></a> and <a href="struct.Span.html#method.checked_sub" title="method jiff::Span::checked_sub"><code>Span::checked_sub</code></a>.</dd><dt><a class="struct" href="struct.SpanCompare.html" title="struct jiff::SpanCompare">Span<wbr>Compare</a></dt><dd>Options for <a href="struct.Span.html#method.compare" title="method jiff::Span::compare"><code>Span::compare</code></a>.</dd><dt><a class="struct" href="struct.SpanFieldwise.html" title="struct jiff::SpanFieldwise">Span<wbr>Fieldwise</a></dt><dd>A wrapper for <a href="struct.Span.html" title="struct jiff::Span"><code>Span</code></a> that implements the <code>Hash</code>, <code>Eq</code> and <code>PartialEq</code>
+traits.</dd><dt><a class="struct" href="struct.SpanRelativeTo.html" title="struct jiff::SpanRelativeTo">Span<wbr>Relative<wbr>To</a></dt><dd>A relative datetime for use with <a href="struct.Span.html" title="struct jiff::Span"><code>Span</code></a> APIs.</dd><dt><a class="struct" href="struct.SpanRound.html" title="struct jiff::SpanRound">Span<wbr>Round</a></dt><dd>Options for <a href="struct.Span.html#method.round" title="method jiff::Span::round"><code>Span::round</code></a>.</dd><dt><a class="struct" href="struct.SpanTotal.html" title="struct jiff::SpanTotal">Span<wbr>Total</a></dt><dd>Options for <a href="struct.Span.html#method.total" title="method jiff::Span::total"><code>Span::total</code></a>.</dd><dt><a class="struct" href="struct.Timestamp.html" title="struct jiff::Timestamp">Timestamp</a></dt><dd>An instant in time represented as the number of nanoseconds since the Unix
+epoch.</dd><dt><a class="struct" href="struct.TimestampArithmetic.html" title="struct jiff::TimestampArithmetic">Timestamp<wbr>Arithmetic</a></dt><dd>Options for <a href="struct.Timestamp.html#method.checked_add" title="method jiff::Timestamp::checked_add"><code>Timestamp::checked_add</code></a> and <a href="struct.Timestamp.html#method.checked_sub" title="method jiff::Timestamp::checked_sub"><code>Timestamp::checked_sub</code></a>.</dd><dt><a class="struct" href="struct.TimestampDifference.html" title="struct jiff::TimestampDifference">Timestamp<wbr>Difference</a></dt><dd>Options for <a href="struct.Timestamp.html#method.since" title="method jiff::Timestamp::since"><code>Timestamp::since</code></a> and <a href="struct.Timestamp.html#method.until" title="method jiff::Timestamp::until"><code>Timestamp::until</code></a>.</dd><dt><a class="struct" href="struct.TimestampDisplayWithOffset.html" title="struct jiff::TimestampDisplayWithOffset">Timestamp<wbr>Display<wbr>With<wbr>Offset</a></dt><dd>A type for formatting a <a href="struct.Timestamp.html" title="struct jiff::Timestamp"><code>Timestamp</code></a> with a specific offset.</dd><dt><a class="struct" href="struct.TimestampRound.html" title="struct jiff::TimestampRound">Timestamp<wbr>Round</a></dt><dd>Options for <a href="struct.Timestamp.html#method.round" title="method jiff::Timestamp::round"><code>Timestamp::round</code></a>.</dd><dt><a class="struct" href="struct.TimestampSeries.html" title="struct jiff::TimestampSeries">Timestamp<wbr>Series</a></dt><dd>An iterator over periodic timestamps, created by <a href="struct.Timestamp.html#method.series" title="method jiff::Timestamp::series"><code>Timestamp::series</code></a>.</dd><dt><a class="struct" href="struct.ZonedDateTime.html" title="struct jiff::ZonedDateTime">Zoned<wbr>Date<wbr>Time</a></dt><dd>A time zone aware instant in time.</dd><dt><a class="struct" href="struct.ZonedDateTimeArithmetic.html" title="struct jiff::ZonedDateTimeArithmetic">Zoned<wbr>Date<wbr>Time<wbr>Arithmetic</a></dt><dd>Options for <a href="struct.Timestamp.html#method.checked_add" title="method jiff::Timestamp::checked_add"><code>Timestamp::checked_add</code></a> and <a href="struct.Timestamp.html#method.checked_sub" title="method jiff::Timestamp::checked_sub"><code>Timestamp::checked_sub</code></a>.</dd><dt><a class="struct" href="struct.ZonedDateTimeDifference.html" title="struct jiff::ZonedDateTimeDifference">Zoned<wbr>Date<wbr>Time<wbr>Difference</a></dt><dd>Options for <a href="struct.ZonedDateTime.html#method.since" title="method jiff::ZonedDateTime::since"><code>ZonedDateTime::since</code></a> and <a href="struct.ZonedDateTime.html#method.until" title="method jiff::ZonedDateTime::until"><code>ZonedDateTime::until</code></a>.</dd><dt><a class="struct" href="struct.ZonedDateTimeRound.html" title="struct jiff::ZonedDateTimeRound">Zoned<wbr>Date<wbr>Time<wbr>Round</a></dt><dd>Options for <a href="struct.ZonedDateTime.html#method.round" title="method jiff::ZonedDateTime::round"><code>ZonedDateTime::round</code></a>.</dd><dt><a class="struct" href="struct.ZonedDateTimeSeries.html" title="struct jiff::ZonedDateTimeSeries">Zoned<wbr>Date<wbr>Time<wbr>Series</a></dt><dd>An iterator over periodic zoned datetimes, created by
+<a href="struct.ZonedDateTime.html#method.series" title="method jiff::ZonedDateTime::series"><code>ZonedDateTime::series</code></a>.</dd><dt><a class="struct" href="struct.ZonedDateTimeWith.html" title="struct jiff::ZonedDateTimeWith">Zoned<wbr>Date<wbr>Time<wbr>With</a></dt><dd>A builder for setting the fields on a <a href="struct.ZonedDateTime.html" title="struct jiff::ZonedDateTime"><code>ZonedDateTime</code></a>.</dd></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.RoundMode.html" title="enum jiff::RoundMode">Round<wbr>Mode</a></dt><dd>The mode for dealing with the remainder when rounding datetimes or spans.</dd><dt><a class="enum" href="enum.Unit.html" title="enum jiff::Unit">Unit</a></dt><dd>A way to refer to a single calendar or clock unit.</dd></dl><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><dl class="item-table"><dt><a class="trait" href="trait.ToSpan.html" title="trait jiff::ToSpan">ToSpan</a></dt><dd>A trait for enabling concise literals for creating <a href="struct.Span.html" title="struct jiff::Span"><code>Span</code></a> values.</dd></dl></section></div></main></body></html>

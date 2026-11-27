@@ -1,0 +1,217 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Support for “printf”-style parsing and formatting."><title>jiff::fmt::strtime - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-1e18a8e7.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="jiff" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (6c709eb42 2026-11-25)" data-channel="nightly" data-search-js="search-085293d4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../../static.files/storage-41dd4d93.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Module strtime</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../jiff/index.html">jiff</a><span class="version">1.0.3</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module strtime</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#example" title="Example">Example</a></li><li><a href="#usage" title="Usage">Usage</a></li><li><a href="#advice" title="Advice">Advice</a></li><li><a href="#conversion-specifications" title="Conversion specifications">Conversion specifications</a></li><li><a href="#conditionally-unsupported" title="Conditionally unsupported">Conditionally unsupported</a></li><li><a href="#unsupported" title="Unsupported">Unsupported</a></li></ul><h3><a href="#structs">Module Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#traits" title="Traits">Traits</a></li><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="../index.html">In jiff::<wbr>fmt</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../../index.html">jiff</a>::<wbr><a href="../index.html">fmt</a></div><h1>Module <span>strtime</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../../src/jiff/fmt/strtime/mod.rs.html#1-3720">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Support for “printf”-style parsing and formatting.</p>
+<p>While the routines exposed in this module very closely resemble the
+corresponding <a href="https://pubs.opengroup.org/onlinepubs/009695399/functions/strptime.html"><code>strptime</code></a> and <a href="https://pubs.opengroup.org/onlinepubs/009695399/functions/strftime.html"><code>strftime</code></a> POSIX functions, it is not a goal
+for the formatting machinery to precisely match POSIX semantics.</p>
+<p>If there is a conversion specifier you need that Jiff doesn’t support, please
+<a href="https://github.com/BurntSushi/jiff/issues/new">create a new issue</a>.</p>
+<p>The formatting and parsing in this module does not currently support any
+form of localization. Please see <a href="https://github.com/BurntSushi/jiff/issues/4">this issue</a> about the topic of
+localization in Jiff.</p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<p>This shows how to parse a civil date and its weekday:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::civil::Date;
+
+<span class="kw">let </span>date = Date::strptime(<span class="string">"%Y-%m-%d is a %A"</span>, <span class="string">"2024-07-15 is a Monday"</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(date.to_string(), <span class="string">"2024-07-15"</span>);
+<span class="comment">// Leading zeros are optional for numbers in all cases:
+</span><span class="kw">let </span>date = Date::strptime(<span class="string">"%Y-%m-%d is a %A"</span>, <span class="string">"2024-07-15 is a Monday"</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(date.to_string(), <span class="string">"2024-07-15"</span>);
+<span class="comment">// Parsing does error checking! 2024-07-15 was not a Tuesday.
+</span><span class="macro">assert!</span>(Date::strptime(<span class="string">"%Y-%m-%d is a %A"</span>, <span class="string">"2024-07-15 is a Tuesday"</span>).is_err());
+</code></pre></div>
+<p>And this shows how to format a zoned datetime with a time zone abbreviation:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::civil::date;
+
+<span class="kw">let </span>zdt = date(<span class="number">2024</span>, <span class="number">7</span>, <span class="number">15</span>).at(<span class="number">17</span>, <span class="number">30</span>, <span class="number">59</span>, <span class="number">0</span>).in_tz(<span class="string">"Australia/Hobart"</span>)<span class="question-mark">?</span>;
+<span class="comment">// %-I instead of %I means no padding.
+</span><span class="kw">let </span>string = zdt.strftime(<span class="string">"%A, %B %d, %Y at %-I:%M%P %Z"</span>).to_string();
+<span class="macro">assert_eq!</span>(string, <span class="string">"Monday, July 15, 2024 at 5:30pm AEST"</span>);
+</code></pre></div>
+<p>Or parse a zoned datetime with an IANA time zone identifier:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil::date, ZonedDateTime};
+
+<span class="kw">let </span>zdt = ZonedDateTime::strptime(
+    <span class="string">"%A, %B %d, %Y at %-I:%M%P %:Q"</span>,
+    <span class="string">"Monday, July 15, 2024 at 5:30pm Australia/Hobart"</span>,
+)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(
+    zdt,
+    date(<span class="number">2024</span>, <span class="number">7</span>, <span class="number">15</span>).at(<span class="number">17</span>, <span class="number">30</span>, <span class="number">0</span>, <span class="number">0</span>).in_tz(<span class="string">"Australia/Hobart"</span>)<span class="question-mark">?</span>,
+);
+</code></pre></div><h2 id="usage"><a class="doc-anchor" href="#usage">§</a>Usage</h2>
+<p>For most cases, you can use the <code>strptime</code> and <code>strftime</code> methods on the
+corresponding datetime type. For example, <a href="../../struct.ZonedDateTime.html#method.strptime" title="associated function jiff::ZonedDateTime::strptime"><code>ZonedDateTime::strptime</code></a> and
+<a href="../../struct.ZonedDateTime.html#method.strftime" title="method jiff::ZonedDateTime::strftime"><code>ZonedDateTime::strftime</code></a>. However, the <a href="struct.BrokenDownTime.html" title="struct jiff::fmt::strtime::BrokenDownTime"><code>BrokenDownTime</code></a> type in this
+module provides a little more control.</p>
+<p>For example, assuming <code>t</code> is a <code>civil::Time</code>, then
+<code>t.strftime("%Y").to_string()</code> will actually panic because a <code>civil::Time</code> does
+not have a year. While the underlying formatting machinery actually returns
+an error, this error gets turned into a panic by virtue of going through the
+<code>std::fmt::Display</code> and <code>std::string::ToString</code> APIs.</p>
+<p>In contrast, <a href="struct.BrokenDownTime.html#method.format" title="method jiff::fmt::strtime::BrokenDownTime::format"><code>BrokenDownTime::format</code></a> (or just <a href="fn.format.html" title="fn jiff::fmt::strtime::format"><code>format</code></a>) can
+report the error to you without any panicking:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil::time, fmt::strtime};
+
+<span class="kw">let </span>t = time(<span class="number">23</span>, <span class="number">59</span>, <span class="number">59</span>, <span class="number">0</span>);
+<span class="macro">assert_eq!</span>(
+    strtime::format(<span class="string">"%Y"</span>, t).unwrap_err().to_string(),
+    <span class="string">"strftime formatting failed: %Y failed: requires date to format"</span>,
+);</code></pre></div><h2 id="advice"><a class="doc-anchor" href="#advice">§</a>Advice</h2>
+<p>The formatting machinery supported by this module is not especially expressive.
+The pattern language is a simple sequence of conversion specifiers interspersed
+by literals and arbitrary whitespace. This means that you sometimes need
+delimiters or spaces between components. For example, this is fine:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::fmt::strtime;
+
+<span class="kw">let </span>date = strtime::parse(<span class="string">"%Y%m%d"</span>, <span class="string">"20240715"</span>)<span class="question-mark">?</span>.to_date()<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(date.to_string(), <span class="string">"2024-07-15"</span>);</code></pre></div>
+<p>But this is ambiguous (is the year <code>999</code> or <code>9990</code>?):</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::fmt::strtime;
+
+<span class="macro">assert!</span>(strtime::parse(<span class="string">"%Y%m%d"</span>, <span class="string">"9990715"</span>).is_err());</code></pre></div>
+<p>In this case, since years greedily consume up to 4 digits by default, <code>9990</code>
+is parsed as the year. And since months greedily consume up to 2 digits by
+default, <code>71</code> is parsed as the month, which results in an invalid day. If you
+expect your datetimes to always use 4 digits for the year, then it might be
+okay to skip on the delimiters. For example, the year <code>999</code> could be written
+with a leading zero:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::fmt::strtime;
+
+<span class="kw">let </span>date = strtime::parse(<span class="string">"%Y%m%d"</span>, <span class="string">"09990715"</span>)<span class="question-mark">?</span>.to_date()<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(date.to_string(), <span class="string">"0999-07-15"</span>);
+<span class="comment">// Indeed, the leading zero is written by default when
+// formatting, since years are padded out to 4 digits
+// by default:
+</span><span class="macro">assert_eq!</span>(date.strftime(<span class="string">"%Y%m%d"</span>).to_string(), <span class="string">"09990715"</span>);
+</code></pre></div>
+<p>The main advice here is that these APIs can come in handy for ad hoc tasks that
+would otherwise be annoying to deal with. For example, I once wrote a tool to
+extract data from an XML dump of my SMS messages, and one of the date formats
+used was <code>Apr 1, 2022 20:46:15</code>. That doesn’t correspond to any standard, and
+while parsing it with a regex isn’t that difficult, it’s pretty annoying,
+especially because of the English abbreviated month name. That’s exactly the
+kind of use case where this module shines.</p>
+<p>If the formatting machinery in this module isn’t flexible enough for your use
+case and you don’t control the format, it is recommended to write a bespoke
+parser (possibly with regex). It is unlikely that the expressiveness of this
+formatting machinery will be improved much. (Although it is plausible to add
+new conversion specifiers.)</p>
+<h2 id="conversion-specifications"><a class="doc-anchor" href="#conversion-specifications">§</a>Conversion specifications</h2>
+<p>This table lists the complete set of conversion specifiers supported in the
+format. While most conversion specifiers are supported as is in both parsing
+and formatting, there are some differences. Where differences occur, they are
+noted in the table below.</p>
+<p>When parsing, and whenever a conversion specifier matches an enumeration of
+strings, the strings are matched without regard to ASCII case.</p>
+<div class="table"><table><thead><tr><th>Specifier</th><th>Example</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>%%</code></td><td><code>%%</code></td><td>A literal <code>%</code>.</td></tr>
+<tr><td><code>%A</code>, <code>%a</code></td><td><code>Sunday</code>, <code>Sun</code></td><td>The full and abbreviated weekday, respectively.</td></tr>
+<tr><td><code>%B</code>, <code>%b</code>, <code>%h</code></td><td><code>June</code>, <code>Jun</code>, <code>Jun</code></td><td>The full and abbreviated month name, respectively.</td></tr>
+<tr><td><code>%C</code></td><td><code>20</code></td><td>The century of the year. No padding.</td></tr>
+<tr><td><code>%c</code></td><td><code>2024 M07 14, Sun 17:31:59</code></td><td>The date and clock time via <a href="trait.Custom.html" title="trait jiff::fmt::strtime::Custom"><code>Custom</code></a>. Supported when formatting only.</td></tr>
+<tr><td><code>%D</code></td><td><code>7/14/24</code></td><td>Equivalent to <code>%m/%d/%y</code>.</td></tr>
+<tr><td><code>%d</code>, <code>%e</code></td><td><code>25</code>, <code> 5</code></td><td>The day of the month. <code>%d</code> is zero-padded, <code>%e</code> is space padded.</td></tr>
+<tr><td><code>%F</code></td><td><code>2024-07-14</code></td><td>Equivalent to <code>%Y-%m-%d</code>.</td></tr>
+<tr><td><code>%f</code></td><td><code>000456</code></td><td>Fractional seconds, up to nanosecond precision.</td></tr>
+<tr><td><code>%.f</code></td><td><code>.000456</code></td><td>Optional fractional seconds, with dot, up to nanosecond precision.</td></tr>
+<tr><td><code>%G</code></td><td><code>2024</code></td><td>An <a href="https://en.wikipedia.org/wiki/ISO_week_date">ISO 8601 week-based</a> year. Zero padded to 4 digits.</td></tr>
+<tr><td><code>%g</code></td><td><code>24</code></td><td>A two-digit <a href="https://en.wikipedia.org/wiki/ISO_week_date">ISO 8601 week-based</a> year. Represents only 1969-2068. Zero padded.</td></tr>
+<tr><td><code>%H</code></td><td><code>23</code></td><td>The hour in a 24 hour clock. Zero padded.</td></tr>
+<tr><td><code>%I</code></td><td><code>11</code></td><td>The hour in a 12 hour clock. Zero padded.</td></tr>
+<tr><td><code>%j</code></td><td><code>060</code></td><td>The day of the year. Range is <code>1..=366</code>. Zero padded to 3 digits.</td></tr>
+<tr><td><code>%k</code></td><td><code>15</code></td><td>The hour in a 24 hour clock. Space padded.</td></tr>
+<tr><td><code>%l</code></td><td><code> 3</code></td><td>The hour in a 12 hour clock. Space padded.</td></tr>
+<tr><td><code>%M</code></td><td><code>04</code></td><td>The minute. Zero padded.</td></tr>
+<tr><td><code>%m</code></td><td><code>01</code></td><td>The month. Zero padded.</td></tr>
+<tr><td><code>%N</code></td><td><code>123456000</code></td><td>Fractional seconds, up to nanosecond precision. Alias for <code>%9f</code>.</td></tr>
+<tr><td><code>%n</code></td><td><code>\n</code></td><td>Formats as a newline character. Parses arbitrary whitespace.</td></tr>
+<tr><td><code>%P</code></td><td><code>am</code></td><td>Whether the time is in the AM or PM, lowercase.</td></tr>
+<tr><td><code>%p</code></td><td><code>PM</code></td><td>Whether the time is in the AM or PM, uppercase.</td></tr>
+<tr><td><code>%Q</code></td><td><code>America/New_York</code>, <code>+0530</code></td><td>An IANA time zone identifier, or <code>%z</code> if one doesn’t exist.</td></tr>
+<tr><td><code>%:Q</code></td><td><code>America/New_York</code>, <code>+05:30</code></td><td>An IANA time zone identifier, or <code>%:z</code> if one doesn’t exist.</td></tr>
+<tr><td><code>%q</code></td><td><code>4</code></td><td>The quarter of the year. Supported when formatting only.</td></tr>
+<tr><td><code>%R</code></td><td><code>23:30</code></td><td>Equivalent to <code>%H:%M</code>.</td></tr>
+<tr><td><code>%r</code></td><td><code>8:30:00 AM</code></td><td>The 12-hour clock time via <a href="trait.Custom.html" title="trait jiff::fmt::strtime::Custom"><code>Custom</code></a>. Supported when formatting only.</td></tr>
+<tr><td><code>%S</code></td><td><code>59</code></td><td>The second. Zero padded.</td></tr>
+<tr><td><code>%s</code></td><td><code>1737396540</code></td><td>A Unix timestamp, in seconds.</td></tr>
+<tr><td><code>%T</code></td><td><code>23:30:59</code></td><td>Equivalent to <code>%H:%M:%S</code>.</td></tr>
+<tr><td><code>%t</code></td><td><code>\t</code></td><td>Formats as a tab character. Parses arbitrary whitespace.</td></tr>
+<tr><td><code>%U</code></td><td><code>03</code></td><td>Week number. Week 1 is the first week starting with a Sunday. Zero padded.</td></tr>
+<tr><td><code>%u</code></td><td><code>7</code></td><td>The day of the week beginning with Monday at <code>1</code>.</td></tr>
+<tr><td><code>%V</code></td><td><code>05</code></td><td>Week number in the <a href="https://en.wikipedia.org/wiki/ISO_week_date">ISO 8601 week-based</a> calendar. Zero padded.</td></tr>
+<tr><td><code>%W</code></td><td><code>03</code></td><td>Week number. Week 1 is the first week starting with a Monday. Zero padded.</td></tr>
+<tr><td><code>%w</code></td><td><code>0</code></td><td>The day of the week beginning with Sunday at <code>0</code>.</td></tr>
+<tr><td><code>%X</code></td><td><code>17:31:59</code></td><td>The clock time via <a href="trait.Custom.html" title="trait jiff::fmt::strtime::Custom"><code>Custom</code></a>. Supported when formatting only.</td></tr>
+<tr><td><code>%x</code></td><td><code>2024 M07 14</code></td><td>The date via <a href="trait.Custom.html" title="trait jiff::fmt::strtime::Custom"><code>Custom</code></a>. Supported when formatting only.</td></tr>
+<tr><td><code>%Y</code></td><td><code>2024</code></td><td>A full year, including century. Zero padded to 4 digits.</td></tr>
+<tr><td><code>%y</code></td><td><code>24</code></td><td>A two-digit year. Represents only 1969-2068. Zero padded.</td></tr>
+<tr><td><code>%Z</code></td><td><code>EDT</code></td><td>A time zone abbreviation. Supported when formatting only.</td></tr>
+<tr><td><code>%z</code></td><td><code>+0530</code></td><td>A time zone offset in the format <code>[+-]HHMM[SS]</code>.</td></tr>
+<tr><td><code>%:z</code></td><td><code>+05:30</code></td><td>A time zone offset in the format <code>[+-]HH:MM[:SS]</code>.</td></tr>
+<tr><td><code>%::z</code></td><td><code>+05:30:00</code></td><td>A time zone offset in the format <code>[+-]HH:MM:SS</code>.</td></tr>
+<tr><td><code>%:::z</code></td><td><code>-04</code>, <code>+05:30</code></td><td>A time zone offset in the format <code>[+-]HH:[MM[:SS]]</code>.</td></tr>
+</tbody></table>
+</div>
+<p>When formatting, the following flags can be inserted immediately after the <code>%</code>
+and before the directive:</p>
+<ul>
+<li><code>_</code> - Pad a numeric result to the left with spaces.</li>
+<li><code>-</code> - Do not pad a numeric result.</li>
+<li><code>0</code> - Pad a numeric result to the left with zeros.</li>
+<li><code>^</code> - Use alphabetic uppercase for all relevant strings.</li>
+<li><code>#</code> - Swap the case of the result string. This is typically only useful with
+<code>%p</code> or <code>%Z</code>, since they are the only conversion specifiers that emit strings
+entirely in uppercase by default.</li>
+</ul>
+<p>The above flags override the “default” settings of a specifier. For example,
+<code>%_d</code> pads with spaces instead of zeros, and <code>%0e</code> pads with zeros instead of
+spaces. The exceptions are the locale (<code>%c</code>, <code>%r</code>, <code>%X</code>, <code>%x</code>), and time zone
+(<code>%z</code>, <code>%:z</code>) specifiers. They are unaffected by any flags.</p>
+<p>Moreover, any number of decimal digits can be inserted after the (possibly
+absent) flag and before the directive, so long as the parsed number is less
+than 256. The number formed by these digits will correspond to the minimum
+amount of padding (to the left). Note that padding is clamped to a maximum of
+<code>20</code>.</p>
+<p>The flags and padding amount above may be used when parsing as well. Most
+settings are ignored during parsing except for padding. For example, if one
+wanted to parse <code>003</code> as the day <code>3</code>, then one should use <code>%03d</code>. Otherwise, by
+default, <code>%d</code> will only try to consume at most 2 digits.</p>
+<p>The <code>%f</code> and <code>%.f</code> flags also support specifying the precision, up to
+nanoseconds. For example, <code>%3f</code> and <code>%.3f</code> will both always print a fractional
+second component to exactly 3 decimal places. When no precision is specified,
+then <code>%f</code> will always emit at least one digit, even if it’s zero. But <code>%.f</code>
+will emit the empty string when the fractional component is zero. Otherwise, it
+will include the leading <code>.</code>. For parsing, <code>%f</code> does not include the leading
+dot, but <code>%.f</code> does. Note that all of the options above are still parsed for
+<code>%f</code> and <code>%.f</code>, but they are all no-ops (except for the padding for <code>%f</code>, which
+is instead interpreted as a precision setting). When using a precision setting,
+truncation is used. If you need a different rounding mode, you should use
+higher level APIs like <a href="../../struct.Timestamp.html#method.round" title="method jiff::Timestamp::round"><code>Timestamp::round</code></a> or <a href="../../struct.ZonedDateTime.html#method.round" title="method jiff::ZonedDateTime::round"><code>ZonedDateTime::round</code></a>.</p>
+<h2 id="conditionally-unsupported"><a class="doc-anchor" href="#conditionally-unsupported">§</a>Conditionally unsupported</h2>
+<p>Jiff does not support <code>%Q</code> or <code>%:Q</code> (IANA time zone identifier) when the
+<code>alloc</code> crate feature is not enabled. This is because a time zone identifier
+is variable width data. If you have a use case for this, please
+<a href="https://github.com/BurntSushi/jiff/issues/new">detail it in a new issue</a>.</p>
+<h2 id="unsupported"><a class="doc-anchor" href="#unsupported">§</a>Unsupported</h2>
+<p>The following things are currently unsupported:</p>
+<ul>
+<li>Parsing or formatting fractional seconds in the time time zone offset.</li>
+<li>The <code>%+</code> conversion specifier is not supported since there doesn’t seem to
+be any consistent definition for it.</li>
+<li>With only Jiff, the <code>%c</code>, <code>%r</code>, <code>%X</code> and <code>%x</code> locale oriented specifiers
+use a default “unknown” locale via the <a href="struct.DefaultCustom.html" title="struct jiff::fmt::strtime::DefaultCustom"><code>DefaultCustom</code></a> implementation
+of the <a href="trait.Custom.html" title="trait jiff::fmt::strtime::Custom"><code>Custom</code></a> trait. An example of the default locale format for <code>%c</code>
+is <code>2024 M07 14, Sun 17:31:59</code>. One can either switch the POSIX locale
+via <a href="struct.PosixCustom.html" title="struct jiff::fmt::strtime::PosixCustom"><code>PosixCustom</code></a> (e.g., <code>Sun Jul 14 17:31:59 2024</code>), or write your own
+implementation of <a href="trait.Custom.html" title="trait jiff::fmt::strtime::Custom"><code>Custom</code></a> powered by <a href="https://docs.rs/icu"><code>icu</code></a> and glued together with Jiff
+via <a href="https://docs.rs/jiff-icu"><code>jiff-icu</code></a>.</li>
+<li>The <code>E</code> and <code>O</code> locale modifiers are not supported.</li>
+</ul>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.BrokenDownTime.html" title="struct jiff::fmt::strtime::BrokenDownTime">Broken<wbr>Down<wbr>Time</a></dt><dd>The “broken down time” used by parsing and formatting.</dd><dt><a class="struct" href="struct.Config.html" title="struct jiff::fmt::strtime::Config">Config</a></dt><dd>Configuration for customizing the behavior of formatting or parsing.</dd><dt><a class="struct" href="struct.DefaultCustom.html" title="struct jiff::fmt::strtime::DefaultCustom">Default<wbr>Custom</a></dt><dd>The default trait implementation of <a href="trait.Custom.html" title="trait jiff::fmt::strtime::Custom"><code>Custom</code></a>.</dd><dt><a class="struct" href="struct.Display.html" title="struct jiff::fmt::strtime::Display">Display</a></dt><dd>A “lazy” implementation of <code>std::fmt::Display</code> for <code>strftime</code>.</dd><dt><a class="struct" href="struct.Extension.html" title="struct jiff::fmt::strtime::Extension">Extension</a></dt><dd>These are “extensions” to the standard <code>strftime</code> conversion specifiers.</dd><dt><a class="struct" href="struct.PosixCustom.html" title="struct jiff::fmt::strtime::PosixCustom">Posix<wbr>Custom</a></dt><dd>A POSIX locale implementation of <a href="trait.Custom.html" title="trait jiff::fmt::strtime::Custom"><code>Custom</code></a>.</dd></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.Meridiem.html" title="enum jiff::fmt::strtime::Meridiem">Meridiem</a></dt><dd>A label to disambiguate hours on a 12-hour clock.</dd></dl><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><dl class="item-table"><dt><a class="trait" href="trait.Custom.html" title="trait jiff::fmt::strtime::Custom">Custom</a></dt><dd>An interface for customizing <code>strtime</code>-style parsing and formatting.</dd></dl><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><dl class="item-table"><dt><a class="fn" href="fn.format.html" title="fn jiff::fmt::strtime::format">format</a></dt><dd>Format the given broken down time using the format string given.</dd><dt><a class="fn" href="fn.parse.html" title="fn jiff::fmt::strtime::parse">parse</a></dt><dd>Parse the given <code>input</code> according to the given <code>format</code> string.</dd></dl></section></div></main></body></html>

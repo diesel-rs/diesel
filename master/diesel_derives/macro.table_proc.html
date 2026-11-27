@@ -1,0 +1,909 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Specifies that a table exists, and what columns it has. This will create a new public module, with the same name, as the name of the table. In this module, you will find a unit struct named `table`, and a unit struct with the name of each column."><title>table_proc in diesel_derives - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-e56847b5.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="diesel_derives" data-themes="" data-resource-suffix="" data-rustdoc-version="1.92.0-nightly (975e6c8fe 2025-09-23)" data-channel="nightly" data-search-js="search-e256b49e.js" data-stringdex-js="stringdex-061df703.js" data-settings-js="settings-c38705f0.js" ><script src="../static.files/storage-e2aeef58.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-ce535bd0.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc macro"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">table_proc</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../diesel_derives/index.html">diesel_<wbr>derives</a><span class="version">2.3.2</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">table_<wbr>proc</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#example-usage" title="Example usage">Example usage</a></li><li><a href="#dsl" title="dsl">dsl</a></li><li><a href="#all_columns" title="`all_columns`"><code>all_columns</code></a></li><li><a href="#star" title="star">star</a></li><li><a href="#sqltype" title="`SqlType`"><code>SqlType</code></a></li><li><a href="#boxedquery" title="`BoxedQuery`"><code>BoxedQuery</code></a></li><li><a href="#expanded-code" title="Expanded Code">Expanded Code</a><ul><li><a href="#input" title="Input">Input</a></li><li><a href="#expanded-code-1" title="Expanded Code">Expanded Code</a></li></ul></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="index.html">In crate diesel_<wbr>derives</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="index.html">diesel_derives</a></div><h1>Macro <span class="macro">table_<wbr>proc</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/diesel_derives/lib.rs.html#1445-1447">Source</a> </span></div><pre class="rust item-decl"><code>table_proc!() { <span class="comment">/* proc-macro */</span> }</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Specifies that a table exists, and what columns it has. This will create a
+new public module, with the same name, as the name of the table. In this
+module, you will find a unit struct named <code>table</code>, and a unit struct with the
+name of each column.</p>
+<p>By default, this allows a maximum of 32 columns per table.
+You can increase this limit to 64 by enabling the <code>64-column-tables</code> feature.
+You can increase it to 128 by enabling the <code>128-column-tables</code> feature.
+You can decrease it to 16 columns,
+which improves compilation time,
+by disabling the default features of Diesel.
+Note that enabling 64 column tables or larger will substantially increase
+the compile time of Diesel.</p>
+<h3 id="example-usage"><a class="doc-anchor" href="#example-usage">§</a>Example usage</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="macro">diesel::table!</span> {
+    users {
+        id -&gt; Integer,
+        name -&gt; VarChar,
+        favorite_color -&gt; Nullable&lt;VarChar&gt;,
+    }
+}</code></pre></div>
+<p>You may also specify a primary key if it is called something other than <code>id</code>.
+Tables with no primary key aren’t supported.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="macro">diesel::table!</span> {
+    users (non_standard_primary_key) {
+        non_standard_primary_key -&gt; Integer,
+        name -&gt; VarChar,
+        favorite_color -&gt; Nullable&lt;VarChar&gt;,
+    }
+}</code></pre></div>
+<p>For tables with composite primary keys, list all the columns in the primary key.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="macro">diesel::table!</span> {
+    followings (user_id, post_id) {
+        user_id -&gt; Integer,
+        post_id -&gt; Integer,
+        favorited -&gt; Bool,
+    }
+}</code></pre></div>
+<p>If you are using types that aren’t from Diesel’s core types, you can specify
+which types to import.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="macro">diesel::table!</span> {
+    <span class="kw">use </span>diesel::sql_types::<span class="kw-2">*</span>;
+    <span class="kw">use </span>diesel_full_text_search::<span class="kw-2">*</span>;
+
+    posts {
+        id -&gt; Integer,
+        title -&gt; Text,
+        keywords -&gt; TsVector,
+    }
+}</code></pre></div>
+<p>If you want to add documentation to the generated code, you can use the
+following syntax:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="macro">diesel::table!</span> {
+    <span class="doccomment">/// The table containing all blog posts
+    </span>posts {
+        <span class="doccomment">/// The post's unique id
+        </span>id -&gt; Integer,
+        <span class="doccomment">/// The post's title
+        </span>title -&gt; Text,
+    }
+}</code></pre></div>
+<p>If you have a column with the same name as a Rust reserved keyword, you can use
+the <code>sql_name</code> attribute like this:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="macro">diesel::table!</span> {
+    posts {
+        id -&gt; Integer,
+        <span class="doccomment">/// This column is named `mytype` but references the table `type` column.
+        </span><span class="attr">#[sql_name = <span class="string">"type"</span>]
+        </span>mytype -&gt; Text,
+    }
+}</code></pre></div>
+<p>This module will also contain several helper types:</p>
+<h3 id="dsl"><a class="doc-anchor" href="#dsl">§</a>dsl</h3>
+<p>This simply re-exports the table, renamed to the same name as the module,
+and each of the columns. This is useful to glob import when you’re dealing
+primarily with one table, to allow writing <code>users.filter(name.eq("Sean"))</code>
+instead of <code>users::table.filter(users::name.eq("Sean"))</code>.</p>
+<h3 id="all_columns"><a class="doc-anchor" href="#all_columns">§</a><code>all_columns</code></h3>
+<p>A constant will be assigned called <code>all_columns</code>. This is what will be
+selected if you don’t otherwise specify a select clause. It’s type will be
+<code>table::AllColumns</code>. You can also get this value from the
+<code>Table::all_columns</code> function.</p>
+<h3 id="star"><a class="doc-anchor" href="#star">§</a>star</h3>
+<p>This will be the qualified “star” expression for this table (e.g.
+<code>users.*</code>). Internally, we read columns by index, not by name, so this
+column is not safe to read data out of, and it has had its SQL type set to
+<code>()</code> to prevent accidentally using it as such. It is sometimes useful for
+counting statements, however. It can also be accessed through the <code>Table.star()</code>
+method.</p>
+<h3 id="sqltype"><a class="doc-anchor" href="#sqltype">§</a><code>SqlType</code></h3>
+<p>A type alias called <code>SqlType</code> will be created. It will be the SQL type of
+<code>all_columns</code>. The SQL type is needed for things like returning boxed
+queries.</p>
+<h3 id="boxedquery"><a class="doc-anchor" href="#boxedquery">§</a><code>BoxedQuery</code></h3>
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">pub type </span>BoxedQuery&lt;<span class="lifetime">'a</span>, DB, ST = SqlType&gt; = BoxedSelectStatement&lt;<span class="lifetime">'a</span>, ST, table, DB&gt;;</code></pre></div><h2 id="expanded-code"><a class="doc-anchor" href="#expanded-code">§</a>Expanded Code</h2><details>
+<summary> Expanded Code </summary>
+<h5 id="input"><a class="doc-anchor" href="#input">§</a>Input</h5>
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="macro">table!</span> {
+    users { id -&gt; Integer, name -&gt; Text, }
+}
+</code></pre></div><h5 id="expanded-code-1"><a class="doc-anchor" href="#expanded-code-1">§</a>Expanded Code</h5><div class="warning">Expanded code might use diesel internal API's and is only shown for educational purpose</div>
+<p>The macro expands the input to the following Rust code:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="attr">#[allow(unused_imports, dead_code, unreachable_pub, unused_qualifications)]
+</span><span class="kw">pub mod </span>users {
+    <span class="kw">use </span>::diesel;
+    <span class="kw">pub use </span><span class="self">self</span>::columns::<span class="kw-2">*</span>;
+    <span class="kw">use </span>diesel::sql_types::<span class="kw-2">*</span>;
+    <span class="doccomment">/// Re-exports all of the columns of this table, as well as the
+    /// table struct renamed to the module name. This is meant to be
+    /// glob imported for functions which only deal with one table.
+    </span><span class="kw">pub mod </span>dsl {
+        <span class="kw">pub use </span><span class="kw">super</span>::columns::id;
+        <span class="kw">pub use </span><span class="kw">super</span>::columns::name;
+        <span class="kw">pub use </span><span class="kw">super</span>::table <span class="kw">as </span>users;
+    }
+    <span class="attr">#[allow(non_upper_case_globals, dead_code)]
+    </span><span class="doccomment">/// A tuple of all of the columns on this table
+    </span><span class="kw">pub const </span>all_columns: (id, name) = (id, name);
+    <span class="attr">#[allow(non_camel_case_types)]
+    #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId, Default)]
+    </span><span class="doccomment">/// The actual table struct
+    ///
+    /// This is the type which provides the base methods of the query
+    /// builder, such as `.select` and `.filter`.
+    </span><span class="kw">pub struct </span>table;
+    <span class="kw">impl </span>table {
+        <span class="attr">#[allow(dead_code)]
+        </span><span class="doccomment">/// Represents `table_name.*`, which is sometimes necessary
+        /// for efficient count queries. It cannot be used in place of
+        /// `all_columns`
+        </span><span class="kw">pub fn </span>star(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; star {
+            star
+        }
+    }
+    <span class="doccomment">/// The SQL type of all of the columns on this table
+    </span><span class="kw">pub type </span>SqlType = (Integer, Text);
+    <span class="doccomment">/// Helper type for representing a boxed query from this table
+    </span><span class="kw">pub type </span>BoxedQuery&lt;<span class="lifetime">'a</span>, DB, ST = SqlType&gt; = diesel::internal::table_macro::BoxedSelectStatement&lt;
+        <span class="lifetime">'a</span>,
+        ST,
+        diesel::internal::table_macro::FromClause&lt;table&gt;,
+        DB,
+    &gt;;
+    <span class="kw">impl </span>diesel::QuerySource <span class="kw">for </span>table {
+        <span class="kw">type </span>FromClause = diesel::internal::table_macro::StaticQueryFragmentInstance&lt;
+            table,
+        &gt;;
+        <span class="kw">type </span>DefaultSelection = &lt;<span class="self">Self </span><span class="kw">as </span>diesel::Table&gt;::AllColumns;
+        <span class="kw">fn </span>from_clause(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self</span>::FromClause {
+            diesel::internal::table_macro::StaticQueryFragmentInstance::new()
+        }
+        <span class="kw">fn </span>default_selection(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self</span>::DefaultSelection {
+            <span class="kw">use </span>diesel::Table;
+            <span class="self">Self</span>::all_columns()
+        }
+    }
+    <span class="kw">impl</span>&lt;DB&gt; diesel::query_builder::QueryFragment&lt;DB&gt; <span class="kw">for </span>table
+    <span class="kw">where
+        </span>DB: diesel::backend::Backend,
+        &lt;table <span class="kw">as </span>diesel::internal::table_macro::StaticQueryFragment&gt;::Component: diesel::query_builder::QueryFragment&lt;
+            DB,
+        &gt;,
+    {
+        <span class="kw">fn </span>walk_ast&lt;<span class="lifetime">'b</span>&gt;(
+            <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+            __diesel_internal_pass: diesel::query_builder::AstPass&lt;<span class="lifetime">'_</span>, <span class="lifetime">'b</span>, DB&gt;,
+        ) -&gt; diesel::result::QueryResult&lt;()&gt; {
+            &lt;table <span class="kw">as </span>diesel::internal::table_macro::StaticQueryFragment&gt;::STATIC_COMPONENT
+                .walk_ast(__diesel_internal_pass)
+        }
+    }
+    <span class="kw">impl </span>diesel::internal::table_macro::StaticQueryFragment <span class="kw">for </span>table {
+        <span class="kw">type </span>Component = diesel::internal::table_macro::Identifier&lt;<span class="lifetime">'static</span>&gt;;
+        <span class="kw">const </span>STATIC_COMPONENT: <span class="kw-2">&amp;</span><span class="lifetime">'static </span><span class="self">Self</span>::Component = <span class="kw-2">&amp;</span>diesel::internal::table_macro::Identifier(
+            <span class="string">"users"</span>,
+        );
+    }
+    <span class="kw">impl </span>diesel::query_builder::AsQuery <span class="kw">for </span>table {
+        <span class="kw">type </span>SqlType = SqlType;
+        <span class="kw">type </span>Query = diesel::internal::table_macro::SelectStatement&lt;
+            diesel::internal::table_macro::FromClause&lt;<span class="self">Self</span>&gt;,
+        &gt;;
+        <span class="kw">fn </span>as_query(<span class="self">self</span>) -&gt; <span class="self">Self</span>::Query {
+            diesel::internal::table_macro::SelectStatement::simple(<span class="self">self</span>)
+        }
+    }
+    <span class="kw">impl </span>diesel::Table <span class="kw">for </span>table {
+        <span class="kw">type </span>PrimaryKey = id;
+        <span class="kw">type </span>AllColumns = (id, name);
+        <span class="kw">fn </span>primary_key(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self</span>::PrimaryKey {
+            id
+        }
+        <span class="kw">fn </span>all_columns() -&gt; <span class="self">Self</span>::AllColumns {
+            (id, name)
+        }
+    }
+    <span class="kw">impl </span>diesel::associations::HasTable <span class="kw">for </span>table {
+        <span class="kw">type </span>Table = <span class="self">Self</span>;
+        <span class="kw">fn </span>table() -&gt; <span class="self">Self</span>::Table {
+            table
+        }
+    }
+    <span class="kw">impl </span>diesel::query_builder::IntoUpdateTarget <span class="kw">for </span>table {
+        <span class="kw">type </span>WhereClause = &lt;&lt;<span class="self">Self </span><span class="kw">as </span>diesel::query_builder::AsQuery&gt;::Query <span class="kw">as </span>diesel::query_builder::IntoUpdateTarget&gt;::WhereClause;
+        <span class="kw">fn </span>into_update_target(
+            <span class="self">self</span>,
+        ) -&gt; diesel::query_builder::UpdateTarget&lt;<span class="self">Self</span>::Table, <span class="self">Self</span>::WhereClause&gt; {
+            <span class="kw">use </span>diesel::query_builder::AsQuery;
+            <span class="kw">let </span>q: diesel::internal::table_macro::SelectStatement&lt;
+                diesel::internal::table_macro::FromClause&lt;table&gt;,
+            &gt; = <span class="self">self</span>.as_query();
+            q.into_update_target()
+        }
+    }
+    <span class="kw">impl </span>diesel::query_source::AppearsInFromClause&lt;table&gt; <span class="kw">for </span>table {
+        <span class="kw">type </span>Count = diesel::query_source::Once;
+    }
+    <span class="kw">impl</span>&lt;S&gt; diesel::internal::table_macro::AliasAppearsInFromClause&lt;S, table&gt; <span class="kw">for </span>table
+    <span class="kw">where
+        </span>S: diesel::query_source::AliasSource&lt;Target = table&gt;,
+    {
+        <span class="kw">type </span>Count = diesel::query_source::Never;
+    }
+    <span class="kw">impl</span>&lt;
+        S1,
+        S2,
+    &gt; diesel::internal::table_macro::AliasAliasAppearsInFromClause&lt;table, S2, S1&gt;
+    <span class="kw">for </span>table
+    <span class="kw">where
+        </span>S1: diesel::query_source::AliasSource&lt;Target = table&gt;,
+        S2: diesel::query_source::AliasSource&lt;Target = table&gt;,
+        S1: diesel::internal::table_macro::AliasAliasAppearsInFromClauseSameTable&lt;
+            S2,
+            table,
+        &gt;,
+    {
+        <span class="kw">type </span>Count = &lt;S1 <span class="kw">as </span>diesel::internal::table_macro::AliasAliasAppearsInFromClauseSameTable&lt;
+            S2,
+            table,
+        &gt;&gt;::Count;
+    }
+    <span class="kw">impl</span>&lt;S&gt; diesel::query_source::AppearsInFromClause&lt;diesel::query_source::Alias&lt;S&gt;&gt;
+    <span class="kw">for </span>table
+    <span class="kw">where
+        </span>S: diesel::query_source::AliasSource,
+    {
+        <span class="kw">type </span>Count = diesel::query_source::Never;
+    }
+    <span class="kw">impl</span>&lt;
+        S,
+        C,
+    &gt; diesel::internal::table_macro::FieldAliasMapperAssociatedTypesDisjointnessTrick&lt;
+        table,
+        S,
+        C,
+    &gt; <span class="kw">for </span>table
+    <span class="kw">where
+        </span>S: diesel::query_source::AliasSource&lt;Target = table&gt; + ::std::clone::Clone,
+        C: diesel::query_source::Column&lt;Table = table&gt;,
+    {
+        <span class="kw">type </span>Out = diesel::query_source::AliasedField&lt;S, C&gt;;
+        <span class="kw">fn </span>map(
+            __diesel_internal_column: C,
+            __diesel_internal_alias: <span class="kw-2">&amp;</span>diesel::query_source::Alias&lt;S&gt;,
+        ) -&gt; <span class="self">Self</span>::Out {
+            __diesel_internal_alias.field(__diesel_internal_column)
+        }
+    }
+    <span class="kw">impl </span>diesel::query_source::AppearsInFromClause&lt;table&gt;
+    <span class="kw">for </span>diesel::internal::table_macro::NoFromClause {
+        <span class="kw">type </span>Count = diesel::query_source::Never;
+    }
+    <span class="kw">impl</span>&lt;
+        Left,
+        Right,
+        Kind,
+    &gt; diesel::JoinTo&lt;diesel::internal::table_macro::Join&lt;Left, Right, Kind&gt;&gt; <span class="kw">for </span>table
+    <span class="kw">where
+        </span>diesel::internal::table_macro::Join&lt;Left, Right, Kind&gt;: diesel::JoinTo&lt;table&gt;,
+        Left: diesel::query_source::QuerySource,
+        Right: diesel::query_source::QuerySource,
+    {
+        <span class="kw">type </span>FromClause = diesel::internal::table_macro::Join&lt;Left, Right, Kind&gt;;
+        <span class="kw">type </span>OnClause = &lt;diesel::internal::table_macro::Join&lt;
+            Left,
+            Right,
+            Kind,
+        &gt; <span class="kw">as </span>diesel::JoinTo&lt;table&gt;&gt;::OnClause;
+        <span class="kw">fn </span>join_target(
+            __diesel_internal_rhs: diesel::internal::table_macro::Join&lt;Left, Right, Kind&gt;,
+        ) -&gt; (<span class="self">Self</span>::FromClause, <span class="self">Self</span>::OnClause) {
+            <span class="kw">let </span>(<span class="kw">_</span>, __diesel_internal_on_clause) = diesel::internal::table_macro::Join::join_target(
+                table,
+            );
+            (__diesel_internal_rhs, __diesel_internal_on_clause)
+        }
+    }
+    <span class="kw">impl</span>&lt;Join, On&gt; diesel::JoinTo&lt;diesel::internal::table_macro::JoinOn&lt;Join, On&gt;&gt;
+    <span class="kw">for </span>table
+    <span class="kw">where
+        </span>diesel::internal::table_macro::JoinOn&lt;Join, On&gt;: diesel::JoinTo&lt;table&gt;,
+    {
+        <span class="kw">type </span>FromClause = diesel::internal::table_macro::JoinOn&lt;Join, On&gt;;
+        <span class="kw">type </span>OnClause = &lt;diesel::internal::table_macro::JoinOn&lt;
+            Join,
+            On,
+        &gt; <span class="kw">as </span>diesel::JoinTo&lt;table&gt;&gt;::OnClause;
+        <span class="kw">fn </span>join_target(
+            __diesel_internal_rhs: diesel::internal::table_macro::JoinOn&lt;Join, On&gt;,
+        ) -&gt; (<span class="self">Self</span>::FromClause, <span class="self">Self</span>::OnClause) {
+            <span class="kw">let </span>(<span class="kw">_</span>, __diesel_internal_on_clause) = diesel::internal::table_macro::JoinOn::join_target(
+                table,
+            );
+            (__diesel_internal_rhs, __diesel_internal_on_clause)
+        }
+    }
+    <span class="kw">impl</span>&lt;
+        F,
+        S,
+        D,
+        W,
+        O,
+        L,
+        Of,
+        G,
+    &gt; diesel::JoinTo&lt;
+        diesel::internal::table_macro::SelectStatement&lt;
+            diesel::internal::table_macro::FromClause&lt;F&gt;,
+            S,
+            D,
+            W,
+            O,
+            L,
+            Of,
+            G,
+        &gt;,
+    &gt; <span class="kw">for </span>table
+    <span class="kw">where
+        </span>diesel::internal::table_macro::SelectStatement&lt;
+            diesel::internal::table_macro::FromClause&lt;F&gt;,
+            S,
+            D,
+            W,
+            O,
+            L,
+            Of,
+            G,
+        &gt;: diesel::JoinTo&lt;table&gt;,
+        F: diesel::query_source::QuerySource,
+    {
+        <span class="kw">type </span>FromClause = diesel::internal::table_macro::SelectStatement&lt;
+            diesel::internal::table_macro::FromClause&lt;F&gt;,
+            S,
+            D,
+            W,
+            O,
+            L,
+            Of,
+            G,
+        &gt;;
+        <span class="kw">type </span>OnClause = &lt;diesel::internal::table_macro::SelectStatement&lt;
+            diesel::internal::table_macro::FromClause&lt;F&gt;,
+            S,
+            D,
+            W,
+            O,
+            L,
+            Of,
+            G,
+        &gt; <span class="kw">as </span>diesel::JoinTo&lt;table&gt;&gt;::OnClause;
+        <span class="kw">fn </span>join_target(
+            __diesel_internal_rhs: diesel::internal::table_macro::SelectStatement&lt;
+                diesel::internal::table_macro::FromClause&lt;F&gt;,
+                S,
+                D,
+                W,
+                O,
+                L,
+                Of,
+                G,
+            &gt;,
+        ) -&gt; (<span class="self">Self</span>::FromClause, <span class="self">Self</span>::OnClause) {
+            <span class="kw">let </span>(<span class="kw">_</span>, __diesel_internal_on_clause) = diesel::internal::table_macro::SelectStatement::join_target(
+                table,
+            );
+            (__diesel_internal_rhs, __diesel_internal_on_clause)
+        }
+    }
+    <span class="kw">impl</span>&lt;
+        <span class="lifetime">'a</span>,
+        QS,
+        ST,
+        DB,
+    &gt; diesel::JoinTo&lt;
+        diesel::internal::table_macro::BoxedSelectStatement&lt;
+            <span class="lifetime">'a</span>,
+            diesel::internal::table_macro::FromClause&lt;QS&gt;,
+            ST,
+            DB,
+        &gt;,
+    &gt; <span class="kw">for </span>table
+    <span class="kw">where
+        </span>diesel::internal::table_macro::BoxedSelectStatement&lt;
+            <span class="lifetime">'a</span>,
+            diesel::internal::table_macro::FromClause&lt;QS&gt;,
+            ST,
+            DB,
+        &gt;: diesel::JoinTo&lt;table&gt;,
+        QS: diesel::query_source::QuerySource,
+    {
+        <span class="kw">type </span>FromClause = diesel::internal::table_macro::BoxedSelectStatement&lt;
+            <span class="lifetime">'a</span>,
+            diesel::internal::table_macro::FromClause&lt;QS&gt;,
+            ST,
+            DB,
+        &gt;;
+        <span class="kw">type </span>OnClause = &lt;diesel::internal::table_macro::BoxedSelectStatement&lt;
+            <span class="lifetime">'a</span>,
+            diesel::internal::table_macro::FromClause&lt;QS&gt;,
+            ST,
+            DB,
+        &gt; <span class="kw">as </span>diesel::JoinTo&lt;table&gt;&gt;::OnClause;
+        <span class="kw">fn </span>join_target(
+            __diesel_internal_rhs: diesel::internal::table_macro::BoxedSelectStatement&lt;
+                <span class="lifetime">'a</span>,
+                diesel::internal::table_macro::FromClause&lt;QS&gt;,
+                ST,
+                DB,
+            &gt;,
+        ) -&gt; (<span class="self">Self</span>::FromClause, <span class="self">Self</span>::OnClause) {
+            <span class="kw">let </span>(<span class="kw">_</span>, __diesel_internal_on_clause) = diesel::internal::table_macro::BoxedSelectStatement::join_target(
+                table,
+            );
+            (__diesel_internal_rhs, __diesel_internal_on_clause)
+        }
+    }
+    <span class="kw">impl</span>&lt;S&gt; diesel::JoinTo&lt;diesel::query_source::Alias&lt;S&gt;&gt; <span class="kw">for </span>table
+    <span class="kw">where
+        </span>diesel::query_source::Alias&lt;S&gt;: diesel::JoinTo&lt;table&gt;,
+    {
+        <span class="kw">type </span>FromClause = diesel::query_source::Alias&lt;S&gt;;
+        <span class="kw">type </span>OnClause = &lt;diesel::query_source::Alias&lt;
+            S,
+        &gt; <span class="kw">as </span>diesel::JoinTo&lt;table&gt;&gt;::OnClause;
+        <span class="kw">fn </span>join_target(
+            __diesel_internal_rhs: diesel::query_source::Alias&lt;S&gt;,
+        ) -&gt; (<span class="self">Self</span>::FromClause, <span class="self">Self</span>::OnClause) {
+            <span class="kw">let </span>(<span class="kw">_</span>, __diesel_internal_on_clause) = diesel::query_source::Alias::&lt;
+                S,
+            &gt;::join_target(table);
+            (__diesel_internal_rhs, __diesel_internal_on_clause)
+        }
+    }
+    <span class="kw">impl</span>&lt;T&gt; diesel::insertable::Insertable&lt;T&gt; <span class="kw">for </span>table
+    <span class="kw">where
+        </span>&lt;table <span class="kw">as </span>diesel::query_builder::AsQuery&gt;::Query: diesel::insertable::Insertable&lt;
+            T,
+        &gt;,
+    {
+        <span class="kw">type </span>Values = &lt;&lt;table <span class="kw">as </span>diesel::query_builder::AsQuery&gt;::Query <span class="kw">as </span>diesel::insertable::Insertable&lt;
+            T,
+        &gt;&gt;::Values;
+        <span class="kw">fn </span>values(<span class="self">self</span>) -&gt; <span class="self">Self</span>::Values {
+            <span class="kw">use </span>diesel::query_builder::AsQuery;
+            <span class="self">self</span>.as_query().values()
+        }
+    }
+    <span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T&gt; diesel::insertable::Insertable&lt;T&gt; <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">'a </span>table
+    <span class="kw">where
+        </span>table: diesel::insertable::Insertable&lt;T&gt;,
+    {
+        <span class="kw">type </span>Values = &lt;table <span class="kw">as </span>diesel::insertable::Insertable&lt;T&gt;&gt;::Values;
+        <span class="kw">fn </span>values(<span class="self">self</span>) -&gt; <span class="self">Self</span>::Values {
+            (<span class="kw-2">*</span><span class="self">self</span>).values()
+        }
+    }
+    <span class="doccomment">/// Contains all of the columns of this table
+    </span><span class="kw">pub mod </span>columns {
+        <span class="kw">use </span>::diesel;
+        <span class="kw">use </span><span class="kw">super</span>::table;
+        <span class="kw">use </span>diesel::sql_types::<span class="kw-2">*</span>;
+        <span class="attr">#[allow(non_camel_case_types, dead_code)]
+        #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId)]
+        </span><span class="doccomment">/// Represents `table_name.*`, which is sometimes needed for
+        /// efficient count queries. It cannot be used in place of
+        /// `all_columns`, and has a `SqlType` of `()` to prevent it
+        /// being used that way
+        </span><span class="kw">pub struct </span>star;
+        <span class="kw">impl</span>&lt;__GB&gt; diesel::expression::ValidGrouping&lt;__GB&gt; <span class="kw">for </span>star
+        <span class="kw">where
+            </span>(id, name): diesel::expression::ValidGrouping&lt;__GB&gt;,
+        {
+            <span class="kw">type </span>IsAggregate = &lt;(
+                id,
+                name,
+            ) <span class="kw">as </span>diesel::expression::ValidGrouping&lt;__GB&gt;&gt;::IsAggregate;
+        }
+        <span class="kw">impl </span>diesel::Expression <span class="kw">for </span>star {
+            <span class="kw">type </span>SqlType = diesel::expression::expression_types::NotSelectable;
+        }
+        <span class="kw">impl</span>&lt;DB: diesel::backend::Backend&gt; diesel::query_builder::QueryFragment&lt;DB&gt;
+        <span class="kw">for </span>star
+        <span class="kw">where
+            </span>&lt;table <span class="kw">as </span>diesel::QuerySource&gt;::FromClause: diesel::query_builder::QueryFragment&lt;
+                DB,
+            &gt;,
+        {
+            <span class="attr">#[allow(non_snake_case)]
+            </span><span class="kw">fn </span>walk_ast&lt;<span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                <span class="kw-2">mut </span>__diesel_internal_out: diesel::query_builder::AstPass&lt;<span class="lifetime">'_</span>, <span class="lifetime">'b</span>, DB&gt;,
+            ) -&gt; diesel::result::QueryResult&lt;()&gt; {
+                <span class="kw">use </span>diesel::QuerySource;
+                <span class="kw">if </span>!__diesel_internal_out.should_skip_from() {
+                    <span class="kw">const </span>FROM_CLAUSE: diesel::internal::table_macro::StaticQueryFragmentInstance&lt;
+                        table,
+                    &gt; = diesel::internal::table_macro::StaticQueryFragmentInstance::new();
+                    FROM_CLAUSE.walk_ast(__diesel_internal_out.reborrow())<span class="question-mark">?</span>;
+                    __diesel_internal_out.push_sql(<span class="string">"."</span>);
+                }
+                __diesel_internal_out.push_sql(<span class="string">"*"</span>);
+                <span class="prelude-val">Ok</span>(())
+            }
+        }
+        <span class="kw">impl </span>diesel::SelectableExpression&lt;table&gt; <span class="kw">for </span>star {}
+        <span class="kw">impl </span>diesel::AppearsOnTable&lt;table&gt; <span class="kw">for </span>star {}
+        <span class="attr">#[allow(non_camel_case_types, dead_code)]
+        #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId, Default)]
+        </span><span class="kw">pub struct </span>id;
+        <span class="kw">impl </span>diesel::expression::Expression <span class="kw">for </span>id {
+            <span class="kw">type </span>SqlType = Integer;
+        }
+        <span class="kw">impl</span>&lt;DB&gt; diesel::query_builder::QueryFragment&lt;DB&gt; <span class="kw">for </span>id
+        <span class="kw">where
+            </span>DB: diesel::backend::Backend,
+            diesel::internal::table_macro::StaticQueryFragmentInstance&lt;
+                table,
+            &gt;: diesel::query_builder::QueryFragment&lt;DB&gt;,
+        {
+            <span class="attr">#[allow(non_snake_case)]
+            </span><span class="kw">fn </span>walk_ast&lt;<span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                <span class="kw-2">mut </span>__diesel_internal_out: diesel::query_builder::AstPass&lt;<span class="lifetime">'_</span>, <span class="lifetime">'b</span>, DB&gt;,
+            ) -&gt; diesel::result::QueryResult&lt;()&gt; {
+                <span class="kw">if </span>!__diesel_internal_out.should_skip_from() {
+                    <span class="kw">const </span>FROM_CLAUSE: diesel::internal::table_macro::StaticQueryFragmentInstance&lt;
+                        table,
+                    &gt; = diesel::internal::table_macro::StaticQueryFragmentInstance::new();
+                    FROM_CLAUSE.walk_ast(__diesel_internal_out.reborrow())<span class="question-mark">?</span>;
+                    __diesel_internal_out.push_sql(<span class="string">"."</span>);
+                }
+                __diesel_internal_out.push_identifier(<span class="string">"id"</span>)
+            }
+        }
+        <span class="kw">impl </span>diesel::SelectableExpression&lt;<span class="kw">super</span>::table&gt; <span class="kw">for </span>id {}
+        <span class="kw">impl</span>&lt;QS&gt; diesel::AppearsOnTable&lt;QS&gt; <span class="kw">for </span>id
+        <span class="kw">where
+            </span>QS: diesel::query_source::AppearsInFromClause&lt;
+                <span class="kw">super</span>::table,
+                Count = diesel::query_source::Once,
+            &gt;,
+        {}
+        <span class="kw">impl</span>&lt;
+            Left,
+            Right,
+        &gt; diesel::SelectableExpression&lt;
+            diesel::internal::table_macro::Join&lt;
+                Left,
+                Right,
+                diesel::internal::table_macro::LeftOuter,
+            &gt;,
+        &gt; <span class="kw">for </span>id
+        <span class="kw">where
+            </span>id: diesel::AppearsOnTable&lt;
+                diesel::internal::table_macro::Join&lt;
+                    Left,
+                    Right,
+                    diesel::internal::table_macro::LeftOuter,
+                &gt;,
+            &gt;,
+            <span class="self">Self</span>: diesel::SelectableExpression&lt;Left&gt;,
+            Right: diesel::query_source::AppearsInFromClause&lt;
+                    <span class="kw">super</span>::table,
+                    Count = diesel::query_source::Never,
+                &gt; + diesel::query_source::QuerySource,
+            Left: diesel::query_source::QuerySource,
+        {}
+        <span class="kw">impl</span>&lt;
+            Left,
+            Right,
+        &gt; diesel::SelectableExpression&lt;
+            diesel::internal::table_macro::Join&lt;
+                Left,
+                Right,
+                diesel::internal::table_macro::Inner,
+            &gt;,
+        &gt; <span class="kw">for </span>id
+        <span class="kw">where
+            </span>id: diesel::AppearsOnTable&lt;
+                diesel::internal::table_macro::Join&lt;
+                    Left,
+                    Right,
+                    diesel::internal::table_macro::Inner,
+                &gt;,
+            &gt;,
+            Left: diesel::query_source::AppearsInFromClause&lt;<span class="kw">super</span>::table&gt;
+                + diesel::query_source::QuerySource,
+            Right: diesel::query_source::AppearsInFromClause&lt;<span class="kw">super</span>::table&gt;
+                + diesel::query_source::QuerySource,
+            (
+                Left::Count,
+                Right::Count,
+            ): diesel::internal::table_macro::Pick&lt;Left, Right&gt;,
+            <span class="self">Self</span>: diesel::SelectableExpression&lt;
+                &lt;(
+                    Left::Count,
+                    Right::Count,
+                ) <span class="kw">as </span>diesel::internal::table_macro::Pick&lt;Left, Right&gt;&gt;::Selection,
+            &gt;,
+        {}
+        <span class="kw">impl</span>&lt;
+            Join,
+            On,
+        &gt; diesel::SelectableExpression&lt;diesel::internal::table_macro::JoinOn&lt;Join, On&gt;&gt;
+        <span class="kw">for </span>id
+        <span class="kw">where
+            </span>id: diesel::SelectableExpression&lt;Join&gt;
+                + diesel::AppearsOnTable&lt;
+                    diesel::internal::table_macro::JoinOn&lt;Join, On&gt;,
+                &gt;,
+        {}
+        <span class="kw">impl</span>&lt;
+            From,
+        &gt; diesel::SelectableExpression&lt;
+            diesel::internal::table_macro::SelectStatement&lt;
+                diesel::internal::table_macro::FromClause&lt;From&gt;,
+            &gt;,
+        &gt; <span class="kw">for </span>id
+        <span class="kw">where
+            </span>From: diesel::query_source::QuerySource,
+            id: diesel::SelectableExpression&lt;From&gt;
+                + diesel::AppearsOnTable&lt;
+                    diesel::internal::table_macro::SelectStatement&lt;
+                        diesel::internal::table_macro::FromClause&lt;From&gt;,
+                    &gt;,
+                &gt;,
+        {}
+        <span class="kw">impl</span>&lt;__GB&gt; diesel::expression::ValidGrouping&lt;__GB&gt; <span class="kw">for </span>id
+        <span class="kw">where
+            </span>__GB: diesel::expression::IsContainedInGroupBy&lt;
+                id,
+                Output = diesel::expression::is_contained_in_group_by::Yes,
+            &gt;,
+        {
+            <span class="kw">type </span>IsAggregate = diesel::expression::is_aggregate::Yes;
+        }
+        <span class="kw">impl </span>diesel::expression::ValidGrouping&lt;()&gt; <span class="kw">for </span>id {
+            <span class="kw">type </span>IsAggregate = diesel::expression::is_aggregate::No;
+        }
+        <span class="kw">impl </span>diesel::expression::IsContainedInGroupBy&lt;id&gt; <span class="kw">for </span>id {
+            <span class="kw">type </span>Output = diesel::expression::is_contained_in_group_by::Yes;
+        }
+        <span class="kw">impl </span>diesel::query_source::Column <span class="kw">for </span>id {
+            <span class="kw">type </span>Table = <span class="kw">super</span>::table;
+            <span class="kw">const </span>NAME: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str = <span class="string">"id"</span>;
+        }
+        <span class="kw">impl</span>&lt;T&gt; diesel::EqAll&lt;T&gt; <span class="kw">for </span>id
+        <span class="kw">where
+            </span>T: diesel::expression::AsExpression&lt;Integer&gt;,
+            diesel::dsl::Eq&lt;
+                id,
+                T::Expression,
+            &gt;: diesel::Expression&lt;SqlType = diesel::sql_types::Bool&gt;,
+        {
+            <span class="kw">type </span>Output = diesel::dsl::Eq&lt;<span class="self">Self</span>, T::Expression&gt;;
+            <span class="kw">fn </span>eq_all(<span class="self">self</span>, __diesel_internal_rhs: T) -&gt; <span class="self">Self</span>::Output {
+                <span class="kw">use </span>diesel::expression_methods::ExpressionMethods;
+                <span class="self">self</span>.eq(__diesel_internal_rhs)
+            }
+        }
+        <span class="kw">impl</span>&lt;Rhs&gt; ::std::ops::Add&lt;Rhs&gt; <span class="kw">for </span>id
+        <span class="kw">where
+            </span>Rhs: diesel::expression::AsExpression&lt;
+                &lt;&lt;id <span class="kw">as </span>diesel::Expression&gt;::SqlType <span class="kw">as </span>diesel::sql_types::ops::Add&gt;::Rhs,
+            &gt;,
+        {
+            <span class="kw">type </span>Output = diesel::internal::table_macro::ops::Add&lt;<span class="self">Self</span>, Rhs::Expression&gt;;
+            <span class="kw">fn </span>add(<span class="self">self</span>, __diesel_internal_rhs: Rhs) -&gt; <span class="self">Self</span>::Output {
+                diesel::internal::table_macro::ops::Add::new(
+                    <span class="self">self</span>,
+                    __diesel_internal_rhs.as_expression(),
+                )
+            }
+        }
+        <span class="kw">impl</span>&lt;Rhs&gt; ::std::ops::Sub&lt;Rhs&gt; <span class="kw">for </span>id
+        <span class="kw">where
+            </span>Rhs: diesel::expression::AsExpression&lt;
+                &lt;&lt;id <span class="kw">as </span>diesel::Expression&gt;::SqlType <span class="kw">as </span>diesel::sql_types::ops::Sub&gt;::Rhs,
+            &gt;,
+        {
+            <span class="kw">type </span>Output = diesel::internal::table_macro::ops::Sub&lt;<span class="self">Self</span>, Rhs::Expression&gt;;
+            <span class="kw">fn </span>sub(<span class="self">self</span>, __diesel_internal_rhs: Rhs) -&gt; <span class="self">Self</span>::Output {
+                diesel::internal::table_macro::ops::Sub::new(
+                    <span class="self">self</span>,
+                    __diesel_internal_rhs.as_expression(),
+                )
+            }
+        }
+        <span class="kw">impl</span>&lt;Rhs&gt; ::std::ops::Div&lt;Rhs&gt; <span class="kw">for </span>id
+        <span class="kw">where
+            </span>Rhs: diesel::expression::AsExpression&lt;
+                &lt;&lt;id <span class="kw">as </span>diesel::Expression&gt;::SqlType <span class="kw">as </span>diesel::sql_types::ops::Div&gt;::Rhs,
+            &gt;,
+        {
+            <span class="kw">type </span>Output = diesel::internal::table_macro::ops::Div&lt;<span class="self">Self</span>, Rhs::Expression&gt;;
+            <span class="kw">fn </span>div(<span class="self">self</span>, __diesel_internal_rhs: Rhs) -&gt; <span class="self">Self</span>::Output {
+                diesel::internal::table_macro::ops::Div::new(
+                    <span class="self">self</span>,
+                    __diesel_internal_rhs.as_expression(),
+                )
+            }
+        }
+        <span class="kw">impl</span>&lt;Rhs&gt; ::std::ops::Mul&lt;Rhs&gt; <span class="kw">for </span>id
+        <span class="kw">where
+            </span>Rhs: diesel::expression::AsExpression&lt;
+                &lt;&lt;id <span class="kw">as </span>diesel::Expression&gt;::SqlType <span class="kw">as </span>diesel::sql_types::ops::Mul&gt;::Rhs,
+            &gt;,
+        {
+            <span class="kw">type </span>Output = diesel::internal::table_macro::ops::Mul&lt;<span class="self">Self</span>, Rhs::Expression&gt;;
+            <span class="kw">fn </span>mul(<span class="self">self</span>, __diesel_internal_rhs: Rhs) -&gt; <span class="self">Self</span>::Output {
+                diesel::internal::table_macro::ops::Mul::new(
+                    <span class="self">self</span>,
+                    __diesel_internal_rhs.as_expression(),
+                )
+            }
+        }
+        <span class="attr">#[allow(non_camel_case_types, dead_code)]
+        #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId, Default)]
+        </span><span class="kw">pub struct </span>name;
+        <span class="kw">impl </span>diesel::expression::Expression <span class="kw">for </span>name {
+            <span class="kw">type </span>SqlType = Text;
+        }
+        <span class="kw">impl</span>&lt;DB&gt; diesel::query_builder::QueryFragment&lt;DB&gt; <span class="kw">for </span>name
+        <span class="kw">where
+            </span>DB: diesel::backend::Backend,
+            diesel::internal::table_macro::StaticQueryFragmentInstance&lt;
+                table,
+            &gt;: diesel::query_builder::QueryFragment&lt;DB&gt;,
+        {
+            <span class="attr">#[allow(non_snake_case)]
+            </span><span class="kw">fn </span>walk_ast&lt;<span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                <span class="kw-2">mut </span>__diesel_internal_out: diesel::query_builder::AstPass&lt;<span class="lifetime">'_</span>, <span class="lifetime">'b</span>, DB&gt;,
+            ) -&gt; diesel::result::QueryResult&lt;()&gt; {
+                <span class="kw">if </span>!__diesel_internal_out.should_skip_from() {
+                    <span class="kw">const </span>FROM_CLAUSE: diesel::internal::table_macro::StaticQueryFragmentInstance&lt;
+                        table,
+                    &gt; = diesel::internal::table_macro::StaticQueryFragmentInstance::new();
+                    FROM_CLAUSE.walk_ast(__diesel_internal_out.reborrow())<span class="question-mark">?</span>;
+                    __diesel_internal_out.push_sql(<span class="string">"."</span>);
+                }
+                __diesel_internal_out.push_identifier(<span class="string">"name"</span>)
+            }
+        }
+        <span class="kw">impl </span>diesel::SelectableExpression&lt;<span class="kw">super</span>::table&gt; <span class="kw">for </span>name {}
+        <span class="kw">impl</span>&lt;QS&gt; diesel::AppearsOnTable&lt;QS&gt; <span class="kw">for </span>name
+        <span class="kw">where
+            </span>QS: diesel::query_source::AppearsInFromClause&lt;
+                <span class="kw">super</span>::table,
+                Count = diesel::query_source::Once,
+            &gt;,
+        {}
+        <span class="kw">impl</span>&lt;
+            Left,
+            Right,
+        &gt; diesel::SelectableExpression&lt;
+            diesel::internal::table_macro::Join&lt;
+                Left,
+                Right,
+                diesel::internal::table_macro::LeftOuter,
+            &gt;,
+        &gt; <span class="kw">for </span>name
+        <span class="kw">where
+            </span>name: diesel::AppearsOnTable&lt;
+                diesel::internal::table_macro::Join&lt;
+                    Left,
+                    Right,
+                    diesel::internal::table_macro::LeftOuter,
+                &gt;,
+            &gt;,
+            <span class="self">Self</span>: diesel::SelectableExpression&lt;Left&gt;,
+            Right: diesel::query_source::AppearsInFromClause&lt;
+                    <span class="kw">super</span>::table,
+                    Count = diesel::query_source::Never,
+                &gt; + diesel::query_source::QuerySource,
+            Left: diesel::query_source::QuerySource,
+        {}
+        <span class="kw">impl</span>&lt;
+            Left,
+            Right,
+        &gt; diesel::SelectableExpression&lt;
+            diesel::internal::table_macro::Join&lt;
+                Left,
+                Right,
+                diesel::internal::table_macro::Inner,
+            &gt;,
+        &gt; <span class="kw">for </span>name
+        <span class="kw">where
+            </span>name: diesel::AppearsOnTable&lt;
+                diesel::internal::table_macro::Join&lt;
+                    Left,
+                    Right,
+                    diesel::internal::table_macro::Inner,
+                &gt;,
+            &gt;,
+            Left: diesel::query_source::AppearsInFromClause&lt;<span class="kw">super</span>::table&gt;
+                + diesel::query_source::QuerySource,
+            Right: diesel::query_source::AppearsInFromClause&lt;<span class="kw">super</span>::table&gt;
+                + diesel::query_source::QuerySource,
+            (
+                Left::Count,
+                Right::Count,
+            ): diesel::internal::table_macro::Pick&lt;Left, Right&gt;,
+            <span class="self">Self</span>: diesel::SelectableExpression&lt;
+                &lt;(
+                    Left::Count,
+                    Right::Count,
+                ) <span class="kw">as </span>diesel::internal::table_macro::Pick&lt;Left, Right&gt;&gt;::Selection,
+            &gt;,
+        {}
+        <span class="kw">impl</span>&lt;
+            Join,
+            On,
+        &gt; diesel::SelectableExpression&lt;diesel::internal::table_macro::JoinOn&lt;Join, On&gt;&gt;
+        <span class="kw">for </span>name
+        <span class="kw">where
+            </span>name: diesel::SelectableExpression&lt;Join&gt;
+                + diesel::AppearsOnTable&lt;
+                    diesel::internal::table_macro::JoinOn&lt;Join, On&gt;,
+                &gt;,
+        {}
+        <span class="kw">impl</span>&lt;
+            From,
+        &gt; diesel::SelectableExpression&lt;
+            diesel::internal::table_macro::SelectStatement&lt;
+                diesel::internal::table_macro::FromClause&lt;From&gt;,
+            &gt;,
+        &gt; <span class="kw">for </span>name
+        <span class="kw">where
+            </span>From: diesel::query_source::QuerySource,
+            name: diesel::SelectableExpression&lt;From&gt;
+                + diesel::AppearsOnTable&lt;
+                    diesel::internal::table_macro::SelectStatement&lt;
+                        diesel::internal::table_macro::FromClause&lt;From&gt;,
+                    &gt;,
+                &gt;,
+        {}
+        <span class="kw">impl</span>&lt;__GB&gt; diesel::expression::ValidGrouping&lt;__GB&gt; <span class="kw">for </span>name
+        <span class="kw">where
+            </span>__GB: diesel::expression::IsContainedInGroupBy&lt;
+                name,
+                Output = diesel::expression::is_contained_in_group_by::Yes,
+            &gt;,
+        {
+            <span class="kw">type </span>IsAggregate = diesel::expression::is_aggregate::Yes;
+        }
+        <span class="kw">impl </span>diesel::expression::ValidGrouping&lt;()&gt; <span class="kw">for </span>name {
+            <span class="kw">type </span>IsAggregate = diesel::expression::is_aggregate::No;
+        }
+        <span class="kw">impl </span>diesel::expression::IsContainedInGroupBy&lt;name&gt; <span class="kw">for </span>name {
+            <span class="kw">type </span>Output = diesel::expression::is_contained_in_group_by::Yes;
+        }
+        <span class="kw">impl </span>diesel::query_source::Column <span class="kw">for </span>name {
+            <span class="kw">type </span>Table = <span class="kw">super</span>::table;
+            <span class="kw">const </span>NAME: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str = <span class="string">"name"</span>;
+        }
+        <span class="kw">impl</span>&lt;T&gt; diesel::EqAll&lt;T&gt; <span class="kw">for </span>name
+        <span class="kw">where
+            </span>T: diesel::expression::AsExpression&lt;Text&gt;,
+            diesel::dsl::Eq&lt;
+                name,
+                T::Expression,
+            &gt;: diesel::Expression&lt;SqlType = diesel::sql_types::Bool&gt;,
+        {
+            <span class="kw">type </span>Output = diesel::dsl::Eq&lt;<span class="self">Self</span>, T::Expression&gt;;
+            <span class="kw">fn </span>eq_all(<span class="self">self</span>, __diesel_internal_rhs: T) -&gt; <span class="self">Self</span>::Output {
+                <span class="kw">use </span>diesel::expression_methods::ExpressionMethods;
+                <span class="self">self</span>.eq(__diesel_internal_rhs)
+            }
+        }
+        <span class="kw">impl </span>diesel::expression::IsContainedInGroupBy&lt;id&gt; <span class="kw">for </span>name {
+            <span class="kw">type </span>Output = diesel::expression::is_contained_in_group_by::No;
+        }
+        <span class="kw">impl </span>diesel::expression::IsContainedInGroupBy&lt;name&gt; <span class="kw">for </span>id {
+            <span class="kw">type </span>Output = diesel::expression::is_contained_in_group_by::Yes;
+        }
+    }
+}</code></pre></div></details></div></details></section></div></main></body></html>

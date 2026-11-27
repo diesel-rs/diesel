@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["CheckForBackend","FieldAttr","RenameVariants","StructAttr"],"fn":["parse_attributes"],"mod":["parsers","util"],"struct":["AttributeSpanWrapper","SqlIdentifier"],"trait":["MySpanned"]};

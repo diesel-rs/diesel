@@ -1,0 +1,375 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/jiff-core-1.0.2/src/tz/tzif/query.rs`."><title>query.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-1e18a8e7.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="jiff_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (6c709eb42 2026-11-25)" data-channel="nightly" data-search-js="search-085293d4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../../../static.files/storage-41dd4d93.js"></script><script defer src="../../../../static.files/src-script-813739b1.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">jiff_core/tz/tzif/</div>query.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use crate</span>::{
+<a href=#2 id=2 data-nosnippet>2</a>    <a href="../../timestamp.rs.html#15-18">Timestamp</a>,
+<a href=#3 id=3 data-nosnippet>3</a>    <a href="../../civil/datetime.rs.html#12-15">civil::DateTime</a>,
+<a href=#4 id=4 data-nosnippet>4</a>    tz::{
+<a href=#5 id=5 data-nosnippet>5</a>        <a href="../mod.rs.html#133">Abbreviation</a>, <a href="../offset.rs.html#413-463">AmbiguousOffset</a>, <a href="../offset.rs.html#483-486">AmbiguousTimestamp</a>, <a href="../offset.rs.html#11-13">Offset</a>, <a href="../mod.rs.html#181-185">OffsetInfo</a>,
+<a href=#6 id=6 data-nosnippet>6</a>        <a href="../mod.rs.html#137-140">Transition</a>, <a href="../mod.rs.html#8">posix</a>,
+<a href=#7 id=7 data-nosnippet>7</a>    },
+<a href=#8 id=8 data-nosnippet>8</a>};
+<a href=#9 id=9 data-nosnippet>9</a>
+<a href=#10 id=10 data-nosnippet>10</a><span class="kw">use super</span>::{
+<a href=#11 id=11 data-nosnippet>11</a>    <a href="mod.rs.html#484-486">DateTime</a> <span class="kw">as </span>TzifDateTime, <a href="mod.rs.html#137-148">LocalTimeType</a>, <a href="mod.rs.html#81-104">TimeZone</a>,
+<a href=#12 id=12 data-nosnippet>12</a>    <a href="mod.rs.html#383-385">Timestamp</a> <span class="kw">as </span>TzifTimestamp, <a href="mod.rs.html#258-266">TransitionInfo</a> <span class="kw">as </span>TzifTransitionInfo,
+<a href=#13 id=13 data-nosnippet>13</a>    <a href="mod.rs.html#347-373">TransitionKind</a>,
+<a href=#14 id=14 data-nosnippet>14</a>};
+<a href=#15 id=15 data-nosnippet>15</a>
+<a href=#16 id=16 data-nosnippet>16</a><span class="kw">impl </span><a href="mod.rs.html#81-104">TimeZone</a> {
+<a href=#17 id=17 data-nosnippet>17</a>    <span class="doccomment">/// Returns the appropriate time zone offset to use for the given
+<a href=#18 id=18 data-nosnippet>18</a>    /// timestamp.
+<a href=#19 id=19 data-nosnippet>19</a>    </span><span class="kw">pub fn </span>to_offset(<span class="kw-2">&amp;</span><span class="self">self</span>, timestamp: <a href="../../timestamp.rs.html#15-18">Timestamp</a>) -&gt; <a href="../offset.rs.html#11-13">Offset</a> {
+<a href=#20 id=20 data-nosnippet>20</a>        <span class="kw">match </span><a class="self" href="#19">self</a>.<a href="#48-115">to_local_time_type</a>(<a href="#19">timestamp</a>) {
+<a href=#21 id=21 data-nosnippet>21</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(typ) =&gt; <a href="#21">typ</a>.offset,
+<a href=#22 id=22 data-nosnippet>22</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(tz) =&gt; <a href="#22">tz</a>.<a href="../posix.rs.html#332-342">to_offset</a>(<a href="#19">timestamp</a>),
+<a href=#23 id=23 data-nosnippet>23</a>        }
+<a href=#24 id=24 data-nosnippet>24</a>    }
+<a href=#25 id=25 data-nosnippet>25</a>
+<a href=#26 id=26 data-nosnippet>26</a>    <span class="doccomment">/// Returns the appropriate time zone offset to use for the given
+<a href=#27 id=27 data-nosnippet>27</a>    /// timestamp.
+<a href=#28 id=28 data-nosnippet>28</a>    ///
+<a href=#29 id=29 data-nosnippet>29</a>    /// This also includes whether the offset returned should be considered to
+<a href=#30 id=30 data-nosnippet>30</a>    /// be DST or not, along with the time zone abbreviation (e.g., EST for
+<a href=#31 id=31 data-nosnippet>31</a>    /// standard time in New York, and EDT for DST in New York).
+<a href=#32 id=32 data-nosnippet>32</a>    </span><span class="kw">pub fn </span>to_offset_info(<span class="kw-2">&amp;</span><span class="self">self</span>, timestamp: <a href="../../timestamp.rs.html#15-18">Timestamp</a>) -&gt; <a href="../mod.rs.html#181-185">OffsetInfo</a> {
+<a href=#33 id=33 data-nosnippet>33</a>        <span class="kw">let </span>typ = <span class="kw">match </span><a class="self" href="#32">self</a>.<a href="#48-115">to_local_time_type</a>(<a href="#32">timestamp</a>) {
+<a href=#34 id=34 data-nosnippet>34</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(typ) =&gt; <a href="#34">typ</a>,
+<a href=#35 id=35 data-nosnippet>35</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(tz) =&gt; <span class="kw">return </span><a href="#35">tz</a>.<a href="../posix.rs.html#350-372">to_offset_info</a>(<a href="#32">timestamp</a>),
+<a href=#36 id=36 data-nosnippet>36</a>        };
+<a href=#37 id=37 data-nosnippet>37</a>        <span class="comment">// This clone will generally just be a memcpy. It only does a heap
+<a href=#38 id=38 data-nosnippet>38</a>        // alloc when the designation is unusually long. (Which should be never
+<a href=#39 id=39 data-nosnippet>39</a>        // for standard tzdata.)
+<a href=#40 id=40 data-nosnippet>40</a>        </span><span class="kw">let </span>abbreviation = <a class="self" href="#32">self</a>.<a href="#339-343">designation</a>(<a href="#33">typ</a>).<a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">clone</a>();
+<a href=#41 id=41 data-nosnippet>41</a>        <a href="../mod.rs.html#181-185">OffsetInfo</a> { offset: <a href="#33">typ</a>.offset, <a href="#40">abbreviation</a>, dst: <a href="#33">typ</a>.dst }
+<a href=#42 id=42 data-nosnippet>42</a>    }
+<a href=#43 id=43 data-nosnippet>43</a>
+<a href=#44 id=44 data-nosnippet>44</a>    <span class="doccomment">/// Returns the local time type for the timestamp given.
+<a href=#45 id=45 data-nosnippet>45</a>    ///
+<a href=#46 id=46 data-nosnippet>46</a>    /// If one could not be found, then this implies that the caller should
+<a href=#47 id=47 data-nosnippet>47</a>    /// use the POSIX time zone returned in the error variant.
+<a href=#48 id=48 data-nosnippet>48</a>    </span><span class="kw">fn </span>to_local_time_type(
+<a href=#49 id=49 data-nosnippet>49</a>        <span class="kw-2">&amp;</span><span class="self">self</span>,
+<a href=#50 id=50 data-nosnippet>50</a>        timestamp: <a href="../../timestamp.rs.html#15-18">Timestamp</a>,
+<a href=#51 id=51 data-nosnippet>51</a>    ) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<span class="kw-2">&amp;</span><a href="mod.rs.html#137-148">LocalTimeType</a>, <span class="kw-2">&amp;</span>posix::<a href="../posix.rs.html#198-205">TimeZone</a>&gt; {
+<a href=#52 id=52 data-nosnippet>52</a>        <span class="kw">let </span>timestamp = <a href="mod.rs.html#383-385">TzifTimestamp</a>::<a href="mod.rs.html#404-412">new</a>(<a href="#50">timestamp</a>);
+<a href=#53 id=53 data-nosnippet>53</a>        <span class="comment">// This is guaranteed because we always push at least one transition.
+<a href=#54 id=54 data-nosnippet>54</a>        // This isn't guaranteed by TZif since it might have 0 transitions,
+<a href=#55 id=55 data-nosnippet>55</a>        // but we always add a "dummy" first transition with our minimum
+<a href=#56 id=56 data-nosnippet>56</a>        // `Timestamp` value. TZif doesn't do this because there is no
+<a href=#57 id=57 data-nosnippet>57</a>        // universal minimum timestamp. (`i64::MIN` is a candidate, but that's
+<a href=#58 id=58 data-nosnippet>58</a>        // likely to cause overflow in readers that don't do error checking.)
+<a href=#59 id=59 data-nosnippet>59</a>        //
+<a href=#60 id=60 data-nosnippet>60</a>        // The result of the dummy transition is that the code below is simpler
+<a href=#61 id=61 data-nosnippet>61</a>        // with fewer special cases.
+<a href=#62 id=62 data-nosnippet>62</a>        </span><span class="kw">let </span>timestamps = <a class="self" href="#49">self</a>.<a href="#323-325">timestamps</a>();
+<a href=#63 id=63 data-nosnippet>63</a>        <span class="kw">let </span>last = <span class="kw-2">*</span><a href="#62">timestamps</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.last">last</a>().<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.expect">expect</a>(<span class="string">"non-empty transitions"</span>);
+<a href=#64 id=64 data-nosnippet>64</a>        <span class="kw">let </span>index = <span class="kw">if </span><a href="#52">timestamp</a> &gt; <a href="#63">last</a> {
+<a href=#65 id=65 data-nosnippet>65</a>            <a href="#62">timestamps</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.len">len</a>() - <span class="number">1
+<a href=#66 id=66 data-nosnippet>66</a>        </span>} <span class="kw">else </span>{
+<a href=#67 id=67 data-nosnippet>67</a>            <span class="kw">let </span>search = <a class="self" href="#49">self</a>.<a href="#323-325">timestamps</a>().<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.binary_search">binary_search</a>(<span class="kw-2">&amp;</span><a href="#52">timestamp</a>);
+<a href=#68 id=68 data-nosnippet>68</a>            <span class="kw">match </span><a href="#67">search</a> {
+<a href=#69 id=69 data-nosnippet>69</a>                <span class="comment">// Since the first transition is always Timestamp::MIN, it's
+<a href=#70 id=70 data-nosnippet>70</a>                // impossible for any timestamp to sort before it.
+<a href=#71 id=71 data-nosnippet>71</a>                </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(<span class="number">0</span>) =&gt; {
+<a href=#72 id=72 data-nosnippet>72</a><span class="expansion"><input id=expand-72 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                    <span class=expanded>{
+    ::core::panicking::panic_fmt(<span class="macro">format_args!</span>(<span class="string">"internal error: entered unreachable code: {0}"</span>,
+            <span class="macro">format_args!</span>(<span class="string">"impossible to come before Timestamp::MIN"</span>)));
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.unreachable.html">unreachable!</a>(<span class="string">"impossible to come before Timestamp::MIN"</span>)</span></span>
+<a href=#73 id=73 data-nosnippet>73</a>                }
+<a href=#74 id=74 data-nosnippet>74</a>                <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(i) =&gt; <a href="#74">i</a>,
+<a href=#75 id=75 data-nosnippet>75</a>                <span class="comment">// i points to the position immediately after the matching
+<a href=#76 id=76 data-nosnippet>76</a>                // timestamp. And since we know that i&gt;0 because of the i==0
+<a href=#77 id=77 data-nosnippet>77</a>                // check above, we can safely subtract 1.
+<a href=#78 id=78 data-nosnippet>78</a>                </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(i) =&gt; <a href="#78">i</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html#method.checked_sub">checked_sub</a>(<span class="number">1</span>).<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.expect">expect</a>(<span class="string">"i is non-zero"</span>),
+<a href=#79 id=79 data-nosnippet>79</a>            }
+<a href=#80 id=80 data-nosnippet>80</a>        };
+<a href=#81 id=81 data-nosnippet>81</a>        <span class="comment">// Our index is always in bounds. The only way it couldn't be is if
+<a href=#82 id=82 data-nosnippet>82</a>        // binary search returns an Err(len) for a time greater than the
+<a href=#83 id=83 data-nosnippet>83</a>        // maximum transition. But we account for that above by converting
+<a href=#84 id=84 data-nosnippet>84</a>        // Err(len) to Err(len-1).
+<a href=#85 id=85 data-nosnippet>85</a></span><span class="expansion"><input id=expand-85 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        <span class=expanded><span class="kw">if </span><span class="bool-val">true </span>{
+    <span class="kw">if </span>!(index &lt; timestamps.len()) {
+        ::core::panicking::panic(<span class="string">"assertion failed: index &lt; timestamps.len()"</span>)
+    };
+};</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.debug_assert.html">debug_assert!</a>(index &lt; timestamps.len())</span></span>;
+<a href=#86 id=86 data-nosnippet>86</a>        <span class="comment">// RFC 8536 says: "Local time for timestamps on or after the last
+<a href=#87 id=87 data-nosnippet>87</a>        // transition is specified by the TZ string in the footer (Section 3.3)
+<a href=#88 id=88 data-nosnippet>88</a>        // if present and nonempty; otherwise, it is unspecified."
+<a href=#89 id=89 data-nosnippet>89</a>        //
+<a href=#90 id=90 data-nosnippet>90</a>        // Subtracting 1 is OK because we know self.transitions is not empty.
+<a href=#91 id=91 data-nosnippet>91</a>        </span><span class="kw">let </span>index = <span class="kw">if </span><a href="#64">index</a> &lt; <a href="#62">timestamps</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.len">len</a>() - <span class="number">1 </span>{
+<a href=#92 id=92 data-nosnippet>92</a>            <span class="comment">// This is the typical case in "fat" TZif files: we found a
+<a href=#93 id=93 data-nosnippet>93</a>            // matching transition.
+<a href=#94 id=94 data-nosnippet>94</a>            </span><a href="#64">index</a>
+<a href=#95 id=95 data-nosnippet>95</a>        } <span class="kw">else </span>{
+<a href=#96 id=96 data-nosnippet>96</a>            <span class="kw">match </span><a class="self" href="#49">self</a>.<a href="#345-347">posix_tz</a>() {
+<a href=#97 id=97 data-nosnippet>97</a>                <span class="comment">// This is the typical case in "slim" TZif files, where the
+<a href=#98 id=98 data-nosnippet>98</a>                // last transition is, as I understand it, the transition at
+<a href=#99 id=99 data-nosnippet>99</a>                // which a consistent rule started that a POSIX TZ string can
+<a href=#100 id=100 data-nosnippet>100</a>                // fully describe. For example, (as of 2024-03-27) the last
+<a href=#101 id=101 data-nosnippet>101</a>                // transition in the "fat" America/New_York TZif file is
+<a href=#102 id=102 data-nosnippet>102</a>                // in 2037, where as in the "slim" version it is 2007.
+<a href=#103 id=103 data-nosnippet>103</a>                //
+<a href=#104 id=104 data-nosnippet>104</a>                // This is likely why some things break with the "slim"
+<a href=#105 id=105 data-nosnippet>105</a>                // version: they don't support POSIX TZ strings (or don't
+<a href=#106 id=106 data-nosnippet>106</a>                // support them correctly).
+<a href=#107 id=107 data-nosnippet>107</a>                </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(tz) =&gt; <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(<a href="#107">tz</a>),
+<a href=#108 id=108 data-nosnippet>108</a>                <span class="comment">// This case is technically unspecified, but I think the
+<a href=#109 id=109 data-nosnippet>109</a>                // typical thing to do is to just use the last transition.
+<a href=#110 id=110 data-nosnippet>110</a>                // I'm not 100% sure on this one.
+<a href=#111 id=111 data-nosnippet>111</a>                </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a> =&gt; <a href="#64">index</a>,
+<a href=#112 id=112 data-nosnippet>112</a>            }
+<a href=#113 id=113 data-nosnippet>113</a>        };
+<a href=#114 id=114 data-nosnippet>114</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a class="self" href="#49">self</a>.<a href="#309-313">local_time_type</a>(<a href="#91">index</a>))
+<a href=#115 id=115 data-nosnippet>115</a>    }
+<a href=#116 id=116 data-nosnippet>116</a>
+<a href=#117 id=117 data-nosnippet>117</a>    <span class="doccomment">/// Returns a possibly ambiguous timestamp for the given civil datetime.
+<a href=#118 id=118 data-nosnippet>118</a>    ///
+<a href=#119 id=119 data-nosnippet>119</a>    /// The given datetime should correspond to the "wall" clock time of what
+<a href=#120 id=120 data-nosnippet>120</a>    /// humans use to tell time for this time zone.
+<a href=#121 id=121 data-nosnippet>121</a>    ///
+<a href=#122 id=122 data-nosnippet>122</a>    /// Note that "ambiguous timestamp" is represented by the possible
+<a href=#123 id=123 data-nosnippet>123</a>    /// selection of offsets that could be applied to the given datetime. In
+<a href=#124 id=124 data-nosnippet>124</a>    /// general, it is only ambiguous around transitions to-and-from DST. The
+<a href=#125 id=125 data-nosnippet>125</a>    /// ambiguity can arise as a "fold" (when a particular wall clock time is
+<a href=#126 id=126 data-nosnippet>126</a>    /// repeated) or as a "gap" (when a particular wall clock time is skipped
+<a href=#127 id=127 data-nosnippet>127</a>    /// entirely).
+<a href=#128 id=128 data-nosnippet>128</a>    </span><span class="kw">pub fn </span>to_ambiguous_timestamp(<span class="kw-2">&amp;</span><span class="self">self</span>, dt: <a href="../../civil/datetime.rs.html#12-15">DateTime</a>) -&gt; <a href="../offset.rs.html#483-486">AmbiguousTimestamp</a> {
+<a href=#129 id=129 data-nosnippet>129</a>        <span class="comment">// This implementation very nearly mirrors `to_local_time_type`
+<a href=#130 id=130 data-nosnippet>130</a>        // above in the beginning: we do a binary search to find transition
+<a href=#131 id=131 data-nosnippet>131</a>        // applicable for the given datetime. Except, we do it on wall clock
+<a href=#132 id=132 data-nosnippet>132</a>        // times instead of timestamps. And in particular, each transition
+<a href=#133 id=133 data-nosnippet>133</a>        // begins with a possibly ambiguous range of wall clock times
+<a href=#134 id=134 data-nosnippet>134</a>        // corresponding to either a "gap" or "fold" in time.
+<a href=#135 id=135 data-nosnippet>135</a>        </span><span class="kw">let </span>dtt = <a href="mod.rs.html#484-486">TzifDateTime</a>::<a href="mod.rs.html#506-517">new</a>(<a href="#128">dt</a>);
+<a href=#136 id=136 data-nosnippet>136</a>        <span class="kw">let </span>(starts, ends) = (<a class="self" href="#128">self</a>.<a href="#327-329">civil_starts</a>(), <a class="self" href="#128">self</a>.<a href="#331-333">civil_ends</a>());
+<a href=#137 id=137 data-nosnippet>137</a><span class="expansion"><input id=expand-137 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        <span class=expanded><span class="kw">if </span>!!starts.is_empty() {
+    {
+        ::core::panicking::panic_fmt(<span class="macro">format_args!</span>(<span class="string">"transitions is non-empty"</span>));
+    }
+};</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.assert.html">assert!</a>(!starts.is_empty(), <span class="string">"transitions is non-empty"</span>)</span></span>;
+<a href=#138 id=138 data-nosnippet>138</a>        <span class="kw">let </span>this_index = <span class="kw">match </span><a href="#136">starts</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.binary_search">binary_search</a>(<span class="kw-2">&amp;</span><a href="#135">dtt</a>) {
+<a href=#139 id=139 data-nosnippet>139</a><span class="expansion"><input id=expand-139 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(<span class="number">0</span>) =&gt; <span class=expanded>{
+    ::core::panicking::panic_fmt(<span class="macro">format_args!</span>(<span class="string">"internal error: entered unreachable code: {0}"</span>,
+            <span class="macro">format_args!</span>(<span class="string">"impossible to come before DateTime::MIN"</span>)));
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.unreachable.html">unreachable!</a>(<span class="string">"impossible to come before DateTime::MIN"</span>)</span></span>,
+<a href=#140 id=140 data-nosnippet>140</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(i) =&gt; <a href="#140">i</a>,
+<a href=#141 id=141 data-nosnippet>141</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(i) =&gt; <a href="#141">i</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html#method.checked_sub">checked_sub</a>(<span class="number">1</span>).<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.expect">expect</a>(<span class="string">"i is non-zero"</span>),
+<a href=#142 id=142 data-nosnippet>142</a>        };
+<a href=#143 id=143 data-nosnippet>143</a><span class="expansion"><input id=expand-143 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        <span class=expanded><span class="kw">if </span><span class="bool-val">true </span>{
+    <span class="kw">if </span>!(this_index &lt; starts.len()) {
+        ::core::panicking::panic(<span class="string">"assertion failed: this_index &lt; starts.len()"</span>)
+    };
+};</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.debug_assert.html">debug_assert!</a>(this_index &lt; starts.len())</span></span>;
+<a href=#144 id=144 data-nosnippet>144</a>
+<a href=#145 id=145 data-nosnippet>145</a>        <span class="kw">let </span>this_offset = <a class="self" href="#128">self</a>.<a href="#309-313">local_time_type</a>(<a href="#138">this_index</a>).offset;
+<a href=#146 id=146 data-nosnippet>146</a>        <span class="comment">// This is a little tricky, but we need to check for ambiguous civil
+<a href=#147 id=147 data-nosnippet>147</a>        // datetimes before possibly using the POSIX TZ string. Namely, a
+<a href=#148 id=148 data-nosnippet>148</a>        // datetime could be ambiguous with respect to the last transition,
+<a href=#149 id=149 data-nosnippet>149</a>        // and we should handle that according to the gap/fold determined for
+<a href=#150 id=150 data-nosnippet>150</a>        // that transition. We cover this case in tests in tz/mod.rs for the
+<a href=#151 id=151 data-nosnippet>151</a>        // Pacific/Honolulu time zone, whose last transition begins with a gap.
+<a href=#152 id=152 data-nosnippet>152</a>        </span><span class="kw">match </span><a class="self" href="#128">self</a>.<a href="#315-317">transition_kind</a>(<a href="#138">this_index</a>) {
+<a href=#153 id=153 data-nosnippet>153</a>            TransitionKind::<a href="mod.rs.html#362">Gap</a> <span class="kw">if </span><a href="#135">dtt</a> &lt; <a href="#136">ends</a>[<a href="#138">this_index</a>] =&gt; {
+<a href=#154 id=154 data-nosnippet>154</a>                <span class="comment">// A gap/fold can only appear when there exists a previous
+<a href=#155 id=155 data-nosnippet>155</a>                // transition.
+<a href=#156 id=156 data-nosnippet>156</a>                </span><span class="kw">let </span>prev_index = <a href="#138">this_index</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html#method.checked_sub">checked_sub</a>(<span class="number">1</span>).<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.unwrap">unwrap</a>();
+<a href=#157 id=157 data-nosnippet>157</a>                <span class="kw">let </span>prev_offset = <a class="self" href="#128">self</a>.<a href="#309-313">local_time_type</a>(<a href="#156">prev_index</a>).offset;
+<a href=#158 id=158 data-nosnippet>158</a>                <span class="kw">return </span>AmbiguousOffset::<a href="../offset.rs.html#433-444">Gap</a> {
+<a href=#159 id=159 data-nosnippet>159</a>                    before: <a href="#157">prev_offset</a>,
+<a href=#160 id=160 data-nosnippet>160</a>                    after: <a href="#145">this_offset</a>,
+<a href=#161 id=161 data-nosnippet>161</a>                }
+<a href=#162 id=162 data-nosnippet>162</a>                .<a href="../offset.rs.html#467-472">into_ambiguous_timestamp</a>(<a href="#128">dt</a>);
+<a href=#163 id=163 data-nosnippet>163</a>            }
+<a href=#164 id=164 data-nosnippet>164</a>            TransitionKind::<a href="mod.rs.html#372">Fold</a> <span class="kw">if </span><a href="#135">dtt</a> &lt; <a href="#136">ends</a>[<a href="#138">this_index</a>] =&gt; {
+<a href=#165 id=165 data-nosnippet>165</a>                <span class="comment">// A gap/fold can only appear when there exists a previous
+<a href=#166 id=166 data-nosnippet>166</a>                // transition.
+<a href=#167 id=167 data-nosnippet>167</a>                </span><span class="kw">let </span>prev_index = <a href="#138">this_index</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html#method.checked_sub">checked_sub</a>(<span class="number">1</span>).<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.unwrap">unwrap</a>();
+<a href=#168 id=168 data-nosnippet>168</a>                <span class="kw">let </span>prev_offset = <a class="self" href="#128">self</a>.<a href="#309-313">local_time_type</a>(<a href="#167">prev_index</a>).offset;
+<a href=#169 id=169 data-nosnippet>169</a>                <span class="kw">return </span>AmbiguousOffset::<a href="../offset.rs.html#451-462">Fold</a> {
+<a href=#170 id=170 data-nosnippet>170</a>                    before: <a href="#168">prev_offset</a>,
+<a href=#171 id=171 data-nosnippet>171</a>                    after: <a href="#145">this_offset</a>,
+<a href=#172 id=172 data-nosnippet>172</a>                }
+<a href=#173 id=173 data-nosnippet>173</a>                .<a href="../offset.rs.html#467-472">into_ambiguous_timestamp</a>(<a href="#128">dt</a>);
+<a href=#174 id=174 data-nosnippet>174</a>            }
+<a href=#175 id=175 data-nosnippet>175</a>            <span class="kw">_ </span>=&gt; {}
+<a href=#176 id=176 data-nosnippet>176</a>        }
+<a href=#177 id=177 data-nosnippet>177</a>        <span class="comment">// The datetime given is not ambiguous with respect to any of the
+<a href=#178 id=178 data-nosnippet>178</a>        // transitions in the TZif data. But, if we matched at or after the
+<a href=#179 id=179 data-nosnippet>179</a>        // last transition, then we need to use the POSIX TZ string (which
+<a href=#180 id=180 data-nosnippet>180</a>        // could still return an ambiguous offset).
+<a href=#181 id=181 data-nosnippet>181</a>        </span><span class="kw">if </span><a href="#138">this_index</a> == <a href="#136">starts</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.len">len</a>() - <span class="number">1 </span>{
+<a href=#182 id=182 data-nosnippet>182</a>            <span class="kw">if let </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(tz) = <a class="self" href="#128">self</a>.<a href="#345-347">posix_tz</a>() {
+<a href=#183 id=183 data-nosnippet>183</a>                <span class="kw">return </span><a href="#182">tz</a>.<a href="../posix.rs.html#385-465">to_ambiguous_timestamp</a>(<a href="#128">dt</a>);
+<a href=#184 id=184 data-nosnippet>184</a>            }
+<a href=#185 id=185 data-nosnippet>185</a>            <span class="comment">// This case is unspecified according to RFC 8536. It means that
+<a href=#186 id=186 data-nosnippet>186</a>            // the given datetime exceeds all transitions *and* there is no
+<a href=#187 id=187 data-nosnippet>187</a>            // POSIX TZ string. So this can happen in V1 files for example.
+<a href=#188 id=188 data-nosnippet>188</a>            // But those should hopefully be essentially non-existent nowadays
+<a href=#189 id=189 data-nosnippet>189</a>            // (2024-03). In any case, we just fall through to using the last
+<a href=#190 id=190 data-nosnippet>190</a>            // transition, which does seem likely to be wrong ~half the time
+<a href=#191 id=191 data-nosnippet>191</a>            // in time zones with DST. But there really isn't much else we can
+<a href=#192 id=192 data-nosnippet>192</a>            // do I think.
+<a href=#193 id=193 data-nosnippet>193</a>        </span>}
+<a href=#194 id=194 data-nosnippet>194</a>        AmbiguousOffset::<a href="../offset.rs.html#421-427">Unambiguous</a> { offset: <a href="#145">this_offset</a> }
+<a href=#195 id=195 data-nosnippet>195</a>            .<a href="../offset.rs.html#467-472">into_ambiguous_timestamp</a>(<a href="#128">dt</a>)
+<a href=#196 id=196 data-nosnippet>196</a>    }
+<a href=#197 id=197 data-nosnippet>197</a>
+<a href=#198 id=198 data-nosnippet>198</a>    <span class="doccomment">/// Returns the timestamp of the most recent time zone transition prior
+<a href=#199 id=199 data-nosnippet>199</a>    /// to the timestamp given. If one doesn't exist, `None` is returned.
+<a href=#200 id=200 data-nosnippet>200</a>    </span><span class="kw">pub fn </span>previous_transition&lt;<span class="lifetime">'t</span>&gt;(
+<a href=#201 id=201 data-nosnippet>201</a>        <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="self">self</span>,
+<a href=#202 id=202 data-nosnippet>202</a>        ts: <a href="../../timestamp.rs.html#15-18">Timestamp</a>,
+<a href=#203 id=203 data-nosnippet>203</a>    ) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#137-140">Transition</a>&gt; {
+<a href=#204 id=204 data-nosnippet>204</a><span class="expansion"><input id=expand-204 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        <span class=expanded><span class="kw">if </span>!!<span class="self">self</span>.timestamps().is_empty() {
+    {
+        ::core::panicking::panic_fmt(<span class="macro">format_args!</span>(<span class="string">"transitions is non-empty"</span>));
+    }
+};</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.assert.html">assert!</a>(!<span class="self">self</span>.timestamps().is_empty(), <span class="string">"transitions is non-empty"</span>)</span></span>;
+<a href=#205 id=205 data-nosnippet>205</a>        <span class="kw">let </span><span class="kw-2">mut </span>timestamp = <a href="mod.rs.html#383-385">TzifTimestamp</a>::<a href="mod.rs.html#404-412">new</a>(<a href="#202">ts</a>);
+<a href=#206 id=206 data-nosnippet>206</a>        <span class="kw">if </span><a href="#202">ts</a>.<a href="../../timestamp.rs.html#273-275">subsec_nanosecond</a>() != <span class="number">0 </span>{
+<a href=#207 id=207 data-nosnippet>207</a>            <a href="#205">timestamp</a> = <a href="#205">timestamp</a>.<a href="mod.rs.html#436-445">saturating_add</a>(<span class="number">1</span>);
+<a href=#208 id=208 data-nosnippet>208</a>        }
+<a href=#209 id=209 data-nosnippet>209</a>        <span class="kw">let </span>search = <a class="self" href="#201">self</a>.<a href="#323-325">timestamps</a>().<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.binary_search">binary_search</a>(<span class="kw-2">&amp;</span><a href="#205">timestamp</a>);
+<a href=#210 id=210 data-nosnippet>210</a>        <span class="kw">let </span>index = <span class="kw">match </span><a href="#209">search</a> {
+<a href=#211 id=211 data-nosnippet>211</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(i) | <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(i) =&gt; i.checked_sub(<span class="number">1</span>)<span class="question-mark">?</span>,
+<a href=#212 id=212 data-nosnippet>212</a>        };
+<a href=#213 id=213 data-nosnippet>213</a>        <span class="kw">let </span>index = <span class="kw">if </span><a href="#210">index</a> == <span class="number">0 </span>{
+<a href=#214 id=214 data-nosnippet>214</a>            <span class="comment">// The first transition is a dummy that we insert, so if we land on
+<a href=#215 id=215 data-nosnippet>215</a>            // it here, treat it as if it doesn't exist.
+<a href=#216 id=216 data-nosnippet>216</a>            </span><span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>;
+<a href=#217 id=217 data-nosnippet>217</a>        } <span class="kw">else if </span><a href="#210">index</a> == <a class="self" href="#201">self</a>.<a href="#323-325">timestamps</a>().<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.len">len</a>() - <span class="number">1 </span>{
+<a href=#218 id=218 data-nosnippet>218</a>            <span class="kw">if let </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(<span class="kw-2">ref </span>posix_tz) = <a class="self" href="#201">self</a>.<a href="#345-347">posix_tz</a>() {
+<a href=#219 id=219 data-nosnippet>219</a>                <span class="comment">// Since the POSIX TZ must be consistent with the last
+<a href=#220 id=220 data-nosnippet>220</a>                // transition, it must be the case that tzif_last &lt;=
+<a href=#221 id=221 data-nosnippet>221</a>                // posix_prev_trans in all cases. So the transition according
+<a href=#222 id=222 data-nosnippet>222</a>                // to the POSIX TZ is always correct here.
+<a href=#223 id=223 data-nosnippet>223</a>                //
+<a href=#224 id=224 data-nosnippet>224</a>                // What if this returns `None` though? I'm not sure in which
+<a href=#225 id=225 data-nosnippet>225</a>                // cases that could matter, and I think it might be a violation
+<a href=#226 id=226 data-nosnippet>226</a>                // of the TZif format if it does.
+<a href=#227 id=227 data-nosnippet>227</a>                //
+<a href=#228 id=228 data-nosnippet>228</a>                // It can return `None`! In the case of a time zone that
+<a href=#229 id=229 data-nosnippet>229</a>                // has eliminated DST, it might have historical time zone
+<a href=#230 id=230 data-nosnippet>230</a>                // transitions but a POSIX time zone without DST. (For example,
+<a href=#231 id=231 data-nosnippet>231</a>                // `America/Sao_Paulo`.) And thus, this would return `None`.
+<a href=#232 id=232 data-nosnippet>232</a>                // So if it does, we pretend as if the POSIX time zone doesn't
+<a href=#233 id=233 data-nosnippet>233</a>                // exist.
+<a href=#234 id=234 data-nosnippet>234</a>                </span><span class="kw">if let </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(trans) = <a href="#218">posix_tz</a>.<a href="../posix.rs.html#469-500">previous_transition</a>(<a href="#202">ts</a>) {
+<a href=#235 id=235 data-nosnippet>235</a>                    <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(<a href="#234">trans</a>);
+<a href=#236 id=236 data-nosnippet>236</a>                }
+<a href=#237 id=237 data-nosnippet>237</a>            }
+<a href=#238 id=238 data-nosnippet>238</a>            <a href="#210">index</a>
+<a href=#239 id=239 data-nosnippet>239</a>        } <span class="kw">else </span>{
+<a href=#240 id=240 data-nosnippet>240</a>            <a href="#210">index</a>
+<a href=#241 id=241 data-nosnippet>241</a>        };
+<a href=#242 id=242 data-nosnippet>242</a>        <span class="kw">let </span>timestamp = <a class="self" href="#201">self</a>.<a href="#323-325">timestamps</a>()[<a href="#213">index</a>];
+<a href=#243 id=243 data-nosnippet>243</a>        <span class="kw">let </span>typ = <a class="self" href="#201">self</a>.<a href="#309-313">local_time_type</a>(<a href="#213">index</a>);
+<a href=#244 id=244 data-nosnippet>244</a>        <span class="kw">let </span>info = <a href="../mod.rs.html#181-185">OffsetInfo</a> {
+<a href=#245 id=245 data-nosnippet>245</a>            offset: <a href="#243">typ</a>.offset,
+<a href=#246 id=246 data-nosnippet>246</a>            abbreviation: <a class="self" href="#201">self</a>.<a href="#339-343">designation</a>(<a href="#243">typ</a>).<a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">clone</a>(),
+<a href=#247 id=247 data-nosnippet>247</a>            dst: <a href="#243">typ</a>.dst,
+<a href=#248 id=248 data-nosnippet>248</a>        };
+<a href=#249 id=249 data-nosnippet>249</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(<a href="../mod.rs.html#137-140">Transition</a> { timestamp: <a href="#242">timestamp</a>.<a href="mod.rs.html#456-464">to_standard_timestamp</a>(), <a href="#244">info</a> })
+<a href=#250 id=250 data-nosnippet>250</a>    }
+<a href=#251 id=251 data-nosnippet>251</a>
+<a href=#252 id=252 data-nosnippet>252</a>    <span class="doccomment">/// Returns the timestamp of the soonest time zone transition after the
+<a href=#253 id=253 data-nosnippet>253</a>    /// timestamp given. If one doesn't exist, `None` is returned.
+<a href=#254 id=254 data-nosnippet>254</a>    </span><span class="kw">pub fn </span>next_transition&lt;<span class="lifetime">'t</span>&gt;(<span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="self">self</span>, ts: <a href="../../timestamp.rs.html#15-18">Timestamp</a>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#137-140">Transition</a>&gt; {
+<a href=#255 id=255 data-nosnippet>255</a><span class="expansion"><input id=expand-255 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        <span class=expanded><span class="kw">if </span>!!<span class="self">self</span>.timestamps().is_empty() {
+    {
+        ::core::panicking::panic_fmt(<span class="macro">format_args!</span>(<span class="string">"transitions is non-empty"</span>));
+    }
+};</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.assert.html">assert!</a>(!<span class="self">self</span>.timestamps().is_empty(), <span class="string">"transitions is non-empty"</span>)</span></span>;
+<a href=#256 id=256 data-nosnippet>256</a>        <span class="kw">let </span>timestamp = <a href="mod.rs.html#383-385">TzifTimestamp</a>::<a href="mod.rs.html#404-412">new</a>(<a href="#254">ts</a>);
+<a href=#257 id=257 data-nosnippet>257</a>        <span class="kw">let </span>search = <a class="self" href="#254">self</a>.<a href="#323-325">timestamps</a>().<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.binary_search">binary_search</a>(<span class="kw-2">&amp;</span><a href="#256">timestamp</a>);
+<a href=#258 id=258 data-nosnippet>258</a>        <span class="kw">let </span>index = <span class="kw">match </span><a href="#257">search</a> {
+<a href=#259 id=259 data-nosnippet>259</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(i) =&gt; i.checked_add(<span class="number">1</span>)<span class="question-mark">?</span>,
+<a href=#260 id=260 data-nosnippet>260</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(i) =&gt; <a href="#260">i</a>,
+<a href=#261 id=261 data-nosnippet>261</a>        };
+<a href=#262 id=262 data-nosnippet>262</a>        <span class="kw">let </span>index = <span class="kw">if </span><a href="#258">index</a> == <span class="number">0 </span>{
+<a href=#263 id=263 data-nosnippet>263</a>            <span class="comment">// The first transition is a dummy that we insert, so if we land on
+<a href=#264 id=264 data-nosnippet>264</a>            // it here, treat it as if it doesn't exist.
+<a href=#265 id=265 data-nosnippet>265</a>            </span><span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>;
+<a href=#266 id=266 data-nosnippet>266</a>        } <span class="kw">else if </span><a href="#258">index</a> &gt;= <a class="self" href="#254">self</a>.<a href="#323-325">timestamps</a>().<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.len">len</a>() {
+<a href=#267 id=267 data-nosnippet>267</a>            <span class="kw">if let </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(posix_tz) = <a class="self" href="#254">self</a>.<a href="#345-347">posix_tz</a>() {
+<a href=#268 id=268 data-nosnippet>268</a>                <span class="comment">// Since the POSIX TZ must be consistent with the last
+<a href=#269 id=269 data-nosnippet>269</a>                // transition, it must be the case that next.timestamp &lt;=
+<a href=#270 id=270 data-nosnippet>270</a>                // posix_next_tans in all cases. So the transition according to
+<a href=#271 id=271 data-nosnippet>271</a>                // the POSIX TZ is always correct here.
+<a href=#272 id=272 data-nosnippet>272</a>                //
+<a href=#273 id=273 data-nosnippet>273</a>                // What if this returns `None` though? I'm not sure in which
+<a href=#274 id=274 data-nosnippet>274</a>                // cases that could matter, and I think it might be a violation
+<a href=#275 id=275 data-nosnippet>275</a>                // of the TZif format if it does.
+<a href=#276 id=276 data-nosnippet>276</a>                //
+<a href=#277 id=277 data-nosnippet>277</a>                // In the "previous" case above, this could return `None` even
+<a href=#278 id=278 data-nosnippet>278</a>                // when there are historical time zone transitions in the case
+<a href=#279 id=279 data-nosnippet>279</a>                // of a time zone eliminating DST (e.g., `America/Sao_Paulo`).
+<a href=#280 id=280 data-nosnippet>280</a>                // But unlike the previous case, if we get `None` here, then
+<a href=#281 id=281 data-nosnippet>281</a>                // that is the real answer because there are no other known
+<a href=#282 id=282 data-nosnippet>282</a>                // future time zone transitions.
+<a href=#283 id=283 data-nosnippet>283</a>                //
+<a href=#284 id=284 data-nosnippet>284</a>                // 2025-05-05: OK, this could return `None` and this is fine.
+<a href=#285 id=285 data-nosnippet>285</a>                // It happens for time zones that had DST but then stopped
+<a href=#286 id=286 data-nosnippet>286</a>                // it at some point in the past. The POSIX time zone has no
+<a href=#287 id=287 data-nosnippet>287</a>                // DST and thus returns `None`. That's fine. But there was a
+<a href=#288 id=288 data-nosnippet>288</a>                // problem: we were using the POSIX time zone even when there
+<a href=#289 id=289 data-nosnippet>289</a>                // was a historical time zone transition after the timestamp
+<a href=#290 id=290 data-nosnippet>290</a>                // given. That was fixed by changing the condition when we get
+<a href=#291 id=291 data-nosnippet>291</a>                // here: it can only happen when the timestamp given comes at
+<a href=#292 id=292 data-nosnippet>292</a>                // or after all historical time zone transitions.
+<a href=#293 id=293 data-nosnippet>293</a>                </span><span class="kw">return </span><a href="#267">posix_tz</a>.<a href="../posix.rs.html#504-532">next_transition</a>(<a href="#254">ts</a>);
+<a href=#294 id=294 data-nosnippet>294</a>            }
+<a href=#295 id=295 data-nosnippet>295</a>            <a class="self" href="#254">self</a>.<a href="#323-325">timestamps</a>().<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.len">len</a>() - <span class="number">1
+<a href=#296 id=296 data-nosnippet>296</a>        </span>} <span class="kw">else </span>{
+<a href=#297 id=297 data-nosnippet>297</a>            <a href="#258">index</a>
+<a href=#298 id=298 data-nosnippet>298</a>        };
+<a href=#299 id=299 data-nosnippet>299</a>        <span class="kw">let </span>timestamp = <a class="self" href="#254">self</a>.<a href="#323-325">timestamps</a>()[<a href="#262">index</a>];
+<a href=#300 id=300 data-nosnippet>300</a>        <span class="kw">let </span>typ = <a class="self" href="#254">self</a>.<a href="#309-313">local_time_type</a>(<a href="#262">index</a>);
+<a href=#301 id=301 data-nosnippet>301</a>        <span class="kw">let </span>info = <a href="../mod.rs.html#181-185">OffsetInfo</a> {
+<a href=#302 id=302 data-nosnippet>302</a>            offset: <a href="#300">typ</a>.offset,
+<a href=#303 id=303 data-nosnippet>303</a>            abbreviation: <a class="self" href="#254">self</a>.<a href="#339-343">designation</a>(<a href="#300">typ</a>).<a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">clone</a>(),
+<a href=#304 id=304 data-nosnippet>304</a>            dst: <a href="#300">typ</a>.dst,
+<a href=#305 id=305 data-nosnippet>305</a>        };
+<a href=#306 id=306 data-nosnippet>306</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(<a href="../mod.rs.html#137-140">Transition</a> { timestamp: <a href="#299">timestamp</a>.<a href="mod.rs.html#456-464">to_standard_timestamp</a>(), <a href="#301">info</a> })
+<a href=#307 id=307 data-nosnippet>307</a>    }
+<a href=#308 id=308 data-nosnippet>308</a>
+<a href=#309 id=309 data-nosnippet>309</a>    <span class="kw">fn </span>local_time_type(<span class="kw-2">&amp;</span><span class="self">self</span>, transition_index: <a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>) -&gt; <span class="kw-2">&amp;</span><a href="mod.rs.html#137-148">LocalTimeType</a> {
+<a href=#310 id=310 data-nosnippet>310</a>        <span class="comment">// OK because we require that `type_index` always points to a valid
+<a href=#311 id=311 data-nosnippet>311</a>        // local time type.
+<a href=#312 id=312 data-nosnippet>312</a>        </span><span class="kw-2">&amp;</span><a class="self" href="#309">self</a>.<a href="#319-321">types</a>()[<a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>::<a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html#tymethod.from">from</a>(<a class="self" href="#309">self</a>.<a href="#335-337">infos</a>()[<a href="#309">transition_index</a>].type_index)]
+<a href=#313 id=313 data-nosnippet>313</a>    }
+<a href=#314 id=314 data-nosnippet>314</a>
+<a href=#315 id=315 data-nosnippet>315</a>    <span class="kw">fn </span>transition_kind(<span class="kw-2">&amp;</span><span class="self">self</span>, transition_index: <a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>) -&gt; <a href="mod.rs.html#347-373">TransitionKind</a> {
+<a href=#316 id=316 data-nosnippet>316</a>        <a class="self" href="#315">self</a>.<a href="#335-337">infos</a>()[<a href="#315">transition_index</a>].kind
+<a href=#317 id=317 data-nosnippet>317</a>    }
+<a href=#318 id=318 data-nosnippet>318</a>
+<a href=#319 id=319 data-nosnippet>319</a>    <span class="kw">fn </span>types(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>[<a href="mod.rs.html#137-148">LocalTimeType</a>] {
+<a href=#320 id=320 data-nosnippet>320</a>        <span class="kw-2">&amp;</span><a class="self" href="#319">self</a>.types
+<a href=#321 id=321 data-nosnippet>321</a>    }
+<a href=#322 id=322 data-nosnippet>322</a>
+<a href=#323 id=323 data-nosnippet>323</a>    <span class="kw">fn </span>timestamps(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>[<a href="mod.rs.html#383-385">TzifTimestamp</a>] {
+<a href=#324 id=324 data-nosnippet>324</a>        <span class="kw-2">&amp;</span><a class="self" href="#323">self</a>.transitions.timestamps
+<a href=#325 id=325 data-nosnippet>325</a>    }
+<a href=#326 id=326 data-nosnippet>326</a>
+<a href=#327 id=327 data-nosnippet>327</a>    <span class="kw">fn </span>civil_starts(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>[<a href="mod.rs.html#484-486">TzifDateTime</a>] {
+<a href=#328 id=328 data-nosnippet>328</a>        <span class="kw-2">&amp;</span><a class="self" href="#327">self</a>.transitions.civil_starts
+<a href=#329 id=329 data-nosnippet>329</a>    }
+<a href=#330 id=330 data-nosnippet>330</a>
+<a href=#331 id=331 data-nosnippet>331</a>    <span class="kw">fn </span>civil_ends(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>[<a href="mod.rs.html#484-486">TzifDateTime</a>] {
+<a href=#332 id=332 data-nosnippet>332</a>        <span class="kw-2">&amp;</span><a class="self" href="#331">self</a>.transitions.civil_ends
+<a href=#333 id=333 data-nosnippet>333</a>    }
+<a href=#334 id=334 data-nosnippet>334</a>
+<a href=#335 id=335 data-nosnippet>335</a>    <span class="kw">fn </span>infos(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>[<a href="mod.rs.html#258-266">TzifTransitionInfo</a>] {
+<a href=#336 id=336 data-nosnippet>336</a>        <span class="kw-2">&amp;</span><a class="self" href="#335">self</a>.transitions.infos
+<a href=#337 id=337 data-nosnippet>337</a>    }
+<a href=#338 id=338 data-nosnippet>338</a>
+<a href=#339 id=339 data-nosnippet>339</a>    <span class="kw">fn </span>designation(<span class="kw-2">&amp;</span><span class="self">self</span>, typ: <span class="kw-2">&amp;</span><a href="mod.rs.html#137-148">LocalTimeType</a>) -&gt; <span class="kw-2">&amp;</span><a href="../mod.rs.html#133">Abbreviation</a> {
+<a href=#340 id=340 data-nosnippet>340</a>        <span class="comment">// OK because every local time type is assigned a valid designation
+<a href=#341 id=341 data-nosnippet>341</a>        // index while parsing or constructing this time zone.
+<a href=#342 id=342 data-nosnippet>342</a>        </span><span class="kw-2">&amp;</span><a class="self" href="#339">self</a>.designations[<a href="#339">typ</a>.<a href="mod.rs.html#151-153">designation</a>()]
+<a href=#343 id=343 data-nosnippet>343</a>    }
+<a href=#344 id=344 data-nosnippet>344</a>
+<a href=#345 id=345 data-nosnippet>345</a>    <span class="kw">fn </span>posix_tz(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="kw-2">&amp;</span>posix::<a href="../posix.rs.html#198-205">TimeZone</a>&gt; {
+<a href=#346 id=346 data-nosnippet>346</a>        <a class="self" href="#345">self</a>.posix_tz.<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.as_ref">as_ref</a>()
+<a href=#347 id=347 data-nosnippet>347</a>    }
+<a href=#348 id=348 data-nosnippet>348</a>}
+</code></pre></div></section></main></body></html>

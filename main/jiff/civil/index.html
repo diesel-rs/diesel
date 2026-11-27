@@ -1,0 +1,96 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Facilities for dealing with inexact dates and times."><title>jiff::civil - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-1e18a8e7.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="jiff" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (6c709eb42 2026-11-25)" data-channel="nightly" data-search-js="search-085293d4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../static.files/storage-41dd4d93.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Module civil</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../jiff/index.html">jiff</a><span class="version">1.0.3</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module civil</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#overview" title="Overview">Overview</a></li><li><a href="#what-is-civil-time" title="What is “civil” time?">What is “civil” time?</a></li><li><a href="#when-should-i-use-civil-time" title="When should I use civil time?">When should I use civil time?</a></li><li><a href="#what-about-dates-preceding-the-introduction-of-the-gregorian-calendar" title="What about dates preceding the introduction of the Gregorian calendar?">What about dates preceding the introduction of the Gregorian calendar?</a></li></ul><h3><a href="#structs">Module Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="../index.html">In crate jiff</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">jiff</a></div><h1>Module <span>civil</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/jiff/civil/mod.rs.html#1-308">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Facilities for dealing with inexact dates and times.</p>
+<h2 id="overview"><a class="doc-anchor" href="#overview">§</a>Overview</h2>
+<p>The essential types in this module are:</p>
+<ul>
+<li><a href="struct.Date.html" title="struct jiff::civil::Date"><code>Date</code></a> is a specific day in the proleptic Gregorian calendar.</li>
+<li><a href="struct.Time.html" title="struct jiff::civil::Time"><code>Time</code></a> is a specific wall clock time.</li>
+<li><a href="struct.DateTime.html" title="struct jiff::civil::DateTime"><code>DateTime</code></a> is a combination of a day and a time.</li>
+</ul>
+<p>Moreover, the <a href="fn.date.html" title="fn jiff::civil::date"><code>date</code></a> and <a href="fn.time.html" title="fn jiff::civil::time"><code>time</code></a> free functions can be used
+to conveniently create values of any of three types above:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::civil::{date, time};
+
+<span class="macro">assert_eq!</span>(date(<span class="number">2024</span>, <span class="number">7</span>, <span class="number">31</span>).to_string(), <span class="string">"2024-07-31"</span>);
+<span class="macro">assert_eq!</span>(time(<span class="number">15</span>, <span class="number">20</span>, <span class="number">0</span>, <span class="number">123</span>).to_string(), <span class="string">"15:20:00.000000123"</span>);
+<span class="macro">assert_eq!</span>(
+    date(<span class="number">2024</span>, <span class="number">7</span>, <span class="number">31</span>).at(<span class="number">15</span>, <span class="number">20</span>, <span class="number">0</span>, <span class="number">123</span>).to_string(),
+    <span class="string">"2024-07-31T15:20:00.000000123"</span>,
+);
+<span class="macro">assert_eq!</span>(
+    time(<span class="number">15</span>, <span class="number">20</span>, <span class="number">0</span>, <span class="number">123</span>).on(<span class="number">2024</span>, <span class="number">7</span>, <span class="number">31</span>).to_string(),
+    <span class="string">"2024-07-31T15:20:00.000000123"</span>,
+);</code></pre></div><h2 id="what-is-civil-time"><a class="doc-anchor" href="#what-is-civil-time">§</a>What is “civil” time?</h2>
+<p>A civil datetime is a calendar date and a clock time. It also goes by the names
+“naive,” “local” or “plain.” The most important thing to understand about civil
+time is that it does not correspond to a precise instant in time. This is in
+contrast to types like <a href="../struct.Timestamp.html" title="struct jiff::Timestamp"><code>Timestamp</code></a> and
+<a href="../struct.ZonedDateTime.html" title="struct jiff::ZonedDateTime"><code>ZonedDateTime</code></a>, which <em>do</em> correspond to a precise
+instant in time (to nanosecond precision).</p>
+<p>Because a civil datetime <em>never</em> has a time zone associated with it, and
+because some time zones have transitions that skip or repeat clock times, it
+follows that not all civil datetimes precisely map to a single instant in time.
+For example, <code>2024-03-10 02:30</code> never existed on a clock in <code>America/New_York</code>
+because the 2 o’clock hour was skipped when the clocks were “moved forward”
+for daylight saving time. Conversely, <code>2024-11-03 01:30</code> occurred twice in
+<code>America/New_York</code> because the 1 o’clock hour was repeated when clocks were
+“moved backward” for daylight saving time. (When time is skipped, it’s called a
+“gap.” When time is repeated, it’s called a “fold.”)</p>
+<p>In contrast, an instant in time (that is, <code>Timestamp</code> or <code>ZonedDateTime</code>) can
+<em>always</em> be converted to a civil datetime. And, when a civil datetime is
+combined with its time zone identifier <em>and</em> its offset, the resulting machine
+readable string is unambiguous 100% of the time:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil::date, tz::TimeZone};
+
+<span class="kw">let </span>tz = TimeZone::get(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+<span class="kw">let </span>dt = date(<span class="number">2024</span>, <span class="number">11</span>, <span class="number">3</span>).at(<span class="number">1</span>, <span class="number">30</span>, <span class="number">0</span>, <span class="number">0</span>);
+<span class="comment">// It's ambiguous, so asking for an unambiguous instant presents an error!
+</span><span class="macro">assert!</span>(tz.to_ambiguous_zoned_datetime(dt).unambiguous().is_err());
+<span class="comment">// Gives you the earlier time in a fold, i.e., before DST ends:
+</span><span class="macro">assert_eq!</span>(
+    tz.to_ambiguous_zoned_datetime(dt).earlier()<span class="question-mark">?</span>.to_string(),
+    <span class="string">"2024-11-03T01:30:00-04:00[America/New_York]"</span>,
+);
+<span class="comment">// Gives you the later time in a fold, i.e., after DST ends.
+// Notice the offset change from the previous example!
+</span><span class="macro">assert_eq!</span>(
+    tz.to_ambiguous_zoned_datetime(dt).later()<span class="question-mark">?</span>.to_string(),
+    <span class="string">"2024-11-03T01:30:00-05:00[America/New_York]"</span>,
+);
+<span class="comment">// "Just give me something reasonable"
+</span><span class="macro">assert_eq!</span>(
+    tz.to_ambiguous_zoned_datetime(dt).compatible()<span class="question-mark">?</span>.to_string(),
+    <span class="string">"2024-11-03T01:30:00-04:00[America/New_York]"</span>,
+);
+</code></pre></div><h2 id="when-should-i-use-civil-time"><a class="doc-anchor" href="#when-should-i-use-civil-time">§</a>When should I use civil time?</h2>
+<p>Here is a likely non-exhaustive list of reasons why you might want to use
+civil time:</p>
+<ul>
+<li>When you want or need to deal with calendar and clock units as an
+intermediate step before and/or after associating it with a time zone. For
+example, perhaps you need to parse strings like <code>2000-01-01T00:00:00</code> from a
+CSV file that have no time zone or offset information, but the time zone is
+implied through some out-of-band mechanism.</li>
+<li>When time zone is actually irrelevant. For example, a fitness tracking app
+that reminds you to work-out at 6am local time, regardless of which time zone
+you’re in.</li>
+<li>When you need to perform arithmetic that deliberately ignores daylight
+saving time.</li>
+<li>When interacting with legacy systems or systems that specifically do not
+support time zones.</li>
+</ul>
+<h2 id="what-about-dates-preceding-the-introduction-of-the-gregorian-calendar"><a class="doc-anchor" href="#what-about-dates-preceding-the-introduction-of-the-gregorian-calendar">§</a>What about dates preceding the introduction of the Gregorian calendar?</h2>
+<p>Jiff uses what is called the <em>proleptic</em> Gregorian calendar. This means that
+Jiff behaves <em>as if</em> the Gregorian calendar has been used for all of time.</p>
+<p>In reality, the Gregorian calendar wasn’t introduced until October 1582.
+However, not all places in the world adopted the Gregorian calendar at that
+time. For example, Russia didn’t convert from the Julian calendar to the
+Gregorian calendar until 1917.</p>
+<p>By using the proleptic calendar—where by we pretend the Gregorian calendar
+has always been in use—we are sacrificing contextually and historically
+accurate dates in favor of a massive simplification in datetime handling. In
+general, the process of determining the correct calendar used by a given locale
+and at a given time is a research task that is outside the scope of what Jiff
+offers.</p>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.Date.html" title="struct jiff::civil::Date">Date</a></dt><dd>A representation of a civil date in the Gregorian calendar.</dd><dt><a class="struct" href="struct.DateArithmetic.html" title="struct jiff::civil::DateArithmetic">Date<wbr>Arithmetic</a></dt><dd>Options for <a href="struct.Date.html#method.checked_add" title="method jiff::civil::Date::checked_add"><code>Date::checked_add</code></a> and <a href="struct.Date.html#method.checked_sub" title="method jiff::civil::Date::checked_sub"><code>Date::checked_sub</code></a>.</dd><dt><a class="struct" href="struct.DateDifference.html" title="struct jiff::civil::DateDifference">Date<wbr>Difference</a></dt><dd>Options for <a href="struct.Date.html#method.since" title="method jiff::civil::Date::since"><code>Date::since</code></a> and <a href="struct.Date.html#method.until" title="method jiff::civil::Date::until"><code>Date::until</code></a>.</dd><dt><a class="struct" href="struct.DateSeries.html" title="struct jiff::civil::DateSeries">Date<wbr>Series</a></dt><dd>An iterator over periodic dates, created by <a href="struct.Date.html#method.series" title="method jiff::civil::Date::series"><code>Date::series</code></a>.</dd><dt><a class="struct" href="struct.DateTime.html" title="struct jiff::civil::DateTime">Date<wbr>Time</a></dt><dd>A representation of a civil datetime in the Gregorian calendar.</dd><dt><a class="struct" href="struct.DateTimeArithmetic.html" title="struct jiff::civil::DateTimeArithmetic">Date<wbr>Time<wbr>Arithmetic</a></dt><dd>Options for <a href="struct.DateTime.html#method.checked_add" title="method jiff::civil::DateTime::checked_add"><code>DateTime::checked_add</code></a> and <a href="struct.DateTime.html#method.checked_sub" title="method jiff::civil::DateTime::checked_sub"><code>DateTime::checked_sub</code></a>.</dd><dt><a class="struct" href="struct.DateTimeDifference.html" title="struct jiff::civil::DateTimeDifference">Date<wbr>Time<wbr>Difference</a></dt><dd>Options for <a href="struct.DateTime.html#method.since" title="method jiff::civil::DateTime::since"><code>DateTime::since</code></a> and <a href="struct.DateTime.html#method.until" title="method jiff::civil::DateTime::until"><code>DateTime::until</code></a>.</dd><dt><a class="struct" href="struct.DateTimeRound.html" title="struct jiff::civil::DateTimeRound">Date<wbr>Time<wbr>Round</a></dt><dd>Options for <a href="struct.DateTime.html#method.round" title="method jiff::civil::DateTime::round"><code>DateTime::round</code></a>.</dd><dt><a class="struct" href="struct.DateTimeSeries.html" title="struct jiff::civil::DateTimeSeries">Date<wbr>Time<wbr>Series</a></dt><dd>An iterator over periodic datetimes, created by <a href="struct.DateTime.html#method.series" title="method jiff::civil::DateTime::series"><code>DateTime::series</code></a>.</dd><dt><a class="struct" href="struct.DateTimeWith.html" title="struct jiff::civil::DateTimeWith">Date<wbr>Time<wbr>With</a></dt><dd>A builder for setting the fields on a <a href="struct.DateTime.html" title="struct jiff::civil::DateTime"><code>DateTime</code></a>.</dd><dt><a class="struct" href="struct.DateWith.html" title="struct jiff::civil::DateWith">Date<wbr>With</a></dt><dd>A builder for setting the fields on a <a href="struct.Date.html" title="struct jiff::civil::Date"><code>Date</code></a>.</dd><dt><a class="struct" href="struct.ISOWeekDate.html" title="struct jiff::civil::ISOWeekDate">ISOWeek<wbr>Date</a></dt><dd>A type representing an <a href="https://en.wikipedia.org/wiki/ISO_week_date">ISO 8601 week date</a>.</dd><dt><a class="struct" href="struct.Time.html" title="struct jiff::civil::Time">Time</a></dt><dd>A representation of civil “wall clock” time.</dd><dt><a class="struct" href="struct.TimeArithmetic.html" title="struct jiff::civil::TimeArithmetic">Time<wbr>Arithmetic</a></dt><dd>Options for <a href="struct.Time.html#method.checked_add" title="method jiff::civil::Time::checked_add"><code>Time::checked_add</code></a> and <a href="struct.Time.html#method.checked_sub" title="method jiff::civil::Time::checked_sub"><code>Time::checked_sub</code></a>.</dd><dt><a class="struct" href="struct.TimeDifference.html" title="struct jiff::civil::TimeDifference">Time<wbr>Difference</a></dt><dd>Options for <a href="struct.Time.html#method.since" title="method jiff::civil::Time::since"><code>Time::since</code></a> and <a href="struct.Time.html#method.until" title="method jiff::civil::Time::until"><code>Time::until</code></a>.</dd><dt><a class="struct" href="struct.TimeRound.html" title="struct jiff::civil::TimeRound">Time<wbr>Round</a></dt><dd>Options for <a href="struct.Time.html#method.round" title="method jiff::civil::Time::round"><code>Time::round</code></a>.</dd><dt><a class="struct" href="struct.TimeSeries.html" title="struct jiff::civil::TimeSeries">Time<wbr>Series</a></dt><dd>An iterator over periodic times, created by <a href="struct.Time.html#method.series" title="method jiff::civil::Time::series"><code>Time::series</code></a>.</dd><dt><a class="struct" href="struct.TimeWith.html" title="struct jiff::civil::TimeWith">Time<wbr>With</a></dt><dd>A builder for setting the fields on a <a href="struct.Time.html" title="struct jiff::civil::Time"><code>Time</code></a>.</dd><dt><a class="struct" href="struct.WeekdaysForward.html" title="struct jiff::civil::WeekdaysForward">Weekdays<wbr>Forward</a></dt><dd>An unending iterator of the days of the week.</dd><dt><a class="struct" href="struct.WeekdaysReverse.html" title="struct jiff::civil::WeekdaysReverse">Weekdays<wbr>Reverse</a></dt><dd>An unending iterator of the days of the week in reverse.</dd></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.Era.html" title="enum jiff::civil::Era">Era</a></dt><dd>The era corresponding to a particular year.</dd><dt><a class="enum" href="enum.Weekday.html" title="enum jiff::civil::Weekday">Weekday</a></dt><dd>A representation for the day of the week.</dd></dl><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><dl class="item-table"><dt><a class="fn" href="fn.date.html" title="fn jiff::civil::date">date</a></dt><dd>Creates a new <code>Date</code> value in a <code>const</code> context.</dd><dt><a class="fn" href="fn.datetime.html" title="fn jiff::civil::datetime">datetime</a></dt><dd>Creates a new <code>DateTime</code> value in a <code>const</code> context.</dd><dt><a class="fn" href="fn.time.html" title="fn jiff::civil::time">time</a></dt><dd>Creates a new <code>Time</code> value in a <code>const</code> context.</dd></dl></section></div></main></body></html>

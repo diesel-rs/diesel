@@ -1,0 +1,102 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Implement necessary traits for adding a new sql type"><title>SqlType in diesel::sql_types - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-e56847b5.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.92.0-nightly (975e6c8fe 2025-09-23)" data-channel="nightly" data-search-js="search-e256b49e.js" data-stringdex-js="stringdex-061df703.js" data-settings-js="settings-c38705f0.js" ><script src="../../static.files/storage-e2aeef58.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-ce535bd0.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc derive"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">SqlType</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../diesel/index.html">diesel</a><span class="version">2.3.1</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">SqlType</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#attributes" title="Attributes">Attributes</a><ul><li><a href="#type-attributes" title="Type attributes">Type attributes</a></li></ul></li><li><a href="#expanded-code" title="Expanded Code">Expanded Code</a><ul><li><a href="#sqlite" title="SQLite">SQLite</a></li><li><a href="#postgresql" title="PostgreSQL">PostgreSQL</a></li><li><a href="#mysql" title="MySQL">MySQL</a></li></ul></li></ul></section><div id="rustdoc-modnav"><h2><a href="index.html">In diesel::<wbr>sql_<wbr>types</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">diesel</a>::<wbr><a href="index.html">sql_types</a></div><h1>Derive Macro <span class="derive">SqlType</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/diesel_derives/lib.rs.html#1056">Source</a> </span></div><pre class="rust item-decl"><code>#[derive(SqlType)]
+{
+    <span class="comment">// Attributes available to this derive:</span>
+    #[diesel]
+    #[postgres]
+    #[sqlite_type]
+    #[mysql_type]
+}
+</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Implement necessary traits for adding a new sql type</p>
+<p>This trait implements all necessary traits to define a
+new sql type. This is useful for adding support for unsupported
+or custom types on the sql side. The sql type will be usable for
+all backends you specified via the attributes listed below.</p>
+<p>This derive will implement <code>NotNull</code>, <code>HasSqlType</code> and <code>SingleValue</code>.
+When using this derive macro,
+you need to specify how the type is represented on various backends.
+You don’t need to specify every backend,
+only the ones supported by your type.</p>
+<p>For PostgreSQL, add <code>#[diesel(postgres_type(name = "pg_type_name", schema = "pg_schema_name"))]</code>
+or <code>#[diesel(postgres_type(oid = "some_oid", array_oid = "some_oid"))]</code> for
+builtin types.
+For MySQL, specify which variant of <code>MysqlType</code> should be used
+by adding <code>#[diesel(mysql_type(name = "Variant"))]</code>.
+For SQLite, specify which variant of <code>SqliteType</code> should be used
+by adding <code>#[diesel(sqlite_type(name = "Variant"))]</code>.</p>
+<h2 id="attributes"><a class="doc-anchor" href="#attributes">§</a>Attributes</h2><h3 id="type-attributes"><a class="doc-anchor" href="#type-attributes">§</a>Type attributes</h3>
+<ul>
+<li><code>#[diesel(postgres_type(name = "TypeName", schema = "public"))]</code> specifies support for
+a postgresql type with the name <code>TypeName</code> in the schema <code>public</code>. Prefer this variant
+for types with no stable OID (== everything but the builtin types). It is possible to leaf
+of the <code>schema</code> part. In that case, Diesel defaults to the default postgres search path.</li>
+<li><code>#[diesel(postgres_type(oid = 42, array_oid = 142))]</code>, specifies support for a
+postgresql type with the given <code>oid</code> and <code>array_oid</code>. This variant
+should only be used with types that have a stable OID.</li>
+<li><code>#[diesel(sqlite_type(name = "TypeName"))]</code>, specifies support for a sqlite type
+with the given name. <code>TypeName</code> needs to be one of the possible values
+in <code>SqliteType</code></li>
+<li><code>#[diesel(mysql_type(name = "TypeName"))]</code>, specifies support for a mysql type
+with the given name. <code>TypeName</code> needs to be one of the possible values
+in <code>MysqlType</code></li>
+</ul>
+<h2 id="expanded-code"><a class="doc-anchor" href="#expanded-code">§</a>Expanded Code</h2><details>
+<summary> Expanded Code </summary>
+<h4 id="sqlite"><a class="doc-anchor" href="#sqlite">§</a>SQLite</h4><h5 id="input"><a class="doc-anchor" href="#input">§</a>Input</h5>
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="attr">#[derive(SqlType)]
+#[diesel(sqlite_type(name = <span class="string">"Integer"</span>))]
+</span><span class="kw">struct </span>Integer;
+</code></pre></div><h5 id="expanded-code-1"><a class="doc-anchor" href="#expanded-code-1">§</a>Expanded Code</h5><div class="warning">Expanded code might use diesel internal API's and is only shown for educational purpose</div>
+<p>The macro expands the input to the following Rust code:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">const _</span>: () = {
+    <span class="kw">use </span>diesel;
+    <span class="kw">impl </span>diesel::sql_types::SqlType <span class="kw">for </span>Integer {
+        <span class="kw">type </span>IsNull = diesel::sql_types::is_nullable::NotNull;
+        <span class="kw">const </span>IS_ARRAY: bool = <span class="bool-val">false</span>;
+    }
+    <span class="kw">impl </span>diesel::sql_types::SingleValue <span class="kw">for </span>Integer {}
+    <span class="kw">impl </span>diesel::sql_types::HasSqlType&lt;Integer&gt; <span class="kw">for </span>diesel::sqlite::Sqlite {
+        <span class="kw">fn </span>metadata(<span class="kw">_</span>: <span class="kw-2">&amp;mut </span>()) -&gt; diesel::sqlite::SqliteType {
+            diesel::sqlite::SqliteType::Integer
+        }
+    }
+};</code></pre></div><h4 id="postgresql"><a class="doc-anchor" href="#postgresql">§</a>PostgreSQL</h4><h5 id="input-1"><a class="doc-anchor" href="#input-1">§</a>Input</h5>
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="attr">#[derive(SqlType)]
+#[diesel(postgres_type(oid = <span class="number">42</span>, array_oid = <span class="number">142</span>))]
+</span><span class="kw">struct </span>Integer;
+</code></pre></div><h5 id="expanded-code-2"><a class="doc-anchor" href="#expanded-code-2">§</a>Expanded Code</h5><div class="warning">Expanded code might use diesel internal API's and is only shown for educational purpose</div>
+<p>The macro expands the input to the following Rust code:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">const _</span>: () = {
+    <span class="kw">use </span>diesel;
+    <span class="kw">impl </span>diesel::sql_types::SqlType <span class="kw">for </span>Integer {
+        <span class="kw">type </span>IsNull = diesel::sql_types::is_nullable::NotNull;
+        <span class="kw">const </span>IS_ARRAY: bool = <span class="bool-val">false</span>;
+    }
+    <span class="kw">impl </span>diesel::sql_types::SingleValue <span class="kw">for </span>Integer {}
+    <span class="kw">use </span>diesel::pg::{PgMetadataLookup, PgTypeMetadata};
+    <span class="kw">impl </span>diesel::sql_types::HasSqlType&lt;Integer&gt; <span class="kw">for </span>diesel::pg::Pg {
+        <span class="kw">fn </span>metadata(<span class="kw">_</span>: <span class="kw-2">&amp;mut </span><span class="self">Self</span>::MetadataLookup) -&gt; PgTypeMetadata {
+            PgTypeMetadata::new(<span class="number">42</span>, <span class="number">142</span>)
+        }
+    }
+};</code></pre></div><h4 id="mysql"><a class="doc-anchor" href="#mysql">§</a>MySQL</h4><h5 id="input-2"><a class="doc-anchor" href="#input-2">§</a>Input</h5>
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="attr">#[derive(SqlType)]
+#[diesel(mysql_type(name = <span class="string">"Long"</span>))]
+</span><span class="kw">struct </span>Integer;
+</code></pre></div><h5 id="expanded-code-3"><a class="doc-anchor" href="#expanded-code-3">§</a>Expanded Code</h5><div class="warning">Expanded code might use diesel internal API's and is only shown for educational purpose</div>
+<p>The macro expands the input to the following Rust code:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">const _</span>: () = {
+    <span class="kw">use </span>diesel;
+    <span class="kw">impl </span>diesel::sql_types::SqlType <span class="kw">for </span>Integer {
+        <span class="kw">type </span>IsNull = diesel::sql_types::is_nullable::NotNull;
+        <span class="kw">const </span>IS_ARRAY: bool = <span class="bool-val">false</span>;
+    }
+    <span class="kw">impl </span>diesel::sql_types::SingleValue <span class="kw">for </span>Integer {}
+    <span class="kw">impl </span>diesel::sql_types::HasSqlType&lt;Integer&gt; <span class="kw">for </span>diesel::mysql::Mysql {
+        <span class="kw">fn </span>metadata(<span class="kw">_</span>: <span class="kw-2">&amp;mut </span>()) -&gt; diesel::mysql::MysqlType {
+            diesel::mysql::MysqlType::Long
+        }
+    }
+};</code></pre></div></details></div></details></section></div></main></body></html>

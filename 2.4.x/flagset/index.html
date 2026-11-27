@@ -1,0 +1,140 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Welcome to FlagSet!"><title>flagset - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="flagset" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../static.files/storage-41dd4d93.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Crate flagset</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../flagset/index.html">flagset</a><span class="version">0.4.7</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#welcome-to-flagset" title="Welcome to FlagSet!">Welcome to FlagSet!</a><ul><li><a href="#existing-implementations" title="Existing Implementations">Existing Implementations</a></li><li><a href="#defining-flags" title="Defining Flags">Defining Flags</a></li><li><a href="#flag-values" title="Flag Values">Flag Values</a></li><li><a href="#specifying-attributes" title="Specifying Attributes">Specifying Attributes</a></li><li><a href="#collections-of-flags" title="Collections of Flags">Collections of Flags</a></li><li><a href="#operations" title="Operations">Operations</a></li></ul></li></ul><h3><a href="#macros">Crate Items</a></h3><ul class="block"><li><a href="#macros" title="Macros">Macros</a></li><li><a href="#structs" title="Structs">Structs</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1>Crate <span>flagset</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/flagset/lib.rs.html#19-1350">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="welcome-to-flagset"><a class="doc-anchor" href="#welcome-to-flagset">§</a>Welcome to FlagSet!</h2>
+<p>FlagSet is a new, ergonomic approach to handling flags that combines the
+best of existing crates like <code>bitflags</code> and <code>enumflags</code> without their
+downsides.</p>
+<h3 id="existing-implementations"><a class="doc-anchor" href="#existing-implementations">§</a>Existing Implementations</h3>
+<p>The <code>bitflags</code> crate has long been part of the Rust ecosystem.
+Unfortunately, it doesn’t feel like natural Rust. The <code>bitflags</code> crate
+uses a weird struct format to define flags. Flags themselves are just
+integers constants, so there is little type-safety involved. But it doesn’t
+have any dependencies. It also allows you to define implied flags (otherwise
+known as overlapping flags).</p>
+<p>The <code>enumflags</code> crate tried to improve on <code>bitflags</code> by using enumerations
+to define flags. This was a big improvement to the natural feel of the code.
+Unfortunately, there are some design flaws. To generate the flags,
+procedural macros were used. This implied two separate crates plus
+additional dependencies. Further, <code>enumflags</code> specifies the size of the
+flags using a <code>repr($size)</code> attribute. Unfortunately, this attribute
+cannot resolve type aliases, such as <code>c_int</code>. This makes <code>enumflags</code> a
+poor fit for FFI, which is the most important place for a flags library.
+The <code>enumflags</code> crate also disallows overlapping flags and is not
+maintained.</p>
+<p>FlagSet improves on both of these by adopting the <code>enumflags</code> natural feel
+and the <code>bitflags</code> mode of flag generation; as well as additional API usage
+niceties. FlagSet has no dependencies and is extensively documented and
+tested. It also tries very hard to prevent you from making mistakes by
+avoiding external usage of the integer types. FlagSet is also a zero-cost
+abstraction: all functions are inlineable and should reduce to the core
+integer operations. FlagSet also does not depend on stdlib, so it can be
+used in <code>no_std</code> libraries and applications.</p>
+<h3 id="defining-flags"><a class="doc-anchor" href="#defining-flags">§</a>Defining Flags</h3>
+<p>Flags are defined using the <code>flags!</code> macro:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>flagset::{FlagSet, flags};
+<span class="kw">use </span>std::os::raw::c_int;
+
+<span class="macro">flags!</span> {
+    <span class="kw">enum </span>FlagsA: u8 {
+        Foo,
+        Bar,
+        Baz,
+    }
+
+    <span class="kw">enum </span>FlagsB: c_int {
+        Foo,
+        Bar,
+        Baz,
+    }
+}</code></pre></div>
+<p>Notice that a flag definition looks just like a regular enumeration, with
+the addition of the field-size type. The field-size type is required and
+can be either a type or a type alias. Both examples are given above.</p>
+<p>Also note that the field-size type specifies the size of the corresponding
+<code>FlagSet</code> type, not size of the enumeration itself. To specify the size of
+the enumeration, use the <code>repr($size)</code> attribute as specified below.</p>
+<h3 id="flag-values"><a class="doc-anchor" href="#flag-values">§</a>Flag Values</h3>
+<p>Flags often need values assigned to them. This can be done implicitly,
+where the value depends on the order of the flags:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>flagset::{FlagSet, flags};
+
+<span class="macro">flags!</span> {
+    <span class="kw">enum </span>Flags: u16 {
+        Foo, <span class="comment">// Implicit Value: 0b0001
+        </span>Bar, <span class="comment">// Implicit Value: 0b0010
+        </span>Baz, <span class="comment">// Implicit Value: 0b0100
+    </span>}
+}</code></pre></div>
+<p>Alternatively, flag values can be defined explicitly, by specifying any
+<code>const</code> expression:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>flagset::{FlagSet, flags};
+
+<span class="macro">flags!</span> {
+    <span class="kw">enum </span>Flags: u16 {
+        Foo = <span class="number">0x01</span>,   <span class="comment">// Explicit Value: 0b0001
+        </span>Bar = <span class="number">2</span>,      <span class="comment">// Explicit Value: 0b0010
+        </span>Baz = <span class="number">0b0100</span>, <span class="comment">// Explicit Value: 0b0100
+    </span>}
+}</code></pre></div>
+<p>Flags can also overlap or “imply” other flags:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>flagset::{FlagSet, flags};
+
+<span class="macro">flags!</span> {
+    <span class="kw">enum </span>Flags: u16 {
+        Foo = <span class="number">0b0001</span>,
+        Bar = <span class="number">0b0010</span>,
+        Baz = <span class="number">0b0110</span>, <span class="comment">// Implies Bar
+        </span>All = (Flags::Foo | Flags::Bar | Flags::Baz).bits(),
+    }
+}</code></pre></div><h3 id="specifying-attributes"><a class="doc-anchor" href="#specifying-attributes">§</a>Specifying Attributes</h3>
+<p>Attributes can be used on the enumeration itself or any of the values:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>flagset::{FlagSet, flags};
+
+<span class="macro">flags!</span> {
+    <span class="attr">#[derive(PartialOrd, Ord)]
+    </span><span class="kw">enum </span>Flags: u8 {
+        Foo,
+        <span class="attr">#[deprecated]
+        </span>Bar,
+        Baz,
+    }
+}</code></pre></div><h3 id="collections-of-flags"><a class="doc-anchor" href="#collections-of-flags">§</a>Collections of Flags</h3>
+<p>A collection of flags is a <code>FlagSet&lt;T&gt;</code>. If you are storing the flags in
+memory, the raw <code>FlagSet&lt;T&gt;</code> type should be used. However, if you want to
+receive flags as an input to a function, you should use
+<code>impl Into&lt;FlagSet&lt;T&gt;&gt;</code>. This allows for very ergonomic APIs:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>flagset::{FlagSet, flags};
+
+<span class="macro">flags!</span> {
+    <span class="kw">enum </span>Flags: u8 {
+        Foo,
+        Bar,
+        Baz,
+    }
+}
+
+<span class="kw">struct </span>Container(FlagSet&lt;Flags&gt;);
+
+<span class="kw">impl </span>Container {
+    <span class="kw">fn </span>new(flags: <span class="kw">impl </span>Into&lt;FlagSet&lt;Flags&gt;&gt;) -&gt; Container {
+        Container(flags.into())
+    }
+}
+
+<span class="macro">assert_eq!</span>(Container::new(Flags::Foo | Flags::Bar).<span class="number">0</span>.bits(), <span class="number">0b011</span>);
+<span class="macro">assert_eq!</span>(Container::new(Flags::Foo).<span class="number">0</span>.bits(), <span class="number">0b001</span>);
+<span class="macro">assert_eq!</span>(Container::new(<span class="prelude-val">None</span>).<span class="number">0</span>.bits(), <span class="number">0b000</span>);</code></pre></div><h3 id="operations"><a class="doc-anchor" href="#operations">§</a>Operations</h3>
+<p>Operations can be performed on a <code>FlagSet&lt;F&gt;</code> or on individual flags:</p>
+<div class="table"><table><thead><tr><th>Operator</th><th>Assignment Operator</th><th>Meaning</th></tr></thead><tbody>
+<tr><td>|</td><td>|=</td><td>Union</td></tr>
+<tr><td>&amp;</td><td>&amp;=</td><td>Intersection</td></tr>
+<tr><td>^</td><td>^=</td><td>Toggle specified flags</td></tr>
+<tr><td>-</td><td>-=</td><td>Difference</td></tr>
+<tr><td>%</td><td>%=</td><td>Symmetric difference</td></tr>
+<tr><td>!</td><td></td><td>Toggle all flags</td></tr>
+</tbody></table>
+</div></div></details><h2 id="macros" class="section-header">Macros<a href="#macros" class="anchor">§</a></h2><dl class="item-table"><dt><a class="macro" href="macro.flags.html" title="macro flagset::flags">flags</a></dt><dd>Define flag value using the <code>enum</code> syntax. See below for details.</dd></dl><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.FlagSet.html" title="struct flagset::FlagSet">FlagSet</a></dt><dt><a class="struct" href="struct.InvalidBits.html" title="struct flagset::InvalidBits">Invalid<wbr>Bits</a></dt><dd>Error type returned when creating a new flagset from bits is invalid or undefined.</dd></dl></section></div></main></body></html>

@@ -1,0 +1,1058 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Comparison with other Rust datetime crates"><title>jiff::_documentation::comparison - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-1e18a8e7.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="jiff" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (6c709eb42 2026-11-25)" data-channel="nightly" data-search-js="search-085293d4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../../static.files/storage-41dd4d93.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Module comparison</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../jiff/index.html">jiff</a><span class="version">1.0.3</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module comparison</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#comparison-with-other-rust-datetime-crates" title="Comparison with other Rust datetime crates">Comparison with other Rust datetime crates</a><ul><li><a href="#chrono-v0438" title="`chrono` (v0.4.38)"><code>chrono</code> (v0.4.38)</a></li><li><a href="#time-v0336" title="`time` (v0.3.36)"><code>time</code> (v0.3.36)</a></li><li><a href="#hifitime-v390" title="`hifitime` (v3.9.0)"><code>hifitime</code> (v3.9.0)</a></li><li><a href="#icu-v150" title="`icu` (v1.5.0)"><code>icu</code> (v1.5.0)</a></li></ul></li></ul></section><div id="rustdoc-modnav"><h2><a href="../index.html">In jiff::<wbr>_<wbr>documentation</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../../index.html">jiff</a>::<wbr><a href="../index.html">_documentation</a></div><h1>Module <span>comparison</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../../src/jiff/lib.rs.html#804">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="comparison-with-other-rust-datetime-crates"><a class="doc-anchor" href="#comparison-with-other-rust-datetime-crates">§</a>Comparison with other Rust datetime crates</h2>
+<p>This document is meant to be a comparison between Jiff and each of the other
+prominent open source datetime libraries for Rust. If you feel like there is a
+library missing from this list, please file an issue about it. I would prefer
+to only add libraries to this list that are being used in production or have a
+substantial number of users.</p>
+<p>The goal of this document is to be as <em>descriptive</em> and <em>substantively
+complete</em> as possible. For example, “Chrono has a better API design than Jiff”
+would be a pretty vague value judgment that someone could easily disagree with.
+But, “Chrono allows using a zone-aware datetime type that is <code>Copy</code> while Jiff
+does not” would be a factual comparison that someone might use to <em>support</em> an
+opinion that Chrono’s API design is better than Jiff’s. In other words, this
+document should provide the “facts of comparison” but refrain from assigning
+value judgments.</p>
+<p>In terms of completeness, it is probably not realistic to expect 100%
+completion here. We aren’t hunting for Korok Seeds. Instead, this document
+aims for <em>substantive</em> completion. That is, if there’s a point of difference
+between Jiff and another library that would likely influence someone’s decision
+of which library to use, and can be articulated descriptively, then it should
+probably be in this document.</p>
+<p>The current status of this document is that it is both <em>incomplete</em> and
+<em>biased</em>. That is, this first draft was written by the author of Jiff without
+any input from other crate maintainers. (To other crate maintainers: I welcome
+feedback. Even if it’s just filing an issue.)</p>
+<p>Note that this document contains many code snippets. They can be tested with
+<code>cargo test --doc _documentation::comparison</code> from the root of this repository.</p>
+<h3 id="chrono-v0438"><a class="doc-anchor" href="#chrono-v0438">§</a><a href="https://docs.rs/chrono"><code>chrono</code></a> (v0.4.38)</h3>
+<p>Chrono is a Rust datetime library that provides a time zone aware datetime
+type.</p>
+<p>For the following comparisons, a <code>Cargo.toml</code> with the following dependencies
+should be able to run any of the programs in this section:</p>
+<div class="example-wrap"><pre class="language-toml"><code>anyhow = &quot;1.0.81&quot;
+chrono = &quot;0.4.38&quot;
+chrono-tz = { version = &quot;0.9.0&quot;, features = [&quot;serde&quot;] }
+jiff = { version = &quot;0.2.0&quot;, features = [&quot;serde&quot;] }
+serde = &quot;1.0.203&quot;
+serde_json = &quot;1.0.117&quot;
+tzfile = &quot;0.1.3&quot;</code></pre></div><h4 id="time-zone-database-integration"><a class="doc-anchor" href="#time-zone-database-integration">§</a>Time zone database integration</h4>
+<p>Jiff gives you automatic integration with your copy of the Time Zone Database.
+On Unix, it’s usually found at <code>/usr/share/zoneinfo</code>. On Windows, since there
+is no canonical location, Jiff will depend on <code>jiff-tzdb</code> by default, which
+will embed the entire database into your binary. Jiff hides these details from
+you. For example, to convert a civil time into an absolute time in a particular
+time zone:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::civil::date;
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="kw">let </span>zdt = date(<span class="number">2024</span>, <span class="number">6</span>, <span class="number">30</span>).at(<span class="number">9</span>, <span class="number">46</span>, <span class="number">0</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(zdt.to_string(), <span class="string">"2024-06-30T09:46:00-04:00[America/New_York]"</span>);
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<p>For Chrono, one recommended option is to use the
+<a href="https://docs.rs/chrono-tz"><code>chrono-tz</code></a> crate:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>anyhow::Context;
+<span class="kw">use </span>chrono::TimeZone;
+<span class="kw">use </span>chrono_tz::America::New_York;
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="kw">let </span>zdt = New_York.with_ymd_and_hms(<span class="number">2024</span>, <span class="number">6</span>, <span class="number">30</span>, <span class="number">9</span>, <span class="number">46</span>, <span class="number">0</span>)
+        .single()
+        .context(<span class="string">"invalid naive time"</span>)<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(zdt.to_string(), <span class="string">"2024-06-30 09:46:00 EDT"</span>);
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<p><code>chrono-tz</code> works by embedding an entire copy of the Time Zone Database into
+your binary, where each time zone is represented as a Rust value that can be
+imported via <code>use</code>. A disadvantage of this approach is that you’re reliant on
+<code>chrono-tz</code> updates to get the most recent time zone information. An advantage
+of this approach is that you never need to worry about an end user’s system
+state. Another advantage is that this allows a <code>TimeZone</code> trait implementation
+to be <code>Copy</code> via a <code>&amp;Tz</code>, and that in turn allows a <code>chrono::DateTime</code> to be
+<code>Copy</code>. In contrast, in Jiff, a <code>TimeZone</code> is never <code>Copy</code>. Since a
+<code>ZonedDateTime</code> embeds a <code>TimeZone</code>, a <code>ZonedDateTime</code> is never <code>Copy</code> either.</p>
+<p>Another recommended option is the <a href="https://docs.rs/tzfile"><code>tzfile</code></a> crate.
+Unlike <code>chrono-tz</code>, the <code>tzfile</code> crate will try to read time zone data from
+your system’s copy of the Time Zone Database.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>anyhow::Context;
+<span class="kw">use </span>chrono::TimeZone;
+<span class="kw">use </span>tzfile::Tz;
+
+<span class="attr">#[cfg(unix)]
+</span><span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="kw">let </span>tz = Tz::named(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>zdt = (<span class="kw-2">&amp;</span>tz).with_ymd_and_hms(<span class="number">2024</span>, <span class="number">6</span>, <span class="number">30</span>, <span class="number">9</span>, <span class="number">46</span>, <span class="number">0</span>)
+        .single()
+        .context(<span class="string">"invalid naive time"</span>)<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(zdt.to_string(), <span class="string">"2024-06-30 09:46:00 EDT"</span>);
+    <span class="prelude-val">Ok</span>(())
+}
+
+<span class="comment">// `tzfile` exposes a platform specific API, which means
+// users of the crate have to deal with platform differences
+// themselves.
+</span><span class="attr">#[cfg(not(unix))]
+</span><span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<p>Note though that at time of writing (2024-07-11), <code>tzfile::Tz::named</code> will
+read and parse the corresponding time zone rules from disk on every call.
+Conversely, in Jiff, all time zone lookups by name are cached. This may or may
+not matter for your use case.</p>
+<h4 id="jiff-losslessly-roundtrips-time-zone-aware-datetimes"><a class="doc-anchor" href="#jiff-losslessly-roundtrips-time-zone-aware-datetimes">§</a>Jiff losslessly roundtrips time zone aware datetimes</h4>
+<p>In Jiff, with <code>serde</code> support enabled, one can serialize and deserialize a
+<code>ZonedDateTime</code> value losslessly. This means that, after deserialization, you
+can expect it to still perform DST arithmetic:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{ToSpan, ZonedDateTime, civil::date};
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="kw">let </span>zdt = date(<span class="number">2024</span>, <span class="number">3</span>, <span class="number">10</span>).at(<span class="number">1</span>, <span class="number">59</span>, <span class="number">59</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+
+    <span class="kw">let </span>json = serde_json::to_string_pretty(<span class="kw-2">&amp;</span>zdt)<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(json, <span class="string">"\"2024-03-10T01:59:59-05:00[America/New_York]\""</span>);
+
+    <span class="kw">let </span>got: ZonedDateTime = serde_json::from_str(<span class="kw-2">&amp;</span>json)<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(got.to_string(), <span class="string">"2024-03-10T01:59:59-05:00[America/New_York]"</span>);
+    <span class="kw">let </span>next = got.checked_add(<span class="number">1</span>.minute())<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(next.to_string(), <span class="string">"2024-03-10T03:00:59-04:00[America/New_York]"</span>);
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<p>Notice that when we add a minute, it jumps to <code>03:00</code> civil time because of the
+transition into daylight saving time in my selected time zone. Notice also the
+offset change from <code>-05</code> to <code>-04</code>.</p>
+<p>Compare this with Chrono which also supports <code>serde</code>, but not with <code>chrono-tz</code>
+or <code>tzfile</code>. One option is to use its <code>Local</code> implementation of its <code>TimeZone</code>
+trait:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>anyhow::Context;
+<span class="kw">use </span>chrono::{DateTime, FixedOffset, Local, TimeDelta, TimeZone};
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="kw">let </span>zdt = Local.with_ymd_and_hms(<span class="number">2024</span>, <span class="number">3</span>, <span class="number">10</span>, <span class="number">1</span>, <span class="number">59</span>, <span class="number">59</span>)
+        .single()
+        .context(<span class="string">"invalid naive time"</span>)<span class="question-mark">?</span>;
+
+    <span class="kw">let </span>json = serde_json::to_string_pretty(<span class="kw-2">&amp;</span>zdt)<span class="question-mark">?</span>;
+    <span class="comment">// Chrono only serializes the offset, which makes lossless
+    // deserialization impossible. Chrono loses the time zone
+    // information.
+    </span><span class="macro">assert_eq!</span>(json, <span class="string">"\"2024-03-10T01:59:59-05:00\""</span>);
+
+    <span class="comment">// The serialized datetime has no time zone information,
+    // so unless there is some out-of-band information saying
+    // what its time zone is, we're forced to use a fixed offset:
+    </span><span class="kw">let </span>got: DateTime&lt;FixedOffset&gt; = serde_json::from_str(<span class="kw-2">&amp;</span>json)<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(got.to_string(), <span class="string">"2024-03-10 01:59:59 -05:00"</span>);
+    <span class="kw">let </span>next = got.checked_add_signed(TimeDelta::minutes(<span class="number">1</span>))
+        .context(<span class="string">"arithmetic failed"</span>)<span class="question-mark">?</span>;
+    <span class="comment">// This is correct for fixed offset, but it's no longer
+    // DST aware.
+    </span><span class="macro">assert_eq!</span>(next.to_string(), <span class="string">"2024-03-10 02:00:59 -05:00"</span>);
+
+    <span class="comment">// We could deserialize into a `DateTime&lt;Local&gt;`, but this
+    // requires knowing that the time zone of the datetime matches
+    // local time zone. Which you might know. But you might not.
+    </span><span class="kw">let </span>got: DateTime&lt;Local&gt; = serde_json::from_str(<span class="kw-2">&amp;</span>json)<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(got.to_string(), <span class="string">"2024-03-10 01:59:59 -05:00"</span>);
+    <span class="kw">let </span>next = got.checked_add_signed(TimeDelta::minutes(<span class="number">1</span>))
+        .context(<span class="string">"arithmetic failed"</span>)<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(next.to_string(), <span class="string">"2024-03-10 03:00:59 -04:00"</span>);
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<p>Or, if you have a <code>Tz</code> from <code>chrono-tz</code>. But in this case, since <code>chrono-tz</code>
+doesn’t support Serde, you have to convert to a <code>DateTime&lt;FixedOffset&gt;</code>. Like
+above, you’ll lose DST safe arithmetic after deserialization:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>anyhow::Context;
+<span class="kw">use </span>chrono::{DateTime, FixedOffset, TimeDelta, TimeZone};
+<span class="kw">use </span>chrono_tz::America::New_York;
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="kw">let </span>zdt = New_York.with_ymd_and_hms(<span class="number">2024</span>, <span class="number">3</span>, <span class="number">10</span>, <span class="number">1</span>, <span class="number">59</span>, <span class="number">59</span>)
+        .single()
+        .context(<span class="string">"invalid naive time"</span>)<span class="question-mark">?</span>;
+
+    <span class="kw">let </span>json = serde_json::to_string_pretty(<span class="kw-2">&amp;</span>zdt.fixed_offset())<span class="question-mark">?</span>;
+    <span class="comment">// Chrono only serializes the offset, which makes lossless
+    // deserialization impossible. Chrono loses the time zone
+    // information.
+    </span><span class="macro">assert_eq!</span>(json, <span class="string">"\"2024-03-10T01:59:59-05:00\""</span>);
+
+    <span class="comment">// The serialized datetime has no time zone information,
+    // so unless there is some out-of-band information saying
+    // what its time zone is, we're forced to use a fixed offset:
+    </span><span class="kw">let </span>got: DateTime&lt;FixedOffset&gt; = serde_json::from_str(<span class="kw-2">&amp;</span>json)<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(got.to_string(), <span class="string">"2024-03-10 01:59:59 -05:00"</span>);
+    <span class="kw">let </span>next = got.checked_add_signed(TimeDelta::minutes(<span class="number">1</span>))
+        .context(<span class="string">"arithmetic failed"</span>)<span class="question-mark">?</span>;
+    <span class="comment">// This is correct for fixed offset, but it's no longer
+    // DST aware.
+    </span><span class="macro">assert_eq!</span>(next.to_string(), <span class="string">"2024-03-10 02:00:59 -05:00"</span>);
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<p>The main way to solve this problem (and is how <code>java.time</code>, Temporal and Jiff
+solve it), is by supporting <a href="https://datatracker.ietf.org/doc/rfc9557/">RFC 9557</a>. Otherwise, the only way to fully
+capture Jiff’s functionality in Chrono is to define a custom serialization
+format that includes the instant, the time zone identifier <em>and</em> the offset.
+(The offset is used for conflict resolution when deserializing datetimes made
+in the future for which their offset has changed due to changes in the time
+zone database.)</p>
+<h4 id="jiff-provides-support-for-zone-aware-calendar-arithmetic"><a class="doc-anchor" href="#jiff-provides-support-for-zone-aware-calendar-arithmetic">§</a>Jiff provides support for zone aware calendar arithmetic</h4>
+<p>With Jiff, you can add non-uniform units like days to time zone aware datetimes,
+and get non-uniform units like days as a representation of a span between
+datetimes. And they agree on the results.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil::date, ToSpan, Unit};
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="kw">let </span>zdt1 = date(<span class="number">2024</span>, <span class="number">3</span>, <span class="number">9</span>).at(<span class="number">21</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>zdt2 = zdt1.checked_add(<span class="number">1</span>.day())<span class="question-mark">?</span>;
+
+    <span class="comment">// Even though 2 o'clock didn't occur on 2024-03-10, adding 1 day
+    // returns the same civil time the next day.
+    </span><span class="macro">assert_eq!</span>(zdt2.to_string(), <span class="string">"2024-03-10T21:00:00-04:00[America/New_York]"</span>);
+    <span class="comment">// The span of time is 23 hours:
+    </span><span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>zdt2 - <span class="kw-2">&amp;</span>zdt1, <span class="number">23</span>.hours().fieldwise());
+    <span class="comment">// But if you ask for the span in units of days, you get exactly 1:
+    </span><span class="macro">assert_eq!</span>(zdt1.until((Unit::Day, <span class="kw-2">&amp;</span>zdt2))<span class="question-mark">?</span>, <span class="number">1</span>.day().fieldwise());
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<p>This is important and difficult to get right because some days are only 23
+hours long (typically the day of the year where DST starts) and some days are
+25 hours long (typically the day of the year where DST ends). With Jiff, you
+can seamlessly go back-and-forth between calendar units and clock units without
+worrying about whether “day” will be interpreted differently.</p>
+<p>Chrono has some support for this. Namely, it can add units of days in a time
+zone aware fashion, but it cannot produce spans of time involving days between
+two zone aware datetimes that is consistent with adding days.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>anyhow::Context;
+<span class="kw">use </span>chrono::{Days, TimeDelta, TimeZone};
+<span class="kw">use </span>chrono_tz::America::New_York;
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="kw">let </span>zdt1 = New_York.with_ymd_and_hms(<span class="number">2024</span>, <span class="number">3</span>, <span class="number">9</span>, <span class="number">21</span>, <span class="number">0</span>, <span class="number">0</span>)
+        .single()
+        .context(<span class="string">"invalid naive time"</span>)<span class="question-mark">?</span>;
+
+    <span class="comment">// Adding 1 day via TimeDelta leads to a result that is
+    // 24 hours later, including the gap at 2am on 2024-03-10.
+    // As a result, you get a different civil time, which is
+    // usually not what is intended.
+    </span><span class="kw">let </span>zdt2 = zdt1.checked_add_signed(TimeDelta::days(<span class="number">1</span>))
+        .context(<span class="string">"adding a time delta failed"</span>)<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(zdt2.to_string(), <span class="string">"2024-03-10 22:00:00 EDT"</span>);
+
+    <span class="comment">// However, Chrono does expose a separate API for adding
+    // units of days specifically. This does get you the
+    // correct result.
+    </span><span class="kw">let </span>zdt2 = zdt1.checked_add_days(Days::new(<span class="number">1</span>))
+        .context(<span class="string">"adding days failed"</span>)<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(zdt2.to_string(), <span class="string">"2024-03-10 21:00:00 EDT"</span>);
+
+    <span class="comment">// The only way to compute a duration between two datetimes
+    // in Chrono is with a `TimeDelta`:
+    </span><span class="kw">let </span>delta = zdt2.signed_duration_since(<span class="kw-2">&amp;</span>zdt1);
+    <span class="comment">// And since `TimeDelta` assumes all days are exactly 24
+    // hours long, you get a result of `0` days. If this were
+    // a fold, the number of days would be `1`, but you'd also
+    // have a number of hours equal to `1`.
+    </span><span class="macro">assert_eq!</span>(delta.num_days(), <span class="number">0</span>);
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div><h4 id="jiff-losslessly-roundtrips-durations"><a class="doc-anchor" href="#jiff-losslessly-roundtrips-durations">§</a>Jiff losslessly roundtrips durations</h4>
+<p>Jiff implements something close to ISO 8601 to provide lossless serialization
+and deserialization of its <code>Span</code> type. A <code>Span</code> covers both calendar and clock
+units.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{Span, ToSpan};
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="kw">let </span>span = <span class="number">5</span>.years().months(<span class="number">2</span>).days(<span class="number">1</span>).hours(<span class="number">20</span>);
+    <span class="kw">let </span>json = serde_json::to_string_pretty(<span class="kw-2">&amp;</span>span)<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(json, <span class="string">"\"P5Y2M1DT20H\""</span>);
+
+    <span class="kw">let </span>got: Span = serde_json::from_str(<span class="kw-2">&amp;</span>json)<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(got, span.fieldwise());
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<p>Chrono <a href="https://github.com/chronotope/chrono/issues/117">does not currently have Serde support for its duration type</a>.</p>
+<h4 id="jiff-supports-dealing-with-gaps-in-civil-time"><a class="doc-anchor" href="#jiff-supports-dealing-with-gaps-in-civil-time">§</a>Jiff supports dealing with gaps in civil time</h4>
+<p>A gap in civil time most typically occurs when a particular region enters
+daylight saving time. When this happens, some time on the clocks in that region
+is skipped. It never appears. (A fold happens when the clocks are rolled back,
+usually when leaving daylight saving time. In this case, some time on the clock
+is repeated.)</p>
+<p>Jiff supports automatically selecting a “reasonable” choice in either case
+via its “compatible” strategy (as specified by <a href="https://datatracker.ietf.org/doc/html/rfc5545">RFC 5545</a>).</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::ZonedDateTime;
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="comment">// This is a gap. The default strategy takes the time after the gap.
+    </span><span class="kw">let </span>zdt: ZonedDateTime = <span class="string">"2024-03-10 02:30[America/New_York]"</span>.parse()<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(zdt.to_string(), <span class="string">"2024-03-10T03:30:00-04:00[America/New_York]"</span>);
+
+    <span class="comment">// This is a fold. The default strategy takes the time before the fold.
+    </span><span class="kw">let </span>zdt: ZonedDateTime = <span class="string">"2024-11-03 01:30[America/New_York]"</span>.parse()<span class="question-mark">?</span>;
+    <span class="comment">// The time after the fold would be identical,
+    // except the offset would be -05.
+    </span><span class="macro">assert_eq!</span>(zdt.to_string(), <span class="string">"2024-11-03T01:30:00-04:00[America/New_York]"</span>);
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<p>Jiff also exposes all information available with respect to ambiguous civil
+datetimes via <code>tz::AmbiguousZonedDateTime</code>, <code>tz::AmbiguousTimestamp</code> and
+<code>tz::AmbiguousOffset</code>. This enables callers to implement whatever strategy
+they want.</p>
+<p>While Chrono will let you deal with folds, it returns <code>MappedLocalTime::None</code>
+in the case of a gap with no additional information. So there’s really nothing
+else you can conveniently do in this case except return an error:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>anyhow::Context;
+<span class="kw">use </span>chrono::{offset::MappedLocalTime, TimeZone};
+<span class="kw">use </span>chrono_tz::America::New_York;
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="comment">// For gaps, Chrono exposes no additional information.
+    </span><span class="kw">let </span>mapped = New_York.with_ymd_and_hms(<span class="number">2024</span>, <span class="number">3</span>, <span class="number">10</span>, <span class="number">2</span>, <span class="number">30</span>, <span class="number">0</span>);
+    <span class="macro">assert_eq!</span>(mapped, MappedLocalTime::None);
+
+    <span class="comment">// For folds, Chrono gives you the two choices.
+    // This is approximately equivalent to what Jiff exposes
+    // in the case of a fold.
+    </span><span class="kw">let </span>zdt = New_York.with_ymd_and_hms(<span class="number">2024</span>, <span class="number">11</span>, <span class="number">3</span>, <span class="number">1</span>, <span class="number">30</span>, <span class="number">0</span>)
+        .earliest()
+        .context(<span class="string">"invalid datetime"</span>)<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(zdt.to_string(), <span class="string">"2024-11-03 01:30:00 EDT"</span>);
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div><h4 id="jiff-supports-rounding-durations"><a class="doc-anchor" href="#jiff-supports-rounding-durations">§</a>Jiff supports rounding durations</h4>
+<p>In Jiff, one can round the duration computed between two datetimes:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil::date, RoundMode, ToSpan, Unit, ZonedDateTimeDifference};
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="kw">let </span>zdt1 = date(<span class="number">2001</span>, <span class="number">11</span>, <span class="number">18</span>).at(<span class="number">8</span>, <span class="number">30</span>, <span class="number">0</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>zdt2 = date(<span class="number">2024</span>, <span class="number">7</span>, <span class="number">11</span>).at(<span class="number">22</span>, <span class="number">38</span>, <span class="number">0</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+
+    <span class="kw">let </span>round_options = ZonedDateTimeDifference::new(<span class="kw-2">&amp;</span>zdt2)
+        .largest(Unit::Year)
+        .smallest(Unit::Day)
+        .mode(RoundMode::HalfExpand);
+    <span class="kw">let </span>span = zdt1.until(round_options)<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(span.fieldwise(), <span class="number">22</span>.years().months(<span class="number">7</span>).days(<span class="number">24</span>));
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<p>While Chrono supports rounding datetimes themselves via its
+<code>chrono::duration::DurationRound</code> trait, it does not support rounding durations
+themselves. Indeed, its principle duration type, <code>TimeDelta</code>, is an “absolute”
+duration like <code>std::time::Duration</code> (except that it is signed). It doesn’t keep
+track of individual units like Jiff does. Instead, everything gets normalized
+into a 96-bit integer number of nanoseconds. With this representation, it is
+impossible to do DST safe rounding to non-uniform units like days.</p>
+<h4 id="jiff-supports-zone-aware-rounding-of-durations"><a class="doc-anchor" href="#jiff-supports-zone-aware-rounding-of-durations">§</a>Jiff supports zone-aware rounding of durations</h4>
+<p>Jiff’s duration rounding is time zone aware. For example, if you’re rounding to
+a number of days, it knows to round 11.5 hours up to 1 day on days with gaps,
+and round 12 hours down to 0 days on days with folds. The only requirement
+is that we provide a reference datetime with which to interpret the span.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil::date, SpanRound, ToSpan, Unit};
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="kw">let </span>gapday = date(<span class="number">2024</span>, <span class="number">3</span>, <span class="number">10</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>foldday = date(<span class="number">2024</span>, <span class="number">11</span>, <span class="number">3</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+
+    <span class="kw">let </span>span1 = <span class="number">11</span>.hours().minutes(<span class="number">30</span>);
+    <span class="kw">let </span>span2 = span1.round(
+        SpanRound::new().smallest(Unit::Day).relative(<span class="kw-2">&amp;</span>gapday),
+    )<span class="question-mark">?</span>;
+    <span class="comment">// rounds up, even though on a normal day 11.5 hours would round down.
+    </span><span class="macro">assert_eq!</span>(span2, <span class="number">1</span>.day().fieldwise());
+
+    <span class="kw">let </span>span1 = <span class="number">12</span>.hours();
+    <span class="kw">let </span>span2 = span1.round(
+        SpanRound::new().smallest(Unit::Day).relative(<span class="kw-2">&amp;</span>foldday),
+    )<span class="question-mark">?</span>;
+    <span class="comment">// rounds down, even though on a normal day 12 hours would round up.
+    </span><span class="macro">assert_eq!</span>(span2, <span class="number">0</span>.days().fieldwise());
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<p>As with the previous section, Chrono does not support rounding durations or
+rounding units like <code>Days</code> with respect to a reference datetime.</p>
+<h4 id="jiff-supports-re-balancing-durations"><a class="doc-anchor" href="#jiff-supports-re-balancing-durations">§</a>Jiff supports re-balancing durations</h4>
+<p>This example is like the one above, except we choose a smaller “largest” unit:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil::date, RoundMode, ToSpan, Unit, ZonedDateTimeDifference};
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="kw">let </span>zdt1 = date(<span class="number">2001</span>, <span class="number">11</span>, <span class="number">18</span>).at(<span class="number">8</span>, <span class="number">30</span>, <span class="number">0</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>zdt2 = date(<span class="number">2024</span>, <span class="number">7</span>, <span class="number">11</span>).at(<span class="number">22</span>, <span class="number">38</span>, <span class="number">0</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+
+    <span class="kw">let </span>round_options = ZonedDateTimeDifference::new(<span class="kw-2">&amp;</span>zdt2)
+        .largest(Unit::Month)
+        .smallest(Unit::Day)
+        .mode(RoundMode::HalfExpand);
+    <span class="kw">let </span>span = zdt1.until(round_options)<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(span, <span class="number">271</span>.months().days(<span class="number">24</span>).fieldwise());
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div><h4 id="jiff-supports-getting-the-nth-weekday-from-the-current-date"><a class="doc-anchor" href="#jiff-supports-getting-the-nth-weekday-from-the-current-date">§</a>Jiff supports getting the <code>nth</code> weekday from the current date</h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::civil::{date, Weekday};
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="kw">let </span>zdt = date(<span class="number">2024</span>, <span class="number">7</span>, <span class="number">11</span>).at(<span class="number">22</span>, <span class="number">59</span>, <span class="number">0</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(zdt.weekday(), Weekday::Thursday);
+
+    <span class="kw">let </span>next_tuesday = zdt.nth_weekday(<span class="number">1</span>, Weekday::Tuesday)<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(
+        next_tuesday.to_string(),
+        <span class="string">"2024-07-16T22:59:00-04:00[America/New_York]"</span>,
+    );
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<p>Chrono does have <code>NaiveDate::from_weekday_of_month_opt</code>, but it only counts
+the number of weekdays for a particular month. (The Jiff equivalent is
+<code>nth_weekday_of_month</code>.) Moreover, Chrono’s method is only available on naive
+dates and not zone aware datetimes.</p>
+<h4 id="jiff-supports-detecting-time-zone-offset-conflicts"><a class="doc-anchor" href="#jiff-supports-detecting-time-zone-offset-conflicts">§</a>Jiff supports detecting time zone offset conflicts</h4>
+<p>One of the problems with storing datetimes in the future is that time
+zone rules can change. For example, if you stored the zone aware datetime
+<code>2020-01-15T12:00-02[America/Sao_Paulo]</code> in 2018, then it would be considered
+to be in daylight saving time with an offset of <code>-2</code>. However, in 2019,
+daylight saving time was abolished in this time zone, which renders the
+datetime invalid because its offset <em>should</em> be <code>-3</code>.</p>
+<p>Jiff can detect these sorts of conflicts and will actually return a parse error
+by default. We exemplify this by creating and serializing a zoned datetime from
+an old copy of the Time Zone Database, and then try to parse it back using our
+system’s current copy of the Time Zone Database. (This also demonstrate’s Jiff
+support for using multiple copies of the Time Zone Database simultaneously.
+But the main point here is to simulate the process of “serialize datetime,
+time zone rules change, deserialize datetime.”)</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{fmt::temporal::DateTimeParser, tz::{<span class="self">self</span>, TimeZoneDatabase}};
+
+<span class="comment">// We use a custom parser with a default configuration because we need
+// to ask the parser to use a different time zone database than the
+// default. This can't be done via the nice `"...".parse()` API one
+// would typically use.
+</span><span class="kw">static </span>PARSER: DateTimeParser = DateTimeParser::new();
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="comment">// Open a version of tzdb from before Brazil announced its abolition
+    // of daylight saving time.
+    </span><span class="kw">let </span>tzdb2018 = TimeZoneDatabase::from_dir(<span class="string">"path/to/tzdb-2018b"</span>)<span class="question-mark">?</span>;
+    <span class="comment">// Open the system tzdb.
+    </span><span class="kw">let </span>tzdb = tz::db();
+
+    <span class="comment">// Parse the same datetime string with the same parser, but using two
+    // different versions of tzdb.
+    </span><span class="kw">let </span>dt = <span class="string">"2020-01-15T12:00[America/Sao_Paulo]"</span>;
+    <span class="kw">let </span>zdt2018 = PARSER.parse_zoned_datetime_with(<span class="kw-2">&amp;</span>tzdb2018, dt)<span class="question-mark">?</span>;
+    <span class="kw">let </span>zdt = PARSER.parse_zoned_datetime_with(tzdb, dt)<span class="question-mark">?</span>;
+
+    <span class="comment">// Before DST was abolished, 2020-01-15 was in DST, which corresponded
+    // to UTC offset -02. Since DST rules applied to datetimes in the
+    // future, the 2018 version of tzdb would lead one to interpret
+    // 2020-01-15 as being in DST.
+    </span><span class="macro">assert_eq!</span>(zdt2018.offset(), tz::offset(-<span class="number">2</span>));
+    <span class="comment">// But DST was abolished in 2019, which means that 2020-01-15 was no
+    // no longer in DST. So after a tzdb update, the same datetime as above
+    // now has a different offset.
+    </span><span class="macro">assert_eq!</span>(zdt.offset(), tz::offset(-<span class="number">3</span>));
+
+    <span class="comment">// So if you try to parse a datetime serialized from an older copy of
+    // tzdb with a new copy of tzdb, you'll get an error under the default
+    // configuration because of `OffsetConflict::Reject`. This would succeed if
+    // you parsed it using tzdb2018!
+    </span><span class="macro">assert!</span>(
+        PARSER.parse_zoned_datetime_with(tzdb, zdt2018.to_string()).is_err()
+    );
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<p>With Chrono, this sort of checking isn’t possible in the first place because
+it doesn’t support an interchange format that includes the IANA time zone
+identifier.</p>
+<h4 id="jiff-supports-adding-durations-with-calendar-units"><a class="doc-anchor" href="#jiff-supports-adding-durations-with-calendar-units">§</a>Jiff supports adding durations with calendar units</h4>
+<p>Since <code>Span</code> is Jiff’s single duration type that combines calendar and clock
+units, one can freely add them together. The only requirement is that if a span
+has calendar units, you need to provide a reference date. (Because 1 month from
+April 1 is shorter than 1 month from May 1.)</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil::date, ToSpan};
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="kw">let </span>span1 = <span class="number">2</span>.years().months(<span class="number">4</span>).days(<span class="number">25</span>).hours(<span class="number">23</span>);
+    <span class="kw">let </span>span2 = <span class="number">3</span>.hours();
+    <span class="kw">let </span>span3 = span1.checked_add((span2, date(<span class="number">2024</span>, <span class="number">1</span>, <span class="number">1</span>)))<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(span3.fieldwise(), <span class="number">2</span>.years().months(<span class="number">4</span>).days(<span class="number">26</span>).hours(<span class="number">2</span>));
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<p>While Chrono has types like <code>Months</code> and <code>Days</code>, there’s no way to combine
+them into one, and Chrono does not provide operations on both at the same time.</p>
+<h4 id="jiff-supports-zone-aware-re-balancing-of-durations"><a class="doc-anchor" href="#jiff-supports-zone-aware-re-balancing-of-durations">§</a>Jiff supports zone-aware re-balancing of durations</h4>
+<p>If you have a span of <code>1.day()</code> and want to convert it to hours, then that
+calculation depends on how long the day is. If you provide a civil date as
+a relative reference point, then Jiff assumes the day is always 24 hours long:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil, SpanRound, ToSpan, Unit};
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="kw">let </span>relative = civil::date(<span class="number">2024</span>, <span class="number">4</span>, <span class="number">1</span>);
+    <span class="kw">let </span>span1 = <span class="number">1</span>.day();
+    <span class="kw">let </span>span2 = span1.round(
+        SpanRound::new().largest(Unit::Hour).relative(relative),
+    )<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(span2, <span class="number">24</span>.hours().fieldwise());
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<p>But if a reference date is provided with a time zone, then the re-balancing is
+DST safe:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil::date, SpanRound, ToSpan, Unit};
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="comment">// In the case of a gap (typically transitioning in DST):
+    </span><span class="kw">let </span>zdt = date(<span class="number">2024</span>, <span class="number">3</span>, <span class="number">9</span>).at(<span class="number">21</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>span1 = <span class="number">1</span>.day();
+    <span class="kw">let </span>span2 = span1.round(
+        SpanRound::new().largest(Unit::Hour).relative(<span class="kw-2">&amp;</span>zdt)
+    )<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(span2, <span class="number">23</span>.hours().fieldwise());
+
+    <span class="comment">// In the case of a fold (typically transitioning out of DST):
+    </span><span class="kw">let </span>zdt = date(<span class="number">2024</span>, <span class="number">11</span>, <span class="number">2</span>).at(<span class="number">21</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>span1 = <span class="number">1</span>.day();
+    <span class="kw">let </span>span2 = span1.round(
+        SpanRound::new().largest(Unit::Hour).relative(<span class="kw-2">&amp;</span>zdt)
+    )<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(span2, <span class="number">25</span>.hours().fieldwise());
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div><h4 id="jiff-is-generally-faster-than-chrono"><a class="doc-anchor" href="#jiff-is-generally-faster-than-chrono">§</a>Jiff is generally faster than Chrono</h4>
+<p>There are some cases where Chrono is faster than Jiff, but Jiff should
+generally be competitive for equivalent operations. It’s generally not
+possible for Chrono or Jiff to always be faster than the other, since
+they each use different representations for fundamental types. This in turn
+makes some operations faster and others slower, depending on what you’re
+trying to do. With that said, Jiff is uniformly faster than Chrono when it
+comes to printing and parsing.</p>
+<div class="example-wrap"><pre class="language-text"><code>$ cd bench
+$ cargo bench -- --save-baseline base
+[.. snip ..]
+$ critcmp base -g &#39;(.*)/(?:jiff|chrono)$&#39;
+group                                                           baseline//chrono                       baseline//jiff
+-----                                                           ----------------                       --------------
+civil_datetime/add_days/diffyear/duration                       1.00      8.5±0.08ns        ? ?/sec    1.56     13.3±0.15ns        ? ?/sec
+civil_datetime/add_days/diffyear/span                                                                  1.00     23.9±0.13ns        ? ?/sec
+civil_datetime/add_days/sameyear/duration                       1.00      6.8±0.05ns        ? ?/sec    1.96     13.3±0.17ns        ? ?/sec
+civil_datetime/add_days/sameyear/span                                                                  1.00     23.8±0.13ns        ? ?/sec
+civil_datetime/to_timestamp_static/bundled                      2.05     22.3±0.24ns        ? ?/sec    1.00     10.9±0.14ns        ? ?/sec
+civil_datetime/to_timestamp_static/zoneinfo                     1.53     16.2±0.15ns        ? ?/sec    1.00     10.6±0.09ns        ? ?/sec
+civil_datetime/to_timestamp_tzdb_lookup/bundled                 1.00     32.0±0.15ns        ? ?/sec
+civil_datetime/to_timestamp_tzdb_lookup/zoneinfo                45.85  1919.7±6.17ns        ? ?/sec    1.00     41.9±0.15ns        ? ?/sec
+date/add_days/diffyear/duration                                 1.00      5.8±0.05ns        ? ?/sec    1.12      6.5±0.04ns        ? ?/sec
+date/add_days/diffyear/span                                                                            1.00      6.5±0.04ns        ? ?/sec
+date/add_days/one/duration                                      1.00      2.1±0.02ns        ? ?/sec    2.55      5.4±0.05ns        ? ?/sec
+date/add_days/one/span                                                                                 1.00      5.8±0.02ns        ? ?/sec
+date/add_days/sameyear/duration                                 1.00      2.1±0.01ns        ? ?/sec    3.08      6.5±0.05ns        ? ?/sec
+date/add_days/sameyear/span                                                                            1.00      6.5±0.05ns        ? ?/sec
+date/difference_days/duration                                   1.18      3.4±0.04ns        ? ?/sec    1.00      2.9±0.02ns        ? ?/sec
+date/difference_days/span                                                                              1.00      2.5±0.02ns        ? ?/sec
+date/tomorrow/diff-month                                        1.00      0.4±0.00ns        ? ?/sec    3.25      1.3±0.01ns        ? ?/sec
+date/tomorrow/diff-year                                         1.16      1.7±0.01ns        ? ?/sec    1.00      1.4±0.01ns        ? ?/sec
+date/tomorrow/same-month                                        1.00      0.4±0.00ns        ? ?/sec    1.99      0.8±0.00ns        ? ?/sec
+date/yesterday/diff-month                                       1.00      0.4±0.02ns        ? ?/sec    3.17      1.3±0.01ns        ? ?/sec
+date/yesterday/diff-year                                        1.85      2.0±0.01ns        ? ?/sec    1.00      1.1±0.01ns        ? ?/sec
+date/yesterday/same-month                                       1.00      0.4±0.03ns        ? ?/sec    1.72      0.7±0.02ns        ? ?/sec
+parse/civil_datetime                                            2.95     73.6±0.72ns        ? ?/sec    1.00     24.9±0.19ns        ? ?/sec
+parse/rfc2822                                                   3.09     59.9±0.30ns        ? ?/sec    1.00     19.3±0.17ns        ? ?/sec
+parse/strptime/oneshot                                          3.11    197.8±0.80ns        ? ?/sec    1.00     63.6±1.19ns        ? ?/sec
+parse/strptime/prebuilt                                         1.00     77.1±1.44ns        ? ?/sec
+print/civil_datetime                                            13.10   147.4±0.60ns        ? ?/sec    1.00     11.3±0.04ns        ? ?/sec
+print/iso8601_duration/long-time/duration/buffer                2.38     46.5±0.34ns        ? ?/sec    1.00     19.5±0.04ns        ? ?/sec
+print/iso8601_duration/long-time/duration/to_string             3.13     71.7±0.36ns        ? ?/sec    1.00     23.0±0.07ns        ? ?/sec
+print/iso8601_duration/short/duration/buffer                    2.65     32.3±0.30ns        ? ?/sec    1.00     12.2±0.04ns        ? ?/sec
+print/iso8601_duration/short/duration/to_string                 2.08     36.8±0.33ns        ? ?/sec    1.00     17.7±0.05ns        ? ?/sec
+print/iso8601_duration/tiny/duration/buffer                     2.74     31.6±0.32ns        ? ?/sec    1.00     11.6±0.03ns        ? ?/sec
+print/iso8601_duration/tiny/duration/to_string                  2.28     36.5±0.40ns        ? ?/sec    1.00     16.0±0.08ns        ? ?/sec
+print/rfc2822/buffer                                            4.91     64.6±0.59ns        ? ?/sec    1.00     13.2±0.03ns        ? ?/sec
+print/rfc2822/to_string                                         5.75    111.0±0.37ns        ? ?/sec    1.00     19.3±0.05ns        ? ?/sec
+print/rfc3339/buffer                                            3.79     64.2±0.56ns        ? ?/sec    1.00     17.0±0.14ns        ? ?/sec
+print/rfc3339/to_string                                         4.75    112.4±0.33ns        ? ?/sec    1.00     23.6±0.11ns        ? ?/sec
+print/rfc9557/buffer                                                                                   1.00     16.2±0.05ns        ? ?/sec
+print/rfc9557/to_string                                                                                1.00     22.2±0.07ns        ? ?/sec
+print/strftime/oneshot/buffer                                   3.90    213.9±1.99ns        ? ?/sec    1.00     54.8±0.32ns        ? ?/sec
+print/strftime/oneshot/to_string                                3.63    261.3±1.26ns        ? ?/sec    1.00     72.1±0.49ns        ? ?/sec
+print/strftime/oneshot/zoned                                                                           1.00     65.5±0.64ns        ? ?/sec
+print/strftime/prebuilt/buffer                                  1.00     85.4±0.52ns        ? ?/sec
+print/strftime/prebuilt/to_string                               1.00    147.4±0.76ns        ? ?/sec
+timestamp/add_time_secs/duration                                2.42      6.1±0.08ns        ? ?/sec    1.00      2.5±0.03ns        ? ?/sec
+timestamp/add_time_secs/span                                                                           1.00      3.8±0.06ns        ? ?/sec
+timestamp/add_time_subsec/duration                              2.10      6.1±0.04ns        ? ?/sec    1.00      2.9±0.02ns        ? ?/sec
+timestamp/add_time_subsec/span                                                                         1.00      8.1±0.09ns        ? ?/sec
+timestamp/every_hour_in_week/byhand                             16.15  1679.6±6.13ns        ? ?/sec    1.00    104.0±0.72ns        ? ?/sec
+timestamp/every_hour_in_week/series                                                                    1.00    105.9±0.66ns        ? ?/sec
+timestamp/from_seconds/integer                                  14.45     4.7±0.03ns        ? ?/sec    1.00      0.3±0.00ns        ? ?/sec
+timestamp/to_civil_datetime_offset_conversion                   1.65      7.3±0.02ns        ? ?/sec    1.00      4.4±0.04ns        ? ?/sec
+timestamp/to_civil_datetime_offset_holistic                                                            1.00      4.4±0.04ns        ? ?/sec
+timestamp/to_civil_datetime_static/America-New-York/bundled     1.00     16.0±0.16ns        ? ?/sec
+timestamp/to_civil_datetime_static/America-New-York/zoneinfo    1.42     18.4±0.11ns        ? ?/sec    1.00     13.0±0.11ns        ? ?/sec
+timestamp/to_civil_datetime_static/Asia-Shanghai/bundled        1.00     15.2±0.16ns        ? ?/sec
+timestamp/to_civil_datetime_static/Asia-Shanghai/zoneinfo       3.16     15.7±0.11ns        ? ?/sec    1.00      5.0±0.05ns        ? ?/sec
+zoned/fixed_offset_add_time/duration                            1.00      6.1±0.06ns        ? ?/sec    1.56      9.5±0.05ns        ? ?/sec
+zoned/fixed_offset_add_time/span                                                                       1.00     16.6±0.09ns        ? ?/sec
+zoned/fixed_offset_to_civil_datetime                            1.23      5.6±0.01ns        ? ?/sec    1.00      4.5±0.01ns        ? ?/sec
+zoned/fixed_offset_to_timestamp                                 3.15      1.2±0.01ns        ? ?/sec    1.00      0.4±0.00ns        ? ?/sec</code></pre></div>
+<p>Questions about benchmarks are welcome in
+<a href="https://github.com/BurntSushi/jiff/discussions">Discussions on GitHub</a>.</p>
+<h3 id="time-v0336"><a class="doc-anchor" href="#time-v0336">§</a><a href="https://docs.rs/time"><code>time</code></a> (v0.3.36)</h3>
+<p><code>time</code> is a Rust datetime library that provides a time zone offset aware
+datetime type.</p>
+<p>For the following comparisons, a <code>Cargo.toml</code> with the following dependencies
+should be able to run any of the programs in this section:</p>
+<div class="example-wrap"><pre class="language-toml"><code>anyhow = &quot;1.0.81&quot;
+jiff = { version = &quot;0.2.0&quot;, features = [&quot;serde&quot;] }
+time = { version = &quot;0.3.36&quot;, features = [&quot;local-offset&quot;, &quot;macros&quot;, &quot;parsing&quot;] }
+time-tz = &quot;2.0.0&quot;</code></pre></div><h4 id="time-zone-database-integration-1"><a class="doc-anchor" href="#time-zone-database-integration-1">§</a>Time zone database integration</h4>
+<p>Like <code>chrono</code>, the <code>time</code> crate does not come with any out of the box
+functionality for reading your system’s copy of the Time Zone Database.
+However, there is a third party crate, <a href="https://docs.rs/time-tz"><code>time-tz</code></a>
+that provides some time zone support in a fashion similar to <code>chrono-tz</code>. That
+is, it requires bundling the time zone data into your binary and does not
+support reading the system copy of the Time Zone Database when available.</p>
+<p>Note also that <code>time</code> does not provide the extension points necessary in its API
+to make handling time zone aware datetimes ergonomic. Indeed, many operations
+are not expressible at all.</p>
+<p>The main thing <code>time</code> supports is a concept of “local” time. In particular, it
+is limited to determining your system’s default time zone offset, but nothing
+more. That is, it doesn’t support DST safe arithmetic:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>anyhow::Context;
+<span class="kw">use </span>time::{ext::NumericalDuration, macros::datetime, Duration};
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="comment">// We create a fixed datetime for testing purposes,
+    // but it's the same sort of value we would get back
+    // from `OffsetDateTime::now_local()`.
+    </span><span class="kw">let </span>dt1 = <span class="macro">datetime!</span>(<span class="number">2024</span>-<span class="number">03</span>-<span class="number">10 01</span>:<span class="number">30</span>:<span class="number">00 </span>-<span class="number">05</span>:<span class="number">00</span>);
+    <span class="kw">let </span>dt2 = dt1.checked_add(<span class="number">1</span>.hours())
+      .context(<span class="string">"datetime arithmetic failed"</span>)<span class="question-mark">?</span>;
+    <span class="comment">// The 2 o'clock hour didn't exist on 2024-03-10
+    // in New York.
+    </span><span class="macro">assert_eq!</span>(dt2.to_string(), <span class="string">"2024-03-10 2:30:00.0 -05:00:00"</span>);
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<p><code>time</code>, in its present design, is fundamentally incapable of doing daylight
+saving time safe arithmetic because its <code>OffsetDateTime</code> type doesn’t know
+anything about the time zone rules. Compare this with Jiff, which lets you not
+only create a datetime with an offset, but with a <em>time zone</em>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil::date, ToSpan};
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="kw">let </span>zdt1 = date(<span class="number">2024</span>, <span class="number">3</span>, <span class="number">10</span>).at(<span class="number">1</span>, <span class="number">30</span>, <span class="number">0</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>zdt2 = zdt1.checked_add(<span class="number">1</span>.hour())<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(zdt2.to_string(), <span class="string">"2024-03-10T03:30:00-04:00[America/New_York]"</span>);
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<p>If you use <code>time-tz</code>, then you can make the above example with <code>time</code> work:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>anyhow::Context;
+<span class="kw">use </span>time::{ext::NumericalDuration, macros::datetime, Duration};
+<span class="kw">use </span>time_tz::{OffsetDateTimeExt, Tz};
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="kw">let </span>tz = time_tz::timezones::db::america::NEW_YORK;
+
+    <span class="comment">// We create a fixed datetime for testing purposes,
+    // but it's the same sort of value we would get back
+    // from `OffsetDateTime::now_local()`.
+    </span><span class="kw">let </span>dt1 = <span class="macro">datetime!</span>(<span class="number">2024</span>-<span class="number">03</span>-<span class="number">10 01</span>:<span class="number">30</span>:<span class="number">00 </span>-<span class="number">05</span>:<span class="number">00</span>);
+    <span class="kw">let </span>dt2 = dt1.checked_add(<span class="number">1</span>.hours())
+      .context(<span class="string">"datetime arithmetic failed"</span>)<span class="question-mark">?
+      </span>.to_timezone(tz);
+    <span class="macro">assert_eq!</span>(dt2.to_string(), <span class="string">"2024-03-10 3:30:00.0 -04:00:00"</span>);
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<p>But note that you have to be careful to call <code>.to_timezone()</code> before printing
+the datetime. In particular, there is no time zone aware datetime type.</p>
+<p>In my comparison with Chrono I went through a lot of examples involving
+time zones. I did this because Chrono supports DST safe arithmetic generally,
+but with a lot of nuanced differences from what Jiff supports. Conversely,
+<code>time</code> doesn’t have a time zone aware datetime type. And the time zone support
+provided by <code>time-tz</code> is extremely limited. So at this time, in this document,
+we won’t belabor the point.</p>
+<h4 id="time-supports-its-own-custom-format-description"><a class="doc-anchor" href="#time-supports-its-own-custom-format-description">§</a><code>time</code> supports its own custom format description</h4>
+<p>Some users may find this easier to use:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>time::{macros::format_description, OffsetDateTime};
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="kw">let </span>format = <span class="macro">format_description!</span>(
+        <span class="string">"[year]-[month]-[day] [hour]:[minute]:[second] \
+         [offset_hour sign:mandatory]:[offset_minute]:[offset_second]"
+    </span>);
+    <span class="kw">let </span>odt = OffsetDateTime::parse(<span class="string">"2024-07-11 22:49:00 -04:00:00"</span>, <span class="kw-2">&amp;</span>format)<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(odt.to_string(), <span class="string">"2024-07-11 22:49:00.0 -04:00:00"</span>);
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<p>Jiff does support a <code>strptime</code>/<code>strftime</code> style API via the
+<code>jiff::fmt::strtime</code> module:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::ZonedDateTime;
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="kw">let </span>zdt = ZonedDateTime::strptime(
+      <span class="string">"%Y-%m-%d %H:%M:%S %:z"</span>,
+      <span class="string">"2024-07-11 22:49:00 -04:00:00"</span>,
+    )<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(zdt.to_string(), <span class="string">"2024-07-11T22:49:00-04:00[-04:00]"</span>);
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<p><code>time</code> also supports <code>strptime</code>/<code>strftime</code> style APIs:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>time::OffsetDateTime;
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="comment">// I don't believe `time` supports `%:z`, so we just drop the colons here.
+    </span><span class="kw">let </span>format = time::format_description::parse_strftime_borrowed(
+        <span class="string">"%Y-%m-%d %H:%M:%S %z"
+    </span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>odt = OffsetDateTime::parse(<span class="string">"2024-07-11 22:49:00 -0400"</span>, <span class="kw-2">&amp;</span>format)<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(odt.to_string(), <span class="string">"2024-07-11 22:49:00.0 -04:00:00"</span>);
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div><h4 id="jiff-supports-rounding-datetimes"><a class="doc-anchor" href="#jiff-supports-rounding-datetimes">§</a>Jiff supports rounding datetimes</h4>
+<p>We use a <code>ZonedDateTime</code> with a <code>TimeZone</code> that has a fixed offset. This is
+same as <code>time</code>’s <code>OffsetDateTime</code> type:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil::date, tz::{<span class="self">self</span>, TimeZone}, Unit, ZonedDateTime};
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="kw">let </span>tz = TimeZone::fixed(tz::offset(-<span class="number">4</span>));
+    <span class="kw">let </span>zdt1 = date(<span class="number">2024</span>, <span class="number">7</span>, <span class="number">11</span>).at(<span class="number">16</span>, <span class="number">46</span>, <span class="number">0</span>, <span class="number">0</span>).to_zoned_datetime(tz)<span class="question-mark">?</span>;
+    <span class="kw">let </span>zdt2 = zdt1.round(Unit::Hour)<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(zdt2.to_string(), <span class="string">"2024-07-11T17:00:00-04:00[-04:00]"</span>);
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<p>Note though that because Jiff has support for time zones, you generally
+shouldn’t need to (and shouldn’t <em>want</em> to) use fixed offset datetimes. It’s
+because they don’t take time zone rules into account and thus do not provide
+DST safe arithmetic. Instead, the code above should be written like this
+(unless you have a very specific reason to do otherwise):</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil::date, Unit};
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="comment">// Can also use `.to_zoned_datetime(TimeZone::system())` to use your
+    // system's default time zone.
+    </span><span class="kw">let </span>zdt1 = date(<span class="number">2024</span>, <span class="number">7</span>, <span class="number">11</span>).at(<span class="number">16</span>, <span class="number">46</span>, <span class="number">0</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>zdt2 = zdt1.round(Unit::Hour)<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(zdt2.to_string(), <span class="string">"2024-07-11T17:00:00-04:00[America/New_York]"</span>);
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<p>From here on, we won’t use fixed offset datetimes in order to avoid encouraging
+their use.</p>
+<p>The <code>time</code> crate has no rounding APIs.</p>
+<h4 id="jiff-supports-rounding-durations-1"><a class="doc-anchor" href="#jiff-supports-rounding-durations-1">§</a>Jiff supports rounding durations</h4>
+<p>In Jiff, one can round the duration computed between two datetimes</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil::date, RoundMode, ToSpan, Unit, ZonedDateTimeDifference};
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="kw">let </span>zdt1 = date(<span class="number">2001</span>, <span class="number">11</span>, <span class="number">18</span>).at(<span class="number">8</span>, <span class="number">30</span>, <span class="number">0</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>zdt2 = date(<span class="number">2024</span>, <span class="number">7</span>, <span class="number">11</span>).at(<span class="number">22</span>, <span class="number">38</span>, <span class="number">0</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+
+    <span class="kw">let </span>round_options = ZonedDateTimeDifference::new(<span class="kw-2">&amp;</span>zdt2)
+        .largest(Unit::Year)
+        .smallest(Unit::Day)
+        .mode(RoundMode::HalfExpand);
+    <span class="kw">let </span>span = zdt1.until(round_options)<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(span, <span class="number">22</span>.years().months(<span class="number">7</span>).days(<span class="number">24</span>).fieldwise());
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<p>The <code>time</code> crate has no rounding APIs.</p>
+<h4 id="jiff-provides-support-for-calendar-arithmetic"><a class="doc-anchor" href="#jiff-provides-support-for-calendar-arithmetic">§</a>Jiff provides support for calendar arithmetic</h4>
+<p>With Jiff, you can add durations with calendar units:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil::date, ToSpan};
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="kw">let </span>zdt1 = date(<span class="number">2024</span>, <span class="number">7</span>, <span class="number">11</span>).at(<span class="number">21</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>zdt2 = zdt1.checked_add(<span class="number">2</span>.years().months(<span class="number">6</span>).days(<span class="number">1</span>))<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(zdt2.to_string(), <span class="string">"2027-01-12T21:00:00-05:00[America/New_York]"</span>);
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<p>The <code>time</code> crate does provide a way to construct a <code>Duration</code> from units of
+days via <code>Duration::days</code>, but this of course requires assuming that all days
+are 24 hours long. And <code>time</code> does not support adding years or months.</p>
+<h4 id="jiff-supports-conveniently-re-balancing-durations"><a class="doc-anchor" href="#jiff-supports-conveniently-re-balancing-durations">§</a>Jiff supports conveniently re-balancing durations</h4>
+<p>Aside from calendar arithmetic, Jiff also supports re-balancing durations
+based on what you want the largest unit to be:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{SpanRound, ToSpan, Unit};
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="comment">// Balance down to seconds.
+    </span><span class="kw">let </span>span1 = <span class="number">4</span>.hours().minutes(<span class="number">36</span>).seconds(<span class="number">59</span>);
+    <span class="kw">let </span>span2 = span1.round(SpanRound::new().largest(Unit::Second))<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(span2, <span class="number">16_619</span>.seconds().fieldwise());
+
+    <span class="comment">// Now go back by balancing up to hours.
+    </span><span class="kw">let </span>span1 = <span class="number">16_619</span>.seconds();
+    <span class="kw">let </span>span2 = span1.round(SpanRound::new().largest(Unit::Hour))<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(span2, <span class="number">4</span>.hours().minutes(<span class="number">36</span>).seconds(<span class="number">59</span>).fieldwise());
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<p>The <code>time</code> crate’s <code>Duration</code> type can go from bigger units down to smaller
+units easily enough:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>time::{ext::NumericalDuration, Duration};
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="kw">let </span>span = <span class="number">4</span>.hours() + <span class="number">36</span>.minutes() + <span class="number">59</span>.seconds();
+    <span class="macro">assert_eq!</span>(span.whole_seconds(), <span class="number">16_619</span>);
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<p>But going from smaller units back up to larger units is difficult:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>time::{ext::NumericalDuration, Duration};
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="kw">let </span>span = <span class="number">16_619</span>.seconds();
+    <span class="macro">assert_eq!</span>(span.whole_hours(), <span class="number">4</span>);
+    <span class="macro">assert_eq!</span>(span.whole_minutes(), <span class="number">276</span>);
+    <span class="macro">assert_eq!</span>(span.whole_seconds(), <span class="number">16_619</span>);
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<p>Notice that the accessors just report how many whole units the span is. You
+can’t get the span broken down into smaller units. To achieve that, you need to
+do the arithmetic yourself:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>time::{convert::{Hour, Minute, Second}, ext::NumericalDuration, Duration};
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="kw">let </span><span class="kw-2">mut </span>span = <span class="number">16_619</span>.seconds();
+    <span class="macro">assert_eq!</span>(span.whole_hours(), <span class="number">4</span>);
+    <span class="macro">assert_eq!</span>(span.whole_minutes() % Minute::per(Hour) <span class="kw">as </span>i64, <span class="number">36</span>);
+    <span class="macro">assert_eq!</span>(span.whole_seconds() % Second::per(Minute) <span class="kw">as </span>i64, <span class="number">59</span>);
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div><h4 id="jiff-is-generally-faster-than-time"><a class="doc-anchor" href="#jiff-is-generally-faster-than-time">§</a>Jiff is generally faster than <code>time</code></h4>
+<p>When it comes to parsing and printing, Jiff is generally faster than <code>time</code>
+although not always. <code>time</code> is sometimes faster than Jiff on date arithmetic,
+but not by much. (Some of these may be due to faster equality comparisons on
+date values, on which <code>time</code> is legitimately faster at than Jiff at present.)</p>
+<p>The following results were collected with <code>time 0.3.47</code>.</p>
+<div class="example-wrap"><pre class="language-text"><code>$ cd bench
+$ cargo bench -- --save-baseline baseline
+[.. snip ..]
+$ critcmp base -g &#39;(.*)/(?:jiff|time)$&#39;
+group                                                           baseline//time                       baseline//jiff
+-----                                                           --------------                       --------------
+civil_datetime/add_days/diffyear/duration                       1.00      7.8±0.08ns        ? ?/sec  1.67     12.9±0.19ns        ? ?/sec
+civil_datetime/add_days/diffyear/span                                                                1.00     18.0±0.28ns        ? ?/sec
+civil_datetime/add_days/sameyear/duration                       1.00      7.8±0.11ns        ? ?/sec  1.66     12.9±0.16ns        ? ?/sec
+civil_datetime/add_days/sameyear/span                                                                1.00     18.0±0.25ns        ? ?/sec
+date/add_days/diffyear/duration                                 1.00      3.8±0.02ns        ? ?/sec  1.67      6.3±0.04ns        ? ?/sec
+date/add_days/diffyear/span                                                                          1.00      4.9±0.05ns        ? ?/sec
+date/add_days/one/duration                                      1.00      3.8±0.03ns        ? ?/sec  1.38      5.2±0.03ns        ? ?/sec
+date/add_days/one/span                                                                               1.00      5.8±0.06ns        ? ?/sec
+date/add_days/sameyear/duration                                 1.00      3.8±0.04ns        ? ?/sec  1.68      6.4±0.07ns        ? ?/sec
+date/add_days/sameyear/span                                                                          1.00      4.9±0.05ns        ? ?/sec
+date/days_in_month/leap/feb                                     1.90      1.1±0.01ns        ? ?/sec  1.00      0.6±0.03ns        ? ?/sec
+date/days_in_month/leap/nofeb                                   2.70      1.0±0.01ns        ? ?/sec  1.00      0.4±0.00ns        ? ?/sec
+date/days_in_month/noleap/feb                                   2.78      1.1±0.02ns        ? ?/sec  1.00      0.4±0.01ns        ? ?/sec
+date/days_in_month/noleap/nofeb                                 2.70      1.0±0.02ns        ? ?/sec  1.00      0.4±0.00ns        ? ?/sec
+date/difference_days/duration                                   1.00      2.1±0.02ns        ? ?/sec  1.41      2.9±0.04ns        ? ?/sec
+date/difference_days/span                                                                            1.00      2.4±0.03ns        ? ?/sec
+date/tomorrow/diff-month                                        1.00      0.4±0.02ns        ? ?/sec  3.42      1.4±0.01ns        ? ?/sec
+date/tomorrow/diff-year                                         1.00      1.0±0.01ns        ? ?/sec  1.59      1.5±0.01ns        ? ?/sec
+date/tomorrow/same-month                                        1.00      0.4±0.00ns        ? ?/sec  2.25      0.9±0.01ns        ? ?/sec
+date/yesterday/diff-month                                       1.00      0.4±0.01ns        ? ?/sec  3.65      1.4±0.02ns        ? ?/sec
+date/yesterday/diff-year                                        1.00      0.9±0.01ns        ? ?/sec  1.35      1.2±0.02ns        ? ?/sec
+date/yesterday/same-month                                       1.00      0.4±0.02ns        ? ?/sec  2.06      0.8±0.01ns        ? ?/sec
+datetime/add_years_months_days                                                                       1.00     29.1±0.18ns        ? ?/sec
+parse/civil_datetime                                            1.00     12.9±0.19ns        ? ?/sec  1.63     21.1±0.19ns        ? ?/sec
+parse/rfc2822                                                   2.24     43.4±1.90ns        ? ?/sec  1.00     19.4±0.15ns        ? ?/sec
+parse/strptime/oneshot                                                                               1.00     62.2±0.39ns        ? ?/sec
+parse/strptime/prebuilt                                         1.00     73.7±0.91ns        ? ?/sec
+print/civil_datetime                                            3.27     37.4±0.32ns        ? ?/sec  1.00     11.4±0.04ns        ? ?/sec
+print/rfc2822/buffer                                            1.55     20.4±0.08ns        ? ?/sec  1.00     13.2±0.05ns        ? ?/sec
+print/rfc2822/to_string                                         3.61     72.0±1.25ns        ? ?/sec  1.00     19.9±0.06ns        ? ?/sec
+print/rfc3339/buffer                                            1.33     22.1±0.29ns        ? ?/sec  1.00     16.7±0.11ns        ? ?/sec
+print/rfc3339/to_string                                         2.91     68.1±1.30ns        ? ?/sec  1.00     23.4±0.12ns        ? ?/sec
+print/rfc9557/buffer                                                                                 1.00     16.2±0.07ns        ? ?/sec
+print/rfc9557/to_string                                                                              1.00     22.6±0.20ns        ? ?/sec
+print/strftime/oneshot/buffer                                   6.88    421.5±1.39ns        ? ?/sec  1.00     61.3±0.82ns        ? ?/sec
+print/strftime/oneshot/to_string                                5.59    434.0±1.44ns        ? ?/sec  1.00     77.7±0.96ns        ? ?/sec
+print/strftime/oneshot/zoned                                                                         1.00     74.6±1.07ns        ? ?/sec
+print/strftime/prebuilt/buffer                                  1.00     97.7±0.99ns        ? ?/sec
+print/strftime/prebuilt/buffer/bespoke                          1.00    105.8±1.45ns        ? ?/sec
+print/strftime/prebuilt/to_string                               1.00    165.3±1.19ns        ? ?/sec
+print/strftime/prebuilt/to_string/bespoke                       1.00    175.0±1.79ns        ? ?/sec
+timestamp/add_time_secs/duration                                3.82      9.6±0.04ns        ? ?/sec  1.00      2.5±0.03ns        ? ?/sec
+timestamp/add_time_secs/span                                                                         1.00      3.7±0.05ns        ? ?/sec
+timestamp/add_time_subsec/duration                              3.33      9.7±0.09ns        ? ?/sec  1.00      2.9±0.03ns        ? ?/sec
+timestamp/add_time_subsec/span                                                                       1.00      7.8±0.08ns        ? ?/sec
+timestamp/every_hour_in_week/byhand                             14.30 1530.8±16.96ns        ? ?/sec  1.00    107.1±0.74ns        ? ?/sec
+timestamp/every_hour_in_week/series                                                                  1.00    105.8±1.01ns        ? ?/sec
+timestamp/from_seconds/integer                                  11.69     4.4±0.03ns        ? ?/sec  1.00      0.4±0.01ns        ? ?/sec
+timestamp/to_civil_datetime_offset_conversion                   1.00      3.9±0.03ns        ? ?/sec  1.49      5.8±0.04ns        ? ?/sec
+timestamp/to_civil_datetime_offset_holistic                     1.00      4.6±0.03ns        ? ?/sec  1.04      4.8±0.04ns        ? ?/sec
+zoned/fixed_offset_add_time/duration                            1.00      9.6±0.09ns        ? ?/sec  1.06     10.3±0.08ns        ? ?/sec
+zoned/fixed_offset_add_time/span                                                                     1.00     16.9±0.12ns        ? ?/sec
+zoned/fixed_offset_to_civil_datetime                            1.00      0.6±0.00ns        ? ?/sec  7.32      4.2±0.01ns        ? ?/sec
+zoned/fixed_offset_to_timestamp                                 6.08      1.8±0.02ns        ? ?/sec  1.00      0.3±0.01ns        ? ?/sec</code></pre></div>
+<p>Questions about benchmarks are welcome in
+<a href="https://github.com/BurntSushi/jiff/discussions">Discussions on GitHub</a>.</p>
+<h3 id="hifitime-v390"><a class="doc-anchor" href="#hifitime-v390">§</a><a href="https://docs.rs/hifitime"><code>hifitime</code></a> (v3.9.0)</h3>
+<p><code>hifitime</code> is a datetime library with a focus on engineering and scientific
+calculations where general relativity and time dilation matter. It supports
+conversion between many different time scales: TAI, Terrestrial Time, UTC, GPST
+and more. It also supports leap seconds.</p>
+<p>For the following comparisons, a <code>Cargo.toml</code> with the following dependencies
+should be able to run any of the programs in this section:</p>
+<div class="example-wrap"><pre class="language-toml"><code>anyhow = &quot;1.0.81&quot;
+hifitime = &quot;3.9.0&quot;
+jiff = { version = &quot;0.2.0&quot;, features = [&quot;serde&quot;] }</code></pre></div><h4 id="time-zone-database-integration-2"><a class="doc-anchor" href="#time-zone-database-integration-2">§</a>Time zone database integration</h4>
+<p>Like the <code>time</code> crate, <code>hifitime</code> does not support time zones and does not have
+any integration with the Time Zone Database. <code>hifitime</code> doesn’t have any
+equivalent to <code>OffsetDateTime</code> like in <code>time</code> either. The only datetime type
+that <code>hifitime</code> has is <code>Epoch</code>, and it is an absolute time. While you can
+convert between it and civil time (assuming civil time is in UTC), there is no
+data type in <code>hifitime</code> for representing civil time.</p>
+<h4 id="hifitime-supports-leap-seconds"><a class="doc-anchor" href="#hifitime-supports-leap-seconds">§</a><code>hifitime</code> supports leap seconds</h4>
+<p>In particular, when computing a duration from two <code>Epoch</code> values that spans
+a positive leap second (a second gets repeated), <code>hifitime</code> will correctly
+report the accurate duration. With that said, to get an accurate duration, one
+of the two time scales has to be converted to to TAI (or another time scale
+which does not have leap seconds):</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>hifitime::{Duration, Epoch, TimeScale};
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="kw">let </span>e1: Epoch = <span class="string">"2015-06-30T23:00:00 UTC"</span>.parse()<span class="question-mark">?</span>;
+    <span class="kw">let </span>e2: Epoch = <span class="string">"2015-07-01T00:00:00 UTC"</span>.parse()<span class="question-mark">?</span>;
+    <span class="kw">let </span>e2 = e2.to_time_scale(TimeScale::TAI);
+
+    <span class="kw">let </span>duration = e2 - e1;
+    <span class="macro">assert_eq!</span>(duration, Duration::from_seconds(<span class="number">3_601.0</span>));
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<p>Jiff, however, <a href="https://github.com/BurntSushi/jiff/issues/7">does not support leap seconds</a>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{SignedDuration, Timestamp};
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="kw">let </span>ts1: Timestamp = <span class="string">"2015-06-30T23:00:00Z"</span>.parse()<span class="question-mark">?</span>;
+    <span class="kw">let </span>ts2: Timestamp = <span class="string">"2015-07-01T00:00:00Z"</span>.parse()<span class="question-mark">?</span>;
+    <span class="kw">let </span>span = ts2 - ts1;
+    <span class="macro">assert_eq!</span>(span, SignedDuration::from_secs(<span class="number">3_600</span>));
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<p>So in this case, Jiff reports <code>3,600</code> seconds as the duration, but the <em>actual</em>
+duration was <code>3,601</code> seconds, as reported by <code>hifitime</code>.</p>
+<h4 id="jiff-makes-checked-or-saturating-arithmetic-explicit"><a class="doc-anchor" href="#jiff-makes-checked-or-saturating-arithmetic-explicit">§</a>Jiff makes checked or saturating arithmetic explicit</h4>
+<p>For Jiff, whether you want to saturate or not is an explicit part of the API.
+And implementations of the <code>Add</code> operator will panic on overflow:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{Timestamp, ToSpan};
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="kw">let </span>ts = Timestamp::MAX;
+    <span class="macro">assert!</span>(ts.checked_add(<span class="number">1</span>.day()).is_err());
+    <span class="macro">assert_eq!</span>(ts.saturating_add(<span class="number">1</span>.hour())<span class="question-mark">?</span>, ts);
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<p>In contrast, <code>hifitime</code> appears to use saturating arithmetic everywhere (I’ve
+not been able to find this behavior documented though, so I’m not clear on what
+the intended semantics are):</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>hifitime::{Duration, Epoch};
+
+<span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+    <span class="kw">let </span>e1 = Epoch::from_unix_seconds(f64::MAX);
+    <span class="kw">let </span>e2 = e1 + Duration::from_days(<span class="number">1.0</span>);
+    <span class="macro">assert_eq!</span>(e1, e2);
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div><h3 id="icu-v150"><a class="doc-anchor" href="#icu-v150">§</a><a href="https://docs.rs/icu"><code>icu</code></a> (v1.5.0)</h3>
+<p>The ICU4X project fulfils a slightly different need than <code>jiff</code>. Its main
+features are calendrical calculations (<code>icu::calendar</code>), supporting conversions
+between different calendar systems such as Gregorian, Buddhist, Islamic,
+Japanese, etc., as well as localized datetime formatting (<code>icu::datetime</code>).</p>
+<p>It does not perform datetime or time-zone arithmetic, and does not have a
+timestamp or duration type.</p>
+<p><code>icu</code> can be used to complement <code>jiff</code> when localized date formatting or
+calendar conversions are required. To facilitate this, the
+<a href="https://docs.rs/jiff-icu"><code>jiff-icu</code></a> crate makes conversions between Jiff
+and ICU4X data types seamless. For example, to do localization starting from
+a Jiff data type:</p>
+<div class="example-wrap"><pre class="language-text"><code>use icu::{
+    calendar::{japanese::Japanese, DateTime},
+    datetime::TypedDateTimeFormatter,
+    locid::locale,
+};
+use jiff::Timestamp;
+use jiff_icu::ConvertFrom as _;
+
+fn main() -&gt; anyhow::Result&lt;()&gt; {
+    let ts: Timestamp = &quot;2024-09-10T23:37:20Z&quot;.parse()?;
+    let zoned = ts.in_tz(&quot;Asia/Tokyo&quot;)?;
+
+    // Create ICU datetime.
+    let datetime = DateTime::convert_from(zoned.datetime());
+
+    // Convert to Japanese calendar.
+    let japanese_datetime = DateTime::new_from_iso(datetime, Japanese::new());
+
+    // Format for the en-GB locale.
+    let formatter = TypedDateTimeFormatter::try_new(
+        &amp;locale!(&quot;en-GB&quot;).into(),
+        Default::default(),
+    )?;
+
+    // Assert that we get the expected result.
+    assert_eq!(
+        formatter.format(&amp;japanese_datetime).to_string(),
+        &quot;Sept 11, 6 Reiwa, 08:37:20&quot;,
+    );
+
+    Ok(())
+}</code></pre></div>
+<p>The above example requires the following dependency specifications:</p>
+<div class="example-wrap"><pre class="language-toml"><code>anyhow = &quot;1.0.81&quot;
+icu = { version = &quot;1.5.0&quot;, features = [&quot;std&quot;] }
+jiff = { version = &quot;0.1.0&quot;, features = [&quot;serde&quot;] }
+jiff-icu = { version = &quot;0.1.0&quot; }</code></pre></div></div></details></section></div></main></body></html>

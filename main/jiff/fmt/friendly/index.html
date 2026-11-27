@@ -1,0 +1,604 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="A bespoke but easy to read format for `Span` and `SignedDuration`."><title>jiff::fmt::friendly - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-1e18a8e7.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="jiff" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (6c709eb42 2026-11-25)" data-channel="nightly" data-search-js="search-085293d4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../../static.files/storage-41dd4d93.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Module friendly</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../jiff/index.html">jiff</a><span class="version">1.0.3</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module friendly</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#integration-points" title="Integration points">Integration points</a></li><li><a href="#rounding" title="Rounding">Rounding</a></li><li><a href="#comparison-with-the-humantime-crate" title="Comparison with the `humantime` crate">Comparison with the <code>humantime</code> crate</a></li><li><a href="#motivation" title="Motivation">Motivation</a></li><li><a href="#internationalization" title="Internationalization">Internationalization</a></li><li><a href="#grammar" title="Grammar">Grammar</a></li></ul><h3><a href="#structs">Module Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="../index.html">In jiff::<wbr>fmt</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../../index.html">jiff</a>::<wbr><a href="../index.html">fmt</a></div><h1>Module <span>friendly</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../../src/jiff/fmt/friendly/mod.rs.html#1-725">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>A bespoke but easy to read format for <a href="../../struct.Span.html" title="struct jiff::Span"><code>Span</code></a> and
+<a href="../../struct.SignedDuration.html" title="struct jiff::SignedDuration"><code>SignedDuration</code></a>.</p>
+<p>The “friendly” duration format is meant to be an alternative to <a href="../temporal/index.html" title="mod jiff::fmt::temporal">Temporal’s
+ISO 8601 duration format</a> that is both easier to read and can
+losslessly serialize and deserialize all <code>Span</code> values.</p>
+<p>Here are a variety of examples showing valid friendly durations for <code>Span</code>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{Span, ToSpan};
+
+<span class="kw">let </span>spans = [
+    (<span class="string">"40d"</span>, <span class="number">40</span>.days()),
+    (<span class="string">"40 days"</span>, <span class="number">40</span>.days()),
+    (<span class="string">"1y1d"</span>, <span class="number">1</span>.year().days(<span class="number">1</span>)),
+    (<span class="string">"1yr 1d"</span>, <span class="number">1</span>.year().days(<span class="number">1</span>)),
+    (<span class="string">"3d4h59m"</span>, <span class="number">3</span>.days().hours(<span class="number">4</span>).minutes(<span class="number">59</span>)),
+    (<span class="string">"3 days, 4 hours, 59 minutes"</span>, <span class="number">3</span>.days().hours(<span class="number">4</span>).minutes(<span class="number">59</span>)),
+    (<span class="string">"3d 4h 59m"</span>, <span class="number">3</span>.days().hours(<span class="number">4</span>).minutes(<span class="number">59</span>)),
+    (<span class="string">"2h30m"</span>, <span class="number">2</span>.hours().minutes(<span class="number">30</span>)),
+    (<span class="string">"2h 30m"</span>, <span class="number">2</span>.hours().minutes(<span class="number">30</span>)),
+    (<span class="string">"1mo"</span>, <span class="number">1</span>.month()),
+    (<span class="string">"1w"</span>, <span class="number">1</span>.week()),
+    (<span class="string">"1 week"</span>, <span class="number">1</span>.week()),
+    (<span class="string">"1w4d"</span>, <span class="number">1</span>.week().days(<span class="number">4</span>)),
+    (<span class="string">"1 wk 4 days"</span>, <span class="number">1</span>.week().days(<span class="number">4</span>)),
+    (<span class="string">"1m"</span>, <span class="number">1</span>.minute()),
+    (<span class="string">"0.0021s"</span>, <span class="number">2</span>.milliseconds().microseconds(<span class="number">100</span>)),
+    (<span class="string">"0s"</span>, <span class="number">0</span>.seconds()),
+    (<span class="string">"0d"</span>, <span class="number">0</span>.seconds()),
+    (<span class="string">"0 days"</span>, <span class="number">0</span>.seconds()),
+    (<span class="string">"3 mins 34s 123ms"</span>, <span class="number">3</span>.minutes().seconds(<span class="number">34</span>).milliseconds(<span class="number">123</span>)),
+    (<span class="string">"3 mins 34.123 secs"</span>, <span class="number">3</span>.minutes().seconds(<span class="number">34</span>).milliseconds(<span class="number">123</span>)),
+    (<span class="string">"3 mins 34,123s"</span>, <span class="number">3</span>.minutes().seconds(<span class="number">34</span>).milliseconds(<span class="number">123</span>)),
+    (
+        <span class="string">"1y1mo1d1h1m1.1s"</span>,
+        <span class="number">1</span>.year().months(<span class="number">1</span>).days(<span class="number">1</span>).hours(<span class="number">1</span>).minutes(<span class="number">1</span>).seconds(<span class="number">1</span>).milliseconds(<span class="number">100</span>),
+    ),
+    (
+        <span class="string">"1yr 1mo 1day 1hr 1min 1.1sec"</span>,
+        <span class="number">1</span>.year().months(<span class="number">1</span>).days(<span class="number">1</span>).hours(<span class="number">1</span>).minutes(<span class="number">1</span>).seconds(<span class="number">1</span>).milliseconds(<span class="number">100</span>),
+    ),
+    (
+        <span class="string">"1 year, 1 month, 1 day, 1 hour, 1 minute 1.1 seconds"</span>,
+        <span class="number">1</span>.year().months(<span class="number">1</span>).days(<span class="number">1</span>).hours(<span class="number">1</span>).minutes(<span class="number">1</span>).seconds(<span class="number">1</span>).milliseconds(<span class="number">100</span>),
+    ),
+    (
+        <span class="string">"1 year, 1 month, 1 day, 01:01:01.1"</span>,
+        <span class="number">1</span>.year().months(<span class="number">1</span>).days(<span class="number">1</span>).hours(<span class="number">1</span>).minutes(<span class="number">1</span>).seconds(<span class="number">1</span>).milliseconds(<span class="number">100</span>),
+    ),
+];
+<span class="kw">for </span>(string, span) <span class="kw">in </span>spans {
+    <span class="kw">let </span>parsed: Span = string.parse()<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(
+        span.fieldwise(),
+        parsed.fieldwise(),
+        <span class="string">"result of parsing {string:?}"</span>,
+    );
+}
+</code></pre></div>
+<p>Note that for a <code>SignedDuration</code>, only units up to hours are supported. If you
+need to support bigger units, then you’ll need to convert it to a <code>Span</code> before
+printing to the friendly format (or parse into a <code>Span</code> and then convert to a
+<code>SignedDuration</code>).</p>
+<h2 id="integration-points"><a class="doc-anchor" href="#integration-points">§</a>Integration points</h2>
+<p>While this module can of course be used to parse and print durations in the
+friendly format, in most cases, you don’t have to. Namely, it is already
+integrated into the <code>Span</code> and <code>SignedDuration</code> types.</p>
+<p>For example, the friendly format can be used by invoking the “alternate”
+format when using the <code>std::fmt::Display</code> trait implementation:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{SignedDuration, ToSpan};
+
+<span class="kw">let </span>span = <span class="number">2</span>.months().days(<span class="number">35</span>).hours(<span class="number">2</span>).minutes(<span class="number">30</span>);
+<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{span}"</span>), <span class="string">"P2M35DT2H30M"</span>);      <span class="comment">// ISO 8601
+</span><span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{span:#}"</span>), <span class="string">"2mo 35d 2h 30m"</span>);  <span class="comment">// "friendly"
+
+</span><span class="kw">let </span>sdur = SignedDuration::new(<span class="number">2 </span>* <span class="number">60 </span>* <span class="number">60 </span>+ <span class="number">30 </span>* <span class="number">60</span>, <span class="number">123_456_789</span>);
+<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{sdur}"</span>), <span class="string">"PT2H30M0.123456789S"</span>);         <span class="comment">// ISO 8601
+</span><span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{sdur:#}"</span>), <span class="string">"2h 30m 123ms 456µs 789ns"</span>);  <span class="comment">// "friendly"</span></code></pre></div>
+<p>Both <code>Span</code> and <code>SignedDuration</code> use the “friendly” format for its
+<code>std::fmt::Debug</code> trait implementation:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{SignedDuration, ToSpan};
+
+<span class="kw">let </span>span = <span class="number">2</span>.months().days(<span class="number">35</span>).hours(<span class="number">2</span>).minutes(<span class="number">30</span>);
+<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{span:?}"</span>), <span class="string">"2mo 35d 2h 30m"</span>);
+
+<span class="kw">let </span>sdur = SignedDuration::new(<span class="number">2 </span>* <span class="number">60 </span>* <span class="number">60 </span>+ <span class="number">30 </span>* <span class="number">60</span>, <span class="number">123_456_789</span>);
+<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{sdur:?}"</span>), <span class="string">"2h 30m 123ms 456µs 789ns"</span>);</code></pre></div>
+<p>Both <code>Span</code> and <code>SignedDuration</code> support parsing the ISO 8601 <em>and</em> friendly
+formats via its <code>std::str::FromStr</code> trait:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{SignedDuration, Span, ToSpan};
+
+<span class="kw">let </span>expected = <span class="number">2</span>.months().days(<span class="number">35</span>).hours(<span class="number">2</span>).minutes(<span class="number">30</span>);
+<span class="kw">let </span>span: Span = <span class="string">"2 months, 35 days, 02:30:00"</span>.parse()<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(span, expected.fieldwise());
+<span class="kw">let </span>span: Span = <span class="string">"P2M35DT2H30M"</span>.parse()<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(span, expected.fieldwise());
+
+<span class="kw">let </span>expected = SignedDuration::new(<span class="number">2 </span>* <span class="number">60 </span>* <span class="number">60 </span>+ <span class="number">30 </span>* <span class="number">60</span>, <span class="number">123_456_789</span>);
+<span class="kw">let </span>sdur: SignedDuration = <span class="string">"2h 30m 0,123456789s"</span>.parse()<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(sdur, expected);
+<span class="kw">let </span>sdur: SignedDuration = <span class="string">"PT2h30m0.123456789s"</span>.parse()<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(sdur, expected);
+</code></pre></div>
+<p>If you need to parse <em>only</em> the friendly format, then that would be a good use
+case for using <a href="struct.SpanParser.html" title="struct jiff::fmt::friendly::SpanParser"><code>SpanParser</code></a> in this module.</p>
+<p>Finally, when the <code>serde</code> crate feature is enabled, the friendly format is
+automatically supported via the <code>serde::Deserialize</code> trait implementation, just
+like for the <code>std::str::FromStr</code> trait above. However, for <code>serde::Serialize</code>,
+both types use ISO 8601. In order to serialize the friendly format,
+you’ll need to write your own serialization function or use one of the
+<a href="crate::fmt::serde"><code>fmt::serde</code></a> helpers provided by Jiff. For example:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{ToSpan, Span};
+
+<span class="attr">#[derive(Debug, serde::Deserialize, serde::Serialize)]
+</span><span class="kw">struct </span>Record {
+    <span class="attr">#[serde(
+        serialize_with = <span class="string">"jiff::fmt::serde::span::friendly::compact::required"
+    </span>)]
+    </span>span: Span,
+}
+
+<span class="kw">let </span>json = <span class="string">r#"{"span":"1 year 2 months 36 hours 1100ms"}"#</span>;
+<span class="kw">let </span>got: Record = serde_json::from_str(<span class="kw-2">&amp;</span>json)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(
+    got.span.fieldwise(),
+    <span class="number">1</span>.year().months(<span class="number">2</span>).hours(<span class="number">36</span>).milliseconds(<span class="number">1100</span>),
+);
+
+<span class="kw">let </span>expected = <span class="string">r#"{"span":"1y 2mo 36h 1100ms"}"#</span>;
+<span class="macro">assert_eq!</span>(serde_json::to_string(<span class="kw-2">&amp;</span>got).unwrap(), expected);
+</code></pre></div>
+<p>The ISO 8601 format is used by default since it is part of a standard and is
+more widely accepted. That is, if you need an interoperable interchange format,
+then ISO 8601 is probably the right choice.</p>
+<h2 id="rounding"><a class="doc-anchor" href="#rounding">§</a>Rounding</h2>
+<p>The printer in this module has no options for rounding. Instead, it is intended
+for users to round a <a href="../../struct.Span.html" title="struct jiff::Span"><code>Span</code></a> first, and then print it. The idea
+is that printing a <code>Span</code> is a relatively “dumb” operation that just emits
+whatever units are non-zero in the <code>Span</code>. This is possible with a <code>Span</code>
+because it represents each unit distinctly. (With a <a href="https://doc.rust-lang.org/nightly/core/time/struct.Duration.html" title="struct core::time::Duration"><code>std::time::Duration</code></a> or
+a <a href="../../struct.SignedDuration.html" title="struct jiff::SignedDuration"><code>jiff::SignedDuration</code></a>, more functionality would
+need to be coupled with the printing logic to achieve a similar result.)</p>
+<p>For example, if you want to print the duration since someone posted a comment
+to an English speaking end user, precision below one half hour might be “too
+much detail.” You can remove this by rounding the <code>Span</code> to the nearest half
+hour before printing:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil, RoundMode, Unit, ZonedDateTimeDifference};
+
+<span class="kw">let </span>commented_at = civil::date(<span class="number">2024</span>, <span class="number">8</span>, <span class="number">1</span>)
+    .at(<span class="number">19</span>, <span class="number">29</span>, <span class="number">13</span>, <span class="number">123_456_789</span>)
+    .in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+<span class="kw">let </span>now = civil::date(<span class="number">2024</span>, <span class="number">12</span>, <span class="number">26</span>)
+    .at(<span class="number">12</span>, <span class="number">49</span>, <span class="number">0</span>, <span class="number">0</span>)
+    .in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+
+<span class="comment">// The default, with units permitted up to years.
+</span><span class="kw">let </span>span = now.since((Unit::Year, <span class="kw-2">&amp;</span>commented_at))<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{span:#}"</span>), <span class="string">"4mo 24d 17h 19m 46s 876ms 543µs 211ns"</span>);
+
+<span class="comment">// The same subtraction, but with more options to control
+// rounding the result. We could also do this with `Span::round`
+// directly by providing `now` as our relative zoned datetime.
+</span><span class="kw">let </span>rounded = now.since(
+    ZonedDateTimeDifference::new(<span class="kw-2">&amp;</span>commented_at)
+        .smallest(Unit::Minute)
+        .largest(Unit::Year)
+        .mode(RoundMode::HalfExpand)
+        .increment(<span class="number">30</span>),
+)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{rounded:#}"</span>), <span class="string">"4mo 24d 17h 30m"</span>);
+</code></pre></div><h2 id="comparison-with-the-humantime-crate"><a class="doc-anchor" href="#comparison-with-the-humantime-crate">§</a>Comparison with the <a href="https://docs.rs/humantime"><code>humantime</code></a> crate</h2>
+<p>To a first approximation, Jiff should cover all <code>humantime</code> use cases,
+including <a href="https://docs.rs/humantime-serde"><code>humantime-serde</code></a> for serialization support.</p>
+<p>To a second approximation, it was a design point of the friendly format to be
+mostly interoperable with what <code>humantime</code> supports. For example, any duration
+string formatted by <code>humantime</code> at time of writing is also a valid friendly
+duration:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>std::time::Duration;
+
+<span class="kw">use </span>jiff::{Span, ToSpan};
+
+<span class="comment">// Just a duration that includes as many unit designator labels as possible.
+</span><span class="kw">let </span>dur = Duration::new(
+    <span class="number">2 </span>* <span class="number">31_557_600 </span>+ <span class="number">1 </span>* <span class="number">2_630_016 </span>+ <span class="number">15 </span>* <span class="number">86400 </span>+ <span class="number">5 </span>* <span class="number">3600 </span>+ <span class="number">59 </span>* <span class="number">60 </span>+ <span class="number">1</span>,
+    <span class="number">123_456_789</span>,
+);
+<span class="kw">let </span>formatted = humantime::format_duration(dur).to_string();
+<span class="macro">assert_eq!</span>(formatted, <span class="string">"2years 1month 15days 5h 59m 1s 123ms 456us 789ns"</span>);
+
+<span class="kw">let </span>span: Span = formatted.parse()<span class="question-mark">?</span>;
+<span class="kw">let </span>expected =
+    <span class="number">2</span>.years()
+        .months(<span class="number">1</span>)
+        .days(<span class="number">15</span>)
+        .hours(<span class="number">5</span>)
+        .minutes(<span class="number">59</span>)
+        .seconds(<span class="number">1</span>)
+        .milliseconds(<span class="number">123</span>)
+        .microseconds(<span class="number">456</span>)
+        .nanoseconds(<span class="number">789</span>);
+<span class="macro">assert_eq!</span>(span, expected.fieldwise());
+</code></pre></div>
+<p>The above somewhat relies on the implementation details of <code>humantime</code>. Namely,
+not everything parseable by <code>humantime</code> is also parseable by the friendly
+format (and vice versa). For example, <code>humantime</code> parses <code>M</code> as a label for
+months, but the friendly format specifically eschews <code>M</code> because of its
+confusability with minutes:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>std::time::Duration;
+
+<span class="kw">let </span>dur = humantime::parse_duration(<span class="string">"1M"</span>)<span class="question-mark">?</span>;
+<span class="comment">// The +38,016 is because `humantime` assigns 30.44 24-hour days to all months.
+</span><span class="macro">assert_eq!</span>(dur, Duration::new(<span class="number">30 </span>* <span class="number">24 </span>* <span class="number">60 </span>* <span class="number">60 </span>+ <span class="number">38_016</span>, <span class="number">0</span>));
+
+<span class="comment">// In contrast, Jiff will reject `1M`:
+</span><span class="macro">assert_eq!</span>(
+    <span class="string">"1M"</span>.parse::&lt;jiff::Span&gt;().unwrap_err().to_string(),
+    <span class="string">"failed to parse input in the \"friendly\" duration format: \
+     expected to find unit designator suffix \
+     (e.g., `years` or `secs`) after parsing integer"</span>,
+);
+</code></pre></div>
+<p>In the other direction, Jiff’s default formatting for the friendly duration
+isn’t always parsable by <code>humantime</code>. This is because, for example, depending
+on the configuration, Jiff may use <code>mo</code> and <code>mos</code> for months, and <code>µs</code> for
+microseconds, none of which are supported by <code>humantime</code>. If you need it, to
+ensure <code>humantime</code> can parse a Jiff formatted friendly duration, Jiff provides
+a special mode that attempts compatibility with <code>humantime</code>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{fmt::friendly::{Designator, SpanPrinter}, ToSpan};
+
+
+<span class="kw">let </span>span =
+    <span class="number">2</span>.years()
+        .months(<span class="number">1</span>)
+        .days(<span class="number">15</span>)
+        .hours(<span class="number">5</span>)
+        .minutes(<span class="number">59</span>)
+        .seconds(<span class="number">1</span>)
+        .milliseconds(<span class="number">123</span>)
+        .microseconds(<span class="number">456</span>)
+        .nanoseconds(<span class="number">789</span>);
+
+<span class="kw">let </span>printer = SpanPrinter::new().designator(Designator::HumanTime);
+<span class="macro">assert_eq!</span>(
+    printer.span_to_string(<span class="kw-2">&amp;</span>span),
+    <span class="string">"2y 1month 15d 5h 59m 1s 123ms 456us 789ns"</span>,
+);</code></pre></div>
+<p>It’s hard to provide solid guarantees here because <code>humantime</code>’s behavior could
+change, but at time of writing, <code>humantime</code> has not changed much in quite a
+long time (its last release is almost 4 years ago at time of writing). So the
+current behavior is likely pretty safe to rely upon.</p>
+<p>More generally, the friendly format is more flexible than what <code>humantime</code>
+supports. For example, the friendly format incorporates <code>HH:MM:SS</code> and
+fractional time units. It also supports more unit labels and permits commas
+to separate units.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::SignedDuration;
+
+<span class="comment">// 10 hours and 30 minutes
+</span><span class="kw">let </span>expected = SignedDuration::new(<span class="number">10 </span>* <span class="number">60 </span>* <span class="number">60 </span>+ <span class="number">30 </span>* <span class="number">60</span>, <span class="number">0</span>);
+<span class="macro">assert_eq!</span>(expected, <span class="string">"10h30m"</span>.parse()<span class="question-mark">?</span>);
+<span class="macro">assert_eq!</span>(expected, <span class="string">"10hrs 30mins"</span>.parse()<span class="question-mark">?</span>);
+<span class="macro">assert_eq!</span>(expected, <span class="string">"10 hours 30 minutes"</span>.parse()<span class="question-mark">?</span>);
+<span class="macro">assert_eq!</span>(expected, <span class="string">"10 hours, 30 minutes"</span>.parse()<span class="question-mark">?</span>);
+<span class="macro">assert_eq!</span>(expected, <span class="string">"10:30:00"</span>.parse()<span class="question-mark">?</span>);
+<span class="macro">assert_eq!</span>(expected, <span class="string">"10.5 hours"</span>.parse()<span class="question-mark">?</span>);
+</code></pre></div>
+<p>Finally, it’s important to point out that <code>humantime</code> only supports parsing
+variable width units like years, months and days by virtue of assigning fixed
+static values to them that aren’t always correct. In contrast, Jiff always
+gets this right and specifically prevents you from getting it wrong.</p>
+<p>To begin, Jiff returns an error if you try to parse a varying unit into a
+<a href="../../struct.SignedDuration.html" title="struct jiff::SignedDuration"><code>SignedDuration</code></a>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::SignedDuration;
+
+<span class="comment">// works fine
+</span><span class="macro">assert_eq!</span>(
+    <span class="string">"1 hour"</span>.parse::&lt;SignedDuration&gt;().unwrap(),
+    SignedDuration::from_hours(<span class="number">1</span>),
+);
+<span class="comment">// Jiff is saving you from doing something wrong
+</span><span class="macro">assert_eq!</span>(
+    <span class="string">"1 day"</span>.parse::&lt;SignedDuration&gt;().unwrap_err().to_string(),
+    <span class="string">"failed to parse input in the \"friendly\" duration format: \
+     parsing calendar units (days in this case) in this context \
+     is not supported (perhaps try parsing into a `jiff::Span` instead)"</span>,
+);</code></pre></div>
+<p>As the error message suggests, parsing into a <a href="../../struct.Span.html" title="struct jiff::Span"><code>Span</code></a> works fine:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::Span;
+
+<span class="macro">assert_eq!</span>(<span class="string">"1 day"</span>.parse::&lt;Span&gt;().unwrap(), Span::new().days(<span class="number">1</span>).fieldwise());</code></pre></div>
+<p>Jiff has this behavior because it’s not possible to determine, in general,
+how long “1 day” (or “1 month” or “1 year”) is without a reference date.
+Since a <code>SignedDuration</code> (along with a <a href="https://doc.rust-lang.org/nightly/core/time/struct.Duration.html" title="struct core::time::Duration"><code>std::time::Duration</code></a>) does not
+support expressing durations in anything other than a 96-bit integer number of
+nanoseconds, it’s not possible to represent concepts like “1 month.” But a
+<a href="../../struct.Span.html" title="struct jiff::Span"><code>Span</code></a> can.</p>
+<p>To see this more concretely, consider the different behavior resulting from
+using <code>humantime</code> to parse durations and adding them to a date:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil, Span};
+
+<span class="kw">let </span>span: Span = <span class="string">"1 month"</span>.parse()<span class="question-mark">?</span>;
+<span class="kw">let </span>dur = humantime::parse_duration(<span class="string">"1 month"</span>)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>datetime = civil::date(<span class="number">2024</span>, <span class="number">5</span>, <span class="number">1</span>).at(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>);
+
+<span class="comment">// Adding 1 month using a `Span` gives one possible expected result. That is,
+// 2024-06-01T00:00:00 is exactly one month later than 2024-05-01T00:00:00.
+</span><span class="macro">assert_eq!</span>(datetime + span, civil::date(<span class="number">2024</span>, <span class="number">6</span>, <span class="number">1</span>).at(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>));
+<span class="comment">// But if we add the duration representing "1 month" as interpreted by
+// humantime, we get a very odd result. This is because humantime uses
+// a duration of 30.44 days (where every day is 24 hours exactly) for
+// all months.
+</span><span class="macro">assert_eq!</span>(datetime + dur, civil::date(<span class="number">2024</span>, <span class="number">5</span>, <span class="number">31</span>).at(<span class="number">10</span>, <span class="number">33</span>, <span class="number">36</span>, <span class="number">0</span>));
+</code></pre></div>
+<p>The same is true for days when dealing with zoned date times:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil, Span};
+
+<span class="kw">let </span>span: Span = <span class="string">"1 day"</span>.parse()<span class="question-mark">?</span>;
+<span class="kw">let </span>dur = humantime::parse_duration(<span class="string">"1 day"</span>)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>zdt = civil::date(<span class="number">2024</span>, <span class="number">3</span>, <span class="number">9</span>).at(<span class="number">17</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+
+<span class="comment">// Adding 1 day gives the generally expected result of the same clock
+// time on the following day when adding a `Span`.
+</span><span class="macro">assert_eq!</span>(
+    <span class="kw-2">&amp;</span>zdt + span,
+    civil::date(<span class="number">2024</span>, <span class="number">3</span>, <span class="number">10</span>).at(<span class="number">17</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>,
+);
+<span class="comment">// But with humantime, all days are assumed to be exactly 24 hours. So
+// you get an instant in time that is 24 hours later, even when some
+// days are shorter and some are longer.
+</span><span class="macro">assert_eq!</span>(
+    <span class="kw-2">&amp;</span>zdt + dur,
+    civil::date(<span class="number">2024</span>, <span class="number">3</span>, <span class="number">10</span>).at(<span class="number">18</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>,
+);
+
+<span class="comment">// Notice also that this inaccuracy can occur merely by a duration that
+// _crosses_ a time zone transition boundary (like DST) at any point. It
+// doesn't require your datetimes to be "close" to when DST occurred.
+</span><span class="kw">let </span>dur = humantime::parse_duration(<span class="string">"20 day"</span>)<span class="question-mark">?</span>;
+<span class="kw">let </span>zdt = civil::date(<span class="number">2024</span>, <span class="number">3</span>, <span class="number">1</span>).at(<span class="number">17</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(
+    <span class="kw-2">&amp;</span>zdt + dur,
+    civil::date(<span class="number">2024</span>, <span class="number">3</span>, <span class="number">21</span>).at(<span class="number">18</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>,
+);
+</code></pre></div>
+<p>It’s worth pointing out that in some applications, the fixed values assigned
+by <code>humantime</code> might be perfectly acceptable. Namely, they introduce error
+into calculations, but the error might be small enough to be a non-issue in
+some applications. But this error <em>can</em> be avoided and <code>humantime</code> commits
+it silently. Indeed, <code>humantime</code>’s API is itself not possible without either
+rejecting varying length units or assuming fixed values for them. This is
+because it parses varying length units but returns a duration expressed as a
+single 96-bit integer number of nanoseconds. In order to do this, you <em>must</em>
+assume a definite length for those varying units. To do this <em>correctly</em>, you
+really need to provide a reference date.</p>
+<p>For example, Jiff can parse <code>1 month</code> into a <code>std::time::Duration</code> too, but
+it requires parsing into a <code>Span</code> and then converting into a <code>Duration</code> by
+providing a reference date:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>std::time::Duration;
+
+<span class="kw">use </span>jiff::{civil, Span};
+
+<span class="kw">let </span>span: Span = <span class="string">"1 month"</span>.parse()<span class="question-mark">?</span>;
+<span class="comment">// converts to signed duration
+</span><span class="kw">let </span>sdur = span.to_duration(civil::date(<span class="number">2024</span>, <span class="number">5</span>, <span class="number">1</span>))<span class="question-mark">?</span>;
+<span class="comment">// converts to standard library unsigned duration
+</span><span class="kw">let </span>dur = Duration::try_from(sdur)<span class="question-mark">?</span>;
+<span class="comment">// exactly 31 days where each day is 24 hours long.
+</span><span class="macro">assert_eq!</span>(dur, Duration::from_secs(<span class="number">31 </span>* <span class="number">24 </span>* <span class="number">60 </span>* <span class="number">60</span>));
+
+<span class="comment">// Now change the reference date and notice that the
+// resulting duration is changed but still correct.
+</span><span class="kw">let </span>sdur = span.to_duration(civil::date(<span class="number">2024</span>, <span class="number">6</span>, <span class="number">1</span>))<span class="question-mark">?</span>;
+<span class="kw">let </span>dur = Duration::try_from(sdur)<span class="question-mark">?</span>;
+<span class="comment">// exactly 30 days where each day is 24 hours long.
+</span><span class="macro">assert_eq!</span>(dur, Duration::from_secs(<span class="number">30 </span>* <span class="number">24 </span>* <span class="number">60 </span>* <span class="number">60</span>));
+</code></pre></div><h2 id="motivation"><a class="doc-anchor" href="#motivation">§</a>Motivation</h2>
+<p>This format was devised, in part, because the standard duration interchange
+format specified by <a href="../temporal/index.html" title="mod jiff::fmt::temporal">Temporal’s ISO 8601 definition</a> is
+sub-optimal in two important respects:</p>
+<ol>
+<li>It doesn’t support individual sub-second components.</li>
+<li>It is difficult to read.</li>
+</ol>
+<p>In the first case, ISO 8601 durations do support sub-second components, but are
+only expressible as fractional seconds. For example:</p>
+<div class="example-wrap"><pre class="language-text"><code>PT1.100S</code></pre></div>
+<p>This is problematic in some cases because it doesn’t permit distinguishing
+between some spans. For example, <code>1.second().milliseconds(100)</code> and
+<code>1100.milliseconds()</code> both serialize to the same ISO 8601 duration as shown
+above. At deserialization time, it’s impossible to know what the span originally
+looked like. Thus, using the ISO 8601 format means the serialization and
+deserialization of <a href="../../struct.Span.html" title="struct jiff::Span"><code>Span</code></a> values is lossy.</p>
+<p>In the second case, ISO 8601 durations appear somewhat difficult to quickly
+read. For example:</p>
+<div class="example-wrap"><pre class="language-text"><code>P1Y2M3DT4H59M1.1S
+P1y2m3dT4h59m1.1S</code></pre></div>
+<p>When all of the unit designators are capital letters in particular (which
+is the default), everything runs together and it’s hard for the eye to
+distinguish where digits stop and letters begin. Using lowercase letters for
+unit designators helps somewhat, but this is an extension to ISO 8601 that
+isn’t broadly supported.</p>
+<p>The “friendly” format resolves both of these problems by permitting sub-second
+components and allowing the use of whitespace and longer unit designator labels
+to improve readability. For example, all of the following are equivalent and
+will parse to the same <code>Span</code>:</p>
+<div class="example-wrap"><pre class="language-text"><code>1y 2mo 3d 4h 59m 1100ms
+1 year 2 months 3 days 4h59m1100ms
+1 year, 2 months, 3 days, 4h59m1100ms
+1 year, 2 months, 3 days, 4 hours 59 minutes 1100 milliseconds</code></pre></div>
+<p>At the same time, the friendly format continues to support fractional
+time components since they may be desirable in some cases. For example, all
+of the following are equivalent:</p>
+<div class="example-wrap"><pre class="language-text"><code>1h 1m 1.5s
+1h 1m 1,5s
+01:01:01.5
+01:01:01,5</code></pre></div>
+<p>The idea with the friendly format is that end users who know how to write
+English durations are happy to both read and write durations in this format.
+And moreover, the format is flexible enough that end users generally don’t need
+to stare at a grammar to figure out how to write a valid duration. Most of the
+intuitive things you’d expect to work will work.</p>
+<h2 id="internationalization"><a class="doc-anchor" href="#internationalization">§</a>Internationalization</h2>
+<p>Currently, only US English unit designator labels are supported. In general,
+Jiff resists trying to solve the internationalization problem in favor
+of punting it to another crate, such as <a href="https://docs.rs/icu"><code>icu</code></a> via <a href="https://docs.rs/jiff-icu"><code>jiff-icu</code></a>. Jiff
+<em>could</em> adopt unit designator labels for other languages, but it’s not
+totally clear whether that’s the right path to follow given the complexity
+of internationalization. If you’d like to discuss it, please
+<a href="https://github.com/BurntSushi/jiff/issues">file an issue</a>.</p>
+<h2 id="grammar"><a class="doc-anchor" href="#grammar">§</a>Grammar</h2>
+<p>This section gives a more precise description of the “friendly” duration format
+in the form of a grammar.</p>
+<div class="example-wrap"><pre class="language-text"><code>format =
+    format-signed-hms
+    | format-signed-designator
+
+format-signed-hms =
+    sign? format-hms
+
+format-hms =
+    [0-9]+ &#39;:&#39; [0-9]+ &#39;:&#39; [0-9]+ fractional?
+
+format-signed-designator =
+    sign? format-designator-units
+    | format-designator-units direction?
+format-designator-units =
+    years
+    | months
+    | weeks
+    | days
+    | hours
+    | minutes
+    | seconds
+    | milliseconds
+    | microseconds
+    | nanoseconds
+
+# This dance below is basically to ensure a few things:
+# First, that at least one unit appears. That is, that
+# we don&#39;t accept the empty string. Secondly, when a
+# fractional component appears in a time value, we don&#39;t
+# allow any subsequent units to appear. Thirdly, that
+# `HH:MM:SS[.f{1,9}]?` is allowed after years, months,
+# weeks or days.
+years =
+    unit-value unit-years comma? ws* format-hms
+    | unit-value unit-years comma? ws* months
+    | unit-value unit-years comma? ws* weeks
+    | unit-value unit-years comma? ws* days
+    | unit-value unit-years comma? ws* hours
+    | unit-value unit-years comma? ws* minutes
+    | unit-value unit-years comma? ws* seconds
+    | unit-value unit-years comma? ws* milliseconds
+    | unit-value unit-years comma? ws* microseconds
+    | unit-value unit-years comma? ws* nanoseconds
+    | unit-value unit-years
+months =
+    unit-value unit-months comma? ws* format-hms
+    | unit-value unit-months comma? ws* weeks
+    | unit-value unit-months comma? ws* days
+    | unit-value unit-months comma? ws* hours
+    | unit-value unit-months comma? ws* minutes
+    | unit-value unit-months comma? ws* seconds
+    | unit-value unit-months comma? ws* milliseconds
+    | unit-value unit-months comma? ws* microseconds
+    | unit-value unit-months comma? ws* nanoseconds
+    | unit-value unit-months
+weeks =
+    unit-value unit-weeks comma? ws* format-hms
+    | unit-value unit-weeks comma? ws* days
+    | unit-value unit-weeks comma? ws* hours
+    | unit-value unit-weeks comma? ws* minutes
+    | unit-value unit-weeks comma? ws* seconds
+    | unit-value unit-weeks comma? ws* milliseconds
+    | unit-value unit-weeks comma? ws* microseconds
+    | unit-value unit-weeks comma? ws* nanoseconds
+    | unit-value unit-weeks
+days =
+    unit-value unit-days comma? ws* format-hms
+    | unit-value unit-days comma? ws* hours
+    | unit-value unit-days comma? ws* minutes
+    | unit-value unit-days comma? ws* seconds
+    | unit-value unit-days comma? ws* milliseconds
+    | unit-value unit-days comma? ws* microseconds
+    | unit-value unit-days comma? ws* nanoseconds
+    | unit-value unit-days
+hours =
+    unit-value unit-hours comma? ws* minutes
+    | unit-value unit-hours comma? ws* seconds
+    | unit-value unit-hours comma? ws* milliseconds
+    | unit-value unit-hours comma? ws* microseconds
+    | unit-value unit-hours comma? ws* nanoseconds
+    | unit-value fractional? ws* unit-hours
+minutes =
+    unit-value unit-minutes comma? ws* seconds
+    | unit-value unit-minutes comma? ws* milliseconds
+    | unit-value unit-minutes comma? ws* microseconds
+    | unit-value unit-minutes comma? ws* nanoseconds
+    | unit-value fractional? ws* unit-minutes
+seconds =
+    unit-value unit-seconds comma? ws* milliseconds
+    | unit-value unit-seconds comma? ws* microseconds
+    | unit-value unit-seconds comma? ws* nanoseconds
+    | unit-value fractional? ws* unit-seconds
+milliseconds =
+    unit-value unit-milliseconds comma? ws* microseconds
+    | unit-value unit-milliseconds comma? ws* nanoseconds
+    | unit-value fractional? ws* unit-milliseconds
+microseconds =
+    unit-value unit-microseconds comma? ws* nanoseconds
+    | unit-value fractional? ws* unit-microseconds
+nanoseconds =
+    unit-value fractional? ws* unit-nanoseconds
+
+unit-value = [0-9]+ [ws*]
+unit-years = &#39;years&#39; | &#39;year&#39; | &#39;yrs&#39; | &#39;yr&#39; | &#39;y&#39;
+unit-months = &#39;months&#39; | &#39;month&#39; | &#39;mos&#39; | &#39;mo&#39;
+unit-weeks = &#39;weeks&#39; | &#39;week&#39; | &#39;wks&#39; | &#39;wk&#39; | &#39;w&#39;
+unit-days = &#39;days&#39; | &#39;day&#39; | &#39;d&#39;
+unit-hours = &#39;hours&#39; | &#39;hour&#39; | &#39;hrs&#39; | &#39;hr&#39; | &#39;h&#39;
+unit-minutes = &#39;minutes&#39; | &#39;minute&#39; | &#39;mins&#39; | &#39;min&#39; | &#39;m&#39;
+unit-seconds = &#39;seconds&#39; | &#39;second&#39; | &#39;secs&#39; | &#39;sec&#39; | &#39;s&#39;
+unit-milliseconds =
+    &#39;milliseconds&#39;
+    | &#39;millisecond&#39;
+    | &#39;millis&#39;
+    | &#39;milli&#39;
+    | &#39;msecs&#39;
+    | &#39;msec&#39;
+    | &#39;ms&#39;
+unit-microseconds =
+    &#39;microseconds&#39;
+    | &#39;microsecond&#39;
+    | &#39;micros&#39;
+    | &#39;micro&#39;
+    | &#39;usecs&#39;
+    | &#39;usec&#39;
+    | &#39;µ&#39; (U+00B5 MICRO SIGN) &#39;secs&#39;
+    | &#39;µ&#39; (U+00B5 MICRO SIGN) &#39;sec&#39;
+    | &#39;us&#39;
+    | &#39;µ&#39; (U+00B5 MICRO SIGN) &#39;s&#39;
+unit-nanoseconds =
+    &#39;nanoseconds&#39; | &#39;nanosecond&#39; | &#39;nanos&#39; | &#39;nano&#39; | &#39;nsecs&#39; | &#39;nsec&#39; | &#39;ns&#39;
+
+fractional = decimal-separator decimal-fraction
+decimal-separator = &#39;.&#39; | &#39;,&#39;
+decimal-fraction = [0-9]{1,9}
+
+sign = &#39;+&#39; | &#39;-&#39;
+direction = ws &#39;ago&#39;
+comma = &#39;,&#39; ws
+ws =
+    U+0020 SPACE
+    | U+0009 HORIZONTAL TAB
+    | U+000A LINE FEED
+    | U+000C FORM FEED
+    | U+000D CARRIAGE RETURN</code></pre></div>
+<p>One thing not specified by the grammar above are maximum values. Namely,
+there are no specific maximum values imposed for each individual unit, nor
+a maximum value for the entire duration (say, when converted to nanoseconds).
+Instead, implementations are expected to impose their own limitations.</p>
+<p>For Jiff, a <code>Span</code> is more limited than a <code>SignedDuration</code>. For example, a the
+year component of a <code>Span</code> is limited to <code>[-19,999, 19,999]</code>. In contrast,
+a <code>SignedDuration</code> is a 96-bit signed integer number of nanoseconds with no
+particular limits on the individual units. They just can’t combine to something
+that overflows a 96-bit signed integer number of nanoseconds. (And parsing into
+a <code>SignedDuration</code> directly only supports units of hours or smaller, since
+bigger units do not have an invariant length.) In general, implementations
+should support a “reasonable” range of values.</p>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.SpanParser.html" title="struct jiff::fmt::friendly::SpanParser">Span<wbr>Parser</a></dt><dd>A parser for Jiff’s “friendly” duration format.</dd><dt><a class="struct" href="struct.SpanPrinter.html" title="struct jiff::fmt::friendly::SpanPrinter">Span<wbr>Printer</a></dt><dd>A printer for Jiff’s “friendly” duration format.</dd></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.Designator.html" title="enum jiff::fmt::friendly::Designator">Designator</a></dt><dd>Configuration for <a href="struct.SpanPrinter.html#method.designator" title="method jiff::fmt::friendly::SpanPrinter::designator"><code>SpanPrinter::designator</code></a>.</dd><dt><a class="enum" href="enum.Direction.html" title="enum jiff::fmt::friendly::Direction">Direction</a></dt><dd>Configuration for <a href="struct.SpanPrinter.html#method.direction" title="method jiff::fmt::friendly::SpanPrinter::direction"><code>SpanPrinter::direction</code></a>.</dd><dt><a class="enum" href="enum.FractionalUnit.html" title="enum jiff::fmt::friendly::FractionalUnit">Fractional<wbr>Unit</a></dt><dd>Configuration for <a href="struct.SpanPrinter.html#method.fractional" title="method jiff::fmt::friendly::SpanPrinter::fractional"><code>SpanPrinter::fractional</code></a>.</dd><dt><a class="enum" href="enum.Spacing.html" title="enum jiff::fmt::friendly::Spacing">Spacing</a></dt><dd>Configuration for <a href="struct.SpanPrinter.html#method.spacing" title="method jiff::fmt::friendly::SpanPrinter::spacing"><code>SpanPrinter::spacing</code></a>.</dd></dl></section></div></main></body></html>

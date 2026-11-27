@@ -1,0 +1,144 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="A hybrid format derived from RFC 3339, RFC 9557 and ISO 8601."><title>jiff::fmt::temporal - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-1e18a8e7.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="jiff" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (6c709eb42 2026-11-25)" data-channel="nightly" data-search-js="search-085293d4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../../static.files/storage-41dd4d93.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Module temporal</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../jiff/index.html">jiff</a><span class="version">1.0.3</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module temporal</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#date-and-time-format" title="Date and time format">Date and time format</a></li><li><a href="#span-format" title="Span format">Span format</a></li><li><a href="#differences-with-temporal" title="Differences with Temporal">Differences with Temporal</a></li></ul><h3><a href="#structs">Module Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="../index.html">In jiff::<wbr>fmt</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../../index.html">jiff</a>::<wbr><a href="../index.html">fmt</a></div><h1>Module <span>temporal</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../../src/jiff/fmt/temporal/mod.rs.html#1-2597">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>A hybrid format derived from <a href="https://www.rfc-editor.org/rfc/rfc3339">RFC 3339</a>, <a href="https://www.rfc-editor.org/rfc/rfc9557.html">RFC 9557</a> and <a href="https://www.iso.org/iso-8601-date-and-time-format.html">ISO 8601</a>.</p>
+<p>This module provides an implementation of the <a href="https://tc39.es/proposal-temporal/#sec-temporal-iso8601grammar">Temporal ISO 8601 grammar</a>. The
+API is spread out over parsers and printers for datetimes and spans.</p>
+<p>Note that for most use cases, you should be using the corresponding
+<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Display.html" title="trait core::fmt::Display"><code>Display</code></a> or <a href="https://doc.rust-lang.org/nightly/core/str/traits/trait.FromStr.html" title="trait core::str::traits::FromStr"><code>FromStr</code></a> trait
+implementations for printing and parsing respectively. This module provides
+a “lower level” API for configuring the behavior of printing and parsing,
+including the ability to parse from byte strings (i.e., <code>&amp;[u8]</code>).</p>
+<h2 id="date-and-time-format"><a class="doc-anchor" href="#date-and-time-format">§</a>Date and time format</h2>
+<p>The specific format supported depends on what kind of type you’re trying to
+parse into. Here are some examples to give a general idea:</p>
+<ul>
+<li><code>02:21:58</code> parses into a <a href="../../civil/struct.Time.html" title="struct jiff::civil::Time"><code>civil::Time</code></a>.</li>
+<li><code>2020-08-21</code> parses into a <a href="../../civil/struct.Date.html" title="struct jiff::civil::Date"><code>civil::Date</code></a>.</li>
+<li><code>2020-08-21T02:21:58</code> and <code>2020-08-21 02:21:58</code> both parse into a
+<a href="../../civil/struct.DateTime.html" title="struct jiff::civil::DateTime"><code>civil::DateTime</code></a>.</li>
+<li><code>2020-08-21T02:21:58-04</code> parses into an <a href="../../struct.Timestamp.html" title="struct jiff::Timestamp"><code>Timestamp</code></a>.</li>
+<li><code>2020-08-21T02:21:58-04[America/New_York]</code> parses into a <a href="../../struct.ZonedDateTime.html" title="struct jiff::ZonedDateTime"><code>ZonedDateTime</code></a>.</li>
+</ul>
+<p>Smaller types can generally be parsed from strings representing a bigger type.
+For example, a <code>civil::Date</code> can be parsed from <code>2020-08-21T02:21:58</code>.</p>
+<p>As mentioned above, the datetime format supported by Jiff is a hybrid of the
+“best” parts of <a href="https://www.rfc-editor.org/rfc/rfc3339">RFC 3339</a>, <a href="https://www.rfc-editor.org/rfc/rfc9557.html">RFC 9557</a> and <a href="https://www.iso.org/iso-8601-date-and-time-format.html">ISO 8601</a>. Generally speaking, <a href="https://www.rfc-editor.org/rfc/rfc3339">RFC
+3339</a> and <a href="https://www.rfc-editor.org/rfc/rfc9557.html">RFC 9557</a> are supported in their entirety, but not all of ISO 8601
+is. For example, <code>2024-06-16T10.5</code> is a valid ISO 8601 datetime, but isn’t
+supported by Jiff. (Only fractional seconds are supported.)</p>
+<p>Some additional details worth noting:</p>
+<ul>
+<li>Parsing <code>ZonedDateTime</code> values requires a datetime string with a time zone
+annotation like <code>[America/New_York]</code> or <code>[-07:00]</code>. If you need to parse a
+datetime without a time zone annotation (but with an offset), then you should
+parse it as an <a href="../../struct.Timestamp.html" title="struct jiff::Timestamp"><code>Timestamp</code></a>. From there, it can be converted to a
+<code>ZonedDateTime</code> via <a href="../../struct.Timestamp.html#method.to_zoned_datetime" title="method jiff::Timestamp::to_zoned_datetime"><code>Timestamp::to_zoned_datetime</code></a>.</li>
+<li>When parsing <code>ZonedDateTime</code> values, ambiguous datetimes are handled via the
+<a href="struct.DateTimeParser.html#method.disambiguation" title="method jiff::fmt::temporal::DateTimeParser::disambiguation"><code>DateTimeParser::disambiguation</code></a> configuration. By default, a “compatible”
+mode is used where the earlier time is selected in a backward transition, while
+the later time is selected in a forward transition.</li>
+<li>When parsing <code>ZonedDateTime</code> values, conflicts between the offset and the
+time zone in the datetime string are handled via the
+<a href="struct.DateTimeParser.html#method.offset_conflict" title="method jiff::fmt::temporal::DateTimeParser::offset_conflict"><code>DateTimeParser::offset_conflict</code></a> configuration. By default, any
+inconsistency between the offset and the time zone results in a parse error.</li>
+<li>When parsing civil types like <code>civil::DateTime</code>, it’s always an error if the
+datetime string has a <code>Z</code> (Zulu) offset. It’s an error since interpreting such
+strings as civil time is usually a bug.</li>
+<li>In all cases, the <code>T</code> designator separating the date and time may be an ASCII
+space instead.</li>
+</ul>
+<p>The complete datetime format supported is described by the
+<a href="https://tc39.es/proposal-temporal/#sec-temporal-iso8601grammar">Temporal ISO 8601 grammar</a>.</p>
+<h2 id="span-format"><a class="doc-anchor" href="#span-format">§</a>Span format</h2>
+<p>To a first approximation, the span format supported roughly corresponds to this
+regular expression:</p>
+<div class="example-wrap"><pre class="language-text"><code>P(\d+y)?(\d+m)?(\d+w)?(\d+d)?(T(\d+h)?(\d+m)?(\d+s)?)?</code></pre></div>
+<p>But there are some details not easily captured by a simple regular expression:</p>
+<ul>
+<li>At least one unit must be specified. To write a zero span, specify <code>0</code> for
+any unit. For example, <code>P0d</code> and <code>PT0s</code> are equivalent.</li>
+<li>The format is case insensitive. The printer will by default capitalize all
+designators, but the unit designators can be configured to use lowercase with
+<a href="struct.SpanPrinter.html#method.lowercase" title="method jiff::fmt::temporal::SpanPrinter::lowercase"><code>SpanPrinter::lowercase</code></a>. For example, <code>P3y1m10dT5h</code> instead of
+<code>P3Y1M10DT5H</code>. You might prefer lowercase since you may find it easier to read.
+However, it is an extension to ISO 8601 and isn’t as broadly supported.</li>
+<li>Hours, minutes or seconds may be fractional. And the only units that may be
+fractional are the lowest units.</li>
+<li>A span like <code>P99999999999y</code> is invalid because it exceeds the allowable range
+of time representable by a <a href="../../struct.Span.html" title="struct jiff::Span"><code>Span</code></a>.</li>
+</ul>
+<p>This is, roughly speaking, a subset of what <a href="https://www.iso.org/iso-8601-date-and-time-format.html">ISO 8601</a> specifies. It isn’t
+strictly speaking a subset since Jiff (like Temporal) permits week units to be
+mixed with other units.</p>
+<p>Here are some examples:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{Span, ToSpan};
+
+<span class="kw">let </span>spans = [
+    (<span class="string">"P40D"</span>, <span class="number">40</span>.days()),
+    (<span class="string">"P1y1d"</span>, <span class="number">1</span>.year().days(<span class="number">1</span>)),
+    (<span class="string">"P3dT4h59m"</span>, <span class="number">3</span>.days().hours(<span class="number">4</span>).minutes(<span class="number">59</span>)),
+    (<span class="string">"PT2H30M"</span>, <span class="number">2</span>.hours().minutes(<span class="number">30</span>)),
+    (<span class="string">"P1m"</span>, <span class="number">1</span>.month()),
+    (<span class="string">"P1w"</span>, <span class="number">1</span>.week()),
+    (<span class="string">"P1w4d"</span>, <span class="number">1</span>.week().days(<span class="number">4</span>)),
+    (<span class="string">"PT1m"</span>, <span class="number">1</span>.minute()),
+    (<span class="string">"PT0.0021s"</span>, <span class="number">2</span>.milliseconds().microseconds(<span class="number">100</span>)),
+    (<span class="string">"PT0s"</span>, <span class="number">0</span>.seconds()),
+    (<span class="string">"P0d"</span>, <span class="number">0</span>.seconds()),
+    (
+        <span class="string">"P1y1m1dT1h1m1.1s"</span>,
+        <span class="number">1</span>.year().months(<span class="number">1</span>).days(<span class="number">1</span>).hours(<span class="number">1</span>).minutes(<span class="number">1</span>).seconds(<span class="number">1</span>).milliseconds(<span class="number">100</span>),
+    ),
+];
+<span class="kw">for </span>(string, span) <span class="kw">in </span>spans {
+    <span class="kw">let </span>parsed: Span = string.parse()<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(
+        span.fieldwise(),
+        parsed.fieldwise(),
+        <span class="string">"result of parsing {string:?}"</span>,
+    );
+}
+</code></pre></div>
+<p>One can also parse ISO 8601 durations into a <a href="../../struct.SignedDuration.html" title="struct jiff::SignedDuration"><code>SignedDuration</code></a>, but units are
+limited to hours or smaller:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::SignedDuration;
+
+<span class="kw">let </span>durations = [
+    (<span class="string">"PT2H30M"</span>, SignedDuration::from_secs(<span class="number">2 </span>* <span class="number">60 </span>* <span class="number">60 </span>+ <span class="number">30 </span>* <span class="number">60</span>)),
+    (<span class="string">"PT2.5h"</span>, SignedDuration::from_secs(<span class="number">2 </span>* <span class="number">60 </span>* <span class="number">60 </span>+ <span class="number">30 </span>* <span class="number">60</span>)),
+    (<span class="string">"PT1m"</span>, SignedDuration::from_mins(<span class="number">1</span>)),
+    (<span class="string">"PT1.5m"</span>, SignedDuration::from_secs(<span class="number">90</span>)),
+    (<span class="string">"PT0.0021s"</span>, SignedDuration::new(<span class="number">0</span>, <span class="number">2_100_000</span>)),
+    (<span class="string">"PT0s"</span>, SignedDuration::ZERO),
+    (<span class="string">"PT0.000000001s"</span>, SignedDuration::from_nanos(<span class="number">1</span>)),
+];
+<span class="kw">for </span>(string, duration) <span class="kw">in </span>durations {
+    <span class="kw">let </span>parsed: SignedDuration = string.parse()<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(duration, parsed, <span class="string">"result of parsing {string:?}"</span>);
+}
+</code></pre></div>
+<p>The complete span format supported is described by the <a href="https://tc39.es/proposal-temporal/#sec-temporal-iso8601grammar">Temporal ISO 8601
+grammar</a>.</p>
+<h2 id="differences-with-temporal"><a class="doc-anchor" href="#differences-with-temporal">§</a>Differences with Temporal</h2>
+<p>Jiff implements Temporal’s grammar pretty closely, but there are a few
+differences at the time of writing. It is a specific goal that all differences
+should be rooted in what Jiff itself supports, and not in the grammar itself.</p>
+<ul>
+<li>The maximum UTC offset value expressible is <code>25:59:59</code> in Jiff, where as in
+Temporal it’s <code>23:59:59.999999999</code>. Jiff supports a slightly bigger maximum
+to account for all valid values of POSIX time zone strings. Jiff also lacks
+nanosecond precision for UTC offsets, as it’s not clear how useful that is in
+practice.</li>
+<li>Jiff doesn’t support a datetime range as big as Temporal. For example,
+in Temporal, <code>+202024-06-14T17:30[America/New_York]</code> is valid. But in Jiff,
+since the maximum supported year is <code>9999</code>, parsing will fail. Jiff’s datetime
+range may be expanded in the future, but it is a non-goal to match Temporal’s
+range precisely.</li>
+<li>Jiff doesn’t support RFC 9557 calendar annotations because Jiff only supports
+the Gregorian calendar.</li>
+</ul>
+<p>There is some more <a href="https://github.com/tc39/proposal-temporal/issues/2843">background on Temporal’s format</a> available.</p>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.DateTimeParser.html" title="struct jiff::fmt::temporal::DateTimeParser">Date<wbr>Time<wbr>Parser</a></dt><dd>A parser for Temporal datetimes.</dd><dt><a class="struct" href="struct.DateTimePrinter.html" title="struct jiff::fmt::temporal::DateTimePrinter">Date<wbr>Time<wbr>Printer</a></dt><dd>A printer for Temporal datetimes.</dd><dt><a class="struct" href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces">Pieces</a></dt><dd>A low level representation of a parsed Temporal ISO 8601 datetime string.</dd><dt><a class="struct" href="struct.PiecesNumericOffset.html" title="struct jiff::fmt::temporal::PiecesNumericOffset">Pieces<wbr>Numeric<wbr>Offset</a></dt><dd>A specific numeric offset, including the sign of the offset, for use with
+<a href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces"><code>Pieces</code></a>.</dd><dt><a class="struct" href="struct.SpanParser.html" title="struct jiff::fmt::temporal::SpanParser">Span<wbr>Parser</a></dt><dd>A parser for Temporal durations.</dd><dt><a class="struct" href="struct.SpanPrinter.html" title="struct jiff::fmt::temporal::SpanPrinter">Span<wbr>Printer</a></dt><dd>A printer for Temporal durations.</dd><dt><a class="struct" href="struct.TimeZoneAnnotation.html" title="struct jiff::fmt::temporal::TimeZoneAnnotation">Time<wbr>Zone<wbr>Annotation</a></dt><dd>An <a href="https://www.rfc-editor.org/rfc/rfc9557.html">RFC 9557</a> time zone annotation, for use with <a href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces"><code>Pieces</code></a>.</dd><dt><a class="struct" href="struct.TimeZoneAnnotationName.html" title="struct jiff::fmt::temporal::TimeZoneAnnotationName">Time<wbr>Zone<wbr>Annotation<wbr>Name</a></dt><dd>A time zone annotation parsed from a datetime string.</dd></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.PiecesOffset.html" title="enum jiff::fmt::temporal::PiecesOffset">Pieces<wbr>Offset</a></dt><dd>An offset parsed from a Temporal ISO 8601 datetime string, for use with
+<a href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces"><code>Pieces</code></a>.</dd><dt><a class="enum" href="enum.TimeZoneAnnotationKind.html" title="enum jiff::fmt::temporal::TimeZoneAnnotationKind">Time<wbr>Zone<wbr>Annotation<wbr>Kind</a></dt><dd>The kind of time zone found in an <a href="https://www.rfc-editor.org/rfc/rfc9557.html">RFC 9557</a> timestamp, for use with
+<a href="struct.Pieces.html" title="struct jiff::fmt::temporal::Pieces"><code>Pieces</code></a>.</dd></dl></section></div></main></body></html>

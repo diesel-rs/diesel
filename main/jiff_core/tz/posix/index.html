@@ -1,0 +1,50 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Implements POSIX time zone string parsing and transition handling."><title>jiff_core::tz::posix - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-1e18a8e7.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="jiff_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (6c709eb42 2026-11-25)" data-channel="nightly" data-search-js="search-085293d4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../../static.files/storage-41dd4d93.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Module posix</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../jiff_core/index.html">jiff_<wbr>core</a><span class="version">1.0.2</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module posix</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#iana-v3-support" title="IANA v3+ Support">IANA v3+ Support</a></li><li><a href="#no-std-and-no-alloc-support" title="`no-std` and `no-alloc` support"><code>no-std</code> and <code>no-alloc</code> support</a></li></ul><h3><a href="#structs">Module Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="../index.html">In jiff_<wbr>core::<wbr>tz</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../../index.html">jiff_core</a>::<wbr><a href="../index.html">tz</a></div><h1>Module <span>posix</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../../src/jiff_core/tz/posix.rs.html#1-3794">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Implements POSIX time zone string parsing and transition handling.</p>
+<p>The <code>TZ</code> environment variable is most commonly used to set a time zone. For
+example, <code>TZ=America/New_York</code>. But it can also be used to tersely define DST
+transitions. Moreover, the format is not just used as an environment variable,
+but is also included at the end of TZif files (version 2 or greater). The IANA
+Time Zone Database project also <a href="https://data.iana.org/time-zones/tzdb-2024a/theory.html#functions">documents the <code>TZ</code> variable</a> with
+a little more commentary.</p>
+<p>Note that we (along with pretty much everyone else) don’t strictly follow
+POSIX here. Namely, <code>TZ=America/New_York</code> isn’t a POSIX compatible usage,
+and I believe it technically should be <code>TZ=:America/New_York</code>. Nevertheless,
+apparently some group of people (IANA folks?) decided <code>TZ=America/New_York</code>
+should be fine. From the <a href="https://data.iana.org/time-zones/tzdb-2024a/theory.html#functions">IANA <code>theory.html</code> documentation</a>:</p>
+<blockquote>
+<p>It was recognized that allowing the TZ environment variable to take on values
+such as ‘America/New_York’ might cause “old” programs (that expect TZ to have
+a certain form) to operate incorrectly; consideration was given to using
+some other environment variable (for example, TIMEZONE) to hold the string
+used to generate the TZif file’s name. In the end, however, it was decided
+to continue using TZ: it is widely used for time zone purposes; separately
+maintaining both TZ and TIMEZONE seemed a nuisance; and systems where “new”
+forms of TZ might cause problems can simply use legacy TZ values such as
+“EST5EDT” which can be used by “new” programs as well as by “old” programs
+that assume pre-POSIX TZ values.</p>
+</blockquote>
+<p>Indeed, even <a href="https://wiki.musl-libc.org/environment-variables">musl subscribes to this behavior</a>. So that’s what we do
+here too.</p>
+<p>Note that a POSIX time zone like <code>EST5</code> corresponds to the UTC offset <code>-05:00</code>,
+and <code>GMT-4</code> corresponds to the UTC offset <code>+04:00</code>. Yes, it’s backwards. How
+fun.</p>
+<h2 id="iana-v3-support"><a class="doc-anchor" href="#iana-v3-support">§</a>IANA v3+ Support</h2>
+<p>While this module and many of its types are directly associated with POSIX,
+this module also plays a supporting role for <code>TZ</code> strings in the IANA TZif
+binary format for versions 2 and greater. Specifically, for versions 3 and
+greater, some minor extensions are supported here via <code>IanaTz::parse</code>. But
+using <code>PosixTz::parse</code> is limited to parsing what is specified by POSIX.
+Nevertheless, we generally use <code>IanaTz::parse</code> everywhere, even when parsing
+the <code>TZ</code> environment variable. The reason for this is that it seems to be what
+other programs do in practice (for example, GNU date).</p>
+<h2 id="no-std-and-no-alloc-support"><a class="doc-anchor" href="#no-std-and-no-alloc-support">§</a><code>no-std</code> and <code>no-alloc</code> support</h2>
+<p>A big part of this module works fine in core-only environments. But because
+core-only environments provide means of indirection, and embedding a
+<code>PosixTimeZone</code> into a <code>TimeZone</code> without indirection would use up a lot of
+space (and thereby make <code>ZonedDateTime</code> quite chunky), we provide core-only
+support principally through a proc macro. Namely, a <code>PosixTimeZone</code> can be
+parsed by the proc macro and then turned into static data.</p>
+<p>POSIX time zone support isn’t explicitly provided directly as a public API
+for core-only environments, but is implicitly supported via TZif. (Since TZif
+data contains POSIX time zone strings.)</p>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.DayTime.html" title="struct jiff_core::tz::posix::DayTime">DayTime</a></dt><dd>The day of a year and the time from that day on which a time zone
+transition occurs.</dd><dt><a class="struct" href="struct.Dst.html" title="struct jiff_core::tz::posix::Dst">Dst</a></dt><dd>The time zone transition rule along with its abbreviation and offset.</dd><dt><a class="struct" href="struct.ParseError.html" title="struct jiff_core::tz::posix::ParseError">Parse<wbr>Error</a></dt><dd>An error that can occur when parsing a POSIX time zone string.</dd><dt><a class="struct" href="struct.Rule.html" title="struct jiff_core::tz::posix::Rule">Rule</a></dt><dd>A time zone transition rule.</dd><dt><a class="struct" href="struct.TimeZone.html" title="struct jiff_core::tz::posix::TimeZone">Time<wbr>Zone</a></dt><dd>A representation of a POSIX time zone transition rule.</dd><dt><a class="struct" href="struct.TransitionCivilTime.html" title="struct jiff_core::tz::posix::TransitionCivilTime">Transition<wbr>Civil<wbr>Time</a></dt><dd>Represents the civil time at which a time zone transition occurs.</dd></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.Day.html" title="enum jiff_core::tz::posix::Day">Day</a></dt><dd>Represents a day in particular year on which a time zone transition occurs.</dd><dt><a class="enum" href="enum.TzEnv.html" title="enum jiff_core::tz::posix::TzEnv">TzEnv</a></dt><dd>The result of parsing the POSIX <code>TZ</code> environment variable.</dd></dl></section></div></main></body></html>

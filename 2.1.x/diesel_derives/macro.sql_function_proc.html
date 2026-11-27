@@ -1,0 +1,205 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Declare a sql function for use in your code."><title>sql_function_proc in diesel_derives - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-081576b923113409.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="diesel_derives" data-themes="" data-resource-suffix="" data-rustdoc-version="1.79.0-nightly (e3181b091 2024-04-18)" data-channel="nightly" data-search-js="search-5b46ae87cc198d72.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-e32f0c247825364d.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-09095024cf37855e.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc macro"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../diesel_derives/index.html">diesel_derives</a><span class="version">2.1.4</span></h2></div><div class="sidebar-elems"></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../diesel_derives/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Type ‘S’ or ‘/’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../settings.html" title="settings">Settings</a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Macro <a href="index.html">diesel_derives</a>::<wbr><a class="macro" href="#">sql_function_proc</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../src/diesel_derives/lib.rs.html#1340-1342">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>sql_function_proc!() { <span class="comment">/* proc-macro */</span> }</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Declare a sql function for use in your code.</p>
+<p>Diesel only provides support for a very small number of SQL functions.
+This macro enables you to add additional functions from the SQL standard,
+as well as any custom functions your application might have.</p>
+<p>The syntax for this macro is very similar to that of a normal Rust function,
+except the argument and return types will be the SQL types being used.
+Typically, these types will come from <a href="../diesel/sql_types/index.html"><code>diesel::sql_types</code></a></p>
+<p>This macro will generate two items. A function with the name that you’ve
+given, and a module with a helper type representing the return type of your
+function. For example, this invocation:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="macro">sql_function!</span>(<span class="kw">fn </span>lower(x: Text) -&gt; Text);</code></pre></div>
+<p>will generate this code:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">pub fn </span>lower&lt;X&gt;(x: X) -&gt; lower::HelperType&lt;X&gt; {
+    ...
+}
+
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>lower {
+    <span class="kw">pub type </span>HelperType&lt;X&gt; = ...;
+}</code></pre></div>
+<p>If you are using this macro for part of a library, where the function is
+part of your public API, it is highly recommended that you re-export this
+helper type with the same name as your function. This is the standard
+structure:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">pub mod </span>functions {
+    <span class="kw">use </span><span class="kw">super</span>::types::<span class="kw-2">*</span>;
+    <span class="kw">use </span>diesel::sql_types::<span class="kw-2">*</span>;
+
+    <span class="macro">sql_function!</span> {
+        <span class="doccomment">/// Represents the Pg `LENGTH` function used with `tsvector`s.
+        </span><span class="kw">fn </span>length(x: TsVector) -&gt; Integer;
+    }
+}
+
+<span class="kw">pub mod </span>helper_types {
+    <span class="doccomment">/// The return type of `length(expr)`
+    </span><span class="kw">pub type </span>Length&lt;Expr&gt; = functions::length::HelperType&lt;Expr&gt;;
+}
+
+<span class="kw">pub mod </span>dsl {
+    <span class="kw">pub use </span>functions::<span class="kw-2">*</span>;
+    <span class="kw">pub use </span>helper_types::<span class="kw-2">*</span>;
+}</code></pre></div>
+<p>Most attributes given to this macro will be put on the generated function
+(including doc comments).</p>
+<h2 id="adding-doc-comments"><a class="doc-anchor" href="#adding-doc-comments">§</a>Adding Doc Comments</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>diesel::sql_types::Text;
+
+<span class="macro">sql_function!</span> {
+    <span class="doccomment">/// Represents the `canon_crate_name` SQL function, created in
+    /// migration ....
+    </span><span class="kw">fn </span>canon_crate_name(a: Text) -&gt; Text;
+}
+
+<span class="kw">let </span>target_name = <span class="string">"diesel"</span>;
+crates.filter(canon_crate_name(name).eq(canon_crate_name(target_name)));
+<span class="comment">// This will generate the following SQL
+// SELECT * FROM crates WHERE canon_crate_name(crates.name) = canon_crate_name($1)</span></code></pre></div>
+<h2 id="special-attributes"><a class="doc-anchor" href="#special-attributes">§</a>Special Attributes</h2>
+<p>There are a handful of special attributes that Diesel will recognize. They
+are:</p>
+<ul>
+<li><code>#[aggregate]</code>
+<ul>
+<li>Indicates that this is an aggregate function, and that <code>NonAggregate</code>
+shouldn’t be implemented.</li>
+</ul>
+</li>
+<li><code>#[sql_name = &quot;name&quot;]</code>
+<ul>
+<li>The SQL to be generated is different from the Rust name of the function.
+This can be used to represent functions which can take many argument
+types, or to capitalize function names.</li>
+</ul>
+</li>
+</ul>
+<p>Functions can also be generic. Take the definition of <code>sum</code>, for example:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>diesel::sql_types::Foldable;
+
+<span class="macro">sql_function!</span> {
+    <span class="attr">#[aggregate]
+    #[sql_name = <span class="string">"SUM"</span>]
+    </span><span class="kw">fn </span>sum&lt;ST: Foldable&gt;(expr: ST) -&gt; ST::Sum;
+}
+
+crates.select(sum(id));</code></pre></div>
+<h2 id="sql-functions-without-arguments"><a class="doc-anchor" href="#sql-functions-without-arguments">§</a>SQL Functions without Arguments</h2>
+<p>A common example is ordering a query using the <code>RANDOM()</code> sql function,
+which can be implemented using <code>sql_function!</code> like this:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="macro">sql_function!</span>(<span class="kw">fn </span>random() -&gt; Text);
+
+crates.order(random());</code></pre></div>
+<h2 id="use-with-sqlite"><a class="doc-anchor" href="#use-with-sqlite">§</a>Use with SQLite</h2>
+<p>On most backends, the implementation of the function is defined in a
+migration using <code>CREATE FUNCTION</code>. On SQLite, the function is implemented in
+Rust instead. You must call <code>register_impl</code> or
+<code>register_nondeterministic_impl</code> with every connection before you can use
+the function.</p>
+<p>These functions will only be generated if the <code>sqlite</code> feature is enabled,
+and the function is not generic.
+SQLite doesn’t support generic functions and variadic functions.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>diesel::sql_types::{Integer, Double};
+<span class="macro">sql_function!</span>(<span class="kw">fn </span>add_mul(x: Integer, y: Integer, z: Double) -&gt; Double);
+
+<span class="kw">let </span>connection = <span class="kw-2">&amp;mut </span>SqliteConnection::establish(<span class="string">":memory:"</span>)<span class="question-mark">?</span>;
+
+add_mul::register_impl(connection, |x: i32, y: i32, z: f64| {
+    (x + y) <span class="kw">as </span>f64 * z
+})<span class="question-mark">?</span>;
+
+<span class="kw">let </span>result = select(add_mul(<span class="number">1</span>, <span class="number">2</span>, <span class="number">1.5</span>))
+    .get_result::&lt;f64&gt;(connection)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="number">4.5</span>, result);</code></pre></div>
+<h3 id="panics"><a class="doc-anchor" href="#panics">§</a>Panics</h3>
+<p>If an implementation of the custom function panics and unwinding is enabled, the panic is
+caught and the function returns to libsqlite with an error. It can’t propagate the panics due
+to the FFI boundary.</p>
+<p>This is the same for <a href="#custom-aggregate-functions">custom aggregate functions</a>.</p>
+<h3 id="custom-aggregate-functions"><a class="doc-anchor" href="#custom-aggregate-functions">§</a>Custom Aggregate Functions</h3>
+<p>Custom aggregate functions can be created in SQLite by adding an <code>#[aggregate]</code>
+attribute inside <code>sql_function</code>. <code>register_impl</code> needs to be called on
+the generated function with a type implementing the
+<a href="../diesel/sqlite/trait.SqliteAggregateFunction.html">SqliteAggregateFunction</a>
+trait as a type parameter as shown in the examples below.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>diesel::sql_types::Integer;
+<span class="kw">use </span>diesel::sqlite::SqliteAggregateFunction;
+
+<span class="macro">sql_function!</span> {
+    <span class="attr">#[aggregate]
+    </span><span class="kw">fn </span>my_sum(x: Integer) -&gt; Integer;
+}
+
+<span class="attr">#[derive(Default)]
+</span><span class="kw">struct </span>MySum { sum: i32 }
+
+<span class="kw">impl </span>SqliteAggregateFunction&lt;i32&gt; <span class="kw">for </span>MySum {
+    <span class="kw">type </span>Output = i32;
+
+    <span class="kw">fn </span>step(<span class="kw-2">&amp;mut </span><span class="self">self</span>, expr: i32) {
+        <span class="self">self</span>.sum += expr;
+    }
+
+    <span class="kw">fn </span>finalize(aggregator: <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>&gt;) -&gt; <span class="self">Self</span>::Output {
+        aggregator.map(|a| a.sum).unwrap_or_default()
+    }
+}
+
+<span class="kw">fn </span>run() -&gt; <span class="prelude-ty">Result</span>&lt;(), Box&lt;<span class="kw">dyn </span>(::std::error::Error)&gt;&gt; {
+    <span class="kw">let </span>connection = <span class="kw-2">&amp;mut </span>SqliteConnection::establish(<span class="string">":memory:"</span>)<span class="question-mark">?</span>;
+
+    my_sum::register_impl::&lt;MySum, <span class="kw">_</span>&gt;(connection)<span class="question-mark">?</span>;
+
+    <span class="kw">let </span>total_score = players.select(my_sum(score))
+        .get_result::&lt;i32&gt;(connection)<span class="question-mark">?</span>;
+
+    <span class="macro">println!</span>(<span class="string">"The total score of all the players is: {}"</span>, total_score);
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<p>With multiple function arguments, the arguments are passed as a tuple to <code>SqliteAggregateFunction</code></p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>diesel::sql_types::{Float, Nullable};
+<span class="kw">use </span>diesel::sqlite::SqliteAggregateFunction;
+
+<span class="macro">sql_function!</span> {
+    <span class="attr">#[aggregate]
+    </span><span class="kw">fn </span>range_max(x0: Float, x1: Float) -&gt; Nullable&lt;Float&gt;;
+}
+
+<span class="attr">#[derive(Default)]
+</span><span class="kw">struct </span>RangeMax&lt;T&gt; { max_value: <span class="prelude-ty">Option</span>&lt;T&gt; }
+
+<span class="kw">impl</span>&lt;T: Default + PartialOrd + Copy + Clone&gt; SqliteAggregateFunction&lt;(T, T)&gt; <span class="kw">for </span>RangeMax&lt;T&gt; {
+    <span class="kw">type </span>Output = <span class="prelude-ty">Option</span>&lt;T&gt;;
+
+    <span class="kw">fn </span>step(<span class="kw-2">&amp;mut </span><span class="self">self</span>, (x0, x1): (T, T)) {
+        <span class="comment">// Compare self.max_value to x0 and x1
+    </span>}
+
+    <span class="kw">fn </span>finalize(aggregator: <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>&gt;) -&gt; <span class="self">Self</span>::Output {
+        aggregator<span class="question-mark">?</span>.max_value
+    }
+}
+
+<span class="kw">fn </span>run() -&gt; <span class="prelude-ty">Result</span>&lt;(), Box&lt;<span class="kw">dyn </span>(::std::error::Error)&gt;&gt; {
+    <span class="kw">let </span>connection = <span class="kw-2">&amp;mut </span>SqliteConnection::establish(<span class="string">":memory:"</span>)<span class="question-mark">?</span>;
+
+    range_max::register_impl::&lt;RangeMax&lt;f32&gt;, <span class="kw">_</span>, <span class="kw">_</span>&gt;(connection)<span class="question-mark">?</span>;
+
+    <span class="kw">let </span>result = student_avgs.select(range_max(s1_avg, s2_avg))
+        .get_result::&lt;<span class="prelude-ty">Option</span>&lt;f32&gt;&gt;(connection)<span class="question-mark">?</span>;
+
+    <span class="kw">if let </span><span class="prelude-val">Some</span>(max_semester_avg) = result {
+        <span class="macro">println!</span>(<span class="string">"The largest semester average is: {}"</span>, max_semester_avg);
+    }
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+</div></details></section></div></main></body></html>

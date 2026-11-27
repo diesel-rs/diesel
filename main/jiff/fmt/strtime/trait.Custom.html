@@ -1,0 +1,140 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="An interface for customizing `strtime`-style parsing and formatting."><title>Custom in jiff::fmt::strtime - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-1e18a8e7.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="jiff" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (6c709eb42 2026-11-25)" data-channel="nightly" data-search-js="search-085293d4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../../static.files/storage-41dd4d93.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc trait"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Custom</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../jiff/index.html">jiff</a><span class="version">1.0.3</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Custom</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#motivation" title="Motivation">Motivation</a></li><li><a href="#supported-conversion-specifiers" title="Supported conversion specifiers">Supported conversion specifiers</a></li><li><a href="#unsupported-behavior" title="Unsupported behavior">Unsupported behavior</a></li><li><a href="#example" title="Example">Example</a></li><li><a href="#trait-objects" title="Trait objects">Trait objects</a></li></ul><h3><a href="#provided-methods">Provided Methods</a></h3><ul class="block"><li><a href="#method.format_12hour_time" title="format_12hour_time">format_12hour_time</a></li><li><a href="#method.format_date" title="format_date">format_date</a></li><li><a href="#method.format_datetime" title="format_datetime">format_datetime</a></li><li><a href="#method.format_time" title="format_time">format_time</a></li></ul><h3><a href="#dyn-compatibility">Dyn Compatibility</a></h3><h3><a href="#implementors">Implementors</a></h3></section><div id="rustdoc-modnav"><h2><a href="index.html">In jiff::<wbr>fmt::<wbr>strtime</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../../index.html">jiff</a>::<wbr><a href="../index.html">fmt</a>::<wbr><a href="index.html">strtime</a></div><h1>Trait <span class="trait">Custom</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../../src/jiff/fmt/strtime/mod.rs.html#691-752">Source</a> </span></div><pre class="rust item-decl"><code>pub trait Custom {
+    // Provided methods
+    fn <a href="#method.format_datetime" class="fn">format_datetime</a>(
+        &amp;self,
+        config: &amp;<a class="struct" href="struct.Config.html" title="struct jiff::fmt::strtime::Config">Config</a>&lt;dyn <a class="trait" href="trait.Custom.html" title="trait jiff::fmt::strtime::Custom">Custom</a> + '_&gt;,
+        ext: &amp;<a class="struct" href="struct.Extension.html" title="struct jiff::fmt::strtime::Extension">Extension</a>,
+        tm: &amp;<a class="struct" href="struct.BrokenDownTime.html" title="struct jiff::fmt::strtime::BrokenDownTime">BrokenDownTime</a>,
+        wtr: &amp;mut dyn <a class="trait" href="../trait.Write.html" title="trait jiff::fmt::Write">Write</a>,
+    ) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.unit.html">()</a>, <a class="struct" href="../../struct.Error.html" title="struct jiff::Error">Error</a>&gt; { ... }
+<span class="item-spacer"></span>    fn <a href="#method.format_date" class="fn">format_date</a>(
+        &amp;self,
+        config: &amp;<a class="struct" href="struct.Config.html" title="struct jiff::fmt::strtime::Config">Config</a>&lt;dyn <a class="trait" href="trait.Custom.html" title="trait jiff::fmt::strtime::Custom">Custom</a> + '_&gt;,
+        _ext: &amp;<a class="struct" href="struct.Extension.html" title="struct jiff::fmt::strtime::Extension">Extension</a>,
+        tm: &amp;<a class="struct" href="struct.BrokenDownTime.html" title="struct jiff::fmt::strtime::BrokenDownTime">BrokenDownTime</a>,
+        wtr: &amp;mut dyn <a class="trait" href="../trait.Write.html" title="trait jiff::fmt::Write">Write</a>,
+    ) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.unit.html">()</a>, <a class="struct" href="../../struct.Error.html" title="struct jiff::Error">Error</a>&gt; { ... }
+<span class="item-spacer"></span>    fn <a href="#method.format_time" class="fn">format_time</a>(
+        &amp;self,
+        config: &amp;<a class="struct" href="struct.Config.html" title="struct jiff::fmt::strtime::Config">Config</a>&lt;dyn <a class="trait" href="trait.Custom.html" title="trait jiff::fmt::strtime::Custom">Custom</a> + '_&gt;,
+        _ext: &amp;<a class="struct" href="struct.Extension.html" title="struct jiff::fmt::strtime::Extension">Extension</a>,
+        tm: &amp;<a class="struct" href="struct.BrokenDownTime.html" title="struct jiff::fmt::strtime::BrokenDownTime">BrokenDownTime</a>,
+        wtr: &amp;mut dyn <a class="trait" href="../trait.Write.html" title="trait jiff::fmt::Write">Write</a>,
+    ) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.unit.html">()</a>, <a class="struct" href="../../struct.Error.html" title="struct jiff::Error">Error</a>&gt; { ... }
+<span class="item-spacer"></span>    fn <a href="#method.format_12hour_time" class="fn">format_12hour_time</a>(
+        &amp;self,
+        config: &amp;<a class="struct" href="struct.Config.html" title="struct jiff::fmt::strtime::Config">Config</a>&lt;dyn <a class="trait" href="trait.Custom.html" title="trait jiff::fmt::strtime::Custom">Custom</a> + '_&gt;,
+        ext: &amp;<a class="struct" href="struct.Extension.html" title="struct jiff::fmt::strtime::Extension">Extension</a>,
+        tm: &amp;<a class="struct" href="struct.BrokenDownTime.html" title="struct jiff::fmt::strtime::BrokenDownTime">BrokenDownTime</a>,
+        wtr: &amp;mut dyn <a class="trait" href="../trait.Write.html" title="trait jiff::fmt::Write">Write</a>,
+    ) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.unit.html">()</a>, <a class="struct" href="../../struct.Error.html" title="struct jiff::Error">Error</a>&gt; { ... }
+}</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>An interface for customizing <code>strtime</code>-style parsing and formatting.</p>
+<p>Each method on this trait comes with a default implementation corresponding
+to the behavior of <a href="struct.DefaultCustom.html" title="struct jiff::fmt::strtime::DefaultCustom"><code>DefaultCustom</code></a>. More methods on this trait may be
+added in the future.</p>
+<p>Implementers of this trait can be attached to a <a href="struct.Config.html" title="struct jiff::fmt::strtime::Config"><code>Config</code></a> which can then
+be passed to <a href="struct.BrokenDownTime.html#method.format_with_config" title="method jiff::fmt::strtime::BrokenDownTime::format_with_config"><code>BrokenDownTime::format_with_config</code></a> or
+<a href="struct.BrokenDownTime.html#method.to_string_with_config" title="method jiff::fmt::strtime::BrokenDownTime::to_string_with_config"><code>BrokenDownTime::to_string_with_config</code></a>.</p>
+<p>New methods with default implementations may be added to this trait in
+semver compatible releases of Jiff.</p>
+<h2 id="motivation"><a class="doc-anchor" href="#motivation">§</a>Motivation</h2>
+<p>While Jiff’s API is generally locale-agnostic, this trait is meant to
+provide a best effort “hook” for tailoring the behavior of <code>strtime</code>
+routines. More specifically, for conversion specifiers in <code>strtime</code>-style
+APIs that are influenced by locale settings.</p>
+<p>In general, a <code>strtime</code>-style API is not optimal for localization.
+It’s both too flexible and not expressive enough. As a result, mixing
+localization with <code>strtime</code>-style APIs is likely not a good idea. However,
+this is sometimes required for legacy or convenience reasons, and that’s
+why Jiff provides this hook.</p>
+<p>If you do need to localize datetimes but don’t have a requirement to
+have it integrate with <code>strtime</code>-style APIs, then you should use the
+<a href="https://docs.rs/icu"><code>icu</code></a> crate via <a href="https://docs.rs/jiff-icu"><code>jiff-icu</code></a> for type conversions. And then follow the
+examples in the <code>icu::datetime</code> API for formatting datetimes.</p>
+<h2 id="supported-conversion-specifiers"><a class="doc-anchor" href="#supported-conversion-specifiers">§</a>Supported conversion specifiers</h2>
+<p>Currently, only formatting for the following specifiers is supported:</p>
+<ul>
+<li><code>%c</code> - Formatting the date and time.</li>
+<li><code>%r</code> - Formatting the 12-hour clock time.</li>
+<li><code>%X</code> - Formatting the clock time.</li>
+<li><code>%x</code> - Formatting the date.</li>
+</ul>
+<h2 id="unsupported-behavior"><a class="doc-anchor" href="#unsupported-behavior">§</a>Unsupported behavior</h2>
+<p>This trait currently does not support parsing based on locale in any way.</p>
+<p>This trait also does not support locale specific behavior for <code>%a</code>/<code>%A</code>
+(day of the week), <code>%b</code>/<code>%B</code> (name of the month) or <code>%p</code>/<code>%P</code> (AM or PM).
+Supporting these is problematic with modern localization APIs, since
+modern APIs do not expose options to localize these things independent of
+anything else. Instead, they are subsumed most holistically into, e.g.,
+“print the long form of a date in the current locale.”</p>
+<p>Since the motivation for this trait is not really to provide the best way
+to localize datetimes, but rather, to facilitate convenience and
+inter-operation with legacy systems, it is plausible that the behaviors
+listed above could be supported by Jiff. If you need the above behaviors,
+please <a href="https://github.com/BurntSushi/jiff/issues/new">open a new issue</a>
+with a proposal.</p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<p>This example shows the difference between the default locale and the
+POSIX locale:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil, fmt::strtime::{BrokenDownTime, PosixCustom, Config}};
+
+<span class="kw">let </span>dt = civil::date(<span class="number">2025</span>, <span class="number">7</span>, <span class="number">1</span>).at(<span class="number">17</span>, <span class="number">30</span>, <span class="number">0</span>, <span class="number">0</span>);
+<span class="kw">let </span>tm = BrokenDownTime::from(dt);
+<span class="macro">assert_eq!</span>(
+    tm.to_string(<span class="string">"%c"</span>)<span class="question-mark">?</span>,
+    <span class="string">"2025 M07 1, Tue 17:30:00"</span>,
+);
+
+<span class="kw">let </span>config = Config::new().custom(PosixCustom::new());
+<span class="macro">assert_eq!</span>(
+    tm.to_string_with_config(<span class="kw-2">&amp;</span>config, <span class="string">"%c"</span>)<span class="question-mark">?</span>,
+    <span class="string">"Tue Jul  1 17:30:00 2025"</span>,
+);
+</code></pre></div><h2 id="trait-objects"><a class="doc-anchor" href="#trait-objects">§</a>Trait objects</h2>
+<p><code>Custom</code> is dyn-compatible. A configuration containing a concrete
+implementation can be coerced to one containing a <code>dyn Custom</code> trait
+object without allocating:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil, fmt::strtime::{BrokenDownTime, PosixCustom, Config, Custom}};
+
+<span class="kw">let </span>config = Config::new().custom(PosixCustom::new());
+<span class="kw">let </span>config: <span class="kw-2">&amp;</span>Config&lt;<span class="kw">dyn </span>Custom&gt; = <span class="kw-2">&amp;</span>config;
+<span class="kw">let </span>tm = BrokenDownTime::from(civil::date(<span class="number">2025</span>, <span class="number">7</span>, <span class="number">1</span>).at(<span class="number">17</span>, <span class="number">30</span>, <span class="number">0</span>, <span class="number">0</span>));
+<span class="macro">assert_eq!</span>(
+    tm.to_string_with_config(config, <span class="string">"%c"</span>)<span class="question-mark">?</span>,
+    <span class="string">"Tue Jul  1 17:30:00 2025"</span>,
+);
+</code></pre></div></div></details><h2 id="provided-methods" class="section-header">Provided Methods<a href="#provided-methods" class="anchor">§</a></h2><div class="methods"><details class="toggle method-toggle" open><summary><section id="method.format_datetime" class="method"><a class="src rightside" href="../../../src/jiff/fmt/strtime/mod.rs.html#695-707">Source</a><h4 class="code-header">fn <a href="#method.format_datetime" class="fn">format_datetime</a>(
+    &amp;self,
+    config: &amp;<a class="struct" href="struct.Config.html" title="struct jiff::fmt::strtime::Config">Config</a>&lt;dyn <a class="trait" href="trait.Custom.html" title="trait jiff::fmt::strtime::Custom">Custom</a> + '_&gt;,
+    ext: &amp;<a class="struct" href="struct.Extension.html" title="struct jiff::fmt::strtime::Extension">Extension</a>,
+    tm: &amp;<a class="struct" href="struct.BrokenDownTime.html" title="struct jiff::fmt::strtime::BrokenDownTime">BrokenDownTime</a>,
+    wtr: &amp;mut dyn <a class="trait" href="../trait.Write.html" title="trait jiff::fmt::Write">Write</a>,
+) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.unit.html">()</a>, <a class="struct" href="../../struct.Error.html" title="struct jiff::Error">Error</a>&gt;</h4></section></summary><div class="docblock"><p>Called when formatting a datetime with the <code>%c</code> flag.</p>
+<p>This defaults to the implementation for <a href="struct.DefaultCustom.html" title="struct jiff::fmt::strtime::DefaultCustom"><code>DefaultCustom</code></a>.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.format_date" class="method"><a class="src rightside" href="../../../src/jiff/fmt/strtime/mod.rs.html#712-721">Source</a><h4 class="code-header">fn <a href="#method.format_date" class="fn">format_date</a>(
+    &amp;self,
+    config: &amp;<a class="struct" href="struct.Config.html" title="struct jiff::fmt::strtime::Config">Config</a>&lt;dyn <a class="trait" href="trait.Custom.html" title="trait jiff::fmt::strtime::Custom">Custom</a> + '_&gt;,
+    _ext: &amp;<a class="struct" href="struct.Extension.html" title="struct jiff::fmt::strtime::Extension">Extension</a>,
+    tm: &amp;<a class="struct" href="struct.BrokenDownTime.html" title="struct jiff::fmt::strtime::BrokenDownTime">BrokenDownTime</a>,
+    wtr: &amp;mut dyn <a class="trait" href="../trait.Write.html" title="trait jiff::fmt::Write">Write</a>,
+) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.unit.html">()</a>, <a class="struct" href="../../struct.Error.html" title="struct jiff::Error">Error</a>&gt;</h4></section></summary><div class="docblock"><p>Called when formatting a datetime with the <code>%x</code> flag.</p>
+<p>This defaults to the implementation for <a href="struct.DefaultCustom.html" title="struct jiff::fmt::strtime::DefaultCustom"><code>DefaultCustom</code></a>.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.format_time" class="method"><a class="src rightside" href="../../../src/jiff/fmt/strtime/mod.rs.html#726-734">Source</a><h4 class="code-header">fn <a href="#method.format_time" class="fn">format_time</a>(
+    &amp;self,
+    config: &amp;<a class="struct" href="struct.Config.html" title="struct jiff::fmt::strtime::Config">Config</a>&lt;dyn <a class="trait" href="trait.Custom.html" title="trait jiff::fmt::strtime::Custom">Custom</a> + '_&gt;,
+    _ext: &amp;<a class="struct" href="struct.Extension.html" title="struct jiff::fmt::strtime::Extension">Extension</a>,
+    tm: &amp;<a class="struct" href="struct.BrokenDownTime.html" title="struct jiff::fmt::strtime::BrokenDownTime">BrokenDownTime</a>,
+    wtr: &amp;mut dyn <a class="trait" href="../trait.Write.html" title="trait jiff::fmt::Write">Write</a>,
+) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.unit.html">()</a>, <a class="struct" href="../../struct.Error.html" title="struct jiff::Error">Error</a>&gt;</h4></section></summary><div class="docblock"><p>Called when formatting a datetime with the <code>%X</code> flag.</p>
+<p>This defaults to the implementation for <a href="struct.DefaultCustom.html" title="struct jiff::fmt::strtime::DefaultCustom"><code>DefaultCustom</code></a>.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.format_12hour_time" class="method"><a class="src rightside" href="../../../src/jiff/fmt/strtime/mod.rs.html#739-751">Source</a><h4 class="code-header">fn <a href="#method.format_12hour_time" class="fn">format_12hour_time</a>(
+    &amp;self,
+    config: &amp;<a class="struct" href="struct.Config.html" title="struct jiff::fmt::strtime::Config">Config</a>&lt;dyn <a class="trait" href="trait.Custom.html" title="trait jiff::fmt::strtime::Custom">Custom</a> + '_&gt;,
+    ext: &amp;<a class="struct" href="struct.Extension.html" title="struct jiff::fmt::strtime::Extension">Extension</a>,
+    tm: &amp;<a class="struct" href="struct.BrokenDownTime.html" title="struct jiff::fmt::strtime::BrokenDownTime">BrokenDownTime</a>,
+    wtr: &amp;mut dyn <a class="trait" href="../trait.Write.html" title="trait jiff::fmt::Write">Write</a>,
+) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.unit.html">()</a>, <a class="struct" href="../../struct.Error.html" title="struct jiff::Error">Error</a>&gt;</h4></section></summary><div class="docblock"><p>Called when formatting a datetime with the <code>%r</code> flag.</p>
+<p>This defaults to the implementation for <a href="struct.DefaultCustom.html" title="struct jiff::fmt::strtime::DefaultCustom"><code>DefaultCustom</code></a>.</p>
+</div></details></div><h2 id="dyn-compatibility" class="section-header">Dyn Compatibility<a href="#dyn-compatibility" class="anchor">§</a></h2><div class="dyn-compatibility-info"><p>This trait <b>is</b> <a href="https://doc.rust-lang.org/nightly/reference/items/traits.html#dyn-compatibility">dyn compatible</a>.</p><p><i>In older versions of Rust, dyn compatibility was called "object safety".</i></p></div><h2 id="implementors" class="section-header">Implementors<a href="#implementors" class="anchor">§</a></h2><div id="implementors-list"><div class="negative-marker"></div><section id="impl-Custom-for-DefaultCustom" class="impl"><a class="src rightside" href="../../../src/jiff/fmt/strtime/mod.rs.html#791">Source</a><a href="#impl-Custom-for-DefaultCustom" class="anchor">§</a><h3 class="code-header">impl <a class="trait" href="trait.Custom.html" title="trait jiff::fmt::strtime::Custom">Custom</a> for <a class="struct" href="struct.DefaultCustom.html" title="struct jiff::fmt::strtime::DefaultCustom">DefaultCustom</a></h3></section><section id="impl-Custom-for-PosixCustom" class="impl"><a class="src rightside" href="../../../src/jiff/fmt/strtime/mod.rs.html#825-873">Source</a><a href="#impl-Custom-for-PosixCustom" class="anchor">§</a><h3 class="code-header">impl <a class="trait" href="trait.Custom.html" title="trait jiff::fmt::strtime::Custom">Custom</a> for <a class="struct" href="struct.PosixCustom.html" title="struct jiff::fmt::strtime::PosixCustom">PosixCustom</a></h3></section></div><script src="../../../trait.impl/jiff/fmt/strtime/trait.Custom.js" async></script></section></div></main></body></html>

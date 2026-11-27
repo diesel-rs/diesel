@@ -1,0 +1,43 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Returns target with `new_value` inserted into `base`."><title>jsonb_insert_with_insert_after in diesel::pg::expression::functions - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-e56847b5.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.92.0-nightly (975e6c8fe 2025-09-23)" data-channel="nightly" data-search-js="search-e256b49e.js" data-stringdex-js="stringdex-061df703.js" data-settings-js="settings-c38705f0.js" ><script src="../../../../static.files/storage-e2aeef58.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../../../static.files/main-ce535bd0.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc fn"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">jsonb_insert_with_insert_after</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../../diesel/index.html">diesel</a><span class="version">2.3.1</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">jsonb_<wbr>insert_<wbr>with_<wbr>insert_<wbr>after</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#example" title="Example">Example</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="index.html">In diesel::<wbr>pg::<wbr>expression::<wbr>functions</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../../../index.html">diesel</a>::<wbr><a href="../../index.html">pg</a>::<wbr><a href="../index.html">expression</a>::<wbr><a href="index.html">functions</a></div><h1>Function <span class="fn">jsonb_<wbr>insert_<wbr>with_<wbr>insert_<wbr>after</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../../../src/diesel/pg/expression/functions.rs.html#18">Source</a> </span></div><pre class="rust item-decl"><code>pub fn jsonb_insert_with_insert_after&lt;E: JsonbOrNullableJsonb + <a class="trait" href="../../../sql_types/trait.SingleValue.html" title="trait diesel::sql_types::SingleValue">SingleValue</a>, Arr: TextArrayOrNullableTextArray + CombinedNullableValue&lt;E, <a class="struct" href="../../../sql_types/struct.Jsonb.html" title="struct diesel::sql_types::Jsonb">Jsonb</a>&gt;, base, path, new_value, insert_after&gt;(
+    base: base,
+    path: path,
+    new_value: new_value,
+    insert_after: insert_after,
+) -&gt; <a class="type" href="type.jsonb_insert_with_insert_after.html" title="type diesel::pg::expression::functions::jsonb_insert_with_insert_after">jsonb_insert_with_insert_after</a>&lt;E, Arr, base, path, new_value, insert_after&gt;<div class="where">where
+    base: <a class="trait" href="../../../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;E&gt;,
+    path: <a class="trait" href="../../../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Arr&gt;,
+    new_value: <a class="trait" href="../../../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;E&gt;,
+    insert_after: <a class="trait" href="../../../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="struct" href="../../../sql_types/struct.Bool.html" title="struct diesel::sql_types::Bool">Bool</a>&gt;,</div></code></pre><span class="item-info"><div class="stab portability">Available on <strong>crate feature <code>postgres_backend</code></strong> only.</div></span><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Returns target with <code>new_value</code> inserted into <code>base</code>.</p>
+<p>If the item designated by the <code>path</code> is an array element, <code>new_value</code> will be inserted before that
+item if <code>insert_after</code> is false (which is the default),
+or after it if <code>insert_after</code> is true.</p>
+<p>If the item designated by the <code>path</code> is an object field, <code>new_value</code> will be inserted only
+if the object does not already contain that key.</p>
+<ul>
+<li>All earlier steps in the <code>path</code> must exist, or the target is returned unchanged.</li>
+<li>As with the path oriented operators, negative integers that appear in the <code>path</code> count
+from the end of JSON arrays.</li>
+<li>If the last <code>path</code> step is an array index that is out of range,
+the new value is added at the beginning of the array if the index is negative,
+or at the end of the array if it is positive.</li>
+</ul>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="kw">let </span>result = diesel::select(jsonb_insert_with_insert_after::&lt;Jsonb, Array&lt;Text&gt;, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>&gt;(
+        <span class="macro">json!</span>({<span class="string">"a"</span>:[<span class="number">0</span>,<span class="number">1</span>,<span class="number">2</span>]}),
+        <span class="macro">vec!</span>[<span class="string">"a"</span>,<span class="string">"1"</span>],
+        <span class="macro">json!</span>(<span class="string">"new_value"</span>),
+        <span class="bool-val">false
+    </span>)).get_result::&lt;Value&gt;(connection)<span class="question-mark">?</span>;
+<span class="kw">let </span>expected: Value = <span class="macro">json!</span>({<span class="string">"a"</span>:[<span class="number">0</span>,<span class="string">"new_value"</span>,<span class="number">1</span>,<span class="number">2</span>]});
+<span class="macro">assert_eq!</span>(result, expected);
+
+<span class="kw">let </span>result = diesel::select(jsonb_insert_with_insert_after::&lt;Jsonb, Array&lt;Text&gt;, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>&gt;(
+        <span class="macro">json!</span>({<span class="string">"a"</span>:[<span class="number">0</span>,<span class="number">1</span>,<span class="number">2</span>]}),
+        <span class="macro">vec!</span>[<span class="string">"a"</span>,<span class="string">"1"</span>],
+        <span class="macro">json!</span>(<span class="string">"new_value"</span>),
+        <span class="bool-val">true
+    </span>)).get_result::&lt;Value&gt;(connection)<span class="question-mark">?</span>;
+<span class="kw">let </span>expected: Value = <span class="macro">json!</span>({<span class="string">"a"</span>:[<span class="number">0</span>,<span class="number">1</span>,<span class="string">"new_value"</span>,<span class="number">2</span>,]});
+<span class="macro">assert_eq!</span>(result, expected);
+</code></pre></div></div></details></section></div></main></body></html>

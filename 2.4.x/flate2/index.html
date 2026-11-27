@@ -1,0 +1,99 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="A DEFLATE-based stream compression/decompression library"><title>flate2 - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="flate2" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../static.files/storage-41dd4d93.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Crate flate2</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../flate2/index.html">flate2</a><span class="version">1.1.11</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#implementation" title="Implementation">Implementation</a></li><li><a href="#feature-flags" title="Feature Flags">Feature Flags</a><ul><li><a href="#ambiguous-feature-selection" title="Ambiguous feature selection">Ambiguous feature selection</a></li></ul></li><li><a href="#organization" title="Organization">Organization</a></li><li><a href="#about-multi-member-gzip-files" title="About multi-member Gzip files">About multi-member Gzip files</a></li></ul><h3><a href="#modules">Crate Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1>Crate <span>flate2</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/flate2/lib.rs.html#1-280">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>A DEFLATE-based stream compression/decompression library</p>
+<p>This library provides support for compression and decompression of
+DEFLATE-based streams:</p>
+<ul>
+<li>the DEFLATE format itself</li>
+<li>the zlib format</li>
+<li>gzip</li>
+</ul>
+<p>These three formats are all closely related and largely only differ in their
+headers/footers. This crate has three types in each submodule for dealing
+with these three formats.</p>
+<h2 id="implementation"><a class="doc-anchor" href="#implementation">§</a>Implementation</h2>
+<p>In addition to supporting three formats, this crate supports several different
+backends, controlled through this crate’s <em>features flags</em>:</p>
+<ul>
+<li>
+<p><code>default</code>, or <code>rust_backend</code> - this implementation currently uses the <code>miniz_oxide</code>
+crate which is a port of <code>miniz.c</code> to Rust. This feature does not
+require a C compiler, and only uses safe Rust code.</p>
+<p>Note that the <code>rust_backend</code> feature may at some point be switched to use <code>zlib-rs</code>,
+and that <code>miniz_oxide</code> should be used explicitly if this is not desired.</p>
+</li>
+<li>
+<p><code>zlib-rs</code> - this implementation utilizes the <code>zlib-rs</code> crate, a Rust rewrite of zlib.
+This backend is the fastest, at the cost of some <code>unsafe</code> Rust code.</p>
+</li>
+</ul>
+<p>Several backends implemented in C are also available.
+These are useful in case you are already using a specific C implementation
+and need the result of compression to be bit-identical.
+See the crate’s README for details on the available C backends.</p>
+<p>The <code>zlib-rs</code> backend typically outperforms all the C implementations.</p>
+<h2 id="feature-flags"><a class="doc-anchor" href="#feature-flags">§</a>Feature Flags</h2>
+<p>Activate the <code>document-features</code> cargo feature to see feature docs here</p>
+<h3 id="ambiguous-feature-selection"><a class="doc-anchor" href="#ambiguous-feature-selection">§</a>Ambiguous feature selection</h3>
+<p>As Cargo features are additive, while backends are not, there is an order in which backends
+become active if multiple are selected.</p>
+<ul>
+<li>zlib-ng</li>
+<li>zlib-rs</li>
+<li>miniz_oxide</li>
+</ul>
+<h2 id="organization"><a class="doc-anchor" href="#organization">§</a>Organization</h2>
+<p>This crate consists of three main modules: <code>bufread</code>, <code>read</code>, and <code>write</code>. Each module
+implements DEFLATE, zlib, and gzip for <a href="https://doc.rust-lang.org/nightly/alloc/io/buf_read/trait.BufRead.html" title="trait alloc::io::buf_read::BufRead"><code>std::io::BufRead</code></a> input types, <a href="https://doc.rust-lang.org/nightly/alloc/io/read/trait.Read.html" title="trait alloc::io::read::Read"><code>std::io::Read</code></a> input
+types, and <a href="https://doc.rust-lang.org/nightly/core/io/write/trait.Write.html" title="trait core::io::write::Write"><code>std::io::Write</code></a> output types respectively.</p>
+<p>Use the <a href="bufread/index.html" title="mod flate2::bufread"><code>bufread</code></a> implementations if you can provide a <code>BufRead</code> type for the input.
+The <code>&amp;[u8]</code> slice type implements the <code>BufRead</code> trait.</p>
+<p>The <a href="read/index.html" title="mod flate2::read"><code>read</code></a> implementations conveniently wrap a <code>Read</code> type in a <code>BufRead</code> implementation.
+However, the <code>read</code> implementations may
+<a href="https://github.com/rust-lang/flate2-rs/issues/338">read past the end of the input data</a>,
+making the <code>Read</code> type useless for subsequent reads of the input. If you need to re-use the
+<code>Read</code> type, wrap it in a <a href="https://doc.rust-lang.org/nightly/alloc/io/buffered/bufreader/struct.BufReader.html" title="struct alloc::io::buffered::bufreader::BufReader"><code>std::io::BufReader</code></a>, use the <code>bufread</code> implementations,
+and perform subsequent reads on the <code>BufReader</code>.</p>
+<p>The <a href="write/index.html" title="mod flate2::write"><code>write</code></a> implementations are most useful when there is no way to create a <code>BufRead</code>
+type, notably when reading async iterators (streams).</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>futures::{Stream, StreamExt};
+<span class="kw">use </span>std::io::{<span class="prelude-ty">Result</span>, Write <span class="kw">as _</span>};
+
+<span class="kw">async fn </span>decompress_gzip_stream&lt;S, I&gt;(stream: S) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;&gt;
+<span class="kw">where
+    </span>S: Stream&lt;Item = I&gt;,
+    I: AsRef&lt;[u8]&gt;
+{
+    <span class="kw">let </span><span class="kw-2">mut </span>stream = <span class="macro">std::pin::pin!</span>(stream);
+    <span class="kw">let </span><span class="kw-2">mut </span>w = Vec::&lt;u8&gt;::new();
+    <span class="kw">let </span><span class="kw-2">mut </span>decoder = flate2::write::GzDecoder::new(w);
+    <span class="kw">while let </span><span class="prelude-val">Some</span>(input) = stream.next().<span class="kw">await </span>{
+        decoder.write_all(input.as_ref())<span class="question-mark">?</span>;
+    }
+    decoder.finish()
+}</code></pre></div>
+<p>Note that types which operate over a specific trait often implement the mirroring trait as well.
+For example a <code>bufread::DeflateDecoder&lt;T&gt;</code> <em>also</em> implements the
+<a href="https://doc.rust-lang.org/nightly/core/io/write/trait.Write.html" title="trait core::io::write::Write"><code>Write</code></a> trait if <code>T: Write</code>. That is, the “dual trait” is forwarded directly
+to the underlying object if available.</p>
+<h2 id="about-multi-member-gzip-files"><a class="doc-anchor" href="#about-multi-member-gzip-files">§</a>About multi-member Gzip files</h2>
+<p>While most <code>gzip</code> files one encounters will have a single <em>member</em> that can be read
+with the <a href="bufread/struct.GzDecoder.html" title="struct flate2::bufread::GzDecoder"><code>GzDecoder</code></a>, there may be some files which have multiple members.</p>
+<p>A <a href="bufread/struct.GzDecoder.html" title="struct flate2::bufread::GzDecoder"><code>GzDecoder</code></a> will only read the first member of gzip data, which may unexpectedly
+provide partial results when a multi-member gzip file is encountered. <code>GzDecoder</code> is appropriate
+for data that is designed to be read as single members from a multi-member file. <code>bufread::GzDecoder</code>
+and <code>write::GzDecoder</code> also allow non-gzip data following gzip data to be handled.</p>
+<p>The <a href="bufread/struct.MultiGzDecoder.html" title="struct flate2::bufread::MultiGzDecoder"><code>MultiGzDecoder</code></a> on the other hand will decode all members of a <code>gzip</code> file
+into one consecutive stream of bytes, which hides the underlying <em>members</em> entirely.
+If a file contains non-gzip data after the gzip data, MultiGzDecoder will
+emit an error after decoding the gzip data. This behavior matches the <code>gzip</code>,
+<code>gunzip</code>, and <code>zcat</code> command line tools.</p>
+</div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="bufread/index.html" title="mod flate2::bufread">bufread</a></dt><dd>Types which operate over <a href="https://doc.rust-lang.org/std/io/trait.BufRead.html"><code>BufRead</code></a> streams, both encoders and decoders for
+various formats.</dd><dt><a class="mod" href="read/index.html" title="mod flate2::read">read</a></dt><dd>Types which operate over <a href="https://doc.rust-lang.org/std/io/trait.Read.html"><code>Read</code></a> streams, both encoders and decoders for
+various formats.</dd><dt><a class="mod" href="write/index.html" title="mod flate2::write">write</a></dt><dd>Types which operate over <a href="https://doc.rust-lang.org/std/io/trait.Write.html"><code>Write</code></a> streams, both encoders and decoders for
+various formats.</dd></dl><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.Compress.html" title="struct flate2::Compress">Compress</a></dt><dd>Raw in-memory compression stream for blocks of data.</dd><dt><a class="struct" href="struct.CompressError.html" title="struct flate2::CompressError">Compress<wbr>Error</a></dt><dd>Error returned when a compression object is used incorrectly or otherwise
+generates an error.</dd><dt><a class="struct" href="struct.Compression.html" title="struct flate2::Compression">Compression</a></dt><dd>When compressing data, the compression level can be specified by a value in
+this struct.</dd><dt><a class="struct" href="struct.Crc.html" title="struct flate2::Crc">Crc</a></dt><dd>The CRC calculated by a <a href="struct.CrcReader.html" title="struct flate2::CrcReader"><code>CrcReader</code></a>.</dd><dt><a class="struct" href="struct.CrcReader.html" title="struct flate2::CrcReader">CrcReader</a></dt><dd>A wrapper around a <a href="https://doc.rust-lang.org/std/io/trait.Read.html"><code>Read</code></a> that calculates the CRC.</dd><dt><a class="struct" href="struct.CrcWriter.html" title="struct flate2::CrcWriter">CrcWriter</a></dt><dd>A wrapper around a <a href="https://doc.rust-lang.org/std/io/trait.Write.html"><code>Write</code></a> that calculates the CRC.</dd><dt><a class="struct" href="struct.Decompress.html" title="struct flate2::Decompress">Decompress</a></dt><dd>Raw in-memory decompression stream for blocks of data.</dd><dt><a class="struct" href="struct.DecompressError.html" title="struct flate2::DecompressError">Decompress<wbr>Error</a></dt><dd>Error returned when a decompression object finds that the input stream of
+bytes was not a valid input stream of bytes.</dd><dt><a class="struct" href="struct.GzBuilder.html" title="struct flate2::GzBuilder">GzBuilder</a></dt><dd>A builder structure to create a new gzip Encoder.</dd><dt><a class="struct" href="struct.GzHeader.html" title="struct flate2::GzHeader">GzHeader</a></dt><dd>A structure representing the header of a gzip stream.</dd></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.FlushCompress.html" title="enum flate2::FlushCompress">Flush<wbr>Compress</a></dt><dd>Values which indicate the form of flushing to be used when compressing
+in-memory data.</dd><dt><a class="enum" href="enum.FlushDecompress.html" title="enum flate2::FlushDecompress">Flush<wbr>Decompress</a></dt><dd>Values which indicate the form of flushing to be used when
+decompressing in-memory data.</dd><dt><a class="enum" href="enum.Status.html" title="enum flate2::Status">Status</a></dt><dd>Possible status results of compressing some data or successfully
+decompressing a block of data.</dd></dl></section></div></main></body></html>

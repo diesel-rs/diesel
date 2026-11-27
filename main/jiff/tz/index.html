@@ -1,0 +1,95 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Routines for interacting with time zones and the zoneinfo database."><title>jiff::tz - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-1e18a8e7.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="jiff" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (6c709eb42 2026-11-25)" data-channel="nightly" data-search-js="search-085293d4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../static.files/storage-41dd4d93.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Module tz</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../jiff/index.html">jiff</a><span class="version">1.0.3</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module tz</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#the-iana-time-zone-database" title="The IANA Time Zone Database">The IANA Time Zone Database</a></li><li><a href="#the-system-or-local-time-zone" title="The system or “local” time zone">The system or “local” time zone</a></li><li><a href="#core-only-environments" title="Core-only environments">Core-only environments</a></li></ul><h3><a href="#structs">Module Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="../index.html">In crate jiff</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">jiff</a></div><h1>Module <span>tz</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/jiff/tz/mod.rs.html#1-378">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Routines for interacting with time zones and the zoneinfo database.</p>
+<p>The main type in this module is <a href="struct.TimeZone.html" title="struct jiff::tz::TimeZone"><code>TimeZone</code></a>. For most use cases, you may not
+even need to interact with this type at all. For example, this code snippet
+converts a civil datetime to a zone aware datetime:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::civil::date;
+
+<span class="kw">let </span>zdt = date(<span class="number">2024</span>, <span class="number">7</span>, <span class="number">10</span>).at(<span class="number">20</span>, <span class="number">48</span>, <span class="number">0</span>, <span class="number">0</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(zdt.to_string(), <span class="string">"2024-07-10T20:48:00-04:00[America/New_York]"</span>);
+</code></pre></div>
+<p>And this example parses a zone aware datetime from a string:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::ZonedDateTime;
+
+<span class="kw">let </span>zdt: ZonedDateTime = <span class="string">"2024-07-10 20:48[america/new_york]"</span>.parse()<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(zdt.year(), <span class="number">2024</span>);
+<span class="macro">assert_eq!</span>(zdt.month(), <span class="number">7</span>);
+<span class="macro">assert_eq!</span>(zdt.day(), <span class="number">10</span>);
+<span class="macro">assert_eq!</span>(zdt.hour(), <span class="number">20</span>);
+<span class="macro">assert_eq!</span>(zdt.minute(), <span class="number">48</span>);
+<span class="macro">assert_eq!</span>(zdt.offset().seconds(), -<span class="number">4 </span>* <span class="number">60 </span>* <span class="number">60</span>);
+<span class="macro">assert_eq!</span>(zdt.time_zone().iana_name(), <span class="prelude-val">Some</span>(<span class="string">"America/New_York"</span>));
+</code></pre></div>
+<p>Yet, neither of the above examples require uttering <a href="struct.TimeZone.html" title="struct jiff::tz::TimeZone"><code>TimeZone</code></a>. This is
+because the datetime types in this crate provide higher level abstractions for
+working with time zone identifiers. Nevertheless, sometimes it is useful to
+work with a <code>TimeZone</code> directly. For example, if one has a <code>TimeZone</code>, then
+conversion from a <a href="../struct.Timestamp.html" title="struct jiff::Timestamp"><code>Timestamp</code></a> to a
+<a href="../struct.ZonedDateTime.html" title="struct jiff::ZonedDateTime"><code>ZonedDateTime</code></a> is infallible:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{tz::TimeZone, Timestamp};
+
+<span class="kw">let </span>tz = TimeZone::get(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+<span class="kw">let </span>ts = Timestamp::UNIX_EPOCH;
+<span class="kw">let </span>zdt = ts.to_zoned_datetime(tz);
+<span class="macro">assert_eq!</span>(zdt.to_string(), <span class="string">"1969-12-31T19:00:00-05:00[America/New_York]"</span>);
+</code></pre></div><h2 id="the-iana-time-zone-database"><a class="doc-anchor" href="#the-iana-time-zone-database">§</a>The <a href="https://en.wikipedia.org/wiki/Tz_database">IANA Time Zone Database</a></h2>
+<p>Since a time zone is a set of rules for determining the civil time, via an
+offset from UTC, in a particular geographic region, a database is required to
+represent the full complexity of these rules in practice. The standard database
+is widespread use is the <a href="https://en.wikipedia.org/wiki/Tz_database">IANA Time Zone Database</a>. On Unix systems, this is
+typically found at <code>/usr/share/zoneinfo</code>, and Jiff will read it automatically.
+On Windows systems, there is no canonical Time Zone Database installation, and
+so Jiff embeds it into the compiled artifact. (This does not happen on Unix
+by default.)</p>
+<p>See the <a href="struct.TimeZoneDatabase.html" title="struct jiff::tz::TimeZoneDatabase"><code>TimeZoneDatabase</code></a> for more information.</p>
+<h2 id="the-system-or-local-time-zone"><a class="doc-anchor" href="#the-system-or-local-time-zone">§</a>The system or “local” time zone</h2>
+<p>In many cases, the operating system manages a “default” time zone. It might,
+for example, be how the <code>date</code> program converts a Unix timestamp to a time that
+is “local” to you.</p>
+<p>Unfortunately, there is no universal approach to discovering a system’s default
+time zone. Instead, Jiff uses heuristics like reading <code>/etc/localtime</code> on Unix,
+and calling <a href="https://learn.microsoft.com/en-us/windows/win32/api/timezoneapi/nf-timezoneapi-getdynamictimezoneinformation"><code>GetDynamicTimeZoneInformation</code></a> on Windows. But in all cases,
+Jiff will always use the IANA Time Zone Database for implementing time zone
+transition rules. (For example, Windows specific APIs for time zone transitions
+are not supported by Jiff.)</p>
+<p>Moreover, Jiff supports reading the <code>TZ</code> environment variable, as specified
+by POSIX, on all systems.</p>
+<p>To get the system’s default time zone, use <a href="struct.TimeZone.html#method.system" title="associated function jiff::tz::TimeZone::system"><code>TimeZone::system</code></a>.</p>
+<h2 id="core-only-environments"><a class="doc-anchor" href="#core-only-environments">§</a>Core-only environments</h2>
+<p>By default, Jiff attempts to read time zone rules from <code>/usr/share/zoneinfo</code>
+on Unix and a bundled database on other platforms (like on Windows). This happens
+at runtime, and aside from requiring APIs to interact with the file system
+on Unix, it also requires dynamic memory allocation.</p>
+<p>For core-only environments that don’t have file system APIs or dynamic
+memory allocation, Jiff provides a way to construct <code>TimeZone</code> values at
+compile time by compiling time zone rules into your binary. This does mean
+that your program will need to be re-compiled if the time zone rules change
+(in contrast to Jiff’s default behavior of reading <code>/usr/share/zoneinfo</code> at
+runtime on Unix), but sometimes there isn’t a practical alternative.</p>
+<p>With the <code>static</code> crate feature enabled, the <a href="crate::tz::get"><code>jiff::tz::get</code></a>
+macro becomes available in this module. This example shows how use it to build
+a <code>TimeZone</code> at compile time. Here, we find the next DST transition from a
+particular timestamp in <code>Europe/Zurich</code>, and then print that in local time for
+Zurich:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{tz::{<span class="self">self</span>, TimeZone}, Timestamp};
+
+<span class="kw">static </span>TZ: TimeZone = <span class="macro">tz::get!</span>(<span class="string">"Europe/Zurich"</span>);
+
+<span class="kw">let </span>ts: Timestamp = <span class="string">"2025-02-25T00:00Z"</span>.parse()<span class="question-mark">?</span>;
+<span class="kw">let </span><span class="prelude-val">Some</span>(next_transition) = TZ.following(ts).next() <span class="kw">else </span>{
+    <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">"no time zone transitions"</span>.into());
+};
+<span class="kw">let </span>zdt = next_transition.timestamp().to_zoned_datetime(TZ.clone());
+<span class="macro">assert_eq!</span>(zdt.to_string(), <span class="string">"2025-03-30T03:00:00+02:00[Europe/Zurich]"</span>);
+</code></pre></div>
+<p>The above example does not require dynamic memory allocation or access to file
+system APIs. It also <em>only</em> embeds the <code>Europe/Zurich</code> time zone into your
+compiled binary.</p>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.AmbiguousTimestamp.html" title="struct jiff::tz::AmbiguousTimestamp">Ambiguous<wbr>Timestamp</a></dt><dd>A possibly ambiguous <a href="../struct.Timestamp.html" title="struct jiff::Timestamp"><code>Timestamp</code></a>, created by
+<a href="struct.TimeZone.html#method.to_ambiguous_timestamp" title="method jiff::tz::TimeZone::to_ambiguous_timestamp"><code>TimeZone::to_ambiguous_timestamp</code></a>.</dd><dt><a class="struct" href="struct.AmbiguousZonedDateTime.html" title="struct jiff::tz::AmbiguousZonedDateTime">Ambiguous<wbr>Zoned<wbr>Date<wbr>Time</a></dt><dd>A possibly ambiguous <a href="../struct.ZonedDateTime.html" title="struct jiff::ZonedDateTime"><code>ZonedDateTime</code></a>, created by
+<a href="struct.TimeZone.html#method.to_ambiguous_zoned_datetime" title="method jiff::tz::TimeZone::to_ambiguous_zoned_datetime"><code>TimeZone::to_ambiguous_zoned_datetime</code></a>.</dd><dt><a class="struct" href="struct.Offset.html" title="struct jiff::tz::Offset">Offset</a></dt><dd>Represents a fixed time zone offset.</dd><dt><a class="struct" href="struct.OffsetArithmetic.html" title="struct jiff::tz::OffsetArithmetic">Offset<wbr>Arithmetic</a></dt><dd>Options for <a href="struct.Offset.html#method.checked_add" title="method jiff::tz::Offset::checked_add"><code>Offset::checked_add</code></a> and <a href="struct.Offset.html#method.checked_sub" title="method jiff::tz::Offset::checked_sub"><code>Offset::checked_sub</code></a>.</dd><dt><a class="struct" href="struct.OffsetRound.html" title="struct jiff::tz::OffsetRound">Offset<wbr>Round</a></dt><dd>Options for <a href="struct.Offset.html#method.round" title="method jiff::tz::Offset::round"><code>Offset::round</code></a>.</dd><dt><a class="struct" href="struct.TimeZone.html" title="struct jiff::tz::TimeZone">Time<wbr>Zone</a></dt><dd>A representation of a <a href="https://en.wikipedia.org/wiki/Time_zone">time zone</a>.</dd><dt><a class="struct" href="struct.TimeZoneDatabase.html" title="struct jiff::tz::TimeZoneDatabase">Time<wbr>Zone<wbr>Database</a></dt><dd>A handle to a <a href="https://en.wikipedia.org/wiki/Tz_database">IANA Time Zone Database</a>.</dd><dt><a class="struct" href="struct.TimeZoneFollowingTransitions.html" title="struct jiff::tz::TimeZoneFollowingTransitions">Time<wbr>Zone<wbr>Following<wbr>Transitions</a></dt><dd>An iterator over time zone transitions going forward in time.</dd><dt><a class="struct" href="struct.TimeZoneLocation.html" title="struct jiff::tz::TimeZoneLocation">Time<wbr>Zone<wbr>Location</a></dt><dd>The geographical location corresponding to a primary time zone identifier.</dd><dt><a class="struct" href="struct.TimeZoneName.html" title="struct jiff::tz::TimeZoneName">Time<wbr>Zone<wbr>Name</a></dt><dd>A name for a time zone yield by the <a href="struct.TimeZoneNameIter.html" title="struct jiff::tz::TimeZoneNameIter"><code>TimeZoneNameIter</code></a> iterator.</dd><dt><a class="struct" href="struct.TimeZoneNameIter.html" title="struct jiff::tz::TimeZoneNameIter">Time<wbr>Zone<wbr>Name<wbr>Iter</a></dt><dd>An iterator over the time zone identifiers in a <a href="struct.TimeZoneDatabase.html" title="struct jiff::tz::TimeZoneDatabase"><code>TimeZoneDatabase</code></a>.</dd><dt><a class="struct" href="struct.TimeZoneOffsetInfo.html" title="struct jiff::tz::TimeZoneOffsetInfo">Time<wbr>Zone<wbr>Offset<wbr>Info</a></dt><dd>An offset along with DST status and a time zone abbreviation.</dd><dt><a class="struct" href="struct.TimeZonePrecedingTransitions.html" title="struct jiff::tz::TimeZonePrecedingTransitions">Time<wbr>Zone<wbr>Preceding<wbr>Transitions</a></dt><dd>An iterator over time zone transitions going backward in time.</dd><dt><a class="struct" href="struct.TimeZoneTransition.html" title="struct jiff::tz::TimeZoneTransition">Time<wbr>Zone<wbr>Transition</a></dt><dd>A representation a single time zone transition.</dd></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.AmbiguousOffset.html" title="enum jiff::tz::AmbiguousOffset">Ambiguous<wbr>Offset</a></dt><dd>A possibly ambiguous <a href="struct.Offset.html" title="struct jiff::tz::Offset"><code>Offset</code></a>.</dd><dt><a class="enum" href="enum.Disambiguation.html" title="enum jiff::tz::Disambiguation">Disambiguation</a></dt><dd>Configuration for resolving ambiguous datetimes in a particular time zone.</dd><dt><a class="enum" href="enum.Dst.html" title="enum jiff::tz::Dst">Dst</a></dt><dd>An enum indicating whether a particular datetime is in DST or not.</dd><dt><a class="enum" href="enum.OffsetConflict.html" title="enum jiff::tz::OffsetConflict">Offset<wbr>Conflict</a></dt><dd>Configuration for resolving disparities between an offset and a time zone.</dd></dl><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><dl class="item-table"><dt><a class="fn" href="fn.db.html" title="fn jiff::tz::db">db</a></dt><dd>Returns a copy of the global <a href="struct.TimeZoneDatabase.html" title="struct jiff::tz::TimeZoneDatabase"><code>TimeZoneDatabase</code></a>.</dd><dt><a class="fn" href="fn.offset.html" title="fn jiff::tz::offset">offset</a></dt><dd>Creates a new time zone offset in a <code>const</code> context from a given number
+of hours.</dd><dt><a class="fn" href="fn.reset_system_time_zone_cache.html" title="fn jiff::tz::reset_system_time_zone_cache">reset_<wbr>system_<wbr>time_<wbr>zone_<wbr>cache</a></dt><dd>Resets Jiff’s internal and global cache for this system’s configured time
+zone.</dd></dl></section></div></main></body></html>

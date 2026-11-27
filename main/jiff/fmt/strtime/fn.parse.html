@@ -1,0 +1,46 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Parse the given `input` according to the given `format` string."><title>parse in jiff::fmt::strtime - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-1e18a8e7.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="jiff" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (6c709eb42 2026-11-25)" data-channel="nightly" data-search-js="search-085293d4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../../static.files/storage-41dd4d93.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc fn"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">parse</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../jiff/index.html">jiff</a><span class="version">1.0.3</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">parse</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#errors" title="Errors">Errors</a></li><li><a href="#example" title="Example">Example</a></li><li><a href="#example-parse-rfc-3339-timestamp-with-fractional-seconds" title="Example: parse RFC 3339 timestamp with fractional seconds">Example: parse RFC 3339 timestamp with fractional seconds</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="index.html">In jiff::<wbr>fmt::<wbr>strtime</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../../index.html">jiff</a>::<wbr><a href="../index.html">fmt</a>::<wbr><a href="index.html">strtime</a></div><h1>Function <span class="fn">parse</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../../src/jiff/fmt/strtime/mod.rs.html#354-359">Source</a> </span></div><pre class="rust item-decl"><code>pub fn parse(
+    format: impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.AsRef.html" title="trait core::convert::AsRef">AsRef</a>&lt;[<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>]&gt;,
+    input: impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.AsRef.html" title="trait core::convert::AsRef">AsRef</a>&lt;[<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>]&gt;,
+) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="struct" href="struct.BrokenDownTime.html" title="struct jiff::fmt::strtime::BrokenDownTime">BrokenDownTime</a>, <a class="struct" href="../../struct.Error.html" title="struct jiff::Error">Error</a>&gt;</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Parse the given <code>input</code> according to the given <code>format</code> string.</p>
+<p>See the <a href="index.html" title="mod jiff::fmt::strtime">module documentation</a> for details on what’s supported.</p>
+<p>This routine is the same as <a href="struct.BrokenDownTime.html#method.parse" title="associated function jiff::fmt::strtime::BrokenDownTime::parse"><code>BrokenDownTime::parse</code></a>, but may be more
+convenient to call.</p>
+<h2 id="errors"><a class="doc-anchor" href="#errors">§</a>Errors</h2>
+<p>This returns an error when parsing failed. This might happen because
+the format string itself was invalid, or because the input didn’t match
+the format string.</p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<p>This example shows how to parse something resembling a RFC 2822 datetime:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil::date, fmt::strtime, tz};
+
+<span class="kw">let </span>zdt = strtime::parse(
+    <span class="string">"%a, %d %b %Y %T %z"</span>,
+    <span class="string">"Mon, 15 Jul 2024 16:24:59 -0400"</span>,
+)<span class="question-mark">?
+</span>.to_zoned_datetime()<span class="question-mark">?</span>;
+
+<span class="kw">let </span>tz = tz::offset(-<span class="number">4</span>).to_time_zone();
+<span class="macro">assert_eq!</span>(
+    zdt,
+    date(<span class="number">2024</span>, <span class="number">7</span>, <span class="number">15</span>).at(<span class="number">16</span>, <span class="number">24</span>, <span class="number">59</span>, <span class="number">0</span>).to_zoned_datetime(tz)<span class="question-mark">?
+</span>);
+</code></pre></div>
+<p>Of course, one should prefer using the <a href="../rfc2822/index.html" title="mod jiff::fmt::rfc2822"><code>fmt::rfc2822</code></a>
+module, which contains a dedicated RFC 2822 parser. For example, the above
+format string does not part all valid RFC 2822 datetimes, since, e.g.,
+the leading weekday is optional and so are the seconds in the time, but
+<code>strptime</code>-like APIs have no way of expressing such requirements.</p>
+<h2 id="example-parse-rfc-3339-timestamp-with-fractional-seconds"><a class="doc-anchor" href="#example-parse-rfc-3339-timestamp-with-fractional-seconds">§</a>Example: parse RFC 3339 timestamp with fractional seconds</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil::date, fmt::strtime};
+
+<span class="kw">let </span>zdt = strtime::parse(
+    <span class="string">"%Y-%m-%dT%H:%M:%S%.f%:z"</span>,
+    <span class="string">"2024-07-15T16:24:59.123456789-04:00"</span>,
+)<span class="question-mark">?
+</span>.to_zoned_datetime()<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(
+    zdt,
+    date(<span class="number">2024</span>, <span class="number">7</span>, <span class="number">15</span>).at(<span class="number">16</span>, <span class="number">24</span>, <span class="number">59</span>, <span class="number">123_456_789</span>).in_tz(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>,
+);
+</code></pre></div></div></details></section></div></main></body></html>

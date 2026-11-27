@@ -1,0 +1,137 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="This is priority queue that supports elements priority modification and early removal."><title>keyed_priority_queue - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="keyed_priority_queue" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../static.files/storage-41dd4d93.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Crate keyed_priority_queue</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../keyed_priority_queue/index.html">keyed_<wbr>priority_<wbr>queue</a><span class="version">0.4.2</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#examples" title="Examples">Examples</a></li></ul><h3><a href="#structs">Crate Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1>Crate <span>keyed_<wbr>priority_<wbr>queue</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/keyed_priority_queue/lib.rs.html#1-161">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>This is priority queue that supports elements priority modification and early removal.</p>
+<p>It uses HashMap and own implementation of binary heap to achieve this.</p>
+<p>Each entry has associated <em>key</em> and <em>priority</em>.
+Keys must be unique, and hashable; priorities must implement Ord trait.</p>
+<p>Popping returns element with biggest priority.
+Pushing adds element to queue.
+Also it is possible to change priority or remove item by key.</p>
+<p>Pop, push, change priority, remove by key have <em><strong>O(log n)</strong></em> time complexity;
+peek, lookup by key are <em><strong>O(1)</strong></em>.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<p>This is implementation of <a href="https://en.wikipedia.org/wiki/A*_search_algorithm">A* algorithm</a> for 2D grid.
+Each cell in grid has the cost.
+This algorithm finds shortest path to target using heuristics.</p>
+<p>Let open set be the set of position where algorithm can move in next step.
+Sometimes better path for node in open set is found
+so the priority of it needs to be updated with new value.</p>
+<p>This example shows how to change priority in <a href="struct.KeyedPriorityQueue.html"><code>KeyedPriorityQueue</code></a> when needed.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>keyed_priority_queue::{KeyedPriorityQueue, Entry};
+<span class="kw">use </span>std::cmp::Reverse;
+<span class="kw">use </span>std::collections::HashSet;
+<span class="kw">use </span>std::ops::Index;
+
+<span class="kw">struct </span>Field {
+    rows: usize,
+    columns: usize,
+    costs: Box&lt;[u32]&gt;,
+}
+
+<span class="attr">#[derive(Eq, PartialEq, Debug, Hash, Copy, Clone)]
+</span><span class="kw">struct </span>Position {
+    row: usize,
+    column: usize,
+}
+
+<span class="kw">impl </span>Index&lt;Position&gt; <span class="kw">for </span>Field {
+    <span class="kw">type </span>Output = u32;
+
+    <span class="kw">fn </span>index(<span class="kw-2">&amp;</span><span class="self">self</span>, index: Position) -&gt; <span class="kw-2">&amp;</span><span class="self">Self</span>::Output {
+        <span class="kw-2">&amp;</span><span class="self">self</span>.costs[<span class="self">self</span>.columns * index.row + index.column]
+    }
+}
+
+<span class="comment">// From cell we can move upper, right, bottom and left
+</span><span class="kw">fn </span>get_neighbors(pos: Position, field: <span class="kw-2">&amp;</span>Field) -&gt; Vec&lt;Position&gt; {
+    <span class="kw">let </span><span class="kw-2">mut </span>items = Vec::with_capacity(<span class="number">4</span>);
+    <span class="kw">if </span>pos.row &gt; <span class="number">0 </span>{
+        items.push(Position { row: pos.row - <span class="number">1</span>, column: pos.column });
+    }
+    <span class="kw">if </span>pos.row + <span class="number">1 </span>&lt; field.rows {
+        items.push(Position { row: pos.row + <span class="number">1</span>, column: pos.column });
+    }
+    <span class="kw">if </span>pos.column &gt; <span class="number">0 </span>{
+        items.push(Position { row: pos.row, column: pos.column - <span class="number">1 </span>});
+    }
+    <span class="kw">if </span>pos.column + <span class="number">1 </span>&lt; field.columns {
+        items.push(Position { row: pos.row, column: pos.column + <span class="number">1 </span>});
+    }
+    items
+}
+
+<span class="kw">fn </span>find_path(start: Position, target: Position, field: <span class="kw-2">&amp;</span>Field) -&gt; <span class="prelude-ty">Option</span>&lt;u32&gt; {
+    <span class="kw">if </span>start == target {
+        <span class="kw">return </span><span class="prelude-val">Some</span>(field[start]);
+    }
+    <span class="kw">let </span>calc_heuristic = |pos: Position| -&gt; u32 {
+        ((target.row <span class="kw">as </span>isize - pos.row <span class="kw">as </span>isize).abs()
+            + (target.column <span class="kw">as </span>isize - pos.column <span class="kw">as </span>isize).abs()) <span class="kw">as </span>u32
+    };
+
+    <span class="comment">// Already handled this points
+    </span><span class="kw">let </span><span class="kw-2">mut </span>closed_set: HashSet&lt;Position&gt; = HashSet::new();
+    <span class="comment">// Positions sortered by total cost and real cost.
+    // We prefer items with lower real cost if total ones are same.
+    </span><span class="attr">#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
+    </span><span class="kw">struct </span>Cost {
+        total: u32,
+        real: u32,
+    }
+    <span class="comment">// Queue that contains all nodes that available for next step
+    // Min-queue required so Reverse struct used as priority.
+    </span><span class="kw">let </span><span class="kw-2">mut </span>available = KeyedPriorityQueue::&lt;Position, Reverse&lt;Cost&gt;&gt;::new();
+    available.push(
+        start,
+        Reverse(Cost {
+            total: calc_heuristic(start),
+            real: <span class="number">0</span>,
+        }),
+    );
+    <span class="kw">while let </span><span class="prelude-val">Some</span>((current_pos, Reverse(current_cost))) = available.pop() {
+        <span class="comment">// We have reached target
+        </span><span class="kw">if </span>current_pos == target {
+            <span class="kw">return </span><span class="prelude-val">Some</span>(current_cost.real);
+        }
+
+        closed_set.insert(current_pos);
+
+        <span class="kw">for </span>next <span class="kw">in </span>get_neighbors(current_pos, <span class="kw-2">&amp;</span>field).into_iter()
+            .filter(|x| !closed_set.contains(x))
+            {
+                <span class="kw">let </span>real = field[next] + current_cost.real;
+                <span class="kw">let </span>total = current_cost.real + calc_heuristic(next);
+                <span class="kw">let </span>cost = Cost { total, real };
+                <span class="comment">// Entire this interaction will make only one hash lookup
+                </span><span class="kw">match </span>available.entry(next) {
+                    Entry::Vacant(entry) =&gt; {
+                        <span class="comment">// Add new position to queue
+                        </span>entry.set_priority(Reverse(cost));
+                    }
+                    Entry::Occupied(entry) <span class="kw">if </span><span class="kw-2">*</span>entry.get_priority() &lt; Reverse(cost) =&gt; {
+                        <span class="comment">// Have found better path to node in queue
+                        </span>entry.set_priority(Reverse(cost));
+                    }
+                    <span class="kw">_ </span>=&gt; { <span class="comment">/* Have found worse path. */ </span>}
+                };
+            }
+    }
+    <span class="prelude-val">None
+</span>}
+
+<span class="kw">let </span>field = Field {
+   rows: <span class="number">4</span>,
+   columns: <span class="number">4</span>,
+   costs: <span class="macro">vec!</span>[
+       <span class="number">1</span>, <span class="number">3</span>, <span class="number">3</span>, <span class="number">6</span>, <span class="comment">//
+       </span><span class="number">4</span>, <span class="number">4</span>, <span class="number">3</span>, <span class="number">8</span>, <span class="comment">//
+       </span><span class="number">3</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">4</span>, <span class="comment">//
+       </span><span class="number">4</span>, <span class="number">8</span>, <span class="number">9</span>, <span class="number">4</span>, <span class="comment">//
+   </span>].into_boxed_slice(),
+};
+
+<span class="kw">let </span>start = Position { row: <span class="number">0</span>, column: <span class="number">0 </span>};
+<span class="kw">let </span>end = Position { row: <span class="number">3</span>, column: <span class="number">3 </span>};
+<span class="macro">assert_eq!</span>(find_path(start, end, <span class="kw-2">&amp;</span>field), <span class="prelude-val">Some</span>(<span class="number">18</span>));</code></pre></div></div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.KeyedPriorityQueue.html" title="struct keyed_priority_queue::KeyedPriorityQueue">Keyed<wbr>Priority<wbr>Queue</a></dt><dd>A priority queue that support lookup by key.</dd><dt><a class="struct" href="struct.KeyedPriorityQueueBorrowIter.html" title="struct keyed_priority_queue::KeyedPriorityQueueBorrowIter">Keyed<wbr>Priority<wbr>Queue<wbr>Borrow<wbr>Iter</a></dt><dd>This is unordered borrowing iterator over queue.</dd><dt><a class="struct" href="struct.KeyedPriorityQueueIterator.html" title="struct keyed_priority_queue::KeyedPriorityQueueIterator">Keyed<wbr>Priority<wbr>Queue<wbr>Iterator</a></dt><dd>This is consuming iterator that returns elements in decreasing order</dd><dt><a class="struct" href="struct.OccupiedEntry.html" title="struct keyed_priority_queue::OccupiedEntry">Occupied<wbr>Entry</a></dt><dd>A view into an occupied entry in a <a href="struct.KeyedPriorityQueue.html"><code>KeyedPriorityQueue</code></a>.
+It is part of the <a href="enum.Entry.html"><code>Entry</code></a> enum.</dd><dt><a class="struct" href="struct.SetPriorityNotFoundError.html" title="struct keyed_priority_queue::SetPriorityNotFoundError">SetPriority<wbr>NotFound<wbr>Error</a></dt><dd>This is error type for <a href="struct.KeyedPriorityQueue.html#method.set_priority"><code>set_priority</code></a> method of <a href="struct.KeyedPriorityQueue.html"><code>KeyedPriorityQueue</code></a>.
+It means that queue doesn’t contain such key.</dd><dt><a class="struct" href="struct.VacantEntry.html" title="struct keyed_priority_queue::VacantEntry">Vacant<wbr>Entry</a></dt><dd>A view into a vacant entry in a <a href="struct.KeyedPriorityQueue.html"><code>KeyedPriorityQueue</code></a>.
+It is part of the <a href="enum.Entry.html"><code>Entry</code></a> enum.</dd></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.Entry.html" title="enum keyed_priority_queue::Entry">Entry</a></dt><dd>A view into a single entry in a queue, which may either be vacant or occupied.</dd></dl></section></div></main></body></html>

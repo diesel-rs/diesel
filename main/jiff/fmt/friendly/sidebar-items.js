@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Designator","Direction","FractionalUnit","Spacing"],"struct":["SpanParser","SpanPrinter"]};

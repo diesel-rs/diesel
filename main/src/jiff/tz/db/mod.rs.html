@@ -1,0 +1,1145 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/jiff-1.0.3/src/tz/db/mod.rs`."><title>mod.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-1e18a8e7.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="jiff" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (6c709eb42 2026-11-25)" data-channel="nightly" data-search-js="search-085293d4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../../../static.files/storage-41dd4d93.js"></script><script defer src="../../../../static.files/src-script-813739b1.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">jiff/tz/db/</div>mod.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-4"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span><a href="../../../../jiff_core/util/struct.ArrayStr.html">jcore::util::ArrayStr</a>;
+<a href=#2 id=2 data-nosnippet>2</a>
+<a href=#3 id=3 data-nosnippet>3</a><span class="kw">use crate</span>::{
+<a href=#4 id=4 data-nosnippet>4</a>    error::{<a href="../../error/mod.rs.html#51-62">Error</a>, <a href="../../error/tz/db.rs.html#5-26">tz::db::Error</a> <span class="kw">as </span>E},
+<a href=#5 id=5 data-nosnippet>5</a>    <a href="../timezone.rs.html#260-262">tz::TimeZone</a>,
+<a href=#6 id=6 data-nosnippet>6</a>    util::{<a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html">sync::Arc</a>, <a href="../../util/mod.rs.html#18">utf8</a>},
+<a href=#7 id=7 data-nosnippet>7</a>};
+<a href=#8 id=8 data-nosnippet>8</a>
+<a href=#9 id=9 data-nosnippet>9</a><span class="kw">mod </span><a href="bundled/mod.rs.html#1-20">bundled</a>;
+<a href=#10 id=10 data-nosnippet>10</a><span class="kw">mod </span><a href="concatenated/mod.rs.html#1-8">concatenated</a>;
+<a href=#11 id=11 data-nosnippet>11</a><span class="kw">mod </span><a href="metadata.rs.html#2-3958">metadata</a>;
+<a href=#12 id=12 data-nosnippet>12</a><span class="kw">mod </span><a href="zoneinfo/mod.rs.html#1-8">zoneinfo</a>;
+<a href=#13 id=13 data-nosnippet>13</a>
+<a href=#14 id=14 data-nosnippet>14</a><span class="doccomment">/// Returns a copy of the global [`TimeZoneDatabase`].
+<a href=#15 id=15 data-nosnippet>15</a>///
+<a href=#16 id=16 data-nosnippet>16</a>/// This is the same database used for convenience routines like
+<a href=#17 id=17 data-nosnippet>17</a>/// [`Timestamp::in_tz`](crate::Timestamp::in_tz) and parsing routines for
+<a href=#18 id=18 data-nosnippet>18</a>/// [`ZonedDateTime`](crate::ZonedDateTime) that need to do IANA time zone
+<a href=#19 id=19 data-nosnippet>19</a>/// identifier lookups. Basically, whenever an implicit time zone database is
+<a href=#20 id=20 data-nosnippet>20</a>/// needed, it is *this* copy of the time zone database that is used.
+<a href=#21 id=21 data-nosnippet>21</a>///
+<a href=#22 id=22 data-nosnippet>22</a>/// In feature configurations where a time zone database cannot interact with
+<a href=#23 id=23 data-nosnippet>23</a>/// the file system (like when `std` is not enabled), this returns a database
+<a href=#24 id=24 data-nosnippet>24</a>/// where every lookup will fail.
+<a href=#25 id=25 data-nosnippet>25</a>///
+<a href=#26 id=26 data-nosnippet>26</a>/// # Example
+<a href=#27 id=27 data-nosnippet>27</a>///
+<a href=#28 id=28 data-nosnippet>28</a>/// ```
+<a href=#29 id=29 data-nosnippet>29</a>/// use jiff::tz;
+<a href=#30 id=30 data-nosnippet>30</a>///
+<a href=#31 id=31 data-nosnippet>31</a>/// assert!(tz::db().get("Antarctica/Troll").is_ok());
+<a href=#32 id=32 data-nosnippet>32</a>/// assert!(tz::db().get("does-not-exist").is_err());
+<a href=#33 id=33 data-nosnippet>33</a>/// ```
+<a href=#34 id=34 data-nosnippet>34</a></span><span class="kw">pub fn </span><a href="../../../../jiff/tz/fn.db.html">db</a>() -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'static </span><a href="#219-221">TimeZoneDatabase</a> {
+<a href=#35 id=35 data-nosnippet>35</a>    <span class="comment">// #[cfg(any(not(feature = "std"), miri))]
+<a href=#36 id=36 data-nosnippet>36</a>    </span><span class="attr">#[cfg(not(feature = <span class="string">"std"</span>))]
+<a href=#37 id=37 data-nosnippet>37</a>    </span>{
+<a href=#38 id=38 data-nosnippet>38</a>        <span class="comment">// Without `std` there's no lazily initialized global state. But when
+<a href=#39 id=39 data-nosnippet>39</a>        // the tzdb is bundled into the binary, we can still hand out a usable
+<a href=#40 id=40 data-nosnippet>40</a>        // database: the bundled database needs no allocation, so it can be
+<a href=#41 id=41 data-nosnippet>41</a>        // constructed in a `const`. (Without `std`, the zoneinfo and
+<a href=#42 id=42 data-nosnippet>42</a>        // concatenated databases are both unavailable, so there's nothing to
+<a href=#43 id=43 data-nosnippet>43</a>        // prefer over the bundle.)
+<a href=#44 id=44 data-nosnippet>44</a>        //
+<a href=#45 id=45 data-nosnippet>45</a>        // Ref: https://github.com/BurntSushi/jiff/issues/533
+<a href=#46 id=46 data-nosnippet>46</a>        </span><span class="attr">#[cfg(any(
+<a href=#47 id=47 data-nosnippet>47</a>            feature = <span class="string">"tzdb-bundle-always"</span>,
+<a href=#48 id=48 data-nosnippet>48</a>            all(
+<a href=#49 id=49 data-nosnippet>49</a>                feature = <span class="string">"tzdb-bundle-platform"</span>,
+<a href=#50 id=50 data-nosnippet>50</a>                any(windows, target_family = <span class="string">"wasm"</span>),
+<a href=#51 id=51 data-nosnippet>51</a>            ),
+<a href=#52 id=52 data-nosnippet>52</a>        ))]
+<a href=#53 id=53 data-nosnippet>53</a>        </span><span class="kw">static </span>DB: TimeZoneDatabase = TimeZoneDatabase {
+<a href=#54 id=54 data-nosnippet>54</a>            inner: Repr::Bundled(bundled::Database::new()),
+<a href=#55 id=55 data-nosnippet>55</a>        };
+<a href=#56 id=56 data-nosnippet>56</a>        <span class="attr">#[cfg(not(any(
+<a href=#57 id=57 data-nosnippet>57</a>            feature = <span class="string">"tzdb-bundle-always"</span>,
+<a href=#58 id=58 data-nosnippet>58</a>            all(
+<a href=#59 id=59 data-nosnippet>59</a>                feature = <span class="string">"tzdb-bundle-platform"</span>,
+<a href=#60 id=60 data-nosnippet>60</a>                any(windows, target_family = <span class="string">"wasm"</span>),
+<a href=#61 id=61 data-nosnippet>61</a>            ),
+<a href=#62 id=62 data-nosnippet>62</a>        )))]
+<a href=#63 id=63 data-nosnippet>63</a>        </span><span class="kw">static </span>DB: TimeZoneDatabase = TimeZoneDatabase::none();
+<a href=#64 id=64 data-nosnippet>64</a>        <span class="kw-2">&amp;</span>DB
+<a href=#65 id=65 data-nosnippet>65</a>    }
+<a href=#66 id=66 data-nosnippet>66</a>    <span class="comment">// #[cfg(all(feature = "std", not(miri)))]
+<a href=#67 id=67 data-nosnippet>67</a>    </span><span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
+<a href=#68 id=68 data-nosnippet>68</a>    </span>{
+<a href=#69 id=69 data-nosnippet>69</a>        <span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/std/sync/once_lock/struct.OnceLock.html">std::sync::OnceLock</a>;
+<a href=#70 id=70 data-nosnippet>70</a>
+<a href=#71 id=71 data-nosnippet>71</a>        <span class="kw">static </span>DB: <a href="https://doc.rust-lang.org/nightly/std/sync/once_lock/struct.OnceLock.html">OnceLock</a>&lt;<a href="#219-221">TimeZoneDatabase</a>&gt; = <a href="https://doc.rust-lang.org/nightly/std/sync/once_lock/struct.OnceLock.html">OnceLock</a>::<a href="https://doc.rust-lang.org/nightly/std/sync/once_lock/struct.OnceLock.html#method.new">new</a>();
+<a href=#72 id=72 data-nosnippet>72</a>        <a href="#71">DB</a>.<a href="https://doc.rust-lang.org/nightly/std/sync/once_lock/struct.OnceLock.html#method.get_or_init">get_or_init</a>(|| {
+<a href=#73 id=73 data-nosnippet>73</a>            <span class="kw">let </span>db = <a href="#219-221">TimeZoneDatabase</a>::<a href="#297-341">from_env</a>();
+<a href=#74 id=74 data-nosnippet>74</a>            <span class="macro">debug!</span>(<span class="string">"initialized global time zone database: {db:?}"</span>);
+<a href=#75 id=75 data-nosnippet>75</a>            <a href="#73">db</a>
+<a href=#76 id=76 data-nosnippet>76</a>        })
+<a href=#77 id=77 data-nosnippet>77</a>    }
+<a href=#78 id=78 data-nosnippet>78</a>}
+<a href=#79 id=79 data-nosnippet>79</a>
+<a href=#80 id=80 data-nosnippet>80</a><span class="doccomment">/// A handle to a [IANA Time Zone Database].
+<a href=#81 id=81 data-nosnippet>81</a>///
+<a href=#82 id=82 data-nosnippet>82</a>/// A `TimeZoneDatabase` provides a way to lookup [`TimeZone`]s by their
+<a href=#83 id=83 data-nosnippet>83</a>/// human readable identifiers, such as `America/Los_Angeles` and
+<a href=#84 id=84 data-nosnippet>84</a>/// `Europe/Warsaw`.
+<a href=#85 id=85 data-nosnippet>85</a>///
+<a href=#86 id=86 data-nosnippet>86</a>/// It is rare to need to create or use this type directly. Routines like zoned
+<a href=#87 id=87 data-nosnippet>87</a>/// datetime parsing and time zone conversion provide convenience routines for
+<a href=#88 id=88 data-nosnippet>88</a>/// using an implicit global time zone database by default. This global time
+<a href=#89 id=89 data-nosnippet>89</a>/// zone database is available via [`jiff::tz::db`](crate::tz::db()`). But
+<a href=#90 id=90 data-nosnippet>90</a>/// lower level parsing routines such as
+<a href=#91 id=91 data-nosnippet>91</a>/// [`fmt::temporal::DateTimeParser::parse_zoned_datetime_with`](crate::fmt::temporal::DateTimeParser::parse_zoned_datetime_with)
+<a href=#92 id=92 data-nosnippet>92</a>/// and
+<a href=#93 id=93 data-nosnippet>93</a>/// [`civil::DateTime::to_zoned_datetime`](crate::civil::DateTime::to_zoned_datetime)
+<a href=#94 id=94 data-nosnippet>94</a>/// provide a means to use a custom copy of a `TimeZoneDatabase`.
+<a href=#95 id=95 data-nosnippet>95</a>///
+<a href=#96 id=96 data-nosnippet>96</a>/// # Platform behavior
+<a href=#97 id=97 data-nosnippet>97</a>///
+<a href=#98 id=98 data-nosnippet>98</a>/// This behavior is subject to change.
+<a href=#99 id=99 data-nosnippet>99</a>///
+<a href=#100 id=100 data-nosnippet>100</a>/// On Unix systems, and when the `tzdb-zoneinfo` crate feature is enabled
+<a href=#101 id=101 data-nosnippet>101</a>/// (which it is by default), Jiff will read the `/usr/share/zoneinfo`
+<a href=#102 id=102 data-nosnippet>102</a>/// directory for time zone data.
+<a href=#103 id=103 data-nosnippet>103</a>///
+<a href=#104 id=104 data-nosnippet>104</a>/// On Windows systems and when the `tzdb-bundle-platform` crate feature is
+<a href=#105 id=105 data-nosnippet>105</a>/// enabled (which it is by default), _or_ when the `tzdb-bundle-always` crate
+<a href=#106 id=106 data-nosnippet>106</a>/// feature is enabled, then the `jiff-tzdb` crate will be used to embed the
+<a href=#107 id=107 data-nosnippet>107</a>/// entire Time Zone Database into the compiled artifact.
+<a href=#108 id=108 data-nosnippet>108</a>///
+<a href=#109 id=109 data-nosnippet>109</a>/// On Android systems, and when the `tzdb-concatenated` crate feature is
+<a href=#110 id=110 data-nosnippet>110</a>/// enabled (which it is by default), Jiff will attempt to read a concatenated
+<a href=#111 id=111 data-nosnippet>111</a>/// zoneinfo database using the `ANDROID_DATA` or `ANDROID_ROOT` environment
+<a href=#112 id=112 data-nosnippet>112</a>/// variables.
+<a href=#113 id=113 data-nosnippet>113</a>///
+<a href=#114 id=114 data-nosnippet>114</a>/// In general, using `/usr/share/zoneinfo` (or an equivalent) is heavily
+<a href=#115 id=115 data-nosnippet>115</a>/// preferred in lieu of embedding the database into your compiled artifact.
+<a href=#116 id=116 data-nosnippet>116</a>/// The reason is because your system copy of the Time Zone Database may be
+<a href=#117 id=117 data-nosnippet>117</a>/// updated, perhaps a few times a year, and it is better to get seamless
+<a href=#118 id=118 data-nosnippet>118</a>/// updates through your system rather than needing to wait on a Rust crate
+<a href=#119 id=119 data-nosnippet>119</a>/// to update and then rebuild your software. The bundling approach should
+<a href=#120 id=120 data-nosnippet>120</a>/// only be used when there is no plausible alternative. For example, Windows
+<a href=#121 id=121 data-nosnippet>121</a>/// has no canonical location for a copy of the Time Zone Database. Indeed,
+<a href=#122 id=122 data-nosnippet>122</a>/// this is why the Cargo configuration of Jiff specifically does not enabled
+<a href=#123 id=123 data-nosnippet>123</a>/// bundling by default on Unix systems, but does enable it by default on
+<a href=#124 id=124 data-nosnippet>124</a>/// Windows systems. Of course, if you really do need a copy of the database
+<a href=#125 id=125 data-nosnippet>125</a>/// bundled, then you can enable the `tzdb-bundle-always` crate feature.
+<a href=#126 id=126 data-nosnippet>126</a>///
+<a href=#127 id=127 data-nosnippet>127</a>/// # Cloning
+<a href=#128 id=128 data-nosnippet>128</a>///
+<a href=#129 id=129 data-nosnippet>129</a>/// A `TimeZoneDatabase` can be cheaply cloned. It will share a thread safe
+<a href=#130 id=130 data-nosnippet>130</a>/// cache with other copies of the same `TimeZoneDatabase`.
+<a href=#131 id=131 data-nosnippet>131</a>///
+<a href=#132 id=132 data-nosnippet>132</a>/// # Caching
+<a href=#133 id=133 data-nosnippet>133</a>///
+<a href=#134 id=134 data-nosnippet>134</a>/// Because looking up a time zone on disk, reading the file into memory
+<a href=#135 id=135 data-nosnippet>135</a>/// and parsing the time zone transitions out of that file requires
+<a href=#136 id=136 data-nosnippet>136</a>/// a fair amount of work, a `TimeZoneDatabase` does a fair bit of
+<a href=#137 id=137 data-nosnippet>137</a>/// caching. This means that the vast majority of calls to, for example,
+<a href=#138 id=138 data-nosnippet>138</a>/// [`Timestamp::in_tz`](crate::Timestamp::in_tz) don't actually need to hit
+<a href=#139 id=139 data-nosnippet>139</a>/// disk. It will just find a cached copy of a [`TimeZone`] and return that.
+<a href=#140 id=140 data-nosnippet>140</a>///
+<a href=#141 id=141 data-nosnippet>141</a>/// Of course, with caching comes problems of cache invalidation. Invariably,
+<a href=#142 id=142 data-nosnippet>142</a>/// there are parameters that Jiff uses to manage when the cache should be
+<a href=#143 id=143 data-nosnippet>143</a>/// invalidated. Jiff tries to emit log messages about this when it happens. If
+<a href=#144 id=144 data-nosnippet>144</a>/// you find the caching behavior of Jiff to be sub-optimal for your use case,
+<a href=#145 id=145 data-nosnippet>145</a>/// please create an issue. (The plan is likely to expose some options for
+<a href=#146 id=146 data-nosnippet>146</a>/// configuring the behavior of a `TimeZoneDatabase`, but I wanted to collect
+<a href=#147 id=147 data-nosnippet>147</a>/// user feedback first.)
+<a href=#148 id=148 data-nosnippet>148</a>///
+<a href=#149 id=149 data-nosnippet>149</a>/// [IANA Time Zone Database]: https://en.wikipedia.org/wiki/Tz_database
+<a href=#150 id=150 data-nosnippet>150</a>///
+<a href=#151 id=151 data-nosnippet>151</a>/// # Example: list all available time zones
+<a href=#152 id=152 data-nosnippet>152</a>///
+<a href=#153 id=153 data-nosnippet>153</a>/// ```no_run
+<a href=#154 id=154 data-nosnippet>154</a>/// use jiff::tz;
+<a href=#155 id=155 data-nosnippet>155</a>///
+<a href=#156 id=156 data-nosnippet>156</a>/// for tzid in tz::db().available() {
+<a href=#157 id=157 data-nosnippet>157</a>///     println!("{tzid}");
+<a href=#158 id=158 data-nosnippet>158</a>/// }
+<a href=#159 id=159 data-nosnippet>159</a>/// ```
+<a href=#160 id=160 data-nosnippet>160</a>///
+<a href=#161 id=161 data-nosnippet>161</a>/// # Example: using multiple time zone databases
+<a href=#162 id=162 data-nosnippet>162</a>///
+<a href=#163 id=163 data-nosnippet>163</a>/// Jiff supports opening and using multiple time zone databases by default.
+<a href=#164 id=164 data-nosnippet>164</a>/// All you need to do is point [`TimeZoneDatabase::from_dir`] to your own
+<a href=#165 id=165 data-nosnippet>165</a>/// copy of the Time Zone Database, and it will handle the rest.
+<a href=#166 id=166 data-nosnippet>166</a>///
+<a href=#167 id=167 data-nosnippet>167</a>/// This example shows how to utilize multiple databases by parsing a datetime
+<a href=#168 id=168 data-nosnippet>168</a>/// using an older copy of the IANA Time Zone Database. This example leverages
+<a href=#169 id=169 data-nosnippet>169</a>/// the fact that the 2018 copy of the database preceded Brazil's announcement
+<a href=#170 id=170 data-nosnippet>170</a>/// that daylight saving time would be abolished. This meant that datetimes
+<a href=#171 id=171 data-nosnippet>171</a>/// in the future, when parsed with the older copy of the Time Zone Database,
+<a href=#172 id=172 data-nosnippet>172</a>/// would still follow the old daylight saving time rules. But a mere update of
+<a href=#173 id=173 data-nosnippet>173</a>/// the database would otherwise change the meaning of the datetime.
+<a href=#174 id=174 data-nosnippet>174</a>///
+<a href=#175 id=175 data-nosnippet>175</a>/// This scenario can come up if one stores datetimes in the future. This is
+<a href=#176 id=176 data-nosnippet>176</a>/// also why the default offset conflict resolution strategy when parsing zoned
+<a href=#177 id=177 data-nosnippet>177</a>/// datetimes is [`OffsetConflict::Reject`](crate::tz::OffsetConflict::Reject),
+<a href=#178 id=178 data-nosnippet>178</a>/// which prevents one from silently re-interpreting datetimes to a different
+<a href=#179 id=179 data-nosnippet>179</a>/// timestamp.
+<a href=#180 id=180 data-nosnippet>180</a>///
+<a href=#181 id=181 data-nosnippet>181</a>/// ```no_run
+<a href=#182 id=182 data-nosnippet>182</a>/// use jiff::{fmt::temporal::DateTimeParser, tz::{self, TimeZoneDatabase}};
+<a href=#183 id=183 data-nosnippet>183</a>///
+<a href=#184 id=184 data-nosnippet>184</a>/// static PARSER: DateTimeParser = DateTimeParser::new();
+<a href=#185 id=185 data-nosnippet>185</a>///
+<a href=#186 id=186 data-nosnippet>186</a>/// // Open a version of tzdb from before Brazil announced its abolition
+<a href=#187 id=187 data-nosnippet>187</a>/// // of daylight saving time.
+<a href=#188 id=188 data-nosnippet>188</a>/// let tzdb2018 = TimeZoneDatabase::from_dir("path/to/tzdb-2018b")?;
+<a href=#189 id=189 data-nosnippet>189</a>/// // Open the system tzdb.
+<a href=#190 id=190 data-nosnippet>190</a>/// let tzdb = tz::db();
+<a href=#191 id=191 data-nosnippet>191</a>///
+<a href=#192 id=192 data-nosnippet>192</a>/// // Parse the same datetime string with the same parser, but using two
+<a href=#193 id=193 data-nosnippet>193</a>/// // different versions of tzdb.
+<a href=#194 id=194 data-nosnippet>194</a>/// let dt = "2020-01-15T12:00[America/Sao_Paulo]";
+<a href=#195 id=195 data-nosnippet>195</a>/// let zdt2018 = PARSER.parse_zoned_datetime_with(&amp;tzdb2018, dt)?;
+<a href=#196 id=196 data-nosnippet>196</a>/// let zdt = PARSER.parse_zoned_datetime_with(tzdb, dt)?;
+<a href=#197 id=197 data-nosnippet>197</a>///
+<a href=#198 id=198 data-nosnippet>198</a>/// // Before DST was abolished, 2020-01-15 was in DST, which corresponded
+<a href=#199 id=199 data-nosnippet>199</a>/// // to UTC offset -02. Since DST rules applied to datetimes in the
+<a href=#200 id=200 data-nosnippet>200</a>/// // future, the 2018 version of tzdb would lead one to interpret
+<a href=#201 id=201 data-nosnippet>201</a>/// // 2020-01-15 as being in DST.
+<a href=#202 id=202 data-nosnippet>202</a>/// assert_eq!(zdt2018.offset(), tz::offset(-2));
+<a href=#203 id=203 data-nosnippet>203</a>/// // But DST was abolished in 2019, which means that 2020-01-15 was no
+<a href=#204 id=204 data-nosnippet>204</a>/// // no longer in DST. So after a tzdb update, the same datetime as above
+<a href=#205 id=205 data-nosnippet>205</a>/// // now has a different offset.
+<a href=#206 id=206 data-nosnippet>206</a>/// assert_eq!(zdt.offset(), tz::offset(-3));
+<a href=#207 id=207 data-nosnippet>207</a>///
+<a href=#208 id=208 data-nosnippet>208</a>/// // So if you try to parse a datetime serialized from an older copy of
+<a href=#209 id=209 data-nosnippet>209</a>/// // tzdb, you'll get an error under the default configuration because
+<a href=#210 id=210 data-nosnippet>210</a>/// // of `OffsetConflict::Reject`. This would succeed if you parsed it
+<a href=#211 id=211 data-nosnippet>211</a>/// // using tzdb2018!
+<a href=#212 id=212 data-nosnippet>212</a>/// assert!(
+<a href=#213 id=213 data-nosnippet>213</a>///     PARSER.parse_zoned_datetime_with(tzdb, zdt2018.to_string()).is_err()
+<a href=#214 id=214 data-nosnippet>214</a>/// );
+<a href=#215 id=215 data-nosnippet>215</a>///
+<a href=#216 id=216 data-nosnippet>216</a>/// # Ok::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;(())
+<a href=#217 id=217 data-nosnippet>217</a>/// ```
+<a href=#218 id=218 data-nosnippet>218</a></span><span class="expansion"><input id=expand-218 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>TimeZoneDatabase {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
+        TimeZoneDatabase { inner: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.inner) }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span></span></span><span class="attr">)]
+<a href=#219 id=219 data-nosnippet>219</a></span><span class="kw">pub struct </span><a href="../../../../jiff/tz/struct.TimeZoneDatabase.html">TimeZoneDatabase</a> {
+<a href=#220 id=220 data-nosnippet>220</a>    inner: <a href="#233-240">Repr</a>,
+<a href=#221 id=221 data-nosnippet>221</a>}
+<a href=#222 id=222 data-nosnippet>222</a>
+<a href=#223 id=223 data-nosnippet>223</a><span class="doccomment">/// The internal representation of a `TimeZoneDatabase`.
+<a href=#224 id=224 data-nosnippet>224</a>///
+<a href=#225 id=225 data-nosnippet>225</a>/// The bundled database is kept out of the `Arc` because it carries no data
+<a href=#226 id=226 data-nosnippet>226</a>/// of its own (the tzdb is compiled into the binary and any parsed zones are
+<a href=#227 id=227 data-nosnippet>227</a>/// cached in a global). This lets it be constructed in a `const`, which is
+<a href=#228 id=228 data-nosnippet>228</a>/// what makes it possible for `db()` to return the bundled database even when
+<a href=#229 id=229 data-nosnippet>229</a>/// `std` is unavailable (and so there is no lazily initialized global state).
+<a href=#230 id=230 data-nosnippet>230</a>///
+<a href=#231 id=231 data-nosnippet>231</a>/// Ref: https://github.com/BurntSushi/jiff/issues/533
+<a href=#232 id=232 data-nosnippet>232</a></span><span class="expansion"><input id=expand-232 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>Repr {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
+        <span class="kw">match </span><span class="self">self </span>{
+            <span class="self">Self</span>::Empty =&gt; Repr::Empty,
+            <span class="self">Self</span>::Bundled(__self_0) =&gt;
+                Repr::Bundled(::core::clone::Clone::clone(__self_0)),
+            <span class="self">Self</span>::Arc(__self_0) =&gt;
+                Repr::Arc(::core::clone::Clone::clone(__self_0)),
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span></span></span><span class="attr">)]
+<a href=#233 id=233 data-nosnippet>233</a></span><span class="kw">enum </span>Repr {
+<a href=#234 id=234 data-nosnippet>234</a>    <span class="doccomment">/// A database for which all lookups fail.
+<a href=#235 id=235 data-nosnippet>235</a>    </span>Empty,
+<a href=#236 id=236 data-nosnippet>236</a>    <span class="doccomment">/// The bundled database. Needs no allocation, so no `Arc`.
+<a href=#237 id=237 data-nosnippet>237</a>    </span>Bundled(bundled::<a href="bundled/disabled.rs.html#4">Database</a>),
+<a href=#238 id=238 data-nosnippet>238</a>    <span class="doccomment">/// A database backed by an `Arc` so that clones share its cache.
+<a href=#239 id=239 data-nosnippet>239</a>    </span>Arc(<a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html">Arc</a>&lt;<a href="#245-248">Kind</a>&gt;),
+<a href=#240 id=240 data-nosnippet>240</a>}
+<a href=#241 id=241 data-nosnippet>241</a>
+<a href=#242 id=242 data-nosnippet>242</a><span class="expansion"><input id=expand-242 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>Kind {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        <span class="kw">match </span><span class="self">self </span>{
+            <span class="self">Self</span>::ZoneInfo(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_struct_field1_finish(f,
+                    <span class="string">"ZoneInfo"</span>, <span class="kw-2">&amp;</span>__self_0),
+            <span class="self">Self</span>::Concatenated(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_struct_field1_finish(f,
+                    <span class="string">"Concatenated"</span>, <span class="kw-2">&amp;</span>__self_0),
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span></span></span><span class="attr">)]
+<a href=#243 id=243 data-nosnippet>243</a></span><span class="comment">// Needed for core-only "dumb" `Arc`.
+<a href=#244 id=244 data-nosnippet>244</a></span><span class="attr">#[cfg_attr(not(feature = <span class="string">"alloc"</span>), derive(Clone))]
+<a href=#245 id=245 data-nosnippet>245</a></span><span class="kw">enum </span>Kind {
+<a href=#246 id=246 data-nosnippet>246</a>    ZoneInfo(zoneinfo::<a href="zoneinfo/disabled.rs.html#4">Database</a>),
+<a href=#247 id=247 data-nosnippet>247</a>    Concatenated(concatenated::<a href="concatenated/disabled.rs.html#4">Database</a>),
+<a href=#248 id=248 data-nosnippet>248</a>}
+<a href=#249 id=249 data-nosnippet>249</a>
+<a href=#250 id=250 data-nosnippet>250</a><span class="kw">impl </span><a href="#219-221">TimeZoneDatabase</a> {
+<a href=#251 id=251 data-nosnippet>251</a>    <span class="doccomment">/// Returns a database for which all time zone lookups fail.
+<a href=#252 id=252 data-nosnippet>252</a>    ///
+<a href=#253 id=253 data-nosnippet>253</a>    /// # Example
+<a href=#254 id=254 data-nosnippet>254</a>    ///
+<a href=#255 id=255 data-nosnippet>255</a>    /// ```
+<a href=#256 id=256 data-nosnippet>256</a>    /// use jiff::tz::TimeZoneDatabase;
+<a href=#257 id=257 data-nosnippet>257</a>    ///
+<a href=#258 id=258 data-nosnippet>258</a>    /// let db = TimeZoneDatabase::none();
+<a href=#259 id=259 data-nosnippet>259</a>    /// assert_eq!(db.available().count(), 0);
+<a href=#260 id=260 data-nosnippet>260</a>    /// ```
+<a href=#261 id=261 data-nosnippet>261</a>    </span><span class="kw">pub const fn </span>none() -&gt; <a href="#219-221">TimeZoneDatabase</a> {
+<a href=#262 id=262 data-nosnippet>262</a>        <a href="#219-221">TimeZoneDatabase</a> { inner: Repr::<a href="#235">Empty</a> }
+<a href=#263 id=263 data-nosnippet>263</a>    }
+<a href=#264 id=264 data-nosnippet>264</a>
+<a href=#265 id=265 data-nosnippet>265</a>    <span class="doccomment">/// Returns a time zone database initialized from the current environment.
+<a href=#266 id=266 data-nosnippet>266</a>    ///
+<a href=#267 id=267 data-nosnippet>267</a>    /// This routine never fails, but it may not be able to find a copy of
+<a href=#268 id=268 data-nosnippet>268</a>    /// your Time Zone Database. When this happens, log messages (with some
+<a href=#269 id=269 data-nosnippet>269</a>    /// at least at the `WARN` level) will be emitted. They can be viewed by
+<a href=#270 id=270 data-nosnippet>270</a>    /// installing a [`log`] compatible logger such as [`env_logger`].
+<a href=#271 id=271 data-nosnippet>271</a>    ///
+<a href=#272 id=272 data-nosnippet>272</a>    /// Typically, one does not need to call this routine directly. Instead,
+<a href=#273 id=273 data-nosnippet>273</a>    /// it's done for you as part of [`jiff::tz::db`](crate::tz::db()).
+<a href=#274 id=274 data-nosnippet>274</a>    /// This does require Jiff's `std` feature to be enabled though. So for
+<a href=#275 id=275 data-nosnippet>275</a>    /// example, you might use this constructor when the features `alloc`
+<a href=#276 id=276 data-nosnippet>276</a>    /// and `tzdb-bundle-always` are enabled to get access to a bundled
+<a href=#277 id=277 data-nosnippet>277</a>    /// copy of the IANA time zone database. (Accessing the system copy at
+<a href=#278 id=278 data-nosnippet>278</a>    /// `/usr/share/zoneinfo` requires `std`.)
+<a href=#279 id=279 data-nosnippet>279</a>    ///
+<a href=#280 id=280 data-nosnippet>280</a>    /// Beware that calling this constructor will create a new _distinct_
+<a href=#281 id=281 data-nosnippet>281</a>    /// handle from the one returned by `jiff::tz::db` with its own cache.
+<a href=#282 id=282 data-nosnippet>282</a>    ///
+<a href=#283 id=283 data-nosnippet>283</a>    /// [`log`]: https://docs.rs/log
+<a href=#284 id=284 data-nosnippet>284</a>    /// [`env_logger`]: https://docs.rs/env_logger
+<a href=#285 id=285 data-nosnippet>285</a>    ///
+<a href=#286 id=286 data-nosnippet>286</a>    /// # Platform behavior
+<a href=#287 id=287 data-nosnippet>287</a>    ///
+<a href=#288 id=288 data-nosnippet>288</a>    /// When the `TZDIR` environment variable is set, this will attempt to
+<a href=#289 id=289 data-nosnippet>289</a>    /// open the Time Zone Database at the directory specified. Otherwise,
+<a href=#290 id=290 data-nosnippet>290</a>    /// this will search a list of predefined directories for a system
+<a href=#291 id=291 data-nosnippet>291</a>    /// installation of the Time Zone Database. Typically, it's found at
+<a href=#292 id=292 data-nosnippet>292</a>    /// `/usr/share/zoneinfo`.
+<a href=#293 id=293 data-nosnippet>293</a>    ///
+<a href=#294 id=294 data-nosnippet>294</a>    /// On Windows systems, under the default crate configuration, this will
+<a href=#295 id=295 data-nosnippet>295</a>    /// return an embedded copy of the Time Zone Database since Windows does
+<a href=#296 id=296 data-nosnippet>296</a>    /// not have a canonical installation of the Time Zone Database.
+<a href=#297 id=297 data-nosnippet>297</a>    </span><span class="kw">pub fn </span>from_env() -&gt; <a href="#219-221">TimeZoneDatabase</a> {
+<a href=#298 id=298 data-nosnippet>298</a>        <span class="comment">// On Android, try the concatenated database first, since that's
+<a href=#299 id=299 data-nosnippet>299</a>        // typically what is used.
+<a href=#300 id=300 data-nosnippet>300</a>        //
+<a href=#301 id=301 data-nosnippet>301</a>        // Overall this logic might be sub-optimal. Like, does it really make
+<a href=#302 id=302 data-nosnippet>302</a>        // sense to check for the zoneinfo or concatenated database on non-Unix
+<a href=#303 id=303 data-nosnippet>303</a>        // platforms? Probably not to be honest. But these should only be
+<a href=#304 id=304 data-nosnippet>304</a>        // executed ~once generally, so it doesn't seem like a big deal to try.
+<a href=#305 id=305 data-nosnippet>305</a>        // And trying makes things a little more flexible I think.
+<a href=#306 id=306 data-nosnippet>306</a>        </span><span class="attr">#[cfg(not(miri))]
+<a href=#307 id=307 data-nosnippet>307</a>        </span>{
+<a href=#308 id=308 data-nosnippet>308</a><span class="expansion"><input id=expand-308 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">            <span class="kw">if </span><span class=expanded><span class="bool-val">false</span></span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.cfg.html">cfg!</a>(target_os = <span class="string">"android"</span>)</span></span> {
+<a href=#309 id=309 data-nosnippet>309</a>                <span class="kw">let </span>db = concatenated::<a href="concatenated/disabled.rs.html#4">Database</a>::<a href="concatenated/disabled.rs.html#7-9">from_env</a>();
+<a href=#310 id=310 data-nosnippet>310</a>                <span class="kw">if </span>!<a href="#309">db</a>.<a href="concatenated/disabled.rs.html#35-37">is_definitively_empty</a>() {
+<a href=#311 id=311 data-nosnippet>311</a>                    <span class="kw">return </span><a href="#219-221">TimeZoneDatabase</a>::<a href="#485-487">new</a>(Kind::<a href="#247">Concatenated</a>(<a href="#309">db</a>));
+<a href=#312 id=312 data-nosnippet>312</a>                }
+<a href=#313 id=313 data-nosnippet>313</a>
+<a href=#314 id=314 data-nosnippet>314</a>                <span class="kw">let </span>db = zoneinfo::<a href="zoneinfo/disabled.rs.html#4">Database</a>::<a href="zoneinfo/disabled.rs.html#7-9">from_env</a>();
+<a href=#315 id=315 data-nosnippet>315</a>                <span class="kw">if </span>!<a href="#314">db</a>.<a href="zoneinfo/disabled.rs.html#35-37">is_definitively_empty</a>() {
+<a href=#316 id=316 data-nosnippet>316</a>                    <span class="kw">return </span><a href="#219-221">TimeZoneDatabase</a>::<a href="#485-487">new</a>(Kind::<a href="#246">ZoneInfo</a>(<a href="#314">db</a>));
+<a href=#317 id=317 data-nosnippet>317</a>                }
+<a href=#318 id=318 data-nosnippet>318</a>            } <span class="kw">else </span>{
+<a href=#319 id=319 data-nosnippet>319</a>                <span class="kw">let </span>db = zoneinfo::<a href="zoneinfo/disabled.rs.html#4">Database</a>::<a href="zoneinfo/disabled.rs.html#7-9">from_env</a>();
+<a href=#320 id=320 data-nosnippet>320</a>                <span class="kw">if </span>!<a href="#319">db</a>.<a href="zoneinfo/disabled.rs.html#35-37">is_definitively_empty</a>() {
+<a href=#321 id=321 data-nosnippet>321</a>                    <span class="kw">return </span><a href="#219-221">TimeZoneDatabase</a>::<a href="#485-487">new</a>(Kind::<a href="#246">ZoneInfo</a>(<a href="#319">db</a>));
+<a href=#322 id=322 data-nosnippet>322</a>                }
+<a href=#323 id=323 data-nosnippet>323</a>
+<a href=#324 id=324 data-nosnippet>324</a>                <span class="kw">let </span>db = concatenated::<a href="concatenated/disabled.rs.html#4">Database</a>::<a href="concatenated/disabled.rs.html#7-9">from_env</a>();
+<a href=#325 id=325 data-nosnippet>325</a>                <span class="kw">if </span>!<a href="#324">db</a>.<a href="concatenated/disabled.rs.html#35-37">is_definitively_empty</a>() {
+<a href=#326 id=326 data-nosnippet>326</a>                    <span class="kw">return </span><a href="#219-221">TimeZoneDatabase</a>::<a href="#485-487">new</a>(Kind::<a href="#247">Concatenated</a>(<a href="#324">db</a>));
+<a href=#327 id=327 data-nosnippet>327</a>                }
+<a href=#328 id=328 data-nosnippet>328</a>            }
+<a href=#329 id=329 data-nosnippet>329</a>        }
+<a href=#330 id=330 data-nosnippet>330</a>
+<a href=#331 id=331 data-nosnippet>331</a>        <span class="kw">let </span>db = bundled::<a href="bundled/disabled.rs.html#4">Database</a>::<a href="bundled/disabled.rs.html#7-9">new</a>();
+<a href=#332 id=332 data-nosnippet>332</a>        <span class="kw">if </span>!<a href="#331">db</a>.<a href="bundled/disabled.rs.html#21-23">is_definitively_empty</a>() {
+<a href=#333 id=333 data-nosnippet>333</a>            <span class="kw">return </span><a href="#219-221">TimeZoneDatabase</a> { inner: Repr::<a href="#237">Bundled</a>(<a href="#331">db</a>) };
+<a href=#334 id=334 data-nosnippet>334</a>        }
+<a href=#335 id=335 data-nosnippet>335</a>
+<a href=#336 id=336 data-nosnippet>336</a>        <span class="macro">warn!</span>(
+<a href=#337 id=337 data-nosnippet>337</a>            <span class="string">"could not find zoneinfo, concatenated tzdata or \
+<a href=#338 id=338 data-nosnippet>338</a>             bundled time zone database"</span>,
+<a href=#339 id=339 data-nosnippet>339</a>        );
+<a href=#340 id=340 data-nosnippet>340</a>        <a href="#219-221">TimeZoneDatabase</a>::<a href="#261-263">none</a>()
+<a href=#341 id=341 data-nosnippet>341</a>    }
+<a href=#342 id=342 data-nosnippet>342</a>
+<a href=#343 id=343 data-nosnippet>343</a>    <span class="doccomment">/// Returns a time zone database initialized from the given directory.
+<a href=#344 id=344 data-nosnippet>344</a>    ///
+<a href=#345 id=345 data-nosnippet>345</a>    /// Unlike [`TimeZoneDatabase::from_env`], this always attempts to look for
+<a href=#346 id=346 data-nosnippet>346</a>    /// a copy of the Time Zone Database at the directory given. And if it
+<a href=#347 id=347 data-nosnippet>347</a>    /// fails to find one at that directory, then an error is returned.
+<a href=#348 id=348 data-nosnippet>348</a>    ///
+<a href=#349 id=349 data-nosnippet>349</a>    /// Basically, you should use this when you need to use a _specific_
+<a href=#350 id=350 data-nosnippet>350</a>    /// copy of the Time Zone Database, and use `TimeZoneDatabase::from_env`
+<a href=#351 id=351 data-nosnippet>351</a>    /// when you just want Jiff to try and "do the right thing for you."
+<a href=#352 id=352 data-nosnippet>352</a>    ///
+<a href=#353 id=353 data-nosnippet>353</a>    /// # Errors
+<a href=#354 id=354 data-nosnippet>354</a>    ///
+<a href=#355 id=355 data-nosnippet>355</a>    /// This returns an error if the given directory does not contain a valid
+<a href=#356 id=356 data-nosnippet>356</a>    /// copy of the Time Zone Database. Generally, this means a directory with
+<a href=#357 id=357 data-nosnippet>357</a>    /// at least one valid TZif file.
+<a href=#358 id=358 data-nosnippet>358</a>    </span><span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
+<a href=#359 id=359 data-nosnippet>359</a>    </span><span class="kw">pub fn </span>from_dir&lt;P: <a href="https://doc.rust-lang.org/nightly/core/convert/trait.AsRef.html">AsRef</a>&lt;std::path::<a href="https://doc.rust-lang.org/nightly/std/path/struct.Path.html">Path</a>&gt;&gt;(
+<a href=#360 id=360 data-nosnippet>360</a>        path: P,
+<a href=#361 id=361 data-nosnippet>361</a>    ) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<a href="#219-221">TimeZoneDatabase</a>, <a href="../../error/mod.rs.html#51-62">Error</a>&gt; {
+<a href=#362 id=362 data-nosnippet>362</a>        <span class="kw">let </span>path = <a href="#360">path</a>.<a href="https://doc.rust-lang.org/nightly/core/convert/trait.AsRef.html#tymethod.as_ref">as_ref</a>();
+<a href=#363 id=363 data-nosnippet>363</a>        <span class="kw">let </span>db = zoneinfo::Database::from_dir(path)<span class="question-mark">?</span>;
+<a href=#364 id=364 data-nosnippet>364</a>        <span class="kw">if </span><a href="#363">db</a>.<a href="zoneinfo/disabled.rs.html#35-37">is_definitively_empty</a>() {
+<a href=#365 id=365 data-nosnippet>365</a>            <span class="macro">warn!</span>(
+<a href=#366 id=366 data-nosnippet>366</a>                <span class="string">"could not find zoneinfo data at directory {path}"</span>,
+<a href=#367 id=367 data-nosnippet>367</a>                path = path.display(),
+<a href=#368 id=368 data-nosnippet>368</a>            );
+<a href=#369 id=369 data-nosnippet>369</a>        }
+<a href=#370 id=370 data-nosnippet>370</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="#219-221">TimeZoneDatabase</a>::<a href="#485-487">new</a>(Kind::<a href="#246">ZoneInfo</a>(<a href="#363">db</a>)))
+<a href=#371 id=371 data-nosnippet>371</a>    }
+<a href=#372 id=372 data-nosnippet>372</a>
+<a href=#373 id=373 data-nosnippet>373</a>    <span class="doccomment">/// Returns a time zone database initialized from a path pointing to a
+<a href=#374 id=374 data-nosnippet>374</a>    /// concatenated `tzdata` file. This type of format is only known to be
+<a href=#375 id=375 data-nosnippet>375</a>    /// found on Android environments. The specific format for this file isn't
+<a href=#376 id=376 data-nosnippet>376</a>    /// defined formally anywhere, but Jiff parses the same format supported
+<a href=#377 id=377 data-nosnippet>377</a>    /// by the [Android Platform].
+<a href=#378 id=378 data-nosnippet>378</a>    ///
+<a href=#379 id=379 data-nosnippet>379</a>    /// Unlike [`TimeZoneDatabase::from_env`], this always attempts to look for
+<a href=#380 id=380 data-nosnippet>380</a>    /// a copy of the Time Zone Database at the path given. And if it
+<a href=#381 id=381 data-nosnippet>381</a>    /// fails to find one at that path, then an error is returned.
+<a href=#382 id=382 data-nosnippet>382</a>    ///
+<a href=#383 id=383 data-nosnippet>383</a>    /// Basically, you should use this when you need to use a _specific_
+<a href=#384 id=384 data-nosnippet>384</a>    /// copy of the Time Zone Database in its concatenated format, and use
+<a href=#385 id=385 data-nosnippet>385</a>    /// `TimeZoneDatabase::from_env` when you just want Jiff to try and "do the
+<a href=#386 id=386 data-nosnippet>386</a>    /// right thing for you." (`TimeZoneDatabase::from_env` will attempt to
+<a href=#387 id=387 data-nosnippet>387</a>    /// automatically detect the presence of a system concatenated `tzdata`
+<a href=#388 id=388 data-nosnippet>388</a>    /// file on Android.)
+<a href=#389 id=389 data-nosnippet>389</a>    ///
+<a href=#390 id=390 data-nosnippet>390</a>    /// # Errors
+<a href=#391 id=391 data-nosnippet>391</a>    ///
+<a href=#392 id=392 data-nosnippet>392</a>    /// This returns an error if the given path does not contain a valid
+<a href=#393 id=393 data-nosnippet>393</a>    /// copy of the concatenated Time Zone Database.
+<a href=#394 id=394 data-nosnippet>394</a>    ///
+<a href=#395 id=395 data-nosnippet>395</a>    /// [Android Platform]: https://android.googlesource.com/platform/libcore/+/jb-mr2-release/luni/src/main/java/libcore/util/ZoneInfoDB.java
+<a href=#396 id=396 data-nosnippet>396</a>    </span><span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
+<a href=#397 id=397 data-nosnippet>397</a>    </span><span class="kw">pub fn </span>from_concatenated_path&lt;P: <a href="https://doc.rust-lang.org/nightly/core/convert/trait.AsRef.html">AsRef</a>&lt;std::path::<a href="https://doc.rust-lang.org/nightly/std/path/struct.Path.html">Path</a>&gt;&gt;(
+<a href=#398 id=398 data-nosnippet>398</a>        path: P,
+<a href=#399 id=399 data-nosnippet>399</a>    ) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<a href="#219-221">TimeZoneDatabase</a>, <a href="../../error/mod.rs.html#51-62">Error</a>&gt; {
+<a href=#400 id=400 data-nosnippet>400</a>        <span class="kw">let </span>path = <a href="#398">path</a>.<a href="https://doc.rust-lang.org/nightly/core/convert/trait.AsRef.html#tymethod.as_ref">as_ref</a>();
+<a href=#401 id=401 data-nosnippet>401</a>        <span class="kw">let </span>db = concatenated::Database::from_path(path)<span class="question-mark">?</span>;
+<a href=#402 id=402 data-nosnippet>402</a>        <span class="kw">if </span><a href="#401">db</a>.<a href="concatenated/disabled.rs.html#35-37">is_definitively_empty</a>() {
+<a href=#403 id=403 data-nosnippet>403</a>            <span class="macro">warn!</span>(
+<a href=#404 id=404 data-nosnippet>404</a>                <span class="string">"could not find concatenated tzdata in file {path}"</span>,
+<a href=#405 id=405 data-nosnippet>405</a>                path = path.display(),
+<a href=#406 id=406 data-nosnippet>406</a>            );
+<a href=#407 id=407 data-nosnippet>407</a>        }
+<a href=#408 id=408 data-nosnippet>408</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="#219-221">TimeZoneDatabase</a>::<a href="#485-487">new</a>(Kind::<a href="#247">Concatenated</a>(<a href="#401">db</a>)))
+<a href=#409 id=409 data-nosnippet>409</a>    }
+<a href=#410 id=410 data-nosnippet>410</a>
+<a href=#411 id=411 data-nosnippet>411</a>    <span class="doccomment">/// Returns a time zone database initialized from the bundled copy of
+<a href=#412 id=412 data-nosnippet>412</a>    /// the [IANA Time Zone Database].
+<a href=#413 id=413 data-nosnippet>413</a>    ///
+<a href=#414 id=414 data-nosnippet>414</a>    /// While this API is always available, in order to get a non-empty
+<a href=#415 id=415 data-nosnippet>415</a>    /// database back, this requires that one of the crate features
+<a href=#416 id=416 data-nosnippet>416</a>    /// `tzdb-bundle-always` or `tzdb-bundle-platform` is enabled. In the
+<a href=#417 id=417 data-nosnippet>417</a>    /// latter case, the bundled database is only available on platforms known
+<a href=#418 id=418 data-nosnippet>418</a>    /// to lack a system copy of the IANA Time Zone Database (i.e., non-Unix
+<a href=#419 id=419 data-nosnippet>419</a>    /// systems).
+<a href=#420 id=420 data-nosnippet>420</a>    ///
+<a href=#421 id=421 data-nosnippet>421</a>    /// This routine is infallible, but it may return a database
+<a href=#422 id=422 data-nosnippet>422</a>    /// that is definitively empty if the bundled data is not
+<a href=#423 id=423 data-nosnippet>423</a>    /// available. To query whether the data is empty or not, use
+<a href=#424 id=424 data-nosnippet>424</a>    /// [`TimeZoneDatabase::is_definitively_empty`].
+<a href=#425 id=425 data-nosnippet>425</a>    ///
+<a href=#426 id=426 data-nosnippet>426</a>    /// # Data generation
+<a href=#427 id=427 data-nosnippet>427</a>    ///
+<a href=#428 id=428 data-nosnippet>428</a>    /// The data in this crate comes from the [IANA Time Zone Database] "data
+<a href=#429 id=429 data-nosnippet>429</a>    /// only" distribution. [`jiff-cli`] is used to first compile the release
+<a href=#430 id=430 data-nosnippet>430</a>    /// into binary TZif data using the `zic` compiler, and secondly, converts
+<a href=#431 id=431 data-nosnippet>431</a>    /// the binary data into a flattened and de-duplicated representation that
+<a href=#432 id=432 data-nosnippet>432</a>    /// is embedded into this crate's source code.
+<a href=#433 id=433 data-nosnippet>433</a>    ///
+<a href=#434 id=434 data-nosnippet>434</a>    /// The conversion into the TZif binary data uses the following settings:
+<a href=#435 id=435 data-nosnippet>435</a>    ///
+<a href=#436 id=436 data-nosnippet>436</a>    /// * The "rearguard" data is used (see below).
+<a href=#437 id=437 data-nosnippet>437</a>    /// * The binary data itself is compiled using the "slim" format. Which
+<a href=#438 id=438 data-nosnippet>438</a>    ///   effectively means that the TZif data primarily only uses explicit
+<a href=#439 id=439 data-nosnippet>439</a>    ///   time zone transitions for historical data and POSIX time zones for
+<a href=#440 id=440 data-nosnippet>440</a>    ///   current time zone transition rules. This doesn't have any impact
+<a href=#441 id=441 data-nosnippet>441</a>    ///   on the actual results. The reason that there are "slim" and "fat"
+<a href=#442 id=442 data-nosnippet>442</a>    ///   formats is to support legacy applications that can't deal with
+<a href=#443 id=443 data-nosnippet>443</a>    ///   POSIX time zones. For example, `/usr/share/zoneinfo` on my modern
+<a href=#444 id=444 data-nosnippet>444</a>    ///   Archlinux installation (2025-02-27) is in the "fat" format.
+<a href=#445 id=445 data-nosnippet>445</a>    ///
+<a href=#446 id=446 data-nosnippet>446</a>    /// The reason that rearguard data is used is a bit more subtle and has
+<a href=#447 id=447 data-nosnippet>447</a>    /// to do with a difference in how the IANA Time Zone Database treats its
+<a href=#448 id=448 data-nosnippet>448</a>    /// internal "daylight saving time" flag and what people in the "real
+<a href=#449 id=449 data-nosnippet>449</a>    /// world" consider "daylight saving time." For example, in the standard
+<a href=#450 id=450 data-nosnippet>450</a>    /// distribution of the IANA Time Zone Database, `Europe/Dublin` has its
+<a href=#451 id=451 data-nosnippet>451</a>    /// daylight saving time flag set to _true_ during Winter and set to
+<a href=#452 id=452 data-nosnippet>452</a>    /// _false_ during Summer. The actual time shifts are the same as, e.g.,
+<a href=#453 id=453 data-nosnippet>453</a>    /// `Europe/London`, but which one is actually labeled "daylight saving
+<a href=#454 id=454 data-nosnippet>454</a>    /// time" is not.
+<a href=#455 id=455 data-nosnippet>455</a>    ///
+<a href=#456 id=456 data-nosnippet>456</a>    /// The IANA Time Zone Database does this for `Europe/Dublin`, presumably,
+<a href=#457 id=457 data-nosnippet>457</a>    /// because _legally_, time during the Summer in Ireland is called `Irish
+<a href=#458 id=458 data-nosnippet>458</a>    /// Standard Time`, and time during the Winter is called `Greenwich Mean
+<a href=#459 id=459 data-nosnippet>459</a>    /// Time`. These legal names are reversed from what is typically the case,
+<a href=#460 id=460 data-nosnippet>460</a>    /// where "standard" time is during the Winter and daylight saving time is
+<a href=#461 id=461 data-nosnippet>461</a>    /// during the Summer. The IANA Time Zone Database implements this tweak in
+<a href=#462 id=462 data-nosnippet>462</a>    /// legal language via a "negative daylight saving time offset." This is
+<a href=#463 id=463 data-nosnippet>463</a>    /// somewhat odd, and some consumers of the IANA Time Zone Database cannot
+<a href=#464 id=464 data-nosnippet>464</a>    /// handle it. Thus, the rearguard format was born for, seemingly, legacy
+<a href=#465 id=465 data-nosnippet>465</a>    /// programs.
+<a href=#466 id=466 data-nosnippet>466</a>    ///
+<a href=#467 id=467 data-nosnippet>467</a>    /// Jiff can handle negative daylight saving time offsets just fine,
+<a href=#468 id=468 data-nosnippet>468</a>    /// but we use the rearguard format anyway so that the underlying data
+<a href=#469 id=469 data-nosnippet>469</a>    /// more accurately reflects on-the-ground reality for humans living in
+<a href=#470 id=470 data-nosnippet>470</a>    /// `Europe/Dublin`. In particular, using the rearguard data enables
+<a href=#471 id=471 data-nosnippet>471</a>    /// [localization of time zone names] to be done correctly.
+<a href=#472 id=472 data-nosnippet>472</a>    ///
+<a href=#473 id=473 data-nosnippet>473</a>    /// [IANA Time Zone Database]: https://en.wikipedia.org/wiki/Tz_database
+<a href=#474 id=474 data-nosnippet>474</a>    /// [`jiff-cli`]: https://github.com/BurntSushi/jiff/tree/master/crates/jiff-cli
+<a href=#475 id=475 data-nosnippet>475</a>    /// [localization of time zone names]: https://github.com/BurntSushi/jiff/issues/258
+<a href=#476 id=476 data-nosnippet>476</a>    </span><span class="kw">pub fn </span>bundled() -&gt; <a href="#219-221">TimeZoneDatabase</a> {
+<a href=#477 id=477 data-nosnippet>477</a>        <span class="kw">let </span>db = bundled::<a href="bundled/disabled.rs.html#4">Database</a>::<a href="bundled/disabled.rs.html#7-9">new</a>();
+<a href=#478 id=478 data-nosnippet>478</a>        <span class="kw">if </span><a href="#477">db</a>.<a href="bundled/disabled.rs.html#21-23">is_definitively_empty</a>() {
+<a href=#479 id=479 data-nosnippet>479</a>            <span class="macro">warn!</span>(<span class="string">"could not find embedded/bundled zoneinfo"</span>);
+<a href=#480 id=480 data-nosnippet>480</a>        }
+<a href=#481 id=481 data-nosnippet>481</a>        <a href="#219-221">TimeZoneDatabase</a> { inner: Repr::<a href="#237">Bundled</a>(<a href="#477">db</a>) }
+<a href=#482 id=482 data-nosnippet>482</a>    }
+<a href=#483 id=483 data-nosnippet>483</a>
+<a href=#484 id=484 data-nosnippet>484</a>    <span class="doccomment">/// Creates a new DB from the internal kind.
+<a href=#485 id=485 data-nosnippet>485</a>    </span><span class="kw">fn </span>new(kind: <a href="#245-248">Kind</a>) -&gt; <a href="#219-221">TimeZoneDatabase</a> {
+<a href=#486 id=486 data-nosnippet>486</a>        <a href="#219-221">TimeZoneDatabase</a> { inner: Repr::<a href="#239">Arc</a>(<a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html">Arc</a>::<a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html#method.new">new</a>(<a href="#485">kind</a>)) }
+<a href=#487 id=487 data-nosnippet>487</a>    }
+<a href=#488 id=488 data-nosnippet>488</a>
+<a href=#489 id=489 data-nosnippet>489</a>    <span class="doccomment">/// Returns a [`TimeZone`] corresponding to the IANA time zone identifier
+<a href=#490 id=490 data-nosnippet>490</a>    /// given.
+<a href=#491 id=491 data-nosnippet>491</a>    ///
+<a href=#492 id=492 data-nosnippet>492</a>    /// The lookup is performed without regard to ASCII case.
+<a href=#493 id=493 data-nosnippet>493</a>    ///
+<a href=#494 id=494 data-nosnippet>494</a>    /// To see a list of all available time zone identifiers for this database,
+<a href=#495 id=495 data-nosnippet>495</a>    /// use [`TimeZoneDatabase::available`].
+<a href=#496 id=496 data-nosnippet>496</a>    ///
+<a href=#497 id=497 data-nosnippet>497</a>    /// It is guaranteed that if the given time zone name is case insensitively
+<a href=#498 id=498 data-nosnippet>498</a>    /// equivalent to `UTC`, then the time zone returned will be equivalent to
+<a href=#499 id=499 data-nosnippet>499</a>    /// `TimeZone::UTC`. Similarly for `Etc/Unknown` and `TimeZone::unknown()`.
+<a href=#500 id=500 data-nosnippet>500</a>    ///
+<a href=#501 id=501 data-nosnippet>501</a>    /// # Example
+<a href=#502 id=502 data-nosnippet>502</a>    ///
+<a href=#503 id=503 data-nosnippet>503</a>    /// ```
+<a href=#504 id=504 data-nosnippet>504</a>    /// use jiff::tz;
+<a href=#505 id=505 data-nosnippet>505</a>    ///
+<a href=#506 id=506 data-nosnippet>506</a>    /// let tz = tz::db().get("america/NEW_YORK")?;
+<a href=#507 id=507 data-nosnippet>507</a>    /// assert_eq!(tz.iana_name(), Some("America/New_York"));
+<a href=#508 id=508 data-nosnippet>508</a>    ///
+<a href=#509 id=509 data-nosnippet>509</a>    /// # Ok::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;(())
+<a href=#510 id=510 data-nosnippet>510</a>    /// ```
+<a href=#511 id=511 data-nosnippet>511</a>    </span><span class="kw">pub fn </span>get(<span class="kw-2">&amp;</span><span class="self">self</span>, name: <span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<a href="../timezone.rs.html#260-262">TimeZone</a>, <a href="../../error/mod.rs.html#51-62">Error</a>&gt; {
+<a href=#512 id=512 data-nosnippet>512</a>        <span class="kw">let </span>found = <span class="kw">match </span><a class="self" href="#511">self</a>.inner {
+<a href=#513 id=513 data-nosnippet>513</a>            Repr::<a href="#235">Empty</a> =&gt; {
+<a href=#514 id=514 data-nosnippet>514</a>                <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(<a href="../../error/mod.rs.html#51-62">Error</a>::<a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html#tymethod.from">from</a>(
+<a href=#515 id=515 data-nosnippet>515</a>                    <a href="../../error/tz/db.rs.html#5-26">E</a>::<a href="../../error/tz/db.rs.html#36-43">failed_time_zone_no_database_configured</a>(<a href="#511">name</a>),
+<a href=#516 id=516 data-nosnippet>516</a>                ));
+<a href=#517 id=517 data-nosnippet>517</a>            }
+<a href=#518 id=518 data-nosnippet>518</a>            Repr::<a href="#237">Bundled</a>(<span class="kw-2">ref </span>db) =&gt; <a href="#518">db</a>.<a href="bundled/disabled.rs.html#13-15">get</a>(<a href="#511">name</a>),
+<a href=#519 id=519 data-nosnippet>519</a>            Repr::<a href="#239">Arc</a>(<span class="kw-2">ref </span>kind) =&gt; <span class="kw">match </span><span class="kw-2">**</span><a href="#519">kind</a> {
+<a href=#520 id=520 data-nosnippet>520</a>                Kind::<a href="#246">ZoneInfo</a>(<span class="kw-2">ref </span>db) =&gt; <a href="#520">db</a>.<a href="zoneinfo/disabled.rs.html#27-29">get</a>(<a href="#511">name</a>),
+<a href=#521 id=521 data-nosnippet>521</a>                Kind::<a href="#247">Concatenated</a>(<span class="kw-2">ref </span>db) =&gt; <a href="#521">db</a>.<a href="concatenated/disabled.rs.html#27-29">get</a>(<a href="#511">name</a>),
+<a href=#522 id=522 data-nosnippet>522</a>            },
+<a href=#523 id=523 data-nosnippet>523</a>        };
+<a href=#524 id=524 data-nosnippet>524</a>        <span class="kw">if let </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(tz) = <a href="#512">found</a> {
+<a href=#525 id=525 data-nosnippet>525</a>            <span class="macro">trace!</span>(<span class="string">"found time zone `{name}` in {db:?}"</span>, db = <span class="self">self</span>);
+<a href=#526 id=526 data-nosnippet>526</a>            <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="#524">tz</a>);
+<a href=#527 id=527 data-nosnippet>527</a>        }
+<a href=#528 id=528 data-nosnippet>528</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(<a href="../../error/mod.rs.html#51-62">Error</a>::<a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html#tymethod.from">from</a>(<a href="../../error/tz/db.rs.html#5-26">E</a>::<a href="../../error/tz/db.rs.html#29-34">failed_time_zone</a>(<a href="#511">name</a>)))
+<a href=#529 id=529 data-nosnippet>529</a>    }
+<a href=#530 id=530 data-nosnippet>530</a>
+<a href=#531 id=531 data-nosnippet>531</a>    <span class="doccomment">/// Returns a list of all available time zone identifiers from this
+<a href=#532 id=532 data-nosnippet>532</a>    /// database.
+<a href=#533 id=533 data-nosnippet>533</a>    ///
+<a href=#534 id=534 data-nosnippet>534</a>    /// Note that time zone identifiers are more of a machine readable
+<a href=#535 id=535 data-nosnippet>535</a>    /// abstraction and not an end user level abstraction. Still, users
+<a href=#536 id=536 data-nosnippet>536</a>    /// comfortable with configuring their system's default time zone through
+<a href=#537 id=537 data-nosnippet>537</a>    /// IANA time zone identifiers are probably comfortable interacting with
+<a href=#538 id=538 data-nosnippet>538</a>    /// the identifiers returned here.
+<a href=#539 id=539 data-nosnippet>539</a>    ///
+<a href=#540 id=540 data-nosnippet>540</a>    /// # Example
+<a href=#541 id=541 data-nosnippet>541</a>    ///
+<a href=#542 id=542 data-nosnippet>542</a>    /// ```no_run
+<a href=#543 id=543 data-nosnippet>543</a>    /// use jiff::tz;
+<a href=#544 id=544 data-nosnippet>544</a>    ///
+<a href=#545 id=545 data-nosnippet>545</a>    /// for tzid in tz::db().available() {
+<a href=#546 id=546 data-nosnippet>546</a>    ///     println!("{tzid}");
+<a href=#547 id=547 data-nosnippet>547</a>    /// }
+<a href=#548 id=548 data-nosnippet>548</a>    /// ```
+<a href=#549 id=549 data-nosnippet>549</a>    </span><span class="kw">pub fn </span>available&lt;<span class="lifetime">'d</span>&gt;(<span class="kw-2">&amp;</span><span class="lifetime">'d </span><span class="self">self</span>) -&gt; <a href="#645-650">TimeZoneNameIter</a>&lt;<span class="lifetime">'d</span>&gt; {
+<a href=#550 id=550 data-nosnippet>550</a>        <span class="kw">match </span><a class="self" href="#549">self</a>.inner {
+<a href=#551 id=551 data-nosnippet>551</a>            Repr::<a href="#235">Empty</a> =&gt; <a href="#645-650">TimeZoneNameIter</a>::<a href="#654-663">empty</a>(),
+<a href=#552 id=552 data-nosnippet>552</a>            Repr::<a href="#237">Bundled</a>(<span class="kw-2">ref </span>db) =&gt; <a href="#552">db</a>.<a href="bundled/disabled.rs.html#17-19">available</a>(),
+<a href=#553 id=553 data-nosnippet>553</a>            Repr::<a href="#239">Arc</a>(<span class="kw-2">ref </span>kind) =&gt; <span class="kw">match </span><span class="kw-2">**</span><a href="#553">kind</a> {
+<a href=#554 id=554 data-nosnippet>554</a>                Kind::<a href="#246">ZoneInfo</a>(<span class="kw-2">ref </span>db) =&gt; <a href="#554">db</a>.<a href="zoneinfo/disabled.rs.html#31-33">available</a>(),
+<a href=#555 id=555 data-nosnippet>555</a>                Kind::<a href="#247">Concatenated</a>(<span class="kw-2">ref </span>db) =&gt; <a href="#555">db</a>.<a href="concatenated/disabled.rs.html#31-33">available</a>(),
+<a href=#556 id=556 data-nosnippet>556</a>            },
+<a href=#557 id=557 data-nosnippet>557</a>        }
+<a href=#558 id=558 data-nosnippet>558</a>    }
+<a href=#559 id=559 data-nosnippet>559</a>
+<a href=#560 id=560 data-nosnippet>560</a>    <span class="doccomment">/// Resets the internal cache of this database.
+<a href=#561 id=561 data-nosnippet>561</a>    ///
+<a href=#562 id=562 data-nosnippet>562</a>    /// Subsequent interactions with this database will need to re-read time
+<a href=#563 id=563 data-nosnippet>563</a>    /// zone data from disk.
+<a href=#564 id=564 data-nosnippet>564</a>    ///
+<a href=#565 id=565 data-nosnippet>565</a>    /// It might be useful to call this if you know the time zone database
+<a href=#566 id=566 data-nosnippet>566</a>    /// has changed on disk and want to force Jiff to re-load it immediately
+<a href=#567 id=567 data-nosnippet>567</a>    /// without spawning a new process or waiting for Jiff's internal cache
+<a href=#568 id=568 data-nosnippet>568</a>    /// invalidation heuristics to kick in.
+<a href=#569 id=569 data-nosnippet>569</a>    </span><span class="kw">pub fn </span>reset(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+<a href=#570 id=570 data-nosnippet>570</a>        <span class="kw">match </span><a class="self" href="#569">self</a>.inner {
+<a href=#571 id=571 data-nosnippet>571</a>            Repr::<a href="#235">Empty</a> =&gt; {}
+<a href=#572 id=572 data-nosnippet>572</a>            Repr::<a href="#237">Bundled</a>(<span class="kw-2">ref </span>db) =&gt; <a href="#572">db</a>.<a href="bundled/disabled.rs.html#11">reset</a>(),
+<a href=#573 id=573 data-nosnippet>573</a>            Repr::<a href="#239">Arc</a>(<span class="kw-2">ref </span>kind) =&gt; <span class="kw">match </span><span class="kw-2">**</span><a href="#573">kind</a> {
+<a href=#574 id=574 data-nosnippet>574</a>                Kind::<a href="#246">ZoneInfo</a>(<span class="kw-2">ref </span>db) =&gt; <a href="#574">db</a>.<a href="zoneinfo/disabled.rs.html#25">reset</a>(),
+<a href=#575 id=575 data-nosnippet>575</a>                Kind::<a href="#247">Concatenated</a>(<span class="kw-2">ref </span>db) =&gt; <a href="#575">db</a>.<a href="concatenated/disabled.rs.html#25">reset</a>(),
+<a href=#576 id=576 data-nosnippet>576</a>            },
+<a href=#577 id=577 data-nosnippet>577</a>        }
+<a href=#578 id=578 data-nosnippet>578</a>    }
+<a href=#579 id=579 data-nosnippet>579</a>
+<a href=#580 id=580 data-nosnippet>580</a>    <span class="doccomment">/// Returns true if it is known that this time zone database is empty.
+<a href=#581 id=581 data-nosnippet>581</a>    ///
+<a href=#582 id=582 data-nosnippet>582</a>    /// When this returns true, it is guaranteed that all
+<a href=#583 id=583 data-nosnippet>583</a>    /// [`TimeZoneDatabase::get`] calls will fail, and that
+<a href=#584 id=584 data-nosnippet>584</a>    /// [`TimeZoneDatabase::available`] will always return an empty iterator.
+<a href=#585 id=585 data-nosnippet>585</a>    ///
+<a href=#586 id=586 data-nosnippet>586</a>    /// Note that if this returns false, it is still possible for this database
+<a href=#587 id=587 data-nosnippet>587</a>    /// to be empty.
+<a href=#588 id=588 data-nosnippet>588</a>    ///
+<a href=#589 id=589 data-nosnippet>589</a>    /// # Example
+<a href=#590 id=590 data-nosnippet>590</a>    ///
+<a href=#591 id=591 data-nosnippet>591</a>    /// ```
+<a href=#592 id=592 data-nosnippet>592</a>    /// use jiff::tz::TimeZoneDatabase;
+<a href=#593 id=593 data-nosnippet>593</a>    ///
+<a href=#594 id=594 data-nosnippet>594</a>    /// let db = TimeZoneDatabase::none();
+<a href=#595 id=595 data-nosnippet>595</a>    /// assert!(db.is_definitively_empty());
+<a href=#596 id=596 data-nosnippet>596</a>    /// ```
+<a href=#597 id=597 data-nosnippet>597</a>    </span><span class="kw">pub fn </span>is_definitively_empty(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a> {
+<a href=#598 id=598 data-nosnippet>598</a>        <span class="kw">match </span><a class="self" href="#597">self</a>.inner {
+<a href=#599 id=599 data-nosnippet>599</a>            Repr::<a href="#235">Empty</a> =&gt; <span class="bool-val">true</span>,
+<a href=#600 id=600 data-nosnippet>600</a>            Repr::<a href="#237">Bundled</a>(<span class="kw-2">ref </span>db) =&gt; <a href="#600">db</a>.<a href="bundled/disabled.rs.html#21-23">is_definitively_empty</a>(),
+<a href=#601 id=601 data-nosnippet>601</a>            Repr::<a href="#239">Arc</a>(<span class="kw-2">ref </span>kind) =&gt; <span class="kw">match </span><span class="kw-2">**</span><a href="#601">kind</a> {
+<a href=#602 id=602 data-nosnippet>602</a>                Kind::<a href="#246">ZoneInfo</a>(<span class="kw-2">ref </span>db) =&gt; <a href="#602">db</a>.<a href="zoneinfo/disabled.rs.html#35-37">is_definitively_empty</a>(),
+<a href=#603 id=603 data-nosnippet>603</a>                Kind::<a href="#247">Concatenated</a>(<span class="kw-2">ref </span>db) =&gt; <a href="#603">db</a>.<a href="concatenated/disabled.rs.html#35-37">is_definitively_empty</a>(),
+<a href=#604 id=604 data-nosnippet>604</a>            },
+<a href=#605 id=605 data-nosnippet>605</a>        }
+<a href=#606 id=606 data-nosnippet>606</a>    }
+<a href=#607 id=607 data-nosnippet>607</a>}
+<a href=#608 id=608 data-nosnippet>608</a>
+<a href=#609 id=609 data-nosnippet>609</a><span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html">core::fmt::Debug</a> <span class="kw">for </span><a href="#219-221">TimeZoneDatabase</a> {
+<a href=#610 id=610 data-nosnippet>610</a>    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>core::fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html">Formatter</a>) -&gt; core::fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/type.Result.html">Result</a> {
+<a href=#611 id=611 data-nosnippet>611</a>        f.write_str(<span class="string">"TimeZoneDatabase("</span>)<span class="question-mark">?</span>;
+<a href=#612 id=612 data-nosnippet>612</a>        <span class="kw">match </span><a class="self" href="#610">self</a>.inner {
+<a href=#613 id=613 data-nosnippet>613</a>            Repr::<a href="#235">Empty</a> =&gt; <span class="kw">return </span><a href="#610">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(<span class="string">"unavailable)"</span>),
+<a href=#614 id=614 data-nosnippet>614</a>            Repr::<a href="#237">Bundled</a>(<span class="kw-2">ref </span>db) =&gt; core::fmt::Debug::fmt(db, f)<span class="question-mark">?</span>,
+<a href=#615 id=615 data-nosnippet>615</a>            Repr::<a href="#239">Arc</a>(<span class="kw-2">ref </span>kind) =&gt; <span class="kw">match </span><span class="kw-2">**</span><a href="#615">kind</a> {
+<a href=#616 id=616 data-nosnippet>616</a>                Kind::<a href="#246">ZoneInfo</a>(<span class="kw-2">ref </span>db) =&gt; core::fmt::Debug::fmt(db, f)<span class="question-mark">?</span>,
+<a href=#617 id=617 data-nosnippet>617</a>                Kind::<a href="#247">Concatenated</a>(<span class="kw-2">ref </span>db) =&gt; core::fmt::Debug::fmt(db, f)<span class="question-mark">?</span>,
+<a href=#618 id=618 data-nosnippet>618</a>            },
+<a href=#619 id=619 data-nosnippet>619</a>        }
+<a href=#620 id=620 data-nosnippet>620</a>        <a href="#610">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(<span class="string">")"</span>)
+<a href=#621 id=621 data-nosnippet>621</a>    }
+<a href=#622 id=622 data-nosnippet>622</a>}
+<a href=#623 id=623 data-nosnippet>623</a>
+<a href=#624 id=624 data-nosnippet>624</a><span class="attr">#[cfg(feature = <span class="string">"defmt"</span>)]
+<a href=#625 id=625 data-nosnippet>625</a></span><span class="kw">impl </span>defmt::Format <span class="kw">for </span>TimeZoneDatabase {
+<a href=#626 id=626 data-nosnippet>626</a>    <span class="kw">fn </span>format(<span class="kw-2">&amp;</span><span class="self">self</span>, f: defmt::Formatter) {
+<a href=#627 id=627 data-nosnippet>627</a>        <span class="comment">// `Kind` doesn't implement `defmt::Format`, so we only emit the type
+<a href=#628 id=628 data-nosnippet>628</a>        // name. On embedded targets the database is usually bundled or unused,
+<a href=#629 id=629 data-nosnippet>629</a>        // so the internal backend probably isn't meaningful to log either way.
+<a href=#630 id=630 data-nosnippet>630</a>        </span><span class="macro">defmt::write!</span>(f, <span class="string">"TimeZoneDatabase(unavailable)"</span>);
+<a href=#631 id=631 data-nosnippet>631</a>    }
+<a href=#632 id=632 data-nosnippet>632</a>}
+<a href=#633 id=633 data-nosnippet>633</a>
+<a href=#634 id=634 data-nosnippet>634</a><span class="doccomment">/// An iterator over the time zone identifiers in a [`TimeZoneDatabase`].
+<a href=#635 id=635 data-nosnippet>635</a>///
+<a href=#636 id=636 data-nosnippet>636</a>/// This iterator is created by [`TimeZoneDatabase::available`].
+<a href=#637 id=637 data-nosnippet>637</a>///
+<a href=#638 id=638 data-nosnippet>638</a>/// There are no guarantees about the order in which this iterator yields
+<a href=#639 id=639 data-nosnippet>639</a>/// time zone identifiers.
+<a href=#640 id=640 data-nosnippet>640</a>///
+<a href=#641 id=641 data-nosnippet>641</a>/// The lifetime parameter corresponds to the lifetime of the
+<a href=#642 id=642 data-nosnippet>642</a>/// `TimeZoneDatabase` from which this iterator was created.
+<a href=#643 id=643 data-nosnippet>643</a></span><span class="expansion"><input id=expand-643 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl</span>&lt;<span class="lifetime">'d</span>&gt; ::core::clone::Clone <span class="kw">for </span>TimeZoneNameIter&lt;<span class="lifetime">'d</span>&gt;
+    {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
+        TimeZoneNameIter { it: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.it) }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl</span>&lt;<span class="lifetime">'d</span>&gt; ::core::fmt::Debug <span class="kw">for </span>TimeZoneNameIter&lt;<span class="lifetime">'d</span>&gt; {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::debug_struct_field1_finish(f,
+            <span class="string">"TimeZoneNameIter it"</span>, &amp;&amp;<span class="self">self</span>.it)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span></span></span><span class="attr">)]
+<a href=#644 id=644 data-nosnippet>644</a>#[cfg_attr(feature = <span class="string">"defmt"</span>, derive(defmt::Format))]
+<a href=#645 id=645 data-nosnippet>645</a></span><span class="kw">pub struct </span><a href="../../../../jiff/tz/struct.TimeZoneNameIter.html">TimeZoneNameIter</a>&lt;<span class="lifetime">'d</span>&gt; {
+<a href=#646 id=646 data-nosnippet>646</a>    <span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
+<a href=#647 id=647 data-nosnippet>647</a>    </span>it: alloc::vec::<a href="https://doc.rust-lang.org/nightly/alloc/vec/into_iter/struct.IntoIter.html">IntoIter</a>&lt;<a href="#693-706">TimeZoneName</a>&lt;<span class="lifetime">'d</span>&gt;&gt;,
+<a href=#648 id=648 data-nosnippet>648</a>    <span class="attr">#[cfg(not(feature = <span class="string">"alloc"</span>))]
+<a href=#649 id=649 data-nosnippet>649</a>    </span>it: core::iter::Empty&lt;TimeZoneName&lt;<span class="lifetime">'d</span>&gt;&gt;,
+<a href=#650 id=650 data-nosnippet>650</a>}
+<a href=#651 id=651 data-nosnippet>651</a>
+<a href=#652 id=652 data-nosnippet>652</a><span class="kw">impl</span>&lt;<span class="lifetime">'d</span>&gt; <a href="#645-650">TimeZoneNameIter</a>&lt;<span class="lifetime">'d</span>&gt; {
+<a href=#653 id=653 data-nosnippet>653</a>    <span class="doccomment">/// Creates a time zone name iterator that never yields any elements.
+<a href=#654 id=654 data-nosnippet>654</a>    </span><span class="kw">fn </span>empty() -&gt; <a href="#645-650">TimeZoneNameIter</a>&lt;<span class="lifetime">'d</span>&gt; {
+<a href=#655 id=655 data-nosnippet>655</a>        <span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
+<a href=#656 id=656 data-nosnippet>656</a>        </span>{
+<a href=#657 id=657 data-nosnippet>657</a>            <a href="#645-650">TimeZoneNameIter</a> { it: alloc::vec::<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>::<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html#method.new">new</a>().<a href="https://doc.rust-lang.org/nightly/core/iter/traits/collect/trait.IntoIterator.html#tymethod.into_iter">into_iter</a>() }
+<a href=#658 id=658 data-nosnippet>658</a>        }
+<a href=#659 id=659 data-nosnippet>659</a>        <span class="attr">#[cfg(not(feature = <span class="string">"alloc"</span>))]
+<a href=#660 id=660 data-nosnippet>660</a>        </span>{
+<a href=#661 id=661 data-nosnippet>661</a>            TimeZoneNameIter { it: core::iter::empty() }
+<a href=#662 id=662 data-nosnippet>662</a>        }
+<a href=#663 id=663 data-nosnippet>663</a>    }
+<a href=#664 id=664 data-nosnippet>664</a>
+<a href=#665 id=665 data-nosnippet>665</a>    <span class="doccomment">/// Creates a time zone name iterator that yields the elements from the
+<a href=#666 id=666 data-nosnippet>666</a>    /// iterator given. (They are collected into a `Vec`.)
+<a href=#667 id=667 data-nosnippet>667</a>    </span><span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
+<a href=#668 id=668 data-nosnippet>668</a>    </span><span class="kw">fn </span>from_iter(
+<a href=#669 id=669 data-nosnippet>669</a>        it: <span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html">Iterator</a>&lt;Item = <span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/convert/trait.Into.html">Into</a>&lt;alloc::string::<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>&gt;&gt;,
+<a href=#670 id=670 data-nosnippet>670</a>    ) -&gt; <a href="#645-650">TimeZoneNameIter</a>&lt;<span class="lifetime">'d</span>&gt; {
+<a href=#671 id=671 data-nosnippet>671</a>        <span class="kw">let </span>names: alloc::vec::<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="#693-706">TimeZoneName</a>&lt;<span class="lifetime">'d</span>&gt;&gt; =
+<a href=#672 id=672 data-nosnippet>672</a>            <a href="#669">it</a>.<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.map">map</a>(|name| <a href="#693-706">TimeZoneName</a>::<a href="#713-715">new</a>(<a href="#672">name</a>.<a href="https://doc.rust-lang.org/nightly/core/convert/trait.Into.html#tymethod.into">into</a>())).<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.collect">collect</a>();
+<a href=#673 id=673 data-nosnippet>673</a>        <a href="#645-650">TimeZoneNameIter</a> { it: <a href="#671">names</a>.<a href="https://doc.rust-lang.org/nightly/core/iter/traits/collect/trait.IntoIterator.html#tymethod.into_iter">into_iter</a>() }
+<a href=#674 id=674 data-nosnippet>674</a>    }
+<a href=#675 id=675 data-nosnippet>675</a>}
+<a href=#676 id=676 data-nosnippet>676</a>
+<a href=#677 id=677 data-nosnippet>677</a><span class="kw">impl</span>&lt;<span class="lifetime">'d</span>&gt; <a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html">Iterator</a> <span class="kw">for </span><a href="#645-650">TimeZoneNameIter</a>&lt;<span class="lifetime">'d</span>&gt; {
+<a href=#678 id=678 data-nosnippet>678</a>    <span class="kw">type </span>Item = <a href="#693-706">TimeZoneName</a>&lt;<span class="lifetime">'d</span>&gt;;
+<a href=#679 id=679 data-nosnippet>679</a>
+<a href=#680 id=680 data-nosnippet>680</a>    <span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="#693-706">TimeZoneName</a>&lt;<span class="lifetime">'d</span>&gt;&gt; {
+<a href=#681 id=681 data-nosnippet>681</a>        <a class="self" href="#680">self</a>.it.<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#tymethod.next">next</a>()
+<a href=#682 id=682 data-nosnippet>682</a>    }
+<a href=#683 id=683 data-nosnippet>683</a>}
+<a href=#684 id=684 data-nosnippet>684</a>
+<a href=#685 id=685 data-nosnippet>685</a><span class="doccomment">/// A name for a time zone yield by the [`TimeZoneNameIter`] iterator.
+<a href=#686 id=686 data-nosnippet>686</a>///
+<a href=#687 id=687 data-nosnippet>687</a>/// The iterator is created by [`TimeZoneDatabase::available`].
+<a href=#688 id=688 data-nosnippet>688</a>///
+<a href=#689 id=689 data-nosnippet>689</a>/// The lifetime parameter corresponds to the lifetime of the
+<a href=#690 id=690 data-nosnippet>690</a>/// `TimeZoneDatabase` from which this name was created.
+<a href=#691 id=691 data-nosnippet>691</a></span><span class="expansion"><input id=expand-691 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl</span>&lt;<span class="lifetime">'d</span>&gt; ::core::clone::Clone <span class="kw">for </span>TimeZoneName&lt;<span class="lifetime">'d</span>&gt; {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
+        TimeZoneName {
+            lifetime: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.lifetime),
+            name: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.name),
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl</span>&lt;<span class="lifetime">'d</span>&gt; ::core::fmt::Debug <span class="kw">for </span>TimeZoneName&lt;<span class="lifetime">'d</span>&gt; {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::debug_struct_field2_finish(f,
+            <span class="string">"TimeZoneName lifetime name"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.lifetime, &amp;&amp;<span class="self">self</span>.name)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl</span>&lt;<span class="lifetime">'d</span>&gt; ::core::cmp::Eq <span class="kw">for </span>TimeZoneName&lt;<span class="lifetime">'d</span>&gt; {
+    <span class="attr">#[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    </span><span class="kw">fn </span>assert_fields_are_eq(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+        <span class="kw">let _</span>:
+                ::core::cmp::AssertParamIsEq&lt;core::marker::PhantomData&lt;<span class="kw-2">&amp;</span><span class="lifetime">'d </span>str&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;alloc::string::String&gt;;
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.Eq.html">Eq</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl</span>&lt;<span class="lifetime">'d</span>&gt; ::core::hash::Hash <span class="kw">for </span>TimeZoneName&lt;<span class="lifetime">'d</span>&gt; {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>hash&lt;__H: ::core::hash::Hasher&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, state: <span class="kw-2">&amp;mut </span>__H) {
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.lifetime, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.name, state)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/hash/macros/derive.Hash.html">Hash</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl</span>&lt;<span class="lifetime">'d</span>&gt; ::core::marker::StructuralPartialEq <span class="kw">for
+    </span>TimeZoneName&lt;<span class="lifetime">'d</span>&gt; {
+}
+<span class="attr">#[automatically_derived]</span><span class="kw">impl</span>&lt;<span class="lifetime">'d</span>&gt; ::core::cmp::PartialEq <span class="kw">for </span>TimeZoneName&lt;<span class="lifetime">'d</span>&gt; {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; bool {
+        <span class="self">self</span>.lifetime == other.lifetime &amp;&amp; <span class="self">self</span>.name == other.name
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.PartialEq.html">PartialEq</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl</span>&lt;<span class="lifetime">'d</span>&gt; ::core::cmp::PartialOrd <span class="kw">for </span>TimeZoneName&lt;<span class="lifetime">'d</span>&gt;
+    {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>partial_cmp(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>)
+        -&gt; ::core::option::Option&lt;::core::cmp::Ordering&gt; {
+        ::core::option::Option::Some(::core::cmp::Ord::cmp(<span class="self">self</span>, other))
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.PartialOrd.html">PartialOrd</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl</span>&lt;<span class="lifetime">'d</span>&gt; ::core::cmp::Ord <span class="kw">for </span>TimeZoneName&lt;<span class="lifetime">'d</span>&gt; {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>cmp(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; ::core::cmp::Ordering {
+        <span class="kw">match </span>::core::cmp::Ord::cmp(<span class="kw-2">&amp;</span><span class="self">self</span>.lifetime, <span class="kw-2">&amp;</span>other.lifetime) {
+            ::core::cmp::Ordering::Equal =&gt;
+                ::core::cmp::Ord::cmp(<span class="kw-2">&amp;</span><span class="self">self</span>.name, <span class="kw-2">&amp;</span>other.name),
+            cmp =&gt; cmp,
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.Ord.html">Ord</a></span></span></span><span class="attr">)]
+<a href=#692 id=692 data-nosnippet>692</a>#[cfg_attr(feature = <span class="string">"defmt"</span>, derive(defmt::Format))]
+<a href=#693 id=693 data-nosnippet>693</a></span><span class="kw">pub struct </span><a href="../../../../jiff/tz/struct.TimeZoneName.html">TimeZoneName</a>&lt;<span class="lifetime">'d</span>&gt; {
+<a href=#694 id=694 data-nosnippet>694</a>    <span class="doccomment">/// The lifetime of the tzdb.
+<a href=#695 id=695 data-nosnippet>695</a>    ///
+<a href=#696 id=696 data-nosnippet>696</a>    /// We don't currently use this, but it could be quite useful if we ever
+<a href=#697 id=697 data-nosnippet>697</a>    /// adopt a "compile time" tzdb like what `chrono-tz` has. Then we could
+<a href=#698 id=698 data-nosnippet>698</a>    /// return strings directly from the embedded data. Or perhaps a "compile
+<a href=#699 id=699 data-nosnippet>699</a>    /// time" TZif or some such.
+<a href=#700 id=700 data-nosnippet>700</a>    </span>lifetime: core::marker::<a href="https://doc.rust-lang.org/nightly/core/marker/struct.PhantomData.html">PhantomData</a>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'d </span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>&gt;,
+<a href=#701 id=701 data-nosnippet>701</a>    <span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
+<a href=#702 id=702 data-nosnippet>702</a>    #[cfg_attr(feature = <span class="string">"defmt"</span>, defmt(Debug2Format))]
+<a href=#703 id=703 data-nosnippet>703</a>    </span>name: alloc::string::<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>,
+<a href=#704 id=704 data-nosnippet>704</a>    <span class="attr">#[cfg(not(feature = <span class="string">"alloc"</span>))]
+<a href=#705 id=705 data-nosnippet>705</a>    </span>name: core::convert::Infallible,
+<a href=#706 id=706 data-nosnippet>706</a>}
+<a href=#707 id=707 data-nosnippet>707</a>
+<a href=#708 id=708 data-nosnippet>708</a><span class="kw">impl</span>&lt;<span class="lifetime">'d</span>&gt; <a href="#693-706">TimeZoneName</a>&lt;<span class="lifetime">'d</span>&gt; {
+<a href=#709 id=709 data-nosnippet>709</a>    <span class="doccomment">/// Returns a new time zone name from the string given.
+<a href=#710 id=710 data-nosnippet>710</a>    ///
+<a href=#711 id=711 data-nosnippet>711</a>    /// The lifetime returned is inferred according to the caller's context.
+<a href=#712 id=712 data-nosnippet>712</a>    </span><span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
+<a href=#713 id=713 data-nosnippet>713</a>    </span><span class="kw">fn </span>new(name: alloc::string::<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>) -&gt; <a href="#693-706">TimeZoneName</a>&lt;<span class="lifetime">'d</span>&gt; {
+<a href=#714 id=714 data-nosnippet>714</a>        <a href="#693-706">TimeZoneName</a> { lifetime: core::marker::<a href="https://doc.rust-lang.org/nightly/core/marker/struct.PhantomData.html">PhantomData</a>, <a href="#713">name</a> }
+<a href=#715 id=715 data-nosnippet>715</a>    }
+<a href=#716 id=716 data-nosnippet>716</a>
+<a href=#717 id=717 data-nosnippet>717</a>    <span class="doccomment">/// Returns this time zone name as a borrowed string.
+<a href=#718 id=718 data-nosnippet>718</a>    ///
+<a href=#719 id=719 data-nosnippet>719</a>    /// Note that the lifetime of the string returned is tied to `self`,
+<a href=#720 id=720 data-nosnippet>720</a>    /// which may be shorter than the lifetime `'d` of the originating
+<a href=#721 id=721 data-nosnippet>721</a>    /// `TimeZoneDatabase`.
+<a href=#722 id=722 data-nosnippet>722</a>    </span><span class="attr">#[inline]
+<a href=#723 id=723 data-nosnippet>723</a>    </span><span class="kw">pub fn </span>as_str&lt;<span class="lifetime">'a</span>&gt;(<span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a> {
+<a href=#724 id=724 data-nosnippet>724</a>        <span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
+<a href=#725 id=725 data-nosnippet>725</a>        </span>{
+<a href=#726 id=726 data-nosnippet>726</a>            <a class="self" href="#723">self</a>.name.<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html#method.as_str">as_str</a>()
+<a href=#727 id=727 data-nosnippet>727</a>        }
+<a href=#728 id=728 data-nosnippet>728</a>        <span class="attr">#[cfg(not(feature = <span class="string">"alloc"</span>))]
+<a href=#729 id=729 data-nosnippet>729</a>        </span>{
+<a href=#730 id=730 data-nosnippet>730</a>            <span class="comment">// Can never be reached because `TimeZoneName` cannot currently
+<a href=#731 id=731 data-nosnippet>731</a>            // be constructed in core-only environments.
+<a href=#732 id=732 data-nosnippet>732</a>            </span><span class="macro">unreachable!</span>()
+<a href=#733 id=733 data-nosnippet>733</a>        }
+<a href=#734 id=734 data-nosnippet>734</a>    }
+<a href=#735 id=735 data-nosnippet>735</a>}
+<a href=#736 id=736 data-nosnippet>736</a>
+<a href=#737 id=737 data-nosnippet>737</a><span class="kw">impl</span>&lt;<span class="lifetime">'d</span>&gt; <a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Display.html">core::fmt::Display</a> <span class="kw">for </span><a href="#693-706">TimeZoneName</a>&lt;<span class="lifetime">'d</span>&gt; {
+<a href=#738 id=738 data-nosnippet>738</a>    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>core::fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html">Formatter</a>) -&gt; core::fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/type.Result.html">Result</a> {
+<a href=#739 id=739 data-nosnippet>739</a>        <a href="#738">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(<a class="self" href="#738">self</a>.<a href="#723-734">as_str</a>())
+<a href=#740 id=740 data-nosnippet>740</a>    }
+<a href=#741 id=741 data-nosnippet>741</a>}
+<a href=#742 id=742 data-nosnippet>742</a>
+<a href=#743 id=743 data-nosnippet>743</a><span class="doccomment">/// The geographical location corresponding to a primary time zone identifier.
+<a href=#744 id=744 data-nosnippet>744</a>///
+<a href=#745 id=745 data-nosnippet>745</a>/// This can be retrieved for a time zone via [`TimeZone::location`].
+<a href=#746 id=746 data-nosnippet>746</a>///
+<a href=#747 id=747 data-nosnippet>747</a>/// # Example
+<a href=#748 id=748 data-nosnippet>748</a>///
+<a href=#749 id=749 data-nosnippet>749</a>/// ```
+<a href=#750 id=750 data-nosnippet>750</a>/// use jiff::tz::TimeZone;
+<a href=#751 id=751 data-nosnippet>751</a>/// # if TimeZone::get("Asia/Calcutta").is_err() { return Ok(()) };
+<a href=#752 id=752 data-nosnippet>752</a>///
+<a href=#753 id=753 data-nosnippet>753</a>/// let tz = TimeZone::get("Europe/Copenhagen")?;
+<a href=#754 id=754 data-nosnippet>754</a>/// let loc = tz.location().unwrap();
+<a href=#755 id=755 data-nosnippet>755</a>/// assert_eq!(loc.country(), "DK");
+<a href=#756 id=756 data-nosnippet>756</a>///
+<a href=#757 id=757 data-nosnippet>757</a>/// let tz = TimeZone::get("EuRoPe/BeRlIn")?;
+<a href=#758 id=758 data-nosnippet>758</a>/// let loc = tz.location().unwrap();
+<a href=#759 id=759 data-nosnippet>759</a>/// assert_eq!(loc.country(), "DE");
+<a href=#760 id=760 data-nosnippet>760</a>///
+<a href=#761 id=761 data-nosnippet>761</a>/// let tz = TimeZone::get("asia/calcutta")?;
+<a href=#762 id=762 data-nosnippet>762</a>/// let loc = tz.location().unwrap();
+<a href=#763 id=763 data-nosnippet>763</a>/// assert_eq!(loc.country(), "IN");
+<a href=#764 id=764 data-nosnippet>764</a>///
+<a href=#765 id=765 data-nosnippet>765</a>/// # Ok::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;(())
+<a href=#766 id=766 data-nosnippet>766</a>/// ```
+<a href=#767 id=767 data-nosnippet>767</a></span><span class="expansion"><input id=expand-767 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]#[doc(hidden)]</span><span class="kw">unsafe impl </span>::core::clone::TrivialClone
+    <span class="kw">for </span>TimeZoneLocation {
+}
+<span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>TimeZoneLocation {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;ArrayStr&lt;<span class="number">2</span>&gt;&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;f64&gt;;
+        <span class="kw-2">*</span><span class="self">self
+    </span>}
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::marker::Copy <span class="kw">for </span>TimeZoneLocation { }</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/marker/derive.Copy.html">Copy</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>TimeZoneLocation {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::debug_struct_field3_finish(f,
+            <span class="string">"TimeZoneLocation country latitude longitude"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.country,
+            <span class="kw-2">&amp;</span><span class="self">self</span>.latitude, &amp;&amp;<span class="self">self</span>.longitude)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span></span></span><span class="attr">)]
+<a href=#768 id=768 data-nosnippet>768</a></span><span class="kw">pub struct </span><a href="../../../../jiff/tz/struct.TimeZoneLocation.html">TimeZoneLocation</a> {
+<a href=#769 id=769 data-nosnippet>769</a>    <span class="doccomment">/// The ISO 3166 code corresponding to the country for the primary time
+<a href=#770 id=770 data-nosnippet>770</a>    /// zone identifier.
+<a href=#771 id=771 data-nosnippet>771</a>    </span>country: <a href="../../../../jiff_core/util/struct.ArrayStr.html">ArrayStr</a>&lt;<span class="number">2</span>&gt;,
+<a href=#772 id=772 data-nosnippet>772</a>    <span class="doccomment">/// The latitude coordinate.
+<a href=#773 id=773 data-nosnippet>773</a>    </span>latitude: <a href="https://doc.rust-lang.org/nightly/std/primitive.f64.html">f64</a>,
+<a href=#774 id=774 data-nosnippet>774</a>    <span class="doccomment">/// The longitude coordinate.
+<a href=#775 id=775 data-nosnippet>775</a>    </span>longitude: <a href="https://doc.rust-lang.org/nightly/std/primitive.f64.html">f64</a>,
+<a href=#776 id=776 data-nosnippet>776</a>}
+<a href=#777 id=777 data-nosnippet>777</a>
+<a href=#778 id=778 data-nosnippet>778</a><span class="kw">impl </span><a href="#768-776">TimeZoneLocation</a> {
+<a href=#779 id=779 data-nosnippet>779</a>    <span class="doccomment">/// Returns the ISO 3166 country code for the corresponding time zone.
+<a href=#780 id=780 data-nosnippet>780</a>    ///
+<a href=#781 id=781 data-nosnippet>781</a>    /// # Example
+<a href=#782 id=782 data-nosnippet>782</a>    ///
+<a href=#783 id=783 data-nosnippet>783</a>    /// ```
+<a href=#784 id=784 data-nosnippet>784</a>    /// use jiff::tz::TimeZone;
+<a href=#785 id=785 data-nosnippet>785</a>    /// # if TimeZone::get("Asia/Calcutta").is_err() { return Ok(()) };
+<a href=#786 id=786 data-nosnippet>786</a>    ///
+<a href=#787 id=787 data-nosnippet>787</a>    /// let tz = TimeZone::get("Asia/Calcutta")?;
+<a href=#788 id=788 data-nosnippet>788</a>    /// let loc = tz.location().unwrap();
+<a href=#789 id=789 data-nosnippet>789</a>    /// assert_eq!(loc.country(), "IN");
+<a href=#790 id=790 data-nosnippet>790</a>    ///
+<a href=#791 id=791 data-nosnippet>791</a>    /// # Ok::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;(())
+<a href=#792 id=792 data-nosnippet>792</a>    /// ```
+<a href=#793 id=793 data-nosnippet>793</a>    </span><span class="kw">pub const fn </span>country(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a> {
+<a href=#794 id=794 data-nosnippet>794</a>        <a class="self" href="#793">self</a>.country.<a href="../../../../jiff_core/util/struct.ArrayStr.html#method.as_str">as_str</a>()
+<a href=#795 id=795 data-nosnippet>795</a>    }
+<a href=#796 id=796 data-nosnippet>796</a>
+<a href=#797 id=797 data-nosnippet>797</a>    <span class="doccomment">/// Returns the latitude coordinate for the corresponding time zone.
+<a href=#798 id=798 data-nosnippet>798</a>    ///
+<a href=#799 id=799 data-nosnippet>799</a>    /// # Example
+<a href=#800 id=800 data-nosnippet>800</a>    ///
+<a href=#801 id=801 data-nosnippet>801</a>    /// ```
+<a href=#802 id=802 data-nosnippet>802</a>    /// use jiff::tz::TimeZone;
+<a href=#803 id=803 data-nosnippet>803</a>    /// # if TimeZone::get("Asia/Calcutta").is_err() { return Ok(()) };
+<a href=#804 id=804 data-nosnippet>804</a>    ///
+<a href=#805 id=805 data-nosnippet>805</a>    /// let tz = TimeZone::get("Asia/Calcutta")?;
+<a href=#806 id=806 data-nosnippet>806</a>    /// let loc = tz.location().unwrap();
+<a href=#807 id=807 data-nosnippet>807</a>    /// assert_eq!(loc.latitude(), 22.533333333333335);
+<a href=#808 id=808 data-nosnippet>808</a>    ///
+<a href=#809 id=809 data-nosnippet>809</a>    /// # Ok::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;(())
+<a href=#810 id=810 data-nosnippet>810</a>    /// ```
+<a href=#811 id=811 data-nosnippet>811</a>    </span><span class="kw">pub const fn </span>latitude(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/std/primitive.f64.html">f64</a> {
+<a href=#812 id=812 data-nosnippet>812</a>        <a class="self" href="#811">self</a>.latitude
+<a href=#813 id=813 data-nosnippet>813</a>    }
+<a href=#814 id=814 data-nosnippet>814</a>
+<a href=#815 id=815 data-nosnippet>815</a>    <span class="doccomment">/// Returns the longitude coordinate for the corresponding time zone.
+<a href=#816 id=816 data-nosnippet>816</a>    ///
+<a href=#817 id=817 data-nosnippet>817</a>    /// # Example
+<a href=#818 id=818 data-nosnippet>818</a>    ///
+<a href=#819 id=819 data-nosnippet>819</a>    /// ```
+<a href=#820 id=820 data-nosnippet>820</a>    /// use jiff::tz::TimeZone;
+<a href=#821 id=821 data-nosnippet>821</a>    /// # if TimeZone::get("Asia/Calcutta").is_err() { return Ok(()) };
+<a href=#822 id=822 data-nosnippet>822</a>    ///
+<a href=#823 id=823 data-nosnippet>823</a>    /// let tz = TimeZone::get("Asia/Calcutta")?;
+<a href=#824 id=824 data-nosnippet>824</a>    /// let loc = tz.location().unwrap();
+<a href=#825 id=825 data-nosnippet>825</a>    /// assert_eq!(loc.longitude(), 88.36666666666666);
+<a href=#826 id=826 data-nosnippet>826</a>    ///
+<a href=#827 id=827 data-nosnippet>827</a>    /// # Ok::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;(())
+<a href=#828 id=828 data-nosnippet>828</a>    /// ```
+<a href=#829 id=829 data-nosnippet>829</a>    </span><span class="kw">pub const fn </span>longitude(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/std/primitive.f64.html">f64</a> {
+<a href=#830 id=830 data-nosnippet>830</a>        <a class="self" href="#829">self</a>.longitude
+<a href=#831 id=831 data-nosnippet>831</a>    }
+<a href=#832 id=832 data-nosnippet>832</a>}
+<a href=#833 id=833 data-nosnippet>833</a>
+<a href=#834 id=834 data-nosnippet>834</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>find_primary_iana_name(iana_name: <span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'static </span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>&gt; {
+<a href=#835 id=835 data-nosnippet>835</a>    <span class="kw">let </span>index = metadata::TIME_ZONE_PRIMARY_IDENTIFIER
+<a href=#836 id=836 data-nosnippet>836</a>        .binary_search_by(|<span class="kw-2">&amp;</span>(key, <span class="kw">_</span>)| key.cmp(iana_name))
+<a href=#837 id=837 data-nosnippet>837</a>        .ok()<span class="question-mark">?</span>;
+<a href=#838 id=838 data-nosnippet>838</a>    <span class="kw">let </span>primary = metadata::<a href="metadata.rs.html#5-604">TIME_ZONE_PRIMARY_IDENTIFIER</a>[<a href="#835">index</a>].<span class="number">1</span>;
+<a href=#839 id=839 data-nosnippet>839</a>    <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(<a href="#838">primary</a>)
+<a href=#840 id=840 data-nosnippet>840</a>}
+<a href=#841 id=841 data-nosnippet>841</a>
+<a href=#842 id=842 data-nosnippet>842</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>find_tz_location(iana_name: <span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="#768-776">TimeZoneLocation</a>&gt; {
+<a href=#843 id=843 data-nosnippet>843</a>    <span class="kw">let </span>index = metadata::TIME_ZONE_PRIMARY_IDENTIFIER
+<a href=#844 id=844 data-nosnippet>844</a>        .binary_search_by(|<span class="kw-2">&amp;</span>(key, <span class="kw">_</span>)| key.cmp(iana_name))
+<a href=#845 id=845 data-nosnippet>845</a>        .ok()<span class="question-mark">?</span>;
+<a href=#846 id=846 data-nosnippet>846</a>    <span class="kw">let </span>primary = metadata::<a href="metadata.rs.html#5-604">TIME_ZONE_PRIMARY_IDENTIFIER</a>[<a href="#843">index</a>].<span class="number">1</span>;
+<a href=#847 id=847 data-nosnippet>847</a>    <span class="kw">let </span>location = metadata::<a href="metadata.rs.html#606-3951">TIME_ZONE_METADATA</a>
+<a href=#848 id=848 data-nosnippet>848</a>        .<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.binary_search_by">binary_search_by</a>(|<span class="kw-2">&amp;</span>(key, <span class="kw">_</span>)| <a href="#848">key</a>.<a href="https://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html#tymethod.cmp">cmp</a>(<a href="#846">primary</a>))
+<a href=#849 id=849 data-nosnippet>849</a>        .<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.ok">ok</a>()
+<a href=#850 id=850 data-nosnippet>850</a>        .<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.map">map</a>(|index| metadata::<a href="metadata.rs.html#606-3951">TIME_ZONE_METADATA</a>[<a href="#850">index</a>].<span class="number">1</span>);
+<a href=#851 id=851 data-nosnippet>851</a>    <a href="#847">location</a>
+<a href=#852 id=852 data-nosnippet>852</a>}
+<a href=#853 id=853 data-nosnippet>853</a>
+<a href=#854 id=854 data-nosnippet>854</a><span class="doccomment">/// Checks if `name` is a "special" time zone and returns one if so.
+<a href=#855 id=855 data-nosnippet>855</a>///
+<a href=#856 id=856 data-nosnippet>856</a>/// This is limited to special constants that should have consistent values
+<a href=#857 id=857 data-nosnippet>857</a>/// across time zone database implementations. For example, `UTC`.
+<a href=#858 id=858 data-nosnippet>858</a></span><span class="kw">fn </span>special_time_zone(name: <span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../timezone.rs.html#260-262">TimeZone</a>&gt; {
+<a href=#859 id=859 data-nosnippet>859</a>    <span class="kw">if </span>utf8::<a href="../../util/utf8.rs.html#95-97">cmp_ignore_ascii_case</a>(<span class="string">"utc"</span>, <a href="#858">name</a>).<a href="https://doc.rust-lang.org/nightly/core/cmp/enum.Ordering.html#method.is_eq">is_eq</a>() {
+<a href=#860 id=860 data-nosnippet>860</a>        <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(<a href="../timezone.rs.html#260-262">TimeZone</a>::<a href="../timezone.rs.html#268">UTC</a>);
+<a href=#861 id=861 data-nosnippet>861</a>    }
+<a href=#862 id=862 data-nosnippet>862</a>    <span class="kw">if </span>utf8::<a href="../../util/utf8.rs.html#95-97">cmp_ignore_ascii_case</a>(<span class="string">"etc/unknown"</span>, <a href="#858">name</a>).<a href="https://doc.rust-lang.org/nightly/core/cmp/enum.Ordering.html#method.is_eq">is_eq</a>() {
+<a href=#863 id=863 data-nosnippet>863</a>        <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(<a href="../timezone.rs.html#260-262">TimeZone</a>::<a href="../timezone.rs.html#593-596">unknown</a>());
+<a href=#864 id=864 data-nosnippet>864</a>    }
+<a href=#865 id=865 data-nosnippet>865</a>    <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>
+<a href=#866 id=866 data-nosnippet>866</a>}
+<a href=#867 id=867 data-nosnippet>867</a>
+<a href=#868 id=868 data-nosnippet>868</a><span class="attr">#[cfg(test)]
+<a href=#869 id=869 data-nosnippet>869</a></span><span class="kw">mod </span>tests {
+<a href=#870 id=870 data-nosnippet>870</a>    <span class="kw">use super</span>::<span class="kw-2">*</span>;
+<a href=#871 id=871 data-nosnippet>871</a>
+<a href=#872 id=872 data-nosnippet>872</a>    <span class="doccomment">/// Tests that the global database returns the bundled tzdb when the bundle
+<a href=#873 id=873 data-nosnippet>873</a>    /// is enabled but neither the zoneinfo nor concatenated databases are.
+<a href=#874 id=874 data-nosnippet>874</a>    ///
+<a href=#875 id=875 data-nosnippet>875</a>    /// This configuration doesn't have `std` (since both `tzdb-zoneinfo` and
+<a href=#876 id=876 data-nosnippet>876</a>    /// `tzdb-concatenated` imply it), and so without special handling `db()`
+<a href=#877 id=877 data-nosnippet>877</a>    /// used to return an empty database despite the tzdb being compiled in.
+<a href=#878 id=878 data-nosnippet>878</a>    ///
+<a href=#879 id=879 data-nosnippet>879</a>    /// Regression test for: https://github.com/BurntSushi/jiff/issues/533
+<a href=#880 id=880 data-nosnippet>880</a>    </span><span class="attr">#[cfg(all(
+<a href=#881 id=881 data-nosnippet>881</a>        feature = <span class="string">"tzdb-bundle-always"</span>,
+<a href=#882 id=882 data-nosnippet>882</a>        not(feature = <span class="string">"tzdb-zoneinfo"</span>),
+<a href=#883 id=883 data-nosnippet>883</a>        not(feature = <span class="string">"tzdb-concatenated"</span>),
+<a href=#884 id=884 data-nosnippet>884</a>    ))]
+<a href=#885 id=885 data-nosnippet>885</a>    #[test]
+<a href=#886 id=886 data-nosnippet>886</a>    </span><span class="kw">fn </span>bundled_db_when_only_bundle_enabled() {
+<a href=#887 id=887 data-nosnippet>887</a>        <span class="kw">let </span>db = db();
+<a href=#888 id=888 data-nosnippet>888</a>        <span class="macro">assert!</span>(!db.is_definitively_empty());
+<a href=#889 id=889 data-nosnippet>889</a>        <span class="macro">assert!</span>(db.get(<span class="string">"America/New_York"</span>).is_ok());
+<a href=#890 id=890 data-nosnippet>890</a>        <span class="comment">// The convenience APIs route through the global `db()`, so this is
+<a href=#891 id=891 data-nosnippet>891</a>        // the symptom originally reported in #533.
+<a href=#892 id=892 data-nosnippet>892</a>        </span><span class="macro">assert!</span>(
+<a href=#893 id=893 data-nosnippet>893</a>            <span class="kw">crate</span>::civil::date(<span class="number">2024</span>, <span class="number">7</span>, <span class="number">4</span>)
+<a href=#894 id=894 data-nosnippet>894</a>                .at(<span class="number">12</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>)
+<a href=#895 id=895 data-nosnippet>895</a>                .in_tz(<span class="string">"America/New_York"</span>)
+<a href=#896 id=896 data-nosnippet>896</a>                .is_ok()
+<a href=#897 id=897 data-nosnippet>897</a>        );
+<a href=#898 id=898 data-nosnippet>898</a>    }
+<a href=#899 id=899 data-nosnippet>899</a>
+<a href=#900 id=900 data-nosnippet>900</a>    <span class="doccomment">/// This tests that the size of a time zone database is kept small.
+<a href=#901 id=901 data-nosnippet>901</a>    ///
+<a href=#902 id=902 data-nosnippet>902</a>    /// It's two words because the bundled database is stored outside the
+<a href=#903 id=903 data-nosnippet>903</a>    /// `Arc` (so it can be constructed in a `const`, see `db()` and #533),
+<a href=#904 id=904 data-nosnippet>904</a>    /// which means the representation needs a tag to distinguish it from the
+<a href=#905 id=905 data-nosnippet>905</a>    /// empty and `Arc`-backed variants.
+<a href=#906 id=906 data-nosnippet>906</a>    ///
+<a href=#907 id=907 data-nosnippet>907</a>    /// I think it would probably be okay to make this bigger if we had a
+<a href=#908 id=908 data-nosnippet>908</a>    /// good reason to, but it seems sensible to put a road-block to avoid
+<a href=#909 id=909 data-nosnippet>909</a>    /// accidentally increasing its size.
+<a href=#910 id=910 data-nosnippet>910</a>    </span><span class="attr">#[test]
+<a href=#911 id=911 data-nosnippet>911</a>    </span><span class="kw">fn </span>time_zone_database_size() {
+<a href=#912 id=912 data-nosnippet>912</a>        <span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
+<a href=#913 id=913 data-nosnippet>913</a>        </span>{
+<a href=#914 id=914 data-nosnippet>914</a>            <span class="kw">let </span>word = core::mem::size_of::&lt;usize&gt;();
+<a href=#915 id=915 data-nosnippet>915</a>            <span class="macro">assert_eq!</span>(<span class="number">2 </span>* word, core::mem::size_of::&lt;TimeZoneDatabase&gt;());
+<a href=#916 id=916 data-nosnippet>916</a>        }
+<a href=#917 id=917 data-nosnippet>917</a>        <span class="comment">// A `TimeZoneDatabase` in core-only is vapid.
+<a href=#918 id=918 data-nosnippet>918</a>        </span><span class="attr">#[cfg(not(feature = <span class="string">"alloc"</span>))]
+<a href=#919 id=919 data-nosnippet>919</a>        </span>{
+<a href=#920 id=920 data-nosnippet>920</a>            <span class="macro">assert_eq!</span>(<span class="number">1</span>, core::mem::size_of::&lt;TimeZoneDatabase&gt;());
+<a href=#921 id=921 data-nosnippet>921</a>        }
+<a href=#922 id=922 data-nosnippet>922</a>    }
+<a href=#923 id=923 data-nosnippet>923</a>
+<a href=#924 id=924 data-nosnippet>924</a>    <span class="doccomment">/// Time zone databases should always return `TimeZone::UTC` if the time
+<a href=#925 id=925 data-nosnippet>925</a>    /// zone is known to be UTC.
+<a href=#926 id=926 data-nosnippet>926</a>    ///
+<a href=#927 id=927 data-nosnippet>927</a>    /// Regression test for: https://github.com/BurntSushi/jiff/issues/346
+<a href=#928 id=928 data-nosnippet>928</a>    </span><span class="attr">#[test]
+<a href=#929 id=929 data-nosnippet>929</a>    </span><span class="kw">fn </span>bundled_returns_utc_constant() {
+<a href=#930 id=930 data-nosnippet>930</a>        <span class="kw">let </span>db = TimeZoneDatabase::bundled();
+<a href=#931 id=931 data-nosnippet>931</a>        <span class="kw">if </span>db.is_definitively_empty() {
+<a href=#932 id=932 data-nosnippet>932</a>            <span class="kw">return</span>;
+<a href=#933 id=933 data-nosnippet>933</a>        }
+<a href=#934 id=934 data-nosnippet>934</a>        <span class="macro">assert_eq!</span>(db.get(<span class="string">"UTC"</span>).unwrap(), TimeZone::UTC);
+<a href=#935 id=935 data-nosnippet>935</a>        <span class="macro">assert_eq!</span>(db.get(<span class="string">"utc"</span>).unwrap(), TimeZone::UTC);
+<a href=#936 id=936 data-nosnippet>936</a>        <span class="macro">assert_eq!</span>(db.get(<span class="string">"uTc"</span>).unwrap(), TimeZone::UTC);
+<a href=#937 id=937 data-nosnippet>937</a>        <span class="macro">assert_eq!</span>(db.get(<span class="string">"UtC"</span>).unwrap(), TimeZone::UTC);
+<a href=#938 id=938 data-nosnippet>938</a>
+<a href=#939 id=939 data-nosnippet>939</a>        <span class="comment">// Also, similarly, for `Etc/Unknown`.
+<a href=#940 id=940 data-nosnippet>940</a>        </span><span class="macro">assert_eq!</span>(db.get(<span class="string">"Etc/Unknown"</span>).unwrap(), TimeZone::unknown());
+<a href=#941 id=941 data-nosnippet>941</a>        <span class="macro">assert_eq!</span>(db.get(<span class="string">"etc/UNKNOWN"</span>).unwrap(), TimeZone::unknown());
+<a href=#942 id=942 data-nosnippet>942</a>    }
+<a href=#943 id=943 data-nosnippet>943</a>
+<a href=#944 id=944 data-nosnippet>944</a>    <span class="doccomment">/// Time zone databases should always return `TimeZone::UTC` if the time
+<a href=#945 id=945 data-nosnippet>945</a>    /// zone is known to be UTC.
+<a href=#946 id=946 data-nosnippet>946</a>    ///
+<a href=#947 id=947 data-nosnippet>947</a>    /// Regression test for: https://github.com/BurntSushi/jiff/issues/346
+<a href=#948 id=948 data-nosnippet>948</a>    </span><span class="attr">#[cfg(all(feature = <span class="string">"std"</span>, not(miri)))]
+<a href=#949 id=949 data-nosnippet>949</a>    #[test]
+<a href=#950 id=950 data-nosnippet>950</a>    </span><span class="kw">fn </span>zoneinfo_returns_utc_constant() {
+<a href=#951 id=951 data-nosnippet>951</a>        <span class="kw">let </span><span class="prelude-val">Ok</span>(db) = TimeZoneDatabase::from_dir(<span class="string">"/usr/share/zoneinfo"</span>) <span class="kw">else </span>{
+<a href=#952 id=952 data-nosnippet>952</a>            <span class="kw">return</span>;
+<a href=#953 id=953 data-nosnippet>953</a>        };
+<a href=#954 id=954 data-nosnippet>954</a>        <span class="kw">if </span>db.is_definitively_empty() {
+<a href=#955 id=955 data-nosnippet>955</a>            <span class="kw">return</span>;
+<a href=#956 id=956 data-nosnippet>956</a>        }
+<a href=#957 id=957 data-nosnippet>957</a>        <span class="macro">assert_eq!</span>(db.get(<span class="string">"UTC"</span>).unwrap(), TimeZone::UTC);
+<a href=#958 id=958 data-nosnippet>958</a>        <span class="macro">assert_eq!</span>(db.get(<span class="string">"utc"</span>).unwrap(), TimeZone::UTC);
+<a href=#959 id=959 data-nosnippet>959</a>        <span class="macro">assert_eq!</span>(db.get(<span class="string">"uTc"</span>).unwrap(), TimeZone::UTC);
+<a href=#960 id=960 data-nosnippet>960</a>        <span class="macro">assert_eq!</span>(db.get(<span class="string">"UtC"</span>).unwrap(), TimeZone::UTC);
+<a href=#961 id=961 data-nosnippet>961</a>
+<a href=#962 id=962 data-nosnippet>962</a>        <span class="comment">// Also, similarly, for `Etc/Unknown`.
+<a href=#963 id=963 data-nosnippet>963</a>        </span><span class="macro">assert_eq!</span>(db.get(<span class="string">"Etc/Unknown"</span>).unwrap(), TimeZone::unknown());
+<a href=#964 id=964 data-nosnippet>964</a>        <span class="macro">assert_eq!</span>(db.get(<span class="string">"etc/UNKNOWN"</span>).unwrap(), TimeZone::unknown());
+<a href=#965 id=965 data-nosnippet>965</a>    }
+<a href=#966 id=966 data-nosnippet>966</a>
+<a href=#967 id=967 data-nosnippet>967</a>    <span class="doccomment">/// This checks that our zoneinfo database never returns a time zone
+<a href=#968 id=968 data-nosnippet>968</a>    /// identifier that isn't presumed to correspond to a real and valid
+<a href=#969 id=969 data-nosnippet>969</a>    /// TZif file in the tzdb.
+<a href=#970 id=970 data-nosnippet>970</a>    ///
+<a href=#971 id=971 data-nosnippet>971</a>    /// This test was added when I optimized the initialized of Jiff's zoneinfo
+<a href=#972 id=972 data-nosnippet>972</a>    /// database. Originally, it did a directory traversal along with a 4-byte
+<a href=#973 id=973 data-nosnippet>973</a>    /// read of every file in the directory to check if the file was TZif or
+<a href=#974 id=974 data-nosnippet>974</a>    /// something else. This turned out to be quite slow on slow file systems.
+<a href=#975 id=975 data-nosnippet>975</a>    /// I rejiggered it so that the reads of every file were removed. But this
+<a href=#976 id=976 data-nosnippet>976</a>    /// meant we could have loaded a name from a file that wasn't TZif into
+<a href=#977 id=977 data-nosnippet>977</a>    /// our in-memory cache.
+<a href=#978 id=978 data-nosnippet>978</a>    ///
+<a href=#979 id=979 data-nosnippet>979</a>    /// For doing a single time zone lookup, this isn't a problem, since we
+<a href=#980 id=980 data-nosnippet>980</a>    /// have to read the TZif data anyway. If it's invalid, then we just
+<a href=#981 id=981 data-nosnippet>981</a>    /// return `None` and log a warning. No big deal.
+<a href=#982 id=982 data-nosnippet>982</a>    ///
+<a href=#983 id=983 data-nosnippet>983</a>    /// But for the `TimeZoneDatabase::available()` API, we were previously
+<a href=#984 id=984 data-nosnippet>984</a>    /// just returning a list of names under the presumption that every such
+<a href=#985 id=985 data-nosnippet>985</a>    /// name corresponds to a valid TZif file. This test checks that we don't
+<a href=#986 id=986 data-nosnippet>986</a>    /// emit junk. (Which was in practice accomplished to moving the 4-byte
+<a href=#987 id=987 data-nosnippet>987</a>    /// read to when we call `TimeZoneDatabase::available()`.)
+<a href=#988 id=988 data-nosnippet>988</a>    ///
+<a href=#989 id=989 data-nosnippet>989</a>    /// Ref: https://github.com/BurntSushi/jiff/issues/366
+<a href=#990 id=990 data-nosnippet>990</a>    </span><span class="attr">#[cfg(all(feature = <span class="string">"std"</span>, not(miri)))]
+<a href=#991 id=991 data-nosnippet>991</a>    #[test]
+<a href=#992 id=992 data-nosnippet>992</a>    </span><span class="kw">fn </span>zoneinfo_available_returns_only_tzif() {
+<a href=#993 id=993 data-nosnippet>993</a>        <span class="kw">use </span>alloc::{
+<a href=#994 id=994 data-nosnippet>994</a>            collections::BTreeSet,
+<a href=#995 id=995 data-nosnippet>995</a>            string::{String, ToString},
+<a href=#996 id=996 data-nosnippet>996</a>        };
+<a href=#997 id=997 data-nosnippet>997</a>
+<a href=#998 id=998 data-nosnippet>998</a>        <span class="kw">let </span><span class="prelude-val">Ok</span>(db) = TimeZoneDatabase::from_dir(<span class="string">"/usr/share/zoneinfo"</span>) <span class="kw">else </span>{
+<a href=#999 id=999 data-nosnippet>999</a>            <span class="kw">return</span>;
+<a href=#1000 id=1000 data-nosnippet>1000</a>        };
+<a href=#1001 id=1001 data-nosnippet>1001</a>        <span class="kw">if </span>db.is_definitively_empty() {
+<a href=#1002 id=1002 data-nosnippet>1002</a>            <span class="kw">return</span>;
+<a href=#1003 id=1003 data-nosnippet>1003</a>        }
+<a href=#1004 id=1004 data-nosnippet>1004</a>        <span class="kw">let </span>names: BTreeSet&lt;String&gt; =
+<a href=#1005 id=1005 data-nosnippet>1005</a>            db.available().map(|n| n.as_str().to_string()).collect();
+<a href=#1006 id=1006 data-nosnippet>1006</a>        <span class="comment">// Not all zoneinfo directories are created equal. Some have more or
+<a href=#1007 id=1007 data-nosnippet>1007</a>        // less junk than others. So just try a few things.
+<a href=#1008 id=1008 data-nosnippet>1008</a>        </span><span class="kw">let </span>should_be_absent = [
+<a href=#1009 id=1009 data-nosnippet>1009</a>            <span class="string">"leapseconds"</span>,
+<a href=#1010 id=1010 data-nosnippet>1010</a>            <span class="string">"tzdata.zi"</span>,
+<a href=#1011 id=1011 data-nosnippet>1011</a>            <span class="string">"leap-seconds.list"</span>,
+<a href=#1012 id=1012 data-nosnippet>1012</a>            <span class="string">"SECURITY"</span>,
+<a href=#1013 id=1013 data-nosnippet>1013</a>            <span class="string">"zone1970.tab"</span>,
+<a href=#1014 id=1014 data-nosnippet>1014</a>            <span class="string">"iso3166.tab"</span>,
+<a href=#1015 id=1015 data-nosnippet>1015</a>            <span class="string">"zonenow.tab"</span>,
+<a href=#1016 id=1016 data-nosnippet>1016</a>            <span class="string">"zone.tab"</span>,
+<a href=#1017 id=1017 data-nosnippet>1017</a>        ];
+<a href=#1018 id=1018 data-nosnippet>1018</a>        <span class="kw">for </span>name <span class="kw">in </span>should_be_absent {
+<a href=#1019 id=1019 data-nosnippet>1019</a>            <span class="macro">assert!</span>(
+<a href=#1020 id=1020 data-nosnippet>1020</a>                !names.contains(name),
+<a href=#1021 id=1021 data-nosnippet>1021</a>                <span class="string">"found `{name}` in time zone list, but it shouldn't be there"</span>,
+<a href=#1022 id=1022 data-nosnippet>1022</a>            );
+<a href=#1023 id=1023 data-nosnippet>1023</a>        }
+<a href=#1024 id=1024 data-nosnippet>1024</a>    }
+<a href=#1025 id=1025 data-nosnippet>1025</a>}
+</code></pre></div></section></main></body></html>

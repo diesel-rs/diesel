@@ -1,0 +1,1591 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="CHANGELOG"><title>jiff::_documentation::changelog - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-1e18a8e7.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="jiff" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (6c709eb42 2026-11-25)" data-channel="nightly" data-search-js="search-085293d4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../../static.files/storage-41dd4d93.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Module changelog</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../jiff/index.html">jiff</a><span class="version">1.0.3</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module changelog</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#changelog" title="CHANGELOG">CHANGELOG</a></li><li><a href="#103-2026-11-24" title="1.0.3 (2026-11-24)">1.0.3 (2026-11-24)</a></li><li><a href="#102-2026-11-21" title="1.0.2 (2026-11-21)">1.0.2 (2026-11-21)</a></li><li><a href="#101-2026-11-17" title="1.0.1 (2026-11-17)">1.0.1 (2026-11-17)</a></li><li><a href="#100-2026-11-15" title="1.0.0 (2026-11-15)">1.0.0 (2026-11-15)</a></li><li><a href="#0246-2026-11-15" title="0.2.46 (2026-11-15)">0.2.46 (2026-11-15)</a></li><li><a href="#0245-2026-11-14" title="0.2.45 (2026-11-14)">0.2.45 (2026-11-14)</a></li><li><a href="#0244-2026-11-14" title="0.2.44 (2026-11-14)">0.2.44 (2026-11-14)</a></li><li><a href="#0243-2026-11-11" title="0.2.43 (2026-11-11)">0.2.43 (2026-11-11)</a></li><li><a href="#0242-2026-11-09" title="0.2.42 (2026-11-09)">0.2.42 (2026-11-09)</a></li><li><a href="#0241-2026-11-08" title="0.2.41 (2026-11-08)">0.2.41 (2026-11-08)</a></li><li><a href="#0240-2026-11-07" title="0.2.40 (2026-11-07)">0.2.40 (2026-11-07)</a></li><li><a href="#0239-2026-11-02" title="0.2.39 (2026-11-02)">0.2.39 (2026-11-02)</a></li><li><a href="#0238-2026-10-06" title="0.2.38 (2026-10-06)">0.2.38 (2026-10-06)</a></li><li><a href="#0237-2026-09-12" title="0.2.37 (2026-09-12)">0.2.37 (2026-09-12)</a></li><li><a href="#0236-2026-09-12" title="0.2.36 (2026-09-12)">0.2.36 (2026-09-12)</a></li><li><a href="#0235-2026-07-25" title="0.2.35 (2026-07-25)">0.2.35 (2026-07-25)</a></li><li><a href="#0234-2026-07-19" title="0.2.34 (2026-07-19)">0.2.34 (2026-07-19)</a></li><li><a href="#0233-2026-07-18" title="0.2.33 (2026-07-18)">0.2.33 (2026-07-18)</a></li><li><a href="#0232-2026-07-08" title="0.2.32 (2026-07-08)">0.2.32 (2026-07-08)</a></li><li><a href="#0231-2026-06-29" title="0.2.31 (2026-06-29)">0.2.31 (2026-06-29)</a></li><li><a href="#0230-2026-06-29" title="0.2.30 (2026-06-29)">0.2.30 (2026-06-29)</a></li><li><a href="#0229-2026-06-20" title="0.2.29 (2026-06-20)">0.2.29 (2026-06-20)</a></li><li><a href="#0228-2026-05-28" title="0.2.28 (2026-05-28)">0.2.28 (2026-05-28)</a></li><li><a href="#0227-2026-05-26" title="0.2.27 (2026-05-26)">0.2.27 (2026-05-26)</a></li><li><a href="#0226-2026-05-25" title="0.2.26 (2026-05-25)">0.2.26 (2026-05-25)</a></li><li><a href="#0225-2026-05-24" title="0.2.25 (2026-05-24)">0.2.25 (2026-05-24)</a></li><li><a href="#0224-2026-04-23" title="0.2.24 (2026-04-23)">0.2.24 (2026-04-23)</a></li><li><a href="#0223-2026-03-03" title="0.2.23 (2026-03-03)">0.2.23 (2026-03-03)</a></li><li><a href="#0222-2026-02-28" title="0.2.22 (2026-02-28)">0.2.22 (2026-02-28)</a></li><li><a href="#0221-2026-02-22" title="0.2.21 (2026-02-22)">0.2.21 (2026-02-22)</a></li><li><a href="#0220-2026-02-11" title="0.2.20 (2026-02-11)">0.2.20 (2026-02-11)</a></li><li><a href="#0219-2026-02-05" title="0.2.19 (2026-02-05)">0.2.19 (2026-02-05)</a></li><li><a href="#0218-2026-01-05" title="0.2.18 (2026-01-05)">0.2.18 (2026-01-05)</a></li><li><a href="#0217-2025-12-24" title="0.2.17 (2025-12-24)">0.2.17 (2025-12-24)</a></li><li><a href="#0216-2025-11-07" title="0.2.16 (2025-11-07)">0.2.16 (2025-11-07)</a></li><li><a href="#0215-2025-06-13" title="0.2.15 (2025-06-13)">0.2.15 (2025-06-13)</a></li><li><a href="#0214-2025-05-20" title="0.2.14 (2025-05-20)">0.2.14 (2025-05-20)</a></li><li><a href="#0213-2025-05-05" title="0.2.13 (2025-05-05)">0.2.13 (2025-05-05)</a></li><li><a href="#0212-2025-05-03" title="0.2.12 (2025-05-03)">0.2.12 (2025-05-03)</a></li><li><a href="#0211-2025-05-01" title="0.2.11 (2025-05-01)">0.2.11 (2025-05-01)</a></li><li><a href="#0210-2025-04-21" title="0.2.10 (2025-04-21)">0.2.10 (2025-04-21)</a></li><li><a href="#029-2025-04-19" title="0.2.9 (2025-04-19)">0.2.9 (2025-04-19)</a></li><li><a href="#028-2025-04-13" title="0.2.8 (2025-04-13)">0.2.8 (2025-04-13)</a></li><li><a href="#027-2025-04-13" title="0.2.7 (2025-04-13)">0.2.7 (2025-04-13)</a></li><li><a href="#026-2025-04-07" title="0.2.6 (2025-04-07)">0.2.6 (2025-04-07)</a></li><li><a href="#025-2025-03-22" title="0.2.5 (2025-03-22)">0.2.5 (2025-03-22)</a></li><li><a href="#024-2025-03-10" title="0.2.4 (2025-03-10)">0.2.4 (2025-03-10)</a></li><li><a href="#023-2025-03-07" title="0.2.3 (2025-03-07)">0.2.3 (2025-03-07)</a></li><li><a href="#022-2025-03-06" title="0.2.2 (2025-03-06)">0.2.2 (2025-03-06)</a></li><li><a href="#021-2025-02-16" title="0.2.1 (2025-02-16)">0.2.1 (2025-02-16)</a></li><li><a href="#020-2025-02-10" title="0.2.0 (2025-02-10)">0.2.0 (2025-02-10)</a></li><li><a href="#0129-2025-02-02" title="0.1.29 (2025-02-02)">0.1.29 (2025-02-02)</a></li><li><a href="#0128-2025-01-27" title="0.1.28 (2025-01-27)">0.1.28 (2025-01-27)</a></li><li><a href="#0127-2025-01-25" title="0.1.27 (2025-01-25)">0.1.27 (2025-01-25)</a></li><li><a href="#0126-2025-01-23" title="0.1.26 (2025-01-23)">0.1.26 (2025-01-23)</a></li><li><a href="#0125-2025-01-21" title="0.1.25 (2025-01-21)">0.1.25 (2025-01-21)</a></li><li><a href="#0124-2025-01-16" title="0.1.24 (2025-01-16)">0.1.24 (2025-01-16)</a></li><li><a href="#0123-2025-01-13" title="0.1.23 (2025-01-13)">0.1.23 (2025-01-13)</a></li><li><a href="#0122-2025-01-12" title="0.1.22 (2025-01-12)">0.1.22 (2025-01-12)</a></li><li><a href="#0121-2025-01-04" title="0.1.21 (2025-01-04)">0.1.21 (2025-01-04)</a></li><li><a href="#0120-2025-01-03" title="0.1.20 (2025-01-03)">0.1.20 (2025-01-03)</a></li><li><a href="#0119-2025-01-02" title="0.1.19 (2025-01-02)">0.1.19 (2025-01-02)</a></li><li><a href="#0118-2024-12-31" title="0.1.18 (2024-12-31)">0.1.18 (2024-12-31)</a></li><li><a href="#0117-2024-12-31" title="0.1.17 (2024-12-31)">0.1.17 (2024-12-31)</a></li><li><a href="#0116-2024-12-26" title="0.1.16 (2024-12-26)">0.1.16 (2024-12-26)</a></li><li><a href="#0115-2024-11-30" title="0.1.15 (2024-11-30)">0.1.15 (2024-11-30)</a></li><li><a href="#0114-2024-11-01" title="0.1.14 (2024-11-01)">0.1.14 (2024-11-01)</a></li><li><a href="#0113-2024-09-07" title="0.1.13 (2024-09-07)">0.1.13 (2024-09-07)</a></li><li><a href="#0112-2024-08-31" title="0.1.12 (2024-08-31)">0.1.12 (2024-08-31)</a></li><li><a href="#0111-2024-08-28" title="0.1.11 (2024-08-28)">0.1.11 (2024-08-28)</a></li><li><a href="#0110-2024-08-23" title="0.1.10 (2024-08-23)">0.1.10 (2024-08-23)</a></li><li><a href="#019-2024-08-23" title="0.1.9 (2024-08-23)">0.1.9 (2024-08-23)</a></li><li><a href="#018-2024-08-19" title="0.1.8 (2024-08-19)">0.1.8 (2024-08-19)</a></li><li><a href="#017-2024-08-18" title="0.1.7 (2024-08-18)">0.1.7 (2024-08-18)</a></li><li><a href="#016-2024-08-18" title="0.1.6 (2024-08-18)">0.1.6 (2024-08-18)</a></li><li><a href="#015-2024-08-09" title="0.1.5 (2024-08-09)">0.1.5 (2024-08-09)</a></li><li><a href="#014-2024-08-01" title="0.1.4 (2024-08-01)">0.1.4 (2024-08-01)</a></li><li><a href="#013-2024-07-30" title="0.1.3 (2024-07-30)">0.1.3 (2024-07-30)</a></li><li><a href="#012-2024-07-28" title="0.1.2 (2024-07-28)">0.1.2 (2024-07-28)</a></li><li><a href="#011-2024-07-25" title="0.1.1 (2024-07-25)">0.1.1 (2024-07-25)</a></li><li><a href="#010-2024-07-21" title="0.1.0 (2024-07-21)">0.1.0 (2024-07-21)</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="../index.html">In jiff::<wbr>_<wbr>documentation</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../../index.html">jiff</a>::<wbr><a href="../index.html">_documentation</a></div><h1>Module <span>changelog</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../../src/jiff/lib.rs.html#810">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="changelog"><a class="doc-anchor" href="#changelog">§</a>CHANGELOG</h2><h2 id="103-2026-11-24"><a class="doc-anchor" href="#103-2026-11-24">§</a>1.0.3 (2026-11-24)</h2>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/723">#723</a>:
+<code>Timestamp::from_{milli,micro}second</code> rejects valid values.</li>
+</ul>
+<h2 id="102-2026-11-21"><a class="doc-anchor" href="#102-2026-11-21">§</a>1.0.2 (2026-11-21)</h2>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/718">#718</a>:
+<code>ZonedDateTime::strptime</code> could panic on inputs near boundaries.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/720">#720</a>:
+Tweak how we handle folds in offset conflict resolution.</li>
+</ul>
+<h2 id="101-2026-11-17"><a class="doc-anchor" href="#101-2026-11-17">§</a>1.0.1 (2026-11-17)</h2>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/713">#713</a>:
+<code>%Z</code> in <code>Timestamp::strftime</code> should format as <code>UTC</code>.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/714">#714</a>:
+Parsing a timestamp could produce an out of bounds value.</li>
+</ul>
+<h2 id="100-2026-11-15"><a class="doc-anchor" href="#100-2026-11-15">§</a>1.0.0 (2026-11-15)</h2>
+<p>This marks the Jiff 1.0 release. Barring some unforeseen major problem with the
+API, this release marks an indefinite commitment to 1.x.y. Consumers of this
+library should feel confident about putting Jiff types into their public API.
+New major versions of Jiff will not be made lightly.</p>
+<p>The most significant breaking change in this release large but simple: the
+<code>Zoned</code> type has been renamed to <code>ZonedDateTime</code>. This also impacts APIs like
+<code>Timestamp::to_zoned</code>, which are now called <code>Timestamp::to_zoned_datetime</code>. The
+remaining breaking changes are pretty minor and shouldn’t impact most users.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/commit/3211f23a7f87eceffda70031c2954a2359cb370c">3211f23</a>:
+Bump MSRV to Rust 1.85.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/262">#262</a>:
+Use <code>core::error::Error</code> in lieu of <code>std::error::Error</code>.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/314">#314</a>:
+<strong>BREAKING</strong>: Make <code>Zoned::iso_week_date</code> take <code>&amp;self</code> instead of <code>self</code>.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/624">#624</a>:
+Make more methods take <code>&amp;self</code>.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/471">#471</a>:
+Turn <code>Custom</code> into a trait object.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/499">#499</a>:
+<strong>BREAKING</strong>: Make <code>Offset::saturating_add</code> fallible.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/629">#629</a>, <a href="https://github.com/BurntSushi/jiff/issues/626">#626</a>:
+<strong>BREAKING</strong>: Make <code>impl Sub for Timestamp</code> return a <code>SignedDuration</code>.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/436">#436</a>:
+<strong>BREAKING</strong>: Seal the <code>ToSpan</code> trait.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/463">#463</a>:
+Provide an accessor for an underlying <code>std::io::Error</code>.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/467">#467</a>:
+<strong>BREAKING</strong>: Make conversions from <code>Timestamp</code> to <code>SystemTime</code> fallible.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/374">#374</a>:
+<strong>BREAKING</strong>: Rename <code>Zoned</code> to <code>ZonedDateTime</code>.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/618">#618</a>:
+<strong>BREAKING</strong>: Make <code>jiff_tzdb::VERSION</code> required.</li>
+<li><a href="https://github.com/BurntSushi/jiff/commit/c03581f405955ed4bbebfda0ae28e03120c289fa">c03581f</a>:
+Add <code>Span::to_friendly</code> routine as a convenience for <code>format("{:#}", span)</code>.</li>
+</ul>
+<p>Documentation:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/545">#545</a>:
+Clarify specification labeling in formatting table.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/630">#630</a>:
+Clarify the use of the propleptic Gregorian calendar.</li>
+</ul>
+<p>Performance:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/commit/4d66e92ecdd6a012c952f7a5c0f628d0ecde662d">4d66e92</a>:
+Add <code>inline(never)</code> to <code>strtime</code> routine.</li>
+</ul>
+<h2 id="0246-2026-11-15"><a class="doc-anchor" href="#0246-2026-11-15">§</a>0.2.46 (2026-11-15)</h2>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/707">#707</a>:
+<code>jiff_core::util::ArrayStr</code> has an unsound API.</li>
+</ul>
+<p>Documentation:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/709">#709</a>:
+Fix documentation inconsistencies.</li>
+</ul>
+<p>Performance:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/708">#708</a>:
+Skip extension parsing for plain directives in strptime.</li>
+</ul>
+<h2 id="0245-2026-11-14"><a class="doc-anchor" href="#0245-2026-11-14">§</a>0.2.45 (2026-11-14)</h2>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/483">#483</a>:
+Support ECMAScript’s “primary” time zone identifiers.</li>
+</ul>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/701">#701</a>:
+Handle zero span multiplication.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/702">#702</a>:
+Constrain ISO week numbers to the year’s last week.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/703">#703</a>:
+<code>Timestamp::checked_add_seconds</code> produces incorrect results across the Unix epoch.</li>
+</ul>
+<h2 id="0244-2026-11-14"><a class="doc-anchor" href="#0244-2026-11-14">§</a>0.2.44 (2026-11-14)</h2>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/697">#697</a>:
+Upgrade Jiff’s bundled IANA Time Zone Database to tzdb <code>2026f</code>.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/694">#694</a>:
+Make <code>jiff::civil::Weekday</code> methods <code>const</code> where possible.</li>
+</ul>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/695">#695</a>:
+Timestamp subtraction assignment.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/696">#696</a>:
+Correct some boundary conditions on <code>Timestamp</code>.</li>
+</ul>
+<h2 id="0243-2026-11-11"><a class="doc-anchor" href="#0243-2026-11-11">§</a>0.2.43 (2026-11-11)</h2>
+<p>This release includes a few new minor API additions.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/651">#651</a>:
+Add <code>jiff::tz::reset_system_time_zone_cache</code>.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/653">#653</a>:
+Expose <code>relative</code> builder option on <code>Span*</code> types.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/689">#689</a>:
+Add <code>jiff_core::tz::posix::ParseError::is_missing_dst_transition_rule</code>
+predicate.</li>
+</ul>
+<h2 id="0242-2026-11-09"><a class="doc-anchor" href="#0242-2026-11-09">§</a>0.2.42 (2026-11-09)</h2>
+<p>This release includes a couple of bug fixes where panics could occur when they
+should not have been. Specifically in <code>Span::total</code> and <code>Span::checked_add</code>.</p>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/683">#683</a>:
+Fix a panic in <code>Span::checked_add</code> when an internal addition would overflow
+a <code>SignedDuration</code>’s minimum/maximum values.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/685">#685</a>:
+Fix a panic in <code>Span::total</code> when a time zone transition boundary was crossed.</li>
+</ul>
+<h2 id="0241-2026-11-08"><a class="doc-anchor" href="#0241-2026-11-08">§</a>0.2.41 (2026-11-08)</h2>
+<p>This release includes a bug fix for time zone transition lookups for timestamps
+before the Unix epoch with a non-zero nanosecond component.</p>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/678">#678</a>:
+Fix timezone transition lookup in TZif data for negative timestamps with a
+non-zero nanosecond component.</li>
+</ul>
+<h2 id="0240-2026-11-07"><a class="doc-anchor" href="#0240-2026-11-07">§</a>0.2.40 (2026-11-07)</h2>
+<p>This release should help reduce the number of entries Jiff adds to <code>Cargo.lock</code>
+by default. This also improves performance for datetime&lt;-&gt;timestamp
+conversions.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/643">#643</a>:
+Don’t add <code>defmt</code> and its dependencies to <code>Cargo.lock</code> when the <code>defmt</code>
+feature isn’t enabled.</li>
+</ul>
+<p>Performance:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/pull/640">#640</a>:
+Add branch-free implementation for part of datetime &lt;-&gt; timestamp conversions.</li>
+</ul>
+<h2 id="0239-2026-11-02"><a class="doc-anchor" href="#0239-2026-11-02">§</a>0.2.39 (2026-11-02)</h2>
+<p>This release gathers a smattering of performance improvements and bug fixes.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/pull/646">#646</a>:
+Added optional <code>serde</code> support to <code>jiff-sqlx</code>.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/659">#659</a>:
+Update the Windows time zone names.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/665">#665</a>:
+Avoid allocating IANA name during a <code>Zoned::strftime</code> call.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/666">#666</a>:
+Avoid a second offset lookup when adding calendar units.</li>
+</ul>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/645">#645</a>:
+Fix <code>Timestamp::from_nanosecond</code> panic on out-of-range input.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/649">#649</a>:
+Fix optional deserializers dropping null under <code>#[serde(flatten)]</code>.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/652">#652</a>:
+Tweak “lossless” wording for round-tripping <code>Zoned</code> values.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/654">#654</a>:
+Fixes a panic when printing some very large durations.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/660">#660</a>:
+Fixes a bug where parsing some very large spans gave an incorrect result.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/668">#668</a>:
+Fixes a panic in <code>Span::total</code> for a zero span with a calendar unit.</li>
+</ul>
+<h2 id="0238-2026-10-06"><a class="doc-anchor" href="#0238-2026-10-06">§</a>0.2.38 (2026-10-06)</h2>
+<p>This release updates Jiff’s bundled copy of the <a href="https://www.iana.org/time-zones">IANA Time Zone Database</a>
+to <code>2026e</code>. See the <a href="https://lists.iana.org/hyperkitty/list/tz-announce@iana.org/thread/VXIA4AU73OQL3OZ3ZBZHWIASIIVBGUJV/"><code>2026e</code> release announcement</a> for more details.</p>
+<h2 id="0237-2026-09-12"><a class="doc-anchor" href="#0237-2026-09-12">§</a>0.2.37 (2026-09-12)</h2>
+<p>This is a redux release of <code>0.2.36</code> that fixes a compilation bug.</p>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/647">#647</a>:
+Fixes a compilation bug due to incorrect include paths.</li>
+</ul>
+<h2 id="0236-2026-09-12"><a class="doc-anchor" href="#0236-2026-09-12">§</a>0.2.36 (2026-09-12)</h2>
+<p>This release has a couple bug fixes and adds opt-in integration with the
+<code>arbitrary</code> crate.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/631">#631</a>:
+Add optional <code>Arbitrary</code> trait implementations from the <code>arbitrary</code> crate.</li>
+</ul>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/pull/617">#617</a>:
+Fixes a bug in <code>jiff_core::tz::Offset</code> checked subtraction routine.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/627">#627</a>:
+Use <code>serialize_some</code> for optional Serde helpers in <code>jiff::fmt::serde</code>.</li>
+</ul>
+<h2 id="0235-2026-07-25"><a class="doc-anchor" href="#0235-2026-07-25">§</a>0.2.35 (2026-07-25)</h2>
+<p>This release fixes a bug in duration parsing where, e.g., <code>-PT0.5S</code> would be
+parsed as if the <code>-</code> sign didn’t exist. This bug also affects friendly
+durations such as <code>-0.5s</code>.</p>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/613">#613</a>:
+Fixes a bug where the sign in a duration could be ignored while parsing.</li>
+</ul>
+<h2 id="0234-2026-07-19"><a class="doc-anchor" href="#0234-2026-07-19">§</a>0.2.34 (2026-07-19)</h2>
+<p>This release contains a few small enhancements. Namely, some error messages
+for parsing datetime values have been improved by removing some redundant
+messaging. Additionally, the <code>strftime</code> APIs on datetime values can no longer
+panic. Instead, they’ll silently pass through invalid formatting directives.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/519">#519</a>:
+Improve some parsing error messages by removing redundancy.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/585">#585</a>:
+Change <code>Timestamp::strftime</code> (and similar methods) so that they will never
+panic.</li>
+</ul>
+<h2 id="0233-2026-07-18"><a class="doc-anchor" href="#0233-2026-07-18">§</a>0.2.33 (2026-07-18)</h2>
+<p>This release permits the use of a global time zone database in <code>alloc</code>-only
+environments. It also contains a massive internal refactor that introduces a
+new <code>jiff-core</code> crate for better code sharing.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/285">#285</a>:
+Decouple naming of time zones from their TZif data.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/373">#373</a>:
+Add a new <code>jiff-core</code> crate for better code sharing.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/533">#533</a>:
+A bundled <code>TimeZoneDatabase</code> is now available when only <code>alloc</code> is enabled.</li>
+</ul>
+<h2 id="0232-2026-07-08"><a class="doc-anchor" href="#0232-2026-07-08">§</a>0.2.32 (2026-07-08)</h2>
+<p>This release updates Jiff’s bundled copy of the <a href="https://www.iana.org/time-zones">IANA Time Zone Database</a>
+to <code>2026c</code>. See the <a href="https://lists.iana.org//hyperkitty/list/tz-announce@iana.org/thread/NVHSX2PAQIT44U5FCCEVNJJYXQMMTJSA/"><code>2026c</code> release announcement</a> for more details.</p>
+<h2 id="0231-2026-06-29"><a class="doc-anchor" href="#0231-2026-06-29">§</a>0.2.31 (2026-06-29)</h2>
+<p>This release fixes a minor bug in tests that prevents the crate from running
+through standard build processes in Linux distributions downstream.</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/pull/591">#594</a>:
+Fix imports in recently added tests.</li>
+</ul>
+<h2 id="0230-2026-06-29"><a class="doc-anchor" href="#0230-2026-06-29">§</a>0.2.30 (2026-06-29)</h2>
+<p>This release fixes a safety soundness bug in Jiff’s lower level printing
+APIs. There is also a nice performance improvement to <code>civil::Date::weekday</code>,
+which also improves downstread routines like <code>civil::Date::nth_weekday</code> and
+datetime&lt;–&gt;timestamp conversions in some cases.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/pull/591">#591</a>:
+Improve the performance of weekday calculations from Gregorian dates by 30-50%.</li>
+</ul>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/592">#592</a>:
+Fix safety soundness bug when using a non-empty <code>String</code> destination buffer
+with lower level printing APIs inside of <code>jiff::fmt</code>.</li>
+</ul>
+<h2 id="0229-2026-06-20"><a class="doc-anchor" href="#0229-2026-06-20">§</a>0.2.29 (2026-06-20)</h2>
+<p>This release adds support for <a href="https://github.com/BurntSushi/jiff/issues/587"><code>defmt</code></a>, which is a highly efficient logging
+framework that targets resource-constrained devices, like microcontrollers.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/505">#505</a>:
+Add support for the <code>defmt</code> crate by implementing <code>defmt::Format</code> on the
+principle public types in Jiff.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/584">#584</a>:
+Add <code>Zoned::UNIX_EPOCH</code> as a constant.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/587">#587</a>:
+Change the <code>Debug</code> output for <code>civil::ISOWeekDate</code> to match the <code>Debug</code> output
+style of other primitive datetime types.</li>
+</ul>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/525">#525</a>:
+Fix a bug that prevented time zone lookups when using an on-disk time zone
+database on Windows.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/539">#539</a>:
+Fix a bug where rendering a datetime in an error message would omit a <code>T</code>
+separator.</li>
+</ul>
+<h2 id="0228-2026-05-28"><a class="doc-anchor" href="#0228-2026-05-28">§</a>0.2.28 (2026-05-28)</h2>
+<p>This is a small release with a fix for test failures on 32-bit targets in
+<code>no-alloc</code> environments.</p>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/573">#573</a>:
+Fix test failure on 32-bit targets in <code>no-alloc</code> environments.</li>
+</ul>
+<h2 id="0227-2026-05-26"><a class="doc-anchor" href="#0227-2026-05-26">§</a>0.2.27 (2026-05-26)</h2>
+<p>This is a small release with a bug fix for build errors on Windows for very old
+versions of Rust.</p>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/566">#566</a>:
+Fix build error on Windows for very old versions of Rust (e.g., 1.71).</li>
+</ul>
+<h2 id="0226-2026-05-25"><a class="doc-anchor" href="#0226-2026-05-25">§</a>0.2.26 (2026-05-25)</h2>
+<p>This release has a couple enhancements.</p>
+<p>Firstly, Jiff now uses <code>windows-link</code> for calling FFI routines on Windows
+instead of <code>windows-sys</code>. Using <code>windows-link</code> means less churn and fewer
+duplicates in the dependency graph.</p>
+<p>Secondly, a new <code>jiff-sqlx 0.2.0</code> release has been put out to support
+<code>sqlx 0.9.0</code>.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/pull/538">#538</a>:
+Replace use of <code>windows-sys</code> with <code>windows-link</code> and inline bindings.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/561">#561</a>:
+Update <code>jiff-sqlx</code> to use <code>sqlx 0.9.0</code> and release <code>jiff-sqlx 0.2.0</code>.</li>
+</ul>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/pull/548">#548</a>:
+Absolutetize incorrect relative size terms in the documentation of <code>RoundMode</code>.</li>
+</ul>
+<h2 id="0225-2026-05-24"><a class="doc-anchor" href="#0225-2026-05-24">§</a>0.2.25 (2026-05-24)</h2>
+<p>This release updates Jiff’s bundled copy of the <a href="https://www.iana.org/time-zones">IANA Time Zone Database</a>
+to <code>2026b</code>. See the <a href="https://lists.iana.org//hyperkitty/list/tz-announce@iana.org/thread/VX2Z3CBO6KHTYZNBBKFFWM7ZCI6TVCXP/"><code>2026b</code> release announcement</a> for more details.</p>
+<h2 id="0224-2026-04-23"><a class="doc-anchor" href="#0224-2026-04-23">§</a>0.2.24 (2026-04-23)</h2>
+<p>This release primarily adds a new <code>memory_usage</code> routine for reporting
+heap allocation sizes for the <code>TimeZone</code> and <code>Zoned</code> types. This
+release also acknowledges and updates the timeline expectations for a
+Jiff 1.0 release in <code>README.md</code>.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/520">#520</a>:
+Add <code>memory_usage</code> to the <code>TimeZone</code> and <code>Zoned</code> types.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/535">#535</a>:
+Improve comment in <code>Span::checked_add</code> example.</li>
+</ul>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/pull/541">#541</a>:
+Update Jiff 1.0 timeline.</li>
+</ul>
+<h2 id="0223-2026-03-03"><a class="doc-anchor" href="#0223-2026-03-03">§</a>0.2.23 (2026-03-03)</h2>
+<p>This release updates Jiff’s bundled copy of the <a href="https://www.iana.org/time-zones">IANA Time Zone Database</a>
+to <code>2026a</code>. See the <a href="https://lists.iana.org/hyperkitty/list/tz-announce@iana.org/thread/ASPLBE3A4BAEXIOQ3KZ6EJSJWBU6L53G/"><code>2026a</code> release announcement</a> for more details.</p>
+<h2 id="0222-2026-02-28"><a class="doc-anchor" href="#0222-2026-02-28">§</a>0.2.22 (2026-02-28)</h2>
+<p>This release includes a bug fix where fallible conversions from signed
+durations to unsigned durations could panic in some cases.</p>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/526">#526</a>:
+Fix a panicking bug that occurs for
+<code>std::time::Duration::try_from(SignedDuration::new(0, -1))</code>.</li>
+</ul>
+<h2 id="0221-2026-02-22"><a class="doc-anchor" href="#0221-2026-02-22">§</a>0.2.21 (2026-02-22)</h2>
+<p>This release contains a performance improvement and a bug fix for
+<code>civil::Date::new</code> where it could panic on some inputs.</p>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/523">#523</a>:
+Fix a bug where <code>Date::new</code> could panic. This was a regression introduced in
+<code>jiff 0.2.20</code>.</li>
+</ul>
+<p>Performance:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/pull/518">#518</a>:
+Improve <code>Timestamp</code> to <code>civil::DateTime</code> conversion performance by ~15%.</li>
+</ul>
+<h2 id="0220-2026-02-11"><a class="doc-anchor" href="#0220-2026-02-11">§</a>0.2.20 (2026-02-11)</h2>
+<p>This release contains a major internal refactor that moves off of using ranged
+integers internally. There are also some small bug fixes and added support for
+finding the system time zone on emscripten targets.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/11">#11</a>:
+Stop using ranged integers internally.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/490">#490</a>:
+Add support for retrieving the system time zone on emscripten targets.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/500">#500</a>:
+Update comparison with the <code>time</code> crate in the Jiff documentation.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/502">#502</a>:
+Enable some non-default features for the Rust Playground deployment.</li>
+</ul>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/485">#485</a>:
+Fix bug with padding for negative integers in <code>strftime</code>.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/486">#486</a>:
+Make <code>%^c</code> result in uppercase strings where appropriate.</li>
+</ul>
+<h2 id="0219-2026-02-05"><a class="doc-anchor" href="#0219-2026-02-05">§</a>0.2.19 (2026-02-05)</h2>
+<p>This is a small release with a performance optimization (with respect to doing
+heavily contended arithmetic on <code>Zoned</code> values) and a bug fix for a panic
+that can occur when using <code>%2s</code> in <code>strftime</code>.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/491">#491</a>:
+Avoid cloning <code>TimeZone</code> for consuming operations on <code>Zoned</code>.</li>
+</ul>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/497">#497</a>:
+Fix a panic in <code>timestamp.strftime("%2s")</code>.</li>
+</ul>
+<h2 id="0218-2026-01-05"><a class="doc-anchor" href="#0218-2026-01-05">§</a>0.2.18 (2026-01-05)</h2>
+<p>This release ships a sizeable refactor to the RFC 2822, RFC 9110, RC
+3339, RFC 9557, ISO 8601 and friendly format printers. Specifically,
+they are now all monomorphic internally (instead of being generic over
+<code>jiff::fmt::Write</code>) and write to uninitialized buffers. This improves
+runtime performance (sometimes dramatically so), and to a more modest
+degree, decreases binary size and improves compile times.</p>
+<p>This release also includes a bug fix where <code>DateTime::MIN.to_zoned(..)</code>
+could panic.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/pull/460">#460</a>:
+Improve runtime performance and binary size of RFC 2822 printer.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/461">#461</a>:
+Tweak behavior of printing min/max offsets in RFC 2822 and Temporal printers.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/462">#462</a>:
+Export fallible constructors for <code>jiff::SignedDuration</code>.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/465">#465</a>:
+Improve runtime performance and binary size of the “friendly” duration printer.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/468">#468</a>:
+Improve runtime performance and binary size of the Temporal ISO 8601 duration
+printer.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/470">#470</a>:
+Improve runtime performance and binary size of the Temporal ISO 8601 datetime
+printer.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/474">#474</a>:
+Improve runtime performance and binary size of Jiff’s <code>strftime</code>
+implementation.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/477">#477</a>:
+Fix a bug where time zone lookups for <code>civil::DateTime::MIN</code> could panic.</li>
+</ul>
+<h2 id="0217-2025-12-24"><a class="doc-anchor" href="#0217-2025-12-24">§</a>0.2.17 (2025-12-24)</h2>
+<p>This release contains binary size improvements to Jiff, more succinct error
+messages and some new minor APIs.</p>
+<p>While Jiff 1.0 is overdue, I’ve been doing a lot of experimenting with
+improving Jiff’s binary size and compile times. In particular, I want to spend
+time doing this before Jiff 1.0 so that we don’t box ourselves into a corner.
+(For example, some binary size improvements may require minor API breaking
+changes.)</p>
+<p>In this release, Jiff has switched to structured error handling internally
+in an effort to provide error predicates and also hopefully improve binary
+sizes and compile times. Overall this didn’t have as big of an impact on
+binary sizes or compile times as I was hoping. I did take this opportunity to
+make Jiff’s error messages a bit more succinct. In many cases, this involved
+de-duplicating some aspects of error messages and omitting user provided input
+in the messages. If you feel like there is a significant decrease in error
+message quality that isn’t easily amended by callers providing additional
+context themselves, please open an issue.</p>
+<p>This release also updates Jiff’s bundled copy of the <a href="https://www.iana.org/time-zones">IANA Time Zone Database</a>
+to <code>2025c</code>. See the <a href="https://lists.iana.org/hyperkitty/list/tz-announce@iana.org/thread/TAGXKYLMAQRZRFTERQ33CEKOW7KRJVAK/"><code>2025c</code> release announcement</a> for more details.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/412">#412</a>:
+Add <code>Display</code>, <code>FromStr</code>, <code>Serialize</code> and <code>Deserialize</code> trait implementations
+for <code>jiff::civil::ISOWeekDate</code>. These all use the ISO 8601 week date format.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/418">#418</a>:
+Add some basic predicates to <code>jiff::Error</code> for basic error introspection.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/453">#453</a>,
+<a href="https://github.com/BurntSushi/jiff/pull/454">#454</a>:
+Switch to structured error handling internally.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/456">#456</a>,
+<a href="https://github.com/BurntSushi/jiff/pull/457">#457</a>,
+<a href="https://github.com/BurntSushi/jiff/pull/458">#458</a>:
+Various improvements to binary size.</li>
+</ul>
+<h2 id="0216-2025-11-07"><a class="doc-anchor" href="#0216-2025-11-07">§</a>0.2.16 (2025-11-07)</h2>
+<p>This release contains a number of enhancements and bug fixes that have accrued
+over the last few months. Most are small polishes. A couple of the bug fixes
+apply to panics that could occur when parsing invalid <code>TZ</code> strings or invalid
+<code>strptime</code> format strings.</p>
+<p>Also, parsing into a <code>Span</code> should now be much faster (for both the ISO 8601
+and “friendly” duration formats).</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/298">#298</a>:
+Add Serde helpers for (de)serializing <code>std::time::Duration</code> values.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/396">#396</a>:
+Add <code>Sub</code> and <code>Add</code> trait implementations for <code>Zoned</code> (in addition to the
+already existing trait implementations for <code>&amp;Zoned</code>).</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/397">#397</a>:
+Add <code>BrokenDownTime::set_meridiem</code> and ensure it overrides the hour when
+formatting.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/409">#409</a>:
+Switch dependency on <code>serde</code> to <code>serde_core</code>. This should help speed up
+compilation times in some cases.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/430">#430</a>:
+Add new <code>Zoned::series</code> API, making it consistent with the same API on other
+datetime types.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/432">#432</a>:
+When <code>lenient</code> mode is enabled for <code>strftime</code>, Jiff will no longer error when
+the formatting string contains invalid UTF-8.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/432">#432</a>:
+Formatting of <code>%y</code> and <code>%g</code> no longer fails based on the specific year value.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/432">#432</a>:
+Parsing of <code>%s</code> is now a bit more consistent with other fields. Moreover,
+<code>BrokenDownTime::{to_timestamp,to_zoned}</code> will now prefer timestamps parsed
+with <code>%s</code> over any other fields that have been parsed.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/433">#433</a>:
+Allow parsing just a <code>%s</code> into a <code>Zoned</code> via the <code>Etc/Unknown</code> time zone.</li>
+</ul>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/386">#386</a>:
+Fix a bug where <code>2087-12-31T23:00:00Z</code> in the <code>Africa/Casablanca</code> time zone
+could not be round-tripped (because its offset was calculated incorrectly as
+a result of not handling “permanent DST” POSIX time zones).</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/407">#407</a>:
+Fix a panic that occurred when parsing an empty string as a POSIX time zone.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/410">#410</a>:
+Fix a panic that could occur when parsing <code>%:</code> via <code>strptime</code> APIs.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/414">#414</a>:
+Update some parts of the documentation to indicate that <code>TimeZone::unknown()</code>
+is a fallback for <code>TimeZone::system()</code> (instead of the <code>jiff 0.1</code> behavior of
+using <code>TimeZone::UTC</code>).</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/423">#423</a>:
+Fix a panicking bug when reading malformed TZif data.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/426">#426</a>:
+Fix a panicking bug when parsing century (<code>%C</code>) via <code>strptime</code>.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/445">#445</a>:
+Fixed bugs with parsing durations like <code>-9223372036854775808s</code>
+and <code>-PT9223372036854775808S</code>.</li>
+</ul>
+<p>Performance:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/pull/445">#445</a>:
+Parsing into <code>Span</code> or <code>SignedDuration</code> is now a fair bit faster in some cases.</li>
+</ul>
+<h2 id="0215-2025-06-13"><a class="doc-anchor" href="#0215-2025-06-13">§</a>0.2.15 (2025-06-13)</h2>
+<p>This release fixes a bug where error values were being constructed during
+parsing even in the success case. This was a regression introduced in <code>0.2.14</code>
+as a result of trying to improve compilation times. Thankfully, fixing this
+regression doesn’t seem to meaningfully impact the amount of IR generated by
+compiling Jiff.</p>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/pull/385">#385</a>:
+Fixes a performance regression for parsing.</li>
+</ul>
+<h2 id="0214-2025-05-20"><a class="doc-anchor" href="#0214-2025-05-20">§</a>0.2.14 (2025-05-20)</h2>
+<p>This release includes a smattering of bug fixes, and hopefully a small
+improvement to the time it takes to compile Jiff. Also, in this release, when
+<code>TZ</code> is set to a non-empty but invalid value, Jiff will always fall back to
+<code>Etc/Unknown</code> when using <code>TimeZone::system()</code>. This differs from previous
+behavior where Jiff would, in this case, attempt to read the system’s default
+time zone. This change brings Jiff into consistency with existing Unix tooling
+like <code>date</code>, and is also arguably a better failure mode. That is, when <code>TZ</code> is
+set but invalid, we shouldn’t silently fall back to the default system time
+zone, but instead do something that indicates something has potentially gone
+wrong.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/364">#364</a>:
+Jiff now falls back to <code>Etc/Unknown</code> for invalid <code>TZ</code> values.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/379">#379</a>:
+Improve compilation times.</li>
+</ul>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/365">#365</a>:
+Fixes a compile error in Jiff when only the <code>tzdb-concatenated</code> feature was
+enabled.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/366">#366</a>:
+Fixes slow initial <code>Zoned::now()</code> in environments where <code>/usr/share/zoneinfo</code>
+is on a very slow file system (like CI environments).</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/376">#376</a>:
+Avoids searching for a tzdb at <code>/usr/share/zoneinfo</code> on Windows.</li>
+</ul>
+<h2 id="0213-2025-05-05"><a class="doc-anchor" href="#0213-2025-05-05">§</a>0.2.13 (2025-05-05)</h2>
+<p>This release fixes a bug in a corner case where <code>TimeZone::following</code> could
+sometimes omit the last time zone transition. This could only happen in time
+zones that once had daylight saving time, but ended it. This did not have an
+impact on other Jiff APIs that handle daylight saving time.</p>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/362">#362</a>:
+Fix a bug where <code>TimeZone::following</code> could omit the last historical time zone
+transition.</li>
+</ul>
+<h2 id="0212-2025-05-03"><a class="doc-anchor" href="#0212-2025-05-03">§</a>0.2.12 (2025-05-03)</h2>
+<p>This release fixes a couple bugs in Jiff’s parser. In particular, a regression
+was introduced in <code>jiff 0.2.11</code> where its RFC 2822 parser could panic on some
+inputs. Previous releases of Jiff are unaffected.</p>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/357">#357</a>:
+Fix a bug where parsing <code>1970-06-01T00-00:45:00[Africa/Monrovia]</code> succeeded
+but it should fail.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/359">#359</a>:
+Fix a bug where the RFC 2822 parser could panic on some inputs.</li>
+</ul>
+<h2 id="0211-2025-05-01"><a class="doc-anchor" href="#0211-2025-05-01">§</a>0.2.11 (2025-05-01)</h2>
+<p>This release includes new APIs for customizing Jiff’s <code>strtime</code> behavior along
+with a few minor bug fixes. Jiff’s <code>strtime</code> formatting API has also been
+optimized. It’s about twice as fast as it was.</p>
+<p>This release also coincides with the publication of <code>jiff-icu 0.2.0-beta.2</code>,
+which has support for <code>icu 2.0.0-beta.2</code>.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/pull/338">#338</a>:
+Add support for the <code>%c</code>, <code>%r</code>, <code>%X</code> and <code>%x</code> conversion specifiers.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/341">#341</a>:
+Add support for <code>%q</code> in <code>jiff::fmt::strtime</code> (prints quarter of year).</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/342">#342</a>:
+Add support for <code>%::z</code> and <code>%:::z</code> in <code>jiff::fmt::strtime</code>.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/344">#344</a>:
+Add support for <code>%N</code> in <code>jiff::fmt::strtime</code> (alias for <code>%9f</code>).</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/350">#350</a>:
+Add a “lenient” mode for <code>strtime</code> formatting APIs that ignores most errors.</li>
+</ul>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/328">#328</a>:
+Document default precision behavior of <code>Display</code> impls for datetime types.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/340">#340</a>:
+Allow whitespace in more places in RFC 2822 parser (improves spec compliance).</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/346">#346</a>:
+<code>TimeZone::get("UTC")</code> should now always return <code>TimeZone::UTC</code>.</li>
+</ul>
+<p>Performance:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/pull/338">#338</a>:
+Jiff’s <code>strftime</code> APIs are now approximately twice as fast as they were.
+Performance should be comparable to <code>chrono</code> and <code>time</code>’s prebuilt APIs.</li>
+</ul>
+<h2 id="0210-2025-04-21"><a class="doc-anchor" href="#0210-2025-04-21">§</a>0.2.10 (2025-04-21)</h2>
+<p>This release includes a bug fix for parsing <code>Tuesday</code> when using <code>%A</code> via
+Jiff’s <code>strptime</code> APIs. Specifically, it would recognize <code>Tueday</code> instead of
+<code>Tuesday</code>.</p>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/333">#333</a>:
+Fix typo in <code>strptime</code> parsing from <code>Tueday</code> to <code>Tuesday</code>.</li>
+</ul>
+<h2 id="029-2025-04-19"><a class="doc-anchor" href="#029-2025-04-19">§</a>0.2.9 (2025-04-19)</h2>
+<p>This release includes a bug fix that, in debug mode, could result in datetime
+types having different hashes for the same value. This could cause problems,
+for example, if you are using datetimes as keys in a hash map. This problem
+didn’t exist when Jiff was compiled in release mode.</p>
+<p>This release also improves the panic message shown when the <code>js</code> feature isn’t
+enabled and the current time is requested on <code>wasm32-unknown-unknown</code> targets.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/296">#296</a>:
+Provide a better panic message when <code>Zoned::now()</code> fails on WASM.</li>
+</ul>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/330">#330</a>:
+Fix bug where <code>Hash</code> on datetime types could yield different hash values for
+the same underlying date/time.</li>
+</ul>
+<h2 id="028-2025-04-13"><a class="doc-anchor" href="#028-2025-04-13">§</a>0.2.8 (2025-04-13)</h2>
+<p>This release fixes a bug where the constructors on <code>SignedDuration</code>
+for floating point durations could panic (in debug mode) or produce
+incorrect results (in release mode). This bug only impacts users of
+the <code>try_from_secs_{f32,f64}</code> and <code>from_secs_{f32,f64}</code> methods on
+<code>SignedDuration</code>.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/pull/326">#326</a>:
+Add an alternate <code>Debug</code> impl for <code>SignedDuration</code> that only shows its second
+and nanosecond components (while using only one component when the other is
+zero).</li>
+</ul>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/324">#324</a>:
+Fix a bug that could produce a panic or incorrect results in
+<code>SignedDuration::(try_)?from_secs_{f32,f64}</code>.</li>
+</ul>
+<h2 id="027-2025-04-13"><a class="doc-anchor" href="#027-2025-04-13">§</a>0.2.7 (2025-04-13)</h2>
+<p>This release includes a bug fix that changes how an empty but set <code>TZ</code>
+environment variable is interpreted (as indistinguishable from <code>TZ=UTC</code>).
+This also includes a new enabled by default create feature, <code>perf-inline</code>,
+which allows toggling Jiff’s use of <code>inline(always)</code>. This may help improve
+compile times or decrease binary size.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/pull/320">#320</a>:
+Remove some internal uses of generics to mildly improve compile times.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/321">#321</a>:
+Add <code>perf-inline</code> crate feature for controlling <code>inline(always)</code> annotations.</li>
+</ul>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/311">#311</a>:
+Make <code>TZ=</code> indistinguishable from <code>TZ=UTC</code>.</li>
+</ul>
+<h2 id="026-2025-04-07"><a class="doc-anchor" href="#026-2025-04-07">§</a>0.2.6 (2025-04-07)</h2>
+<p>This release includes a few bug fixes and support for discovering the IANA Time
+Zone Database automatically on Illumos.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/315">#315</a>:
+Add support for automatically finding the tzdb on Illumos.</li>
+</ul>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/305">#305</a>:
+Fixed <code>Zoned</code> rounding on days with DST time zone transitions.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/309">#309</a>:
+Fixed bug where <code>TimeZone::preceding</code> could omit historical time zone
+transitions for time zones that have eliminated DST in the present.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/312">#312</a>:
+Fixed <code>nth_weekday_in_month</code>, where it would sometimes incorrectly return an
+error.</li>
+</ul>
+<h2 id="025-2025-03-22"><a class="doc-anchor" href="#025-2025-03-22">§</a>0.2.5 (2025-03-22)</h2>
+<p>This release updates Jiff’s bundled copy of the <a href="https://www.iana.org/time-zones">IANA Time Zone Database</a> to
+<code>2025b</code>. See the <a href="https://lists.iana.org/hyperkitty/list/tz-announce@iana.org/thread/6JVHNHLB6I2WAYTQ75L6KEPEQHFXAJK3/"><code>2025b</code> release announcement</a> for more details.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/pull/300">#300</a>:
+Update <code>jiff-tzdb</code> to <code>2025b</code>.</li>
+</ul>
+<h2 id="024-2025-03-10"><a class="doc-anchor" href="#024-2025-03-10">§</a>0.2.4 (2025-03-10)</h2>
+<p>This is another small release that fixes a problem where Jiff could break
+builds if they relied on inference for integer comparisons. Specifically, Jiff
+uses internal trait impls to make comparing its internal ranged integers
+more convenient. But Rust the language has no concept of “internal” trait
+impls, and thus this can impact type inference. If code was written in a way
+that relies on a singular trait impl that is available, then adding Jiff to
+the project can cause it to break.</p>
+<p>This isn’t arguably Jiff’s fault per se, but since these trait impls were just
+about internal convenience and not essential to Jiff’s design, we adopt a
+pragmatic approach and just remove them.</p>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/293">#293</a>:
+Remove internal trait impls that can cause breaks due to inference failures.</li>
+</ul>
+<h2 id="023-2025-03-07"><a class="doc-anchor" href="#023-2025-03-07">§</a>0.2.3 (2025-03-07)</h2>
+<p>This is a small release that fixes a bug in the handling of POSIX time zones
+in some cases. Specifically, the implementation of <code>Date::yesterday</code> was wrong
+when the date was the first of the month. This was a regression introduced in
+<code>0.2.2</code> and was not present in older releases. More test coverage has been
+added.</p>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/290">#290</a>:
+Fix bug in implementation of <code>Date::yesterday</code>.</li>
+</ul>
+<h2 id="022-2025-03-06"><a class="doc-anchor" href="#022-2025-03-06">§</a>0.2.2 (2025-03-06)</h2>
+<p>This release of Jiff includes a new opt-in proc macro for embedding a
+<code>TimeZone</code> into your binary. Just enable Jiff’s <code>static</code> feature, and this will
+print the current time in the <code>America/New_York</code> time zone:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{
+    tz::{<span class="self">self</span>, TimeZone},
+    Timestamp,
+};
+
+<span class="kw">fn </span>main() {
+    <span class="kw">static </span>TZ: TimeZone = <span class="macro">tz::get!</span>(<span class="string">"America/New_York"</span>);
+    <span class="kw">let </span>zdt = Timestamp::now().to_zoned(TZ.clone());
+    <span class="macro">println!</span>(<span class="string">"{zdt}"</span>);
+}</code></pre></div>
+<p>This enables <code>TimeZone</code> to be meaningfully used in core-only environments,
+even when dynamic memory allocation isn’t available.</p>
+<p>This release also features a number of performance improvements for time zone
+lookups. In some cases, the improvement is significant (by an order of
+magnitude).</p>
+<p>Additionally, the IANA Time Zone Database embedded into <code>jiff-tzdb</code> now
+uses “rearguard” semantics. This means that the boolean flag indicating
+whether daylight saving time is active or not (only accessible via
+<code>TimeZone::to_offset_info</code>) will respect the actual definition of
+daylight saving time. (This is relevant, for example, for time zones like
+<code>Europe/Dublin</code>, where their summer time is <em>legally</em> known as their standard
+time, but is in effect daylight saving time.)</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/256">#256</a>:
+Add <code>tz::{get,include}</code> macros for time zone support in core-only environments.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/258">#258</a>:
+Switch to <code>rearguard</code> tzdb data in <code>jiff-tzdb</code> and document it.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/259">#259</a>:
+De-duplicate TZif data in <code>jiff-tzdb</code>.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/273">#273</a>:
+Add “crate features” documentation to <code>jiff-sqlx</code> and <code>jiff-diesel</code>.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/277">#277</a>:
+Document semver guarantee for error conditions on <code>Timestamp</code> constructors.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/287">#277</a>:
+Greatly optimize time zone lookups (for both timestamps and civil datetimes).</li>
+</ul>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/261">#261</a>:
+Improve the documentation for <code>ZonedWith::nanosecond</code> and
+<code>ZonedWith::subsec_nanosecond</code>.</li>
+</ul>
+<h2 id="021-2025-02-16"><a class="doc-anchor" href="#021-2025-02-16">§</a>0.2.1 (2025-02-16)</h2>
+<p>This release includes a massive number of optimizations that significantly
+improves performance in some cases. If you had a workload whose performance
+with Jiff was underwhelming, please give it a try. I welcome questions via
+<a href="https://github.com/BurntSushi/jiff/discussions">Discussions on GitHub</a>.</p>
+<p>This release also provides a new API, <code>Timestamp::constant</code>, for constructing
+<code>Timestamp</code> values in a <code>const</code> context.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/discussions/235">#235</a>,
+<a href="https://github.com/BurntSushi/jiff/discussions/255">#255</a>,
+<a href="https://github.com/BurntSushi/jiff/pull/266">#266</a>:
+A massive number of performance improvements. Jiff should now generally be
+faster than <code>chrono</code> and <code>time</code>.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/263">#263</a>:
+Add <code>Timestamp::constant</code> for constructing timestamps in <code>const</code> context.</li>
+</ul>
+<h2 id="020-2025-02-10"><a class="doc-anchor" href="#020-2025-02-10">§</a>0.2.0 (2025-02-10)</h2>
+<p>This is a new semver incompatible release of Jiff. It contains several breaking
+changes. I expect most users of Jiff to be able to upgrade without any changes.
+The fundamental API organization of Jiff has not changed.</p>
+<p>Some of the highlights of this release include reducing footguns and better
+ecosystem integration.</p>
+<p>For reducing footguns, APIs on <code>Span</code> will no longer implicitly assume that
+days are always 24 hours long. And <code>Span</code> no longer implements <code>PartialEq</code> or
+<code>Eq</code> (instead favoring <code>span.fieldwise()</code> to create a value that supports naive
+fieldwise comparison). Moreover, when using <code>TimeZone::system()</code> (perhaps via
+<code>Zoned::now()</code>), if the system time zone could not be detected, then a special
+<code>Etc/Unknown</code> time zone will be used instead. This avoids erroring, but also
+surfaces itself to make it clearer that something has (perhaps) gone wrong.</p>
+<p>As for ecosystem integration, this release coincides with the publication
+of the <a href="https://docs.rs/jiff-icu"><code>jiff-icu</code></a>, <a href="https://docs.rs/jiff-sqlx"><code>jiff-sqlx</code></a> and <a href="https://docs.rs/jiff-diesel"><code>jiff-diesel</code></a> crates. <code>jiff-icu</code>
+integrates with the <a href="https://github.com/unicode-org/icu4x">ICU4X project</a>, and is now the recommended way to use
+Jiff to work with non-Gregorian calendars or to localize datetimes for end
+users. <code>jiff-sqlx</code> and <code>jiff-diesel</code> provide wrapper types that implement the
+necessary traits to make it ergonomic to store and retrieve Jiff values in a
+database using <a href="https://github.com/launchbadge/sqlx">SQLx</a> or <a href="https://github.com/diesel-rs/diesel">Diesel</a>, respectively.</p>
+<p>Unless something unexpected happens, my plan is for the next breaking change
+release to be Jiff 1.0 in about 6 months. Once Jiff 1.0 is out, I plan to
+commit to it indefinitely.</p>
+<p><strong>BREAKING CHANGES</strong>:</p>
+<p>This is an exhaustive list of breaking changes. Changes with the bolded
+<strong>RUNTIME</strong> prefix are changes that will not be caught by the Rust compiler.
+That is, they are changes in runtime behavior.</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/28">#28</a>:
+The deprecated <code>intz</code> routines on <code>Zoned</code>, <code>Timestamp</code>, <code>civil::DateTime</code> and
+<code>civil::Date</code> have been removed. You can use <code>in_tz</code> instead. This change was
+made because many found the name <code>intz</code> to be unclear.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/32">#32</a>:
+The <code>PartialEq</code> and <code>Eq</code> trait implementations on <code>Span</code> have been removed.
+Ideally these shouldn’t have been used, but if you do need them, please use
+<code>Span::fieldwise</code> to create a <code>SpanFieldwise</code>, which does have the <code>PartialEq</code>
+and <code>Eq</code> traits implemented. These were removed on <code>Span</code> itself because they
+made it very easy to commit subtle bugs.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/36">#36</a>:
+Turn panics during <code>Timestamp::saturing_add</code> into errors. Callers adding
+spans that are known to contain units of hours or smaller are guaranteed that
+this will not return an error.</li>
+<li><strong>RUNTIME</strong> <a href="https://github.com/BurntSushi/jiff/issues/48">#48</a>:
+On <code>Span</code> APIs, days are no longer silently assumed to always be 24 hours when
+a relative datetime is not provided. Instead, to perform operations on units
+of days or bigger, callers must either provide a relative date or opt into
+invariant 24-hour days with <code>SpanRelativeTo::days_are_24_hours</code>. Shortcuts have
+been added to the span builders. For example, <code>SpanTotal::days_are_24_hours</code>.</li>
+<li><strong>RUNTIME</strong> <a href="https://github.com/BurntSushi/jiff/issues/147">#147</a>:
+Change the behavior of the deprecated <code>%V</code> conversion specifier in
+<code>jiff::fmt::strtime</code> from formatting an IANA time zone identifier to formatting
+an ISO 8601 week number. To format an IANA time zone identifier, use <code>%Q</code> or
+<code>%:Q</code> (which were introduced in <code>jiff 0.1</code>).</li>
+<li><strong>RUNTIME</strong> <a href="https://github.com/BurntSushi/jiff/issues/212">#212</a>:
+When parsing into a <code>Zoned</code> with a civil time corresponding to a gap, we treat
+all offsets as invalid and return an error. Previously, we would accept the
+offset as given. This brings us into line with Temporal’s behavior. For
+example, previously Jiff accepted <code>2006-04-02T02:30-05[America/Indiana/Vevay]</code>
+but will now return an error. This is desirable for cases where a datetime in
+the future is serialized before a change in the daylight saving time rules.
+For more examples, see <code>jiff::fmt::temporal::DateTimeParser::offset_conflict</code>
+for details on how to change Jiff’s default behavior. This behavior change also
+applies to <code>tz::OffsetConflict::PreferOffset</code>.</li>
+<li><strong>RUNTIME</strong> <a href="https://github.com/BurntSushi/jiff/issues/213">#213</a>:
+Tweak the semantics of <code>tz::TimeZoneDatabase</code> so that it only initializes one
+internal tzdb instead of trying to find as many as possible. It is unlikely
+that you’ll be impacted by this change, but it’s meant to make the semantics
+be a bit more sensible. (In <code>jiff 0.1</code>, it was in theory possible for one tz
+lookup to succeed in the system zoneinfo and then another tz lookup to fail
+in zoneinfo but succeed automatically via the bundled copy. But this seems
+confusing and possibly not desirable. Hence the change.)</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/218">#218</a>:
+In order to make naming a little more consistent between <code>Zoned</code>
+and <code>civil::Date</code>, the <code>civil::Date::to_iso_week_date</code> and
+<code>civil::ISOWeekDate::to_date</code> APIs were renamed to <code>civil::Date::iso_week_date</code>
+and <code>civil::ISOWeekDate::date</code>.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/220">#220</a>:
+Remove <code>Span::to_duration</code> for converting a <code>Span</code> to a <code>std::time::Duration</code>
+and rename <code>Span::to_jiff_duration</code> to <code>Span::to_duration</code>. This prioritizes
+<code>SignedDuration</code> as the “primary” non-calendar duration type in Jiff. And makes
+it more consistent with APIs like <code>Zoned::duration_since</code>. For non-calendar
+spans, the <code>TryFrom&lt;Span&gt; for std::time::Duration</code> still exists. For calendar
+durations, use <code>Span::to_duration</code> and then convert the <code>SignedDuration</code> to
+<code>std::time::Duration</code>. Additionally, <code>Timestamp::from_jiff_duration</code> and
+<code>Timestamp::as_jiff_duration</code> were renamed to <code>Timestamp::from_duration</code> and
+<code>Timestamp::as_duration</code>, respectively. The old deprecated routines on the
+unsigned <code>std::time::Duration</code> have been removed.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/221">#221</a>:
+Change the type of the value yielded by the <code>jiff::tz::TimeZoneNameIter</code>
+iterator from <code>String</code> to <code>jiff::tz::TimeZoneName</code>. This opaque type is more
+API evolution friendly. To access the string, either use <code>TimeZoneName</code>’s
+<code>Display</code> trait implementation, or its <code>as_str</code> method.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/222">#222</a>:
+Split <code>TimeZone::to_offset</code> into two methods. One that just returns the
+offset, and another, <code>TimeZone::to_offset_info</code>, which includes the offset,
+DST status and time zone abbreviation. The extra info is rarely needed and
+is sometimes more costly to compute. Also, make the lifetime of the time
+zone abbreviation returned by <code>TimeZoneTransition::abbreviation</code> tied to
+the transition instead of the time zone (for future API flexibility, likely
+in core-only environments). This change was overall motivated by wanting to
+do less work in the common case (where we only need the offset), and for
+reducing the size of a <code>TimeZone</code> considerably in core-only environments.
+Callers previously using <code>TimeZone::to_offset</code> to get DST status and time zone
+abbreviation should now use <code>TimeZone::to_offset_info</code>.</li>
+<li><strong>RUNTIME</strong> <a href="https://github.com/BurntSushi/jiff/issues/230">#230</a>:
+When <code>TimeZone::system()</code> cannot find a system configured time zone, <code>jiff 0.1</code> would automatically fall back to <code>TimeZone::UTC</code> (with a WARN-level log
+message). In <code>jiff 0.2</code>, the fall back is now to <code>TimeZone::unknown()</code>, which
+has a special <code>Etc/Unknown</code> identifier (as specified by Unicode and reserved by
+the IANA time zone database). The fallback otherwise still behaves as if it
+were <code>TimeZone::UTC</code>. This helps surface error conditions related to finding
+the system time zone without causing unrecoverable failure.</li>
+</ul>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/136">#136</a>:
+When the special <code>SpanRelativeTo::days_are_24_hours()</code> marker is used, weeks
+will also be treated as invariant. That is, seven 24-hour days. In all cases,
+working with years and months still requires a relative date.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/228">#228</a>:
+It is now possible to forcefully use a bundled copy of the IANA time zone
+database without relying on disabling crate features. This can be done by
+enabling the <code>tzdb-bundle-always</code> crate feature and explicitly creating a
+<code>jiff::tz::TimeZoneDatabase::bundled()</code> database. Once in hand, you must use
+APIs like <code>TimeZoneDatabase::get</code> to create a <code>TimeZone</code> and avoid any APIs
+that implicitly use the global time zone database (like <code>Timestamp::in_tz</code> or
+even <code>Zoned::from_str</code>).</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/238">#238</a>:
+Add integration with the ICU4X project via the <a href="https://docs.rs/jiff-icu"><code>jiff-icu</code></a> crate. <code>jiff-icu</code>
+provides traits for easily converting between datetime types defined in Jiff
+and datetime types defined in ICU4X.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/240">#240</a>:
+Add integration with the SQLx project via the <a href="https://docs.rs/jiff-sqlx"><code>jiff-sqlx</code></a> crate. <code>jiff-sqlx</code>
+provides wrapper types that implement the necessary traits in SQLx for
+reasonably ergonomic integration. This includes PostgreSQL and SQLite support,
+but not MySQL support. (It’s not clear if it’s possible at present to provide
+MySQL support for SQLx for datetime types outside of SQLx itself.)</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/241">#241</a>:
+Add integration with the Diesel project via the <a href="https://docs.rs/jiff-diesel"><code>jiff-diesel</code></a> crate.
+<code>jiff-diesel</code> provides wrapper types that implement the necessary traits in
+Diesel for reasonably ergonomic integration. This includes MySQL, PostgreSQL
+and SQLite support.</li>
+</ul>
+<h2 id="0129-2025-02-02"><a class="doc-anchor" href="#0129-2025-02-02">§</a>0.1.29 (2025-02-02)</h2>
+<p>This release includes a few small enhancements and a bug fix. In particular,
+there is now Serde support for <code>TimeZone</code> and the <code>ISOWeekDate</code> API has been
+filled out a bit more.</p>
+<p>Unless a serious issue is uncovered, my plan is that this will be the last
+release before <code>jiff 0.2</code>.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/89">#89</a>:
+Opt-in support for using Serde with <code>jiff::tz::TimeZone</code> has been added.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/227">#227</a>:
+The <code>civil::ISOWeekDate</code> API has been beefed up with a few convenience methods.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/233">#233</a>:
+Add <code>tz::Offset::round</code> for rounding time zone offsets.</li>
+</ul>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/231">#231</a>:
+Use more flexible offset equality when parsing offsets with fractional minutes.</li>
+</ul>
+<h2 id="0128-2025-01-27"><a class="doc-anchor" href="#0128-2025-01-27">§</a>0.1.28 (2025-01-27)</h2>
+<p>This is a small release that just removes the dev-dependency on <code>serde_yml</code>.
+It has been replaced with the deprecated <code>serde_yaml</code>. See
+<a href="https://x.com/davidtolnay/status/1883906113428676938">this post about <code>serde_yml</code> shenanigans</a>
+for why this was done. Note that this was only a dev-dependency and thus doesn’t
+impact folks using Jiff.</p>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/pull/225">#225</a>:
+Remove dependency on <code>serde_yml</code> in favor of <code>serde_yaml</code>.</li>
+</ul>
+<h2 id="0127-2025-01-25"><a class="doc-anchor" href="#0127-2025-01-25">§</a>0.1.27 (2025-01-25)</h2>
+<p>This is a small release with a bug fix for precision loss in some cases when
+doing arithmetic on <code>Timestamp</code> or <code>Zoned</code>.</p>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/223">#223</a>:
+Fix the check for fractional seconds before taking the fast path.</li>
+</ul>
+<h2 id="0126-2025-01-23"><a class="doc-anchor" href="#0126-2025-01-23">§</a>0.1.26 (2025-01-23)</h2>
+<p>This is a small release with another deprecation and a new API for doing
+prefix parsing via <code>strptime</code>. There’s also a bug fix for a corner case
+when dealing with daylight saving time gaps with the <code>Zoned::with</code> API.</p>
+<p>Deprecations:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/pull/210">#210</a>:
+Deprecate <code>ISOWeekDate::to_date</code> in favor of <code>ISOWeekDate::date</code>.</li>
+</ul>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/209">#209</a>:
+Add <code>fmt::strtime::BrokenDownTime::parse_prefix</code> for parsing only a prefix.</li>
+</ul>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/211">#211</a>:
+Fix unintuitive behavior of <code>Zoned::with</code> when time falls in a DST gap.</li>
+</ul>
+<h2 id="0125-2025-01-21"><a class="doc-anchor" href="#0125-2025-01-21">§</a>0.1.25 (2025-01-21)</h2>
+<p>This release contains a number of deprecations in preparation for a <code>jiff 0.2</code>
+release. The deprecations are meant to facilitate a smoother transition. The
+deprecations, when possible, come with new APIs that will permit users to write
+forward compatible code that will work in both <code>jiff 0.1</code> and <code>jiff 0.2</code>.</p>
+<p>This release also includes a handful of new conversion specifiers in Jiff’s
+<code>strftime</code> and <code>strptime</code> APIs. This improves compatibility with the analogous
+implementation with GNU libc.</p>
+<p>Deprecations:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/28">#28</a>:
+The <code>intz</code> methods on <code>Zoned</code>, <code>Timestamp</code>, <code>civil::DateTime</code> and <code>civil::Date</code>
+have been deprecated in favor of <code>in_tz</code>.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/32">#32</a>:
+The <code>Eq</code> and <code>PartialEq</code> trait implementations on <code>Span</code> have been deprecated
+in favor of using the new <code>SpanFieldwise</code> type.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/48">#48</a>:
+Silently assuming days are always 24 hours in some <code>Span</code> APIs has now been
+deprecated. This will become an error in <code>jiff 0.2</code>. To continue assuming
+days are 24 hours without a relative reference date, you can use the new
+<code>SpanRelativeTo::days_are_24_hours</code> API. In <code>jiff 0.1</code>, you’ll seen a
+WARN-level log message emitted if you’re code will be broken by <code>jiff 0.2</code>.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/147">#147</a>:
+Both <code>%V</code> and <code>%:V</code> have been deprecated in favor of <code>%Q</code> and <code>%:Q</code>. In
+<code>jiff 0.2</code>, <code>%V</code> will correspond to the ISO 8601 week number and <code>%:V</code> will
+result in an error. This change was made to improve compatibility with other
+<code>strtime</code> implementations. <code>%V</code> and <code>%:V</code> continue to correspond to IANA
+time zone identifiers in <code>jiff 0.1</code>, but using them for parsing or formatting
+will result in a WARN-level deprecation message.</li>
+</ul>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/147">#147</a>:
+Adds a number of new conversion specifiers to Jiff’s <code>strftime</code> and
+<code>strptime</code> APIs. Specifically, <code>%C</code>, <code>%G</code>, <code>%g</code>, <code>%j</code>, <code>%k</code>, <code>%l</code>, <code>%n</code>, <code>%R</code>,
+<code>%s</code>, <code>%t</code>, <code>%U</code>, <code>%u</code>, <code>%W</code>, <code>%w</code>. Their behavior should match the
+corresponding specifiers in GNU libc.</li>
+</ul>
+<h2 id="0124-2025-01-16"><a class="doc-anchor" href="#0124-2025-01-16">§</a>0.1.24 (2025-01-16)</h2>
+<p>This release updates Jiff’s bundled copy of the <a href="https://www.iana.org/time-zones">IANA Time Zone Database</a> to
+<code>2025a</code>. See the <a href="https://lists.iana.org/hyperkitty/list/tz-announce@iana.org/thread/MWII7R3HMCEDNUCIYQKSSTYYR7UWK4OQ/"><code>2025a</code> release announcement</a> for more details.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/pull/206">#206</a>:
+Update <code>jiff-tzdb</code> to <code>2025a</code>.</li>
+</ul>
+<h2 id="0123-2025-01-13"><a class="doc-anchor" href="#0123-2025-01-13">§</a>0.1.23 (2025-01-13)</h2>
+<p>This release includes some bug fixes, particularly for compilation on
+<code>aarch64-linux-android</code>. There are also some minor enhancements, such as making
+<code>Zoned::iso_week_date</code> a convenience function for <code>civil::Date::iso_week_date</code>,
+in line with similar functions.</p>
+<p>My current plan is to make a reasonably quick transition to <code>jiff 0.2</code> with a
+few pending breaking changes. I will be making some <code>jiff 0.1</code> releases with
+deprecations in order to make the transition as smooth as possible. If all goes
+well with <code>jiff 0.2</code>, then my plan is still to do a Jiff 1.0 release in the
+Summer of 2025.</p>
+<p>Deprecations:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/discussions/197">#197</a>:
+<code>Date::to_iso_week_date</code> has been deprecated in favor of <code>Date::iso_week_date</code>.</li>
+</ul>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/discussions/196">#196</a>:
+Improve ISO week date documentation regarding weekday offsets.</li>
+<li><a href="https://github.com/BurntSushi/jiff/discussions/197">#197</a>:
+Add <code>Zoned::iso_week_date</code>, <code>DateTime::iso_week_date</code> and
+<code>Date::iso_week_date</code>.</li>
+</ul>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/200">#200</a>:
+Fix compilation failure on Android in a Termux shell.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/202">#202</a>:
+Re-add license files to crate artifact.</li>
+</ul>
+<h2 id="0122-2025-01-12"><a class="doc-anchor" href="#0122-2025-01-12">§</a>0.1.22 (2025-01-12)</h2>
+<p>This release adds support for Android. This support means that Jiff will
+automatically read its special concatenated time zone database, and will
+read the <code>persist.sys.timezone</code> property to determine the system’s current
+time zone.</p>
+<p>See <a href="PLATFORM.md">PLATFORM</a> for more specific information about Android support.</p>
+<p>Note that this release also removed all non-essential files (including tests
+and test data) for the artifact uploaded to crates.io. If you need or want
+these files, please open a new issue.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/140">#140</a>:
+Add support for the Android platform.</li>
+</ul>
+<h2 id="0121-2025-01-04"><a class="doc-anchor" href="#0121-2025-01-04">§</a>0.1.21 (2025-01-04)</h2>
+<p>This release includes a new API for setting the unit designator label in a
+friendly formatted duration for zero-length durations.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/192">#192</a>:
+Add option to the friendly printer for setting the unit when writing a
+zero-length duration.</li>
+</ul>
+<h2 id="0120-2025-01-03"><a class="doc-anchor" href="#0120-2025-01-03">§</a>0.1.20 (2025-01-03)</h2>
+<p>This release includes a new type, <code>Pieces</code>, in the <code>jiff::fmt::temporal</code>
+sub-module. This exposes the individual components of a parsed Temporal
+ISO 8601 datetime string. It allows users of Jiff to circumvent the checks
+in the higher level parsing routines that prevent you from shooting yourself
+in the foot.</p>
+<p>For example, parsing into a <code>Zoned</code> will return an error for raw RFC 3339
+timestamps like <code>2025-01-03T22:03-05</code> because there is no time zone annotation.
+Without a time zone, Jiff cannot do time zone aware arithmetic and rounding.
+Instead, such a datetime can only be parsed into a <code>Timestamp</code>. This lower
+level <code>Pieces</code> API now permits users of Jiff to parse this string into its
+component parts and assemble it into a <code>Zoned</code> if they so choose.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/188">#188</a>:
+Add <code>fmt::temporal::Pieces</code> for granular datetime parsing and formatting.</li>
+</ul>
+<h2 id="0119-2025-01-02"><a class="doc-anchor" href="#0119-2025-01-02">§</a>0.1.19 (2025-01-02)</h2>
+<p>This releases includes a UTF-8 related bug fix and a few enhancements.</p>
+<p>Firstly, a <code>Span</code>’s default <code>Display</code> implementation now writes uppercase
+unit designator labels. That means you’ll get <code>P1Y2M3DT4H5M6S</code> instead
+of <code>P1y2m3dT4h5m6s</code> by default. You can restore previous behavior via
+<code>jiff::fmt::temporal::SpanPrinter::lowercase</code>. This change was made to improve
+interoperability.</p>
+<p>Secondly, <code>SignedDuration</code> now supports rounding via <code>SignedDuration::round</code>.
+Note that it only supports rounding time units (hours or smaller). In order to
+round with calendar units, you’ll still need to use a <code>Span</code>.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/130">#130</a>:
+Document value ranges for methods like <code>year</code>, <code>day</code>, <code>hour</code> and so on.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/187">#187</a>:
+Add a rounding API (for time units only) on <code>SignedDuration</code>.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/190">#190</a>:
+<code>Span</code> and <code>SignedDuration</code> now use uppercase unit designator labels in their
+default ISO 8601 <code>Display</code> implementation.</li>
+</ul>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/155">#155</a>:
+Relax <code>strftime</code> format strings from ASCII-only to all of UTF-8.</li>
+</ul>
+<h2 id="0118-2024-12-31"><a class="doc-anchor" href="#0118-2024-12-31">§</a>0.1.18 (2024-12-31)</h2>
+<p>This release includes a few minor enhancements. Namely, the ability to iterate
+over time zone transitions (in the future or the past), and some improvements
+to failure modes when <code>Timestamp</code> and <code>Span</code> arithmetic fails.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/144">#144</a>:
+Add APIs for iterating over the transitions of a time zone.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/145">#145</a>:
+Improve docs and error messages around fallible <code>Timestamp</code> arithmetic.</li>
+</ul>
+<h2 id="0117-2024-12-31"><a class="doc-anchor" href="#0117-2024-12-31">§</a>0.1.17 (2024-12-31)</h2>
+<p>This release enhances Jiff’s support for <code>no_std</code> environments by making its
+<code>alloc</code> feature optional. When <code>alloc</code> is disabled, only fixed offset time
+zones are supported and error messages are significantly degraded. If you have
+core-only use cases for Jiff, I’d love to hear about them on the issue tracker.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/162">#162</a>:
+Support platforms that do not have atomics in <code>std</code>.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/168">#168</a>:
+Jiff now supports disabling the <code>alloc</code> feature, which enables core-only mode.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/169">#169</a>:
+Add <code>TimeZone::to_fixed_offset</code> for accessing an invariant offset if possible.</li>
+</ul>
+<h2 id="0116-2024-12-26"><a class="doc-anchor" href="#0116-2024-12-26">§</a>0.1.16 (2024-12-26)</h2>
+<p>This release includes a new <code>jiff::fmt::friendly</code> module for formatting and
+parsing durations in a more human readable format than what ISO 8601 specifies.
+ISO 8601 remains the “default” duration format in Jiff due to its widespread
+support. Here are some examples:</p>
+<div class="example-wrap"><pre class="language-text"><code>40d
+40 days
+1y1d
+1yr 1d
+3d4h59m
+3 days, 4 hours, 59 minutes
+3d 4h 59m
+2h30m
+2h 30m
+1mo
+1w
+1 week
+1w4d
+1 wk 4 days
+1m
+0.0021s
+0s
+0d
+0 days
+3 mins 34s 123ms
+3 mins 34.123 secs
+3 mins 34,123s
+1y1mo1d1h1m1.1s
+1yr 1mo 1day 1hr 1min 1.1sec
+1 year, 1 month, 1 day, 1 hour, 1 minute 1.1 seconds
+1 year, 1 month, 1 day, 01:01:01.1</code></pre></div>
+<p>To quickly demonstrate this new feature, here’s a simple CLI program using
+Clap:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">use </span>clap::Parser;
+<span class="kw">use </span>jiff::{Span, Zoned};
+
+<span class="attr">#[derive(Parser, Debug)]
+#[command(version, about, long_about = <span class="prelude-val">None</span>)]
+</span><span class="kw">struct </span>Args {
+    duration: Span,
+}
+
+<span class="kw">fn </span>main() {
+    <span class="kw">let </span>args = Args::parse();
+    <span class="macro">println!</span>(<span class="string">"adding duration to now: {}"</span>, <span class="kw-2">&amp;</span>Zoned::now() + args.duration);
+}</code></pre></div>
+<p>And running the program:</p>
+<div class="example-wrap"><pre class="language-text"><code>$ cargo run -q -- &#39;1 year, 2 months, 5 hours&#39;
+adding duration to now: 2026-02-26T18:58:22-05:00[America/New_York]
+$ cargo run -q -- &#39;P1Y2MT5H&#39;  # ISO 8601 durations are supported too!
+adding duration to now: 2026-02-26T19:00:57-05:00[America/New_York]</code></pre></div>
+<p>With Jiff, you should no longer need to pull in crates like
+<a href="https://docs.rs/humantime"><code>humantime</code></a> and
+<a href="https://docs.rs/humantime-serde"><code>humantime-serde</code></a>
+to accomplish a similar task.</p>
+<p>While this new format doesn’t support any kind of internationalization, the
+prevalence of the <code>humantime</code> crate suggests there’s a desire for something
+like this. The “friendly” format is meant to service all the same use cases
+as <code>humantime</code> does for durations, but in a way that doesn’t let you shoot
+yourself in the foot.</p>
+<p>The new “friendly” format is now the default for the <code>Debug</code> implementations
+of both <code>Span</code> and <code>SignedDuration</code>. It’s also available via the “alternate”
+<code>Display</code> implementations for <code>Span</code> and <code>SignedDuration</code> as well. Moreover,
+the <code>FromStr</code> trait implementations for both <code>Span</code> and <code>SignedDuration</code> will
+parse <em>both</em> the ISO 8601 duration and this new “friendly” format. Finally,
+when <code>serde</code> integration is enabled, the <code>Deserialize</code> implementations for
+<code>SignedDuration</code> and <code>Span</code> also automatically parse either ISO 8601 or the
+friendly format. For serialization, ISO 8601 remains the default, but the
+<code>jiff::fmt::serde</code> module provides easy to use helpers to switch to the
+friendly format.</p>
+<p>The <code>jiff::fmt::friendly</code> module documentation provides many more details,
+including a complete grammar for the format.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/pull/143">#143</a>:
+Add <code>Hash</code> implementation for <code>Zoned</code> and <code>Timestamp</code>.</li>
+</ul>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/60">#60</a>:
+Use a better <code>Debug</code> output format for <code>SignedDuration</code> and <code>Span</code>.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/111">#111</a>:
+Add a new “friendly” duration format.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/138">#138</a>:
+Fix deserialization in <code>serde_yml</code> and <code>serde_yaml</code> crates.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/161">#161</a>:
+Fix <code>serde</code> dependency configuration so that it builds in no-std mode.</li>
+</ul>
+<h2 id="0115-2024-11-30"><a class="doc-anchor" href="#0115-2024-11-30">§</a>0.1.15 (2024-11-30)</h2>
+<p>This release fixes a bug where Jiff would sometimes fail to parse TZif files
+(found, typically, in <code>/usr/share/zoneinfo</code> on Unix systems). This occurred
+when the TZif file contained a time zone transition outside the range of Jiff’s
+<code>Timestamp</code> type (which is <code>-9999-01-01</code> to <code>9999-12-31</code>). The bug fix works by
+clamping the out-of-range transitions to Jiff’s supported range.</p>
+<p>This bug only seems to occur in some environments where their TZif files
+contain more extreme values than what is typically found.</p>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/163">#163</a>:
+Fix a bug where Jiff would fail to parse some TZif files.</li>
+</ul>
+<h2 id="0114-2024-11-01"><a class="doc-anchor" href="#0114-2024-11-01">§</a>0.1.14 (2024-11-01)</h2>
+<p>This release introduces new APIs to the RFC 2822 printer that explicitly
+print timestamps in a format strictly compatible with <a href="https://datatracker.ietf.org/doc/html/rfc9110#section-5.6.7-15">RFC 9110</a>.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/151">#151</a>:
+Add <code>rfc2822::DateTimePrinter::timestamp_to_rfc9110_string</code> method.</li>
+</ul>
+<h2 id="0113-2024-09-07"><a class="doc-anchor" href="#0113-2024-09-07">§</a>0.1.13 (2024-09-07)</h2>
+<p>This release introduces a new <code>jiff::tz::TimeZone::try_system</code> API. It is like
+<code>TimeZone::system</code>, but returns an error instead of an automatic fall back to
+UTC when the system time zone could not be discovered.</p>
+<p>This also includes an update to the bundled <a href="https://www.iana.org/time-zones">IANA Time Zone Database</a> to the
+<code>2024b</code> release in the <code>jiff-tzdb</code> crate. As a reminder, the bundled database
+is not used or included on Unix platforms by default. See <a href="PLATFORM.md">PLATFORM</a> for more
+details.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/65">#65</a>:
+Add <code>TimeZone::try_system</code> for fallibly determining the system’s time zone.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/125">#125</a>:
+Update to the <code>2024b</code> release of the <a href="https://www.iana.org/time-zones">IANA Time Zone Database</a>.</li>
+</ul>
+<h2 id="0112-2024-08-31"><a class="doc-anchor" href="#0112-2024-08-31">§</a>0.1.12 (2024-08-31)</h2>
+<p>This release introduces some new minor APIs that support formatting
+<code>Timestamp</code> values as RFC 3339 strings with a specific offset.</p>
+<p>Previously, using the standard formatting routines that Jiff provides, it was
+only possible to format a <code>Timestamp</code> using Zulu time. For example:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::Timestamp;
+
+<span class="macro">assert_eq!</span>(
+    Timestamp::UNIX_EPOCH.to_string(),
+    <span class="string">"1970-01-01T00:00:00Z"</span>,
+);</code></pre></div>
+<p>This is fine most use cases, but it can be useful on occasion to format
+a <code>Timestamp</code> with a specific offset. While this isn’t as expressive
+as formatting a datetime with a time zone (e.g., with an IANA time
+zone identifier), it may be useful in contexts where you just want to
+“hint” at what a user’s local time is. To that end, there is a new
+<code>Timestamp::display_with_offset</code> method that makes this possible:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{tz, Timestamp};
+
+<span class="macro">assert_eq!</span>(
+    Timestamp::UNIX_EPOCH.display_with_offset(tz::offset(-<span class="number">5</span>)).to_string(),
+    <span class="string">"1969-12-31T19:00:00-05:00"</span>,
+);</code></pre></div>
+<p>A corresponding API was added to <code>jiff::fmt::temporal::DateTimePrinter</code> for
+lower level use.</p>
+<p>Moreover, this release also includes new convenience APIs on the Temporal and
+RFC 2822 printer types for returning strings. For example, previously, if you
+were using the RFC 2822 printer to format a <code>Timestamp</code>, you had to do this:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{fmt::rfc2822::DateTimePrinter, Timestamp};
+
+<span class="kw">let </span><span class="kw-2">mut </span>buf = String::new();
+DateTimePrinter::new().print_timestamp(<span class="kw-2">&amp;</span>Timestamp::UNIX_EPOCH, <span class="kw-2">&amp;mut </span>buf).unwrap();
+<span class="macro">assert_eq!</span>(buf, <span class="string">"Thu, 1 Jan 1970 00:00:00 -0000"</span>);</code></pre></div>
+<p>But now you can just do this:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{fmt::rfc2822::DateTimePrinter, Timestamp};
+
+<span class="macro">assert_eq!</span>(
+    DateTimePrinter::new().timestamp_to_string(<span class="kw-2">&amp;</span>Timestamp::UNIX_EPOCH).unwrap(),
+    <span class="string">"Thu, 1 Jan 1970 00:00:00 -0000"</span>,
+);</code></pre></div>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/pull/122">#122</a>:
+Support formatting <code>Timestamp</code> to an RFC 3339 string with a specific offset.</li>
+</ul>
+<h2 id="0111-2024-08-28"><a class="doc-anchor" href="#0111-2024-08-28">§</a>0.1.11 (2024-08-28)</h2>
+<p>This release includes a few small enhancements that have been requested over
+the last several weeks. The biggest enhancement is a new <code>jiff::fmt::serde</code>
+sub-module. It provides convenience routines similar to Chrono’s
+<code>chrono::serde</code> sub-module for serializing and deserializing between a
+<code>jiff::Timestamp</code> and an integer number of seconds, milliseconds, microseconds
+or nanoseconds. For example:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::Timestamp;
+
+<span class="attr">#[derive(serde::Serialize, serde::Deserialize)]
+</span><span class="kw">struct </span>Record {
+    <span class="attr">#[serde(with = <span class="string">"jiff::fmt::serde::timestamp::second::required"</span>)]
+    </span>timestamp: Timestamp,
+}
+
+<span class="kw">let </span>json = <span class="string">r#"{"timestamp":1517644800}"#</span>;
+<span class="kw">let </span>got: Record = serde_json::from_str(<span class="kw-2">&amp;</span>json).unwrap();
+<span class="macro">assert_eq!</span>(got.timestamp, Timestamp::from_second(<span class="number">1517644800</span>).unwrap());
+<span class="macro">assert_eq!</span>(serde_json::to_string(<span class="kw-2">&amp;</span>got).unwrap(), json);</code></pre></div>
+<p>If you need to support optional timestamps via <code>Option&lt;Timestamp&gt;</code>, then use
+<code>jiff::fmt::serde::timestamp::second::optional</code> instead. Similarly, if you
+need to support milliseconds instead of seconds, then replace <code>second</code> with
+<code>millisecond</code> in the module path.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/78">#78</a>:
+Add <code>BrokenDownTime::set_{offset,iana_time_zone}</code> APIs.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/93">#93</a>:
+Add note about using <code>Timestamp::now().to_zoned()</code> instead of
+<code>Zoned::now().with_time_zone()</code>.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/101">#101</a>:
+Add new <code>jiff::fmt::serde</code> module for integration with integer timestamps.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/117">#117</a>:
+Remove <code>unsafe</code> usage in <code>libm</code> functions (applicable only to no-std users).</li>
+</ul>
+<h2 id="0110-2024-08-23"><a class="doc-anchor" href="#0110-2024-08-23">§</a>0.1.10 (2024-08-23)</h2>
+<p>This release features a small bug fix where Jiff will detect an IANA time
+zone identifier in some cases where it wouldn’t before. While Jiff would
+previously read the symlink metadata on <code>/etc/localtime</code> by default to discover
+the system configured time zone on Unix systems, it <em>wouldn’t</em> do so when
+<code>TZ=/etc/localtime</code>. There’s really no reason not to, so this release of Jiff
+is fixed to use symlink sniffing on file paths provided by the <code>TZ</code> environment
+variable.</p>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/113">#113</a>:
+When <code>TZ=/etc/localtime</code>, use symlink metadata to detect IANA identifier.</li>
+</ul>
+<h2 id="019-2024-08-23"><a class="doc-anchor" href="#019-2024-08-23">§</a>0.1.9 (2024-08-23)</h2>
+<p>This release introduces new options for controlling the precision
+of fractional seconds when printing <code>Zoned</code>, <code>Timestamp</code>,
+<code>civil::DateTime</code> or <code>civil::Time</code> values. This is principally exposed
+via <code>jiff::fmt::temporal::DateTimePrinter::precision</code>, but it’s also
+available via the standard library’s formatting machinery. For example,
+if <code>zdt</code> is a <code>jiff::Zoned</code>, then <code>format!("{zdt:.6}")</code> will format
+it into a string with microsecond precision, even if its fractional
+component is zero.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/92">#92</a>:
+Support setting the precision of fractional seconds when printing datetimes.</li>
+</ul>
+<h2 id="018-2024-08-19"><a class="doc-anchor" href="#018-2024-08-19">§</a>0.1.8 (2024-08-19)</h2>
+<p>This releases fixes a build error in Jiff’s <code>alloc</code>-only configuration. This
+regression was introduced in <code>jiff 0.1.6</code>.</p>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/108">#108</a>:
+Use <code>core::time::Duration</code> everywhere instead of <code>std::time::Duration</code>.</li>
+</ul>
+<h2 id="017-2024-08-18"><a class="doc-anchor" href="#017-2024-08-18">§</a>0.1.7 (2024-08-18)</h2>
+<p>This release relaxes Jiff’s dependency on <code>windows-sys</code> to include multiple
+semver incompatible releases. The purpose of this relaxation is to enable
+Jiff to work with different versions of <code>windows-sys</code> in the hopes that this
+reduces the likelihood that multiple copies of <code>windows-sys</code> are included in
+your dependency tree.</p>
+<p>Dependencies:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/pull/106">#106</a>:
+Relax <code>windows-sys</code> dependency constraint to <code>&gt;=0.52.0, &lt;=0.59.*</code>.</li>
+</ul>
+<h2 id="016-2024-08-18"><a class="doc-anchor" href="#016-2024-08-18">§</a>0.1.6 (2024-08-18)</h2>
+<p>This release includes a new top-level type, <code>SignedDuration</code>, that provides a
+near exact replica of <code>std::time::Duration</code>, but signed. It is meant to provide
+alternative APIs for working with durations at a lower level than what <code>Span</code>
+provides, and to facilitate better integration with the standard library.</p>
+<p>A <code>SignedDuration</code> has also been integrated with all of Jiff’s datetime types.
+For example, previously, <code>Zoned::checked_add</code> only accepted a concrete
+<code>jiff::Span</code>. But now it accepts a <code>jiff::Span</code>, <code>jiff::SignedDuration</code> or even
+a <code>std::time::Duration</code>. Moreover, all of the <code>until</code> and <code>since</code> APIs on
+datetime types have been ported and copied to return <code>SignedDuration</code> under the
+<code>duration_until</code> and <code>duration_since</code> names.</p>
+<p>This marks an initial integration phase with <code>SignedDuration</code>. It is planned
+to integrate it more with the datetime types. Currently, there are integrations
+on <code>Timestamp</code> and <code>Span</code>, but more will be added in the future.</p>
+<p>Overall, folks should still use <code>Span</code>. That is the intended default duration
+type in Jiff and will continue to be. Users of Jiff may find <code>SignedDuration</code>
+useful in contexts where speed is important or when one needs to integrate
+with the standard library.</p>
+<p>This release also includes a few related deprecations as the APIs involving
+<code>std::time::Duration</code> are phased out in favor of <code>SignedDuration</code>.</p>
+<p>Deprecations:</p>
+<ul>
+<li><code>Timestamp::as_duration</code>: replaced with <code>as_jiff_duration</code>, which will be
+renamed to <code>as_duration</code> in <code>jiff 0.2</code>.</li>
+<li><code>Timestamp::from_duration</code>: replaced with <code>from_jiff_duration</code>, which will be
+renamed to <code>from_duration</code> in <code>jiff 0.2</code>.</li>
+<li><code>Timestamp::from_signed_duration</code>: replaced with <code>from_jiff_duration</code>.</li>
+<li><code>Span::to_duration</code>: replaced with <code>to_jiff_duration</code>, which will be renamed
+to <code>to_duration</code> in <code>jiff 0.2</code>.</li>
+</ul>
+<p>Basically, all of the above APIs either accept or return a
+<code>std::time::Duration</code>. To avoid breaking changes at this point, new methods
+for <code>SignedDuration</code> were added. For example, <code>Timestamp::as_jiff_duration</code>.
+In <code>jiff 0.2</code>, the above deprecated methods will be removed and replaced with
+equivalent methods that accept or return a <code>SignedDuration</code> instead. Callers
+can then convert between a <code>SignedDuration</code> and a <code>std::time::Duration</code> using
+appropriate <code>TryFrom</code> trait implementations.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/21">#21</a>:
+Add new top-level <code>SignedDuration</code> type.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/90">#90</a>:
+Improve error message when using <code>Span</code> with &gt;=day units with a <code>Timestamp</code>.</li>
+</ul>
+<p>Performance:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/pull/104">#104</a>
+Optimize offset calculations in time zones without DST.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/105">#105</a>
+Optimize offset calculations for timestamps after last DST rule change.</li>
+</ul>
+<h2 id="015-2024-08-09"><a class="doc-anchor" href="#015-2024-08-09">§</a>0.1.5 (2024-08-09)</h2>
+<p>This release includes some improvements and bug fixes, particularly for Jiff’s
+<code>strtime</code> APIs.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/63">#63</a>:
+Add link to original Chrono maintainer’s commentary in <code>DESIGN.md</code>.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/75">#75</a>:
+Add support for <code>%V</code> for formatting <em>and</em> parsing IANA time zone identifiers.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/79">#79</a>:
+Add <code>devcontainer.json</code> to support GitHub Codespaces.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/85">#85</a>:
+Set correct ranges for internal tracking in return value of <code>days_in_month</code>.</li>
+</ul>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/59">#59</a>:
+Fixes a bug where some <code>Span</code>s could not be roundtripped through ISO 8601.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/71">#71</a>:
+Tweak wording in documentation of “printf”-style API.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/73">#73</a>:
+Make it so <code>%.Nf</code> only formats to <code>N</code> decimal places.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/77">#77</a>:
+Disable optimizations when running tests.</li>
+</ul>
+<h2 id="014-2024-08-01"><a class="doc-anchor" href="#014-2024-08-01">§</a>0.1.4 (2024-08-01)</h2>
+<p>This release includes a small improvement for <code>strptime</code> that permits
+<code>%Y%m%d</code> to parse <code>20240730</code> correctly.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/62">#62</a>:
+Tweak <code>strptime</code> so that things like <code>%Y</code> aren’t unceremoniously greedy.</li>
+</ul>
+<h2 id="013-2024-07-30"><a class="doc-anchor" href="#013-2024-07-30">§</a>0.1.3 (2024-07-30)</h2>
+<p>This release features support for <code>wasm32-unknown-unknown</code>. That is, when
+Jiff’s new <code>js</code> crate feature is enabled, Jiff will automatically use
+JavaScript APIs to determine the current time and time zone.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/pull/58">#58</a>:
+Add WASM support and a new <code>PLATFORM.md</code> guide.</li>
+</ul>
+<h2 id="012-2024-07-28"><a class="doc-anchor" href="#012-2024-07-28">§</a>0.1.2 (2024-07-28)</h2>
+<p>This release features a few new APIs that a need for arose while experimenting
+with actually using Jiff in real projects. Namely, the <code>jiff::fmt::strtime</code>
+module now has <code>%f</code> and <code>%.f</code> directives for parsing and formatting fractional
+seconds. And both <code>jiff::fmt::rfc2822</code> and <code>jiff::fmt::strtime</code> now have
+support for skipping weekday checks during parsing. (Previously, Jiff required
+that an English weekday be consistent with the date parsed, and there was no
+way to opt out. While this is still the default behavior, callers can disable
+this check.)</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/pull/52">#52</a>:
+Improve documentation for <code>Span</code> getter methods.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/53">#53</a>:
+Add support for skipping weekday checking when parsing datetimes.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/55">#55</a>:
+Add support for fractional seconds in <code>jiff::fmt::strtime</code>.</li>
+</ul>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/pull/49">#49</a>:
+Fix informational regex describing ISO 8601 format.</li>
+<li><a href="https://github.com/BurntSushi/jiff/pull/51">#51</a>:
+Explicitly allow new deny-by-default lint <code>ambiguous_negative_literals</code>.</li>
+</ul>
+<h2 id="011-2024-07-25"><a class="doc-anchor" href="#011-2024-07-25">§</a>0.1.1 (2024-07-25)</h2>
+<p>This is a new semver compatible release. The principle addition are APIs for
+converting between a <code>jiff::Span</code> and a <code>std::time::Duration</code>. Specifically,
+there are now <code>TryFrom&lt;Span&gt; for Duration</code> and <code>TryFrom&lt;Duration&gt; for Span</code>
+trait implementations. There is also a <code>Span::to_duration</code>, which requires a
+relative date, for converting spans with non-uniform units (like months) to a
+<code>Duration</code>.</p>
+<p>Enhancements:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/21">#21</a>,
+<a href="https://github.com/BurntSushi/jiff/issues/40">#40</a>:
+Adds APIs for converting between <code>Span</code> and <code>std::time::Duration</code>.</li>
+</ul>
+<p>Bug fixes:</p>
+<ul>
+<li><a href="https://github.com/BurntSushi/jiff/issues/36">#36</a>:
+Saturating arithmetic for <code>Timestamp</code> panics with day-or-greater units.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/38">#38</a>:
+Fix some bugs in the micro-benchmarks.</li>
+<li><a href="https://github.com/BurntSushi/jiff/issues/39">#39</a>:
+Document that the RFC 2822 parser is not technically fully spec compliant.</li>
+</ul>
+<h2 id="010-2024-07-21"><a class="doc-anchor" href="#010-2024-07-21">§</a>0.1.0 (2024-07-21)</h2>
+<p>The initial release of Jiff.</p>
+</div></details></section></div></main></body></html>

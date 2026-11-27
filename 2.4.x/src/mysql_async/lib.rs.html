@@ -1,0 +1,652 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/mysql_async-0.37.1/src/lib.rs`."><title>lib.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="mysql_async" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../static.files/storage-41dd4d93.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">mysql_async/</div>lib.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="comment">// Copyright (c) 2016 Anatoly Ikorsky
+<a href=#2 id=2 data-nosnippet>2</a>//
+<a href=#3 id=3 data-nosnippet>3</a>// Licensed under the Apache License, Version 2.0
+<a href=#4 id=4 data-nosnippet>4</a>// &lt;LICENSE-APACHE or http://www.apache.org/licenses/LICENSE-2.0&gt; or the MIT
+<a href=#5 id=5 data-nosnippet>5</a>// license &lt;LICENSE-MIT or http://opensource.org/licenses/MIT&gt;, at your
+<a href=#6 id=6 data-nosnippet>6</a>// option. All files in the project carrying such notice may not be copied,
+<a href=#7 id=7 data-nosnippet>7</a>// modified, or distributed except according to those terms.
+<a href=#8 id=8 data-nosnippet>8</a>
+<a href=#9 id=9 data-nosnippet>9</a></span><span class="doccomment">//! Tokio based asynchronous MySql client library for The Rust Programming Language.
+<a href=#10 id=10 data-nosnippet>10</a>//!
+<a href=#11 id=11 data-nosnippet>11</a>//! # Installation
+<a href=#12 id=12 data-nosnippet>12</a>//!
+<a href=#13 id=13 data-nosnippet>13</a>//! The library is hosted on [crates.io](https://crates.io/crates/mysql_async/).
+<a href=#14 id=14 data-nosnippet>14</a>//!
+<a href=#15 id=15 data-nosnippet>15</a>//! ```toml
+<a href=#16 id=16 data-nosnippet>16</a>//! [dependencies]
+<a href=#17 id=17 data-nosnippet>17</a>//! mysql_async = "&lt;desired version&gt;"
+<a href=#18 id=18 data-nosnippet>18</a>//! ```
+<a href=#19 id=19 data-nosnippet>19</a>//!
+<a href=#20 id=20 data-nosnippet>20</a>//! # Crate Features
+<a href=#21 id=21 data-nosnippet>21</a>//!
+<a href=#22 id=22 data-nosnippet>22</a>//! By default there are only two features enabled:
+<a href=#23 id=23 data-nosnippet>23</a>//!
+<a href=#24 id=24 data-nosnippet>24</a>//! *   `flate2/zlib` — choosing flate2 backend is mandatory
+<a href=#25 id=25 data-nosnippet>25</a>//! *   `derive` — see ["Derive Macros" section in `mysql_common` docs][mysqlcommonderive]
+<a href=#26 id=26 data-nosnippet>26</a>//!
+<a href=#27 id=27 data-nosnippet>27</a>//! ## List Of Features
+<a href=#28 id=28 data-nosnippet>28</a>//!
+<a href=#29 id=29 data-nosnippet>29</a>//! *   `minimal` – enables only necessary features (at the moment the only necessary feature
+<a href=#30 id=30 data-nosnippet>30</a>//!     is `flate2` backend). Enables:
+<a href=#31 id=31 data-nosnippet>31</a>//!
+<a href=#32 id=32 data-nosnippet>32</a>//!     -   `flate2/zlib"
+<a href=#33 id=33 data-nosnippet>33</a>//!
+<a href=#34 id=34 data-nosnippet>34</a>//!     **Example:**
+<a href=#35 id=35 data-nosnippet>35</a>//!
+<a href=#36 id=36 data-nosnippet>36</a>//!     ```toml
+<a href=#37 id=37 data-nosnippet>37</a>//!     [dependencies]
+<a href=#38 id=38 data-nosnippet>38</a>//!     mysql_async = { version = "*", default-features = false, features = ["minimal"]}
+<a href=#39 id=39 data-nosnippet>39</a>//!     ```
+<a href=#40 id=40 data-nosnippet>40</a>//!
+<a href=#41 id=41 data-nosnippet>41</a>//! *   `minimal-rust` - same as `minimal` but with rust-based flate2 backend. Enables:
+<a href=#42 id=42 data-nosnippet>42</a>//!
+<a href=#43 id=43 data-nosnippet>43</a>//!     -    `flate2/rust_backend`
+<a href=#44 id=44 data-nosnippet>44</a>//!
+<a href=#45 id=45 data-nosnippet>45</a>//! *   `default` – enables the following set of features:
+<a href=#46 id=46 data-nosnippet>46</a>//!
+<a href=#47 id=47 data-nosnippet>47</a>//!     -   `flate2/zlib`
+<a href=#48 id=48 data-nosnippet>48</a>//!     -   `derive`
+<a href=#49 id=49 data-nosnippet>49</a>//!
+<a href=#50 id=50 data-nosnippet>50</a>//! *   `default-rustls` – default set of features with TLS via `rustls/aws-lc-rs`
+<a href=#51 id=51 data-nosnippet>51</a>//!
+<a href=#52 id=52 data-nosnippet>52</a>//! *   `default-rustls-ring` – default set of features with TLS via `rustls/ring`
+<a href=#53 id=53 data-nosnippet>53</a>//!
+<a href=#54 id=54 data-nosnippet>54</a>//!     **Example:**
+<a href=#55 id=55 data-nosnippet>55</a>//!
+<a href=#56 id=56 data-nosnippet>56</a>//!     ```toml
+<a href=#57 id=57 data-nosnippet>57</a>//!     [dependencies]
+<a href=#58 id=58 data-nosnippet>58</a>//!     mysql_async = { version = "*", default-features = false, features = ["default-rustls"] }
+<a href=#59 id=59 data-nosnippet>59</a>//!     ```
+<a href=#60 id=60 data-nosnippet>60</a>//!
+<a href=#61 id=61 data-nosnippet>61</a>//! *   `native-tls-tls` – enables TLS via `native-tls`
+<a href=#62 id=62 data-nosnippet>62</a>//!
+<a href=#63 id=63 data-nosnippet>63</a>//!     **Example:**
+<a href=#64 id=64 data-nosnippet>64</a>//!
+<a href=#65 id=65 data-nosnippet>65</a>//!     ```toml
+<a href=#66 id=66 data-nosnippet>66</a>//!     [dependencies]
+<a href=#67 id=67 data-nosnippet>67</a>//!     mysql_async = { version = "*", default-features = false, features = ["minimal", "native-tls-tls"] }
+<a href=#68 id=68 data-nosnippet>68</a>//!
+<a href=#69 id=69 data-nosnippet>69</a>//! *   `rustls-tls` - enables rustls TLS backend with no provider. You should enable one
+<a href=#70 id=70 data-nosnippet>70</a>//!     of existing providers using `aws-lc-rs` or `ring` features:
+<a href=#71 id=71 data-nosnippet>71</a>//!
+<a href=#72 id=72 data-nosnippet>72</a>//!     **Example:**
+<a href=#73 id=73 data-nosnippet>73</a>//!
+<a href=#74 id=74 data-nosnippet>74</a>//!     ```toml
+<a href=#75 id=75 data-nosnippet>75</a>//!     [dependencies]
+<a href=#76 id=76 data-nosnippet>76</a>//!     mysql_async = { version = "*", default-features = false, features = ["minimal-rust", "rustls-tls", "ring"] }
+<a href=#77 id=77 data-nosnippet>77</a>//!
+<a href=#78 id=78 data-nosnippet>78</a>//! *   `tracing` – enables instrumentation via `tracing` package.
+<a href=#79 id=79 data-nosnippet>79</a>//!
+<a href=#80 id=80 data-nosnippet>80</a>//!     Primary operations (`query`, `prepare`, `exec`) are instrumented at `INFO` level.
+<a href=#81 id=81 data-nosnippet>81</a>//!     Remaining operations, incl. `get_conn`, are instrumented at `DEBUG` level.
+<a href=#82 id=82 data-nosnippet>82</a>//!     Also at `DEBUG`, the SQL queries and parameters are added to the `query`, `prepare`
+<a href=#83 id=83 data-nosnippet>83</a>//!     and `exec` spans. Also some internal queries are instrumented at `TRACE` level.
+<a href=#84 id=84 data-nosnippet>84</a>//!
+<a href=#85 id=85 data-nosnippet>85</a>//!     **Example:**
+<a href=#86 id=86 data-nosnippet>86</a>//!
+<a href=#87 id=87 data-nosnippet>87</a>//!     ```toml
+<a href=#88 id=88 data-nosnippet>88</a>//!     [dependencies]
+<a href=#89 id=89 data-nosnippet>89</a>//!     mysql_async = { version = "*", features = ["tracing"] }
+<a href=#90 id=90 data-nosnippet>90</a>//!     ```
+<a href=#91 id=91 data-nosnippet>91</a>//!
+<a href=#92 id=92 data-nosnippet>92</a>//! *   `binlog` - enables binlog-related functionality. Enables:
+<a href=#93 id=93 data-nosnippet>93</a>//!
+<a href=#94 id=94 data-nosnippet>94</a>//!     -   `mysql_common/binlog"
+<a href=#95 id=95 data-nosnippet>95</a>//!
+<a href=#96 id=96 data-nosnippet>96</a>//! ### Proxied features (see [`mysql_common`` fatures][myslqcommonfeatures])
+<a href=#97 id=97 data-nosnippet>97</a>//!
+<a href=#98 id=98 data-nosnippet>98</a>//! *   `derive` – enables `mysql_common/derive` feature
+<a href=#99 id=99 data-nosnippet>99</a>//! *   `chrono` = enables `mysql_common/chrono` feature
+<a href=#100 id=100 data-nosnippet>100</a>//! *   `time` = enables `mysql_common/time` feature
+<a href=#101 id=101 data-nosnippet>101</a>//! *   `bigdecimal` = enables `mysql_common/bigdecimal` feature
+<a href=#102 id=102 data-nosnippet>102</a>//! *   `rust_decimal` = enables `mysql_common/rust_decimal` feature
+<a href=#103 id=103 data-nosnippet>103</a>//! *   `frunk` = enables `mysql_common/frunk` feature
+<a href=#104 id=104 data-nosnippet>104</a>//!
+<a href=#105 id=105 data-nosnippet>105</a>//! [myslqcommonfeatures]: https://github.com/blackbeam/rust_mysql_common#crate-features
+<a href=#106 id=106 data-nosnippet>106</a>//! [mysqlcommonderive]: https://github.com/blackbeam/rust_mysql_common?tab=readme-ov-file#derive-macros
+<a href=#107 id=107 data-nosnippet>107</a>//!
+<a href=#108 id=108 data-nosnippet>108</a>//! # TLS/SSL Support
+<a href=#109 id=109 data-nosnippet>109</a>//!
+<a href=#110 id=110 data-nosnippet>110</a>//! SSL support comes in two flavors:
+<a href=#111 id=111 data-nosnippet>111</a>//!
+<a href=#112 id=112 data-nosnippet>112</a>//! 1.  Based on native-tls – this is the default option, that usually works without pitfalls
+<a href=#113 id=113 data-nosnippet>113</a>//!     (see the `native-tls-tls` crate feature).
+<a href=#114 id=114 data-nosnippet>114</a>//!
+<a href=#115 id=115 data-nosnippet>115</a>//! 2.  Based on rustls – TLS backend written in Rust (see the `rustls-tls` crate feature).
+<a href=#116 id=116 data-nosnippet>116</a>//!
+<a href=#117 id=117 data-nosnippet>117</a>//!     Please also note a few things about rustls:
+<a href=#118 id=118 data-nosnippet>118</a>//!     -   it will fail if you'll try to connect to the server by its IP address,
+<a href=#119 id=119 data-nosnippet>119</a>//!         hostname is required;
+<a href=#120 id=120 data-nosnippet>120</a>//!     -   it, most likely, won't work on windows, at least with default server certs,
+<a href=#121 id=121 data-nosnippet>121</a>//!         generated by the MySql installer.
+<a href=#122 id=122 data-nosnippet>122</a>//!
+<a href=#123 id=123 data-nosnippet>123</a>//! # Connection URL parameters
+<a href=#124 id=124 data-nosnippet>124</a>//!
+<a href=#125 id=125 data-nosnippet>125</a>//! There is a set of url-parameters supported by the driver (see documentation on [`Opts`]).
+<a href=#126 id=126 data-nosnippet>126</a>//!
+<a href=#127 id=127 data-nosnippet>127</a>//! # Example
+<a href=#128 id=128 data-nosnippet>128</a>//!
+<a href=#129 id=129 data-nosnippet>129</a>//! ```rust
+<a href=#130 id=130 data-nosnippet>130</a>//! # use mysql_async::{Result, test_misc::get_opts};
+<a href=#131 id=131 data-nosnippet>131</a>//! use mysql_async::prelude::*;
+<a href=#132 id=132 data-nosnippet>132</a>//! # use std::env;
+<a href=#133 id=133 data-nosnippet>133</a>//!
+<a href=#134 id=134 data-nosnippet>134</a>//! #[derive(Debug, PartialEq, Eq, Clone)]
+<a href=#135 id=135 data-nosnippet>135</a>//! struct Payment {
+<a href=#136 id=136 data-nosnippet>136</a>//!     customer_id: i32,
+<a href=#137 id=137 data-nosnippet>137</a>//!     amount: i32,
+<a href=#138 id=138 data-nosnippet>138</a>//!     account_name: Option&lt;String&gt;,
+<a href=#139 id=139 data-nosnippet>139</a>//! }
+<a href=#140 id=140 data-nosnippet>140</a>//!
+<a href=#141 id=141 data-nosnippet>141</a>//! #[tokio::main]
+<a href=#142 id=142 data-nosnippet>142</a>//! async fn main() -&gt; Result&lt;()&gt; {
+<a href=#143 id=143 data-nosnippet>143</a>//!     let payments = vec![
+<a href=#144 id=144 data-nosnippet>144</a>//!         Payment { customer_id: 1, amount: 2, account_name: None },
+<a href=#145 id=145 data-nosnippet>145</a>//!         Payment { customer_id: 3, amount: 4, account_name: Some("foo".into()) },
+<a href=#146 id=146 data-nosnippet>146</a>//!         Payment { customer_id: 5, amount: 6, account_name: None },
+<a href=#147 id=147 data-nosnippet>147</a>//!         Payment { customer_id: 7, amount: 8, account_name: None },
+<a href=#148 id=148 data-nosnippet>148</a>//!         Payment { customer_id: 9, amount: 10, account_name: Some("bar".into()) },
+<a href=#149 id=149 data-nosnippet>149</a>//!     ];
+<a href=#150 id=150 data-nosnippet>150</a>//!
+<a href=#151 id=151 data-nosnippet>151</a>//!     let database_url = /* ... */
+<a href=#152 id=152 data-nosnippet>152</a>//!     # get_opts();
+<a href=#153 id=153 data-nosnippet>153</a>//!
+<a href=#154 id=154 data-nosnippet>154</a>//!     let pool = mysql_async::Pool::new(database_url);
+<a href=#155 id=155 data-nosnippet>155</a>//!     let mut conn = pool.get_conn().await?;
+<a href=#156 id=156 data-nosnippet>156</a>//!
+<a href=#157 id=157 data-nosnippet>157</a>//!     // Create a temporary table
+<a href=#158 id=158 data-nosnippet>158</a>//!     r"CREATE TEMPORARY TABLE payment (
+<a href=#159 id=159 data-nosnippet>159</a>//!         customer_id int not null,
+<a href=#160 id=160 data-nosnippet>160</a>//!         amount int not null,
+<a href=#161 id=161 data-nosnippet>161</a>//!         account_name text
+<a href=#162 id=162 data-nosnippet>162</a>//!     )".ignore(&amp;mut conn).await?;
+<a href=#163 id=163 data-nosnippet>163</a>//!
+<a href=#164 id=164 data-nosnippet>164</a>//!     // Save payments
+<a href=#165 id=165 data-nosnippet>165</a>//!     r"INSERT INTO payment (customer_id, amount, account_name)
+<a href=#166 id=166 data-nosnippet>166</a>//!       VALUES (:customer_id, :amount, :account_name)"
+<a href=#167 id=167 data-nosnippet>167</a>//!         .with(payments.iter().map(|payment| params! {
+<a href=#168 id=168 data-nosnippet>168</a>//!             "customer_id" =&gt; payment.customer_id,
+<a href=#169 id=169 data-nosnippet>169</a>//!             "amount" =&gt; payment.amount,
+<a href=#170 id=170 data-nosnippet>170</a>//!             "account_name" =&gt; payment.account_name.as_ref(),
+<a href=#171 id=171 data-nosnippet>171</a>//!         }))
+<a href=#172 id=172 data-nosnippet>172</a>//!         .batch(&amp;mut conn)
+<a href=#173 id=173 data-nosnippet>173</a>//!         .await?;
+<a href=#174 id=174 data-nosnippet>174</a>//!
+<a href=#175 id=175 data-nosnippet>175</a>//!     // Load payments from the database. Type inference will work here.
+<a href=#176 id=176 data-nosnippet>176</a>//!     let loaded_payments = "SELECT customer_id, amount, account_name FROM payment"
+<a href=#177 id=177 data-nosnippet>177</a>//!         .with(())
+<a href=#178 id=178 data-nosnippet>178</a>//!         .map(&amp;mut conn, |(customer_id, amount, account_name)| Payment { customer_id, amount, account_name })
+<a href=#179 id=179 data-nosnippet>179</a>//!         .await?;
+<a href=#180 id=180 data-nosnippet>180</a>//!
+<a href=#181 id=181 data-nosnippet>181</a>//!     // Dropped connection will go to the pool
+<a href=#182 id=182 data-nosnippet>182</a>//!     drop(conn);
+<a href=#183 id=183 data-nosnippet>183</a>//!
+<a href=#184 id=184 data-nosnippet>184</a>//!     // The Pool must be disconnected explicitly because
+<a href=#185 id=185 data-nosnippet>185</a>//!     // it's an asynchronous operation.
+<a href=#186 id=186 data-nosnippet>186</a>//!     pool.disconnect().await?;
+<a href=#187 id=187 data-nosnippet>187</a>//!
+<a href=#188 id=188 data-nosnippet>188</a>//!     assert_eq!(loaded_payments, payments);
+<a href=#189 id=189 data-nosnippet>189</a>//!
+<a href=#190 id=190 data-nosnippet>190</a>//!     // the async fn returns Result, so
+<a href=#191 id=191 data-nosnippet>191</a>//!     Ok(())
+<a href=#192 id=192 data-nosnippet>192</a>//! }
+<a href=#193 id=193 data-nosnippet>193</a>//! ```
+<a href=#194 id=194 data-nosnippet>194</a>//!
+<a href=#195 id=195 data-nosnippet>195</a>//! # Pool
+<a href=#196 id=196 data-nosnippet>196</a>//!
+<a href=#197 id=197 data-nosnippet>197</a>//! The [`Pool`] structure is an asynchronous connection pool.
+<a href=#198 id=198 data-nosnippet>198</a>//!
+<a href=#199 id=199 data-nosnippet>199</a>//! Please note:
+<a href=#200 id=200 data-nosnippet>200</a>//!
+<a href=#201 id=201 data-nosnippet>201</a>//! * [`Pool`] is a smart pointer – each clone will point to the same pool instance.
+<a href=#202 id=202 data-nosnippet>202</a>//! * [`Pool`] is `Send + Sync + 'static` – feel free to pass it around.
+<a href=#203 id=203 data-nosnippet>203</a>//! * use [`Pool::disconnect`] to gracefuly close the pool.
+<a href=#204 id=204 data-nosnippet>204</a>//! * ⚠️ [`Pool::new`] is lazy and won't assert server availability.
+<a href=#205 id=205 data-nosnippet>205</a>//!
+<a href=#206 id=206 data-nosnippet>206</a>//! # Transaction
+<a href=#207 id=207 data-nosnippet>207</a>//!
+<a href=#208 id=208 data-nosnippet>208</a>//! [`Conn::start_transaction`] is a wrapper, that starts with `START TRANSACTION`
+<a href=#209 id=209 data-nosnippet>209</a>//! and ends with `COMMIT` or `ROLLBACK`.
+<a href=#210 id=210 data-nosnippet>210</a>//!
+<a href=#211 id=211 data-nosnippet>211</a>//! Dropped transaction will be implicitly rolled back if it wasn't explicitly
+<a href=#212 id=212 data-nosnippet>212</a>//! committed or rolled back. Note that this behaviour will be triggered by a pool
+<a href=#213 id=213 data-nosnippet>213</a>//! (on conn drop) or by the next query, i.e. may be delayed.
+<a href=#214 id=214 data-nosnippet>214</a>//!
+<a href=#215 id=215 data-nosnippet>215</a>//! API won't allow you to run nested transactions because some statements causes
+<a href=#216 id=216 data-nosnippet>216</a>//! an implicit commit (`START TRANSACTION` is one of them), so this behavior
+<a href=#217 id=217 data-nosnippet>217</a>//! is chosen as less error prone.
+<a href=#218 id=218 data-nosnippet>218</a>//!
+<a href=#219 id=219 data-nosnippet>219</a>//! # `Value`
+<a href=#220 id=220 data-nosnippet>220</a>//!
+<a href=#221 id=221 data-nosnippet>221</a>//! This enumeration represents the raw value of a MySql cell. Library offers conversion between
+<a href=#222 id=222 data-nosnippet>222</a>//! `Value` and different rust types via `FromValue` trait described below.
+<a href=#223 id=223 data-nosnippet>223</a>//!
+<a href=#224 id=224 data-nosnippet>224</a>//! ## `FromValue` trait
+<a href=#225 id=225 data-nosnippet>225</a>//!
+<a href=#226 id=226 data-nosnippet>226</a>//! This trait is reexported from **mysql_common** create. Please refer to its
+<a href=#227 id=227 data-nosnippet>227</a>//! [crate docs](https://docs.rs/mysql_common) for the list of supported conversions.
+<a href=#228 id=228 data-nosnippet>228</a>//!
+<a href=#229 id=229 data-nosnippet>229</a>//! Trait offers conversion in two flavours:
+<a href=#230 id=230 data-nosnippet>230</a>//!
+<a href=#231 id=231 data-nosnippet>231</a>//! *   `from_value(Value) -&gt; T` - convenient, but panicking conversion.
+<a href=#232 id=232 data-nosnippet>232</a>//!
+<a href=#233 id=233 data-nosnippet>233</a>//!     Note, that for any variant of `Value` there exist a type, that fully covers its domain,
+<a href=#234 id=234 data-nosnippet>234</a>//!     i.e. for any variant of `Value` there exist `T: FromValue` such that `from_value` will never
+<a href=#235 id=235 data-nosnippet>235</a>//!     panic. This means, that if your database schema is known, than it's possible to write your
+<a href=#236 id=236 data-nosnippet>236</a>//!     application using only `from_value` with no fear of runtime panic.
+<a href=#237 id=237 data-nosnippet>237</a>//!
+<a href=#238 id=238 data-nosnippet>238</a>//!     Also note, that some convertions may fail even though the type seem sufficient,
+<a href=#239 id=239 data-nosnippet>239</a>//!     e.g. in case of invalid dates (see [sql mode](https://dev.mysql.com/doc/refman/8.0/en/sql-mode.html)).
+<a href=#240 id=240 data-nosnippet>240</a>//!
+<a href=#241 id=241 data-nosnippet>241</a>//! *   `from_value_opt(Value) -&gt; Option&lt;T&gt;` - non-panicking, but less convenient conversion.
+<a href=#242 id=242 data-nosnippet>242</a>//!
+<a href=#243 id=243 data-nosnippet>243</a>//!     This function is useful to probe conversion in cases, where source database schema
+<a href=#244 id=244 data-nosnippet>244</a>//!     is unknown.
+<a href=#245 id=245 data-nosnippet>245</a>//!
+<a href=#246 id=246 data-nosnippet>246</a>//! # MySql query protocols
+<a href=#247 id=247 data-nosnippet>247</a>//!
+<a href=#248 id=248 data-nosnippet>248</a>//! ## Text protocol
+<a href=#249 id=249 data-nosnippet>249</a>//!
+<a href=#250 id=250 data-nosnippet>250</a>//! MySql text protocol is implemented in the set of `Queryable::query*` methods
+<a href=#251 id=251 data-nosnippet>251</a>//! and in the [`prelude::Query`] trait if query is [`prelude::AsQuery`].
+<a href=#252 id=252 data-nosnippet>252</a>//! It's useful when your query doesn't have parameters.
+<a href=#253 id=253 data-nosnippet>253</a>//!
+<a href=#254 id=254 data-nosnippet>254</a>//! **Note:** All values of a text protocol result set will be encoded as strings by the server,
+<a href=#255 id=255 data-nosnippet>255</a>//! so `from_value` conversion may lead to additional parsing costs.
+<a href=#256 id=256 data-nosnippet>256</a>//!
+<a href=#257 id=257 data-nosnippet>257</a>//! ## Binary protocol and prepared statements.
+<a href=#258 id=258 data-nosnippet>258</a>//!
+<a href=#259 id=259 data-nosnippet>259</a>//! MySql binary protocol is implemented in the set of `exec*` methods,
+<a href=#260 id=260 data-nosnippet>260</a>//! defined on the [`prelude::Queryable`] trait and in the [`prelude::Query`]
+<a href=#261 id=261 data-nosnippet>261</a>//! trait if query is [`QueryWithParams`]. Prepared statements is the only way to
+<a href=#262 id=262 data-nosnippet>262</a>//! pass rust value to the MySql server. MySql uses `?` symbol as a parameter placeholder.
+<a href=#263 id=263 data-nosnippet>263</a>//!
+<a href=#264 id=264 data-nosnippet>264</a>//! **Note:** it's only possible to use parameters where a single MySql value
+<a href=#265 id=265 data-nosnippet>265</a>//! is expected, i.e. you can't execute something like `SELECT ... WHERE id IN ?`
+<a href=#266 id=266 data-nosnippet>266</a>//! with a vector as a parameter. You'll need to build a query that looks like
+<a href=#267 id=267 data-nosnippet>267</a>//! `SELECT ... WHERE id IN (?, ?, ...)` and to pass each vector element as
+<a href=#268 id=268 data-nosnippet>268</a>//! a parameter.
+<a href=#269 id=269 data-nosnippet>269</a>//!
+<a href=#270 id=270 data-nosnippet>270</a>//! # Named parameters
+<a href=#271 id=271 data-nosnippet>271</a>//!
+<a href=#272 id=272 data-nosnippet>272</a>//! MySql itself doesn't have named parameters support, so it's implemented on the client side.
+<a href=#273 id=273 data-nosnippet>273</a>//! One should use `:name` as a placeholder syntax for a named parameter. Named parameters uses
+<a href=#274 id=274 data-nosnippet>274</a>//! the following naming convention:
+<a href=#275 id=275 data-nosnippet>275</a>//!
+<a href=#276 id=276 data-nosnippet>276</a>//! * parameter name must start with either `_` or `a..z`
+<a href=#277 id=277 data-nosnippet>277</a>//! * parameter name may continue with `_`, `a..z` and `0..9`
+<a href=#278 id=278 data-nosnippet>278</a>//!
+<a href=#279 id=279 data-nosnippet>279</a>//! **Note:** this rules mean that, say, the statment `SELECT :fooBar` will be translated
+<a href=#280 id=280 data-nosnippet>280</a>//! to `SELECT ?Bar` so please be careful.
+<a href=#281 id=281 data-nosnippet>281</a>//!
+<a href=#282 id=282 data-nosnippet>282</a>//! Named parameters may be repeated within the statement, e.g `SELECT :foo, :foo` will require
+<a href=#283 id=283 data-nosnippet>283</a>//! a single named parameter `foo` that will be repeated on the corresponding positions during
+<a href=#284 id=284 data-nosnippet>284</a>//! statement execution.
+<a href=#285 id=285 data-nosnippet>285</a>//!
+<a href=#286 id=286 data-nosnippet>286</a>//! One should use the `params!` macro to build parameters for execution.
+<a href=#287 id=287 data-nosnippet>287</a>//!
+<a href=#288 id=288 data-nosnippet>288</a>//! **Note:** Positional and named parameters can't be mixed within the single statement.
+<a href=#289 id=289 data-nosnippet>289</a>//!
+<a href=#290 id=290 data-nosnippet>290</a>//! # Statements
+<a href=#291 id=291 data-nosnippet>291</a>//!
+<a href=#292 id=292 data-nosnippet>292</a>//! In MySql each prepared statement belongs to a particular connection and can't be executed
+<a href=#293 id=293 data-nosnippet>293</a>//! on another connection. Trying to do so will lead to an error. The driver won't tie statement
+<a href=#294 id=294 data-nosnippet>294</a>//! to its connection in any way, but one can look on to the connection id, contained
+<a href=#295 id=295 data-nosnippet>295</a>//! in the [`Statement`] structure.
+<a href=#296 id=296 data-nosnippet>296</a>//!
+<a href=#297 id=297 data-nosnippet>297</a>//! # LOCAL INFILE Handlers
+<a href=#298 id=298 data-nosnippet>298</a>//!
+<a href=#299 id=299 data-nosnippet>299</a>//! **Warning:** You should be aware of [Security Considerations for LOAD DATA LOCAL][1].
+<a href=#300 id=300 data-nosnippet>300</a>//!
+<a href=#301 id=301 data-nosnippet>301</a>//! There are two flavors of LOCAL INFILE handlers – _global_ and _local_.
+<a href=#302 id=302 data-nosnippet>302</a>//!
+<a href=#303 id=303 data-nosnippet>303</a>//! I case of a LOCAL INFILE request from the server the driver will try to find a handler for it:
+<a href=#304 id=304 data-nosnippet>304</a>//!
+<a href=#305 id=305 data-nosnippet>305</a>//! 1.  It'll try to use _local_ handler installed on the connection, if any;
+<a href=#306 id=306 data-nosnippet>306</a>//! 2.  It'll try to use _global_ handler, specified via [`OptsBuilder::local_infile_handler`],
+<a href=#307 id=307 data-nosnippet>307</a>//!     if any;
+<a href=#308 id=308 data-nosnippet>308</a>//! 3.  It will emit [`LocalInfileError::NoHandler`] if no handlers found.
+<a href=#309 id=309 data-nosnippet>309</a>//!
+<a href=#310 id=310 data-nosnippet>310</a>//! The purpose of a handler (_local_ or _global_) is to return [`InfileData`].
+<a href=#311 id=311 data-nosnippet>311</a>//!
+<a href=#312 id=312 data-nosnippet>312</a>//! ## _Global_ LOCAL INFILE handler
+<a href=#313 id=313 data-nosnippet>313</a>//!
+<a href=#314 id=314 data-nosnippet>314</a>//! See [`prelude::GlobalHandler`].
+<a href=#315 id=315 data-nosnippet>315</a>//!
+<a href=#316 id=316 data-nosnippet>316</a>//! Simply speaking the _global_ handler is an async function that takes a file name (as `&amp;[u8]`)
+<a href=#317 id=317 data-nosnippet>317</a>//! and returns `Result&lt;InfileData&gt;`.
+<a href=#318 id=318 data-nosnippet>318</a>//!
+<a href=#319 id=319 data-nosnippet>319</a>//! You can set it up using [`OptsBuilder::local_infile_handler`]. Server will use it if there is no
+<a href=#320 id=320 data-nosnippet>320</a>//! _local_ handler installed for the connection. This handler might be called multiple times.
+<a href=#321 id=321 data-nosnippet>321</a>//!
+<a href=#322 id=322 data-nosnippet>322</a>//! Examles:
+<a href=#323 id=323 data-nosnippet>323</a>//!
+<a href=#324 id=324 data-nosnippet>324</a>//! 1.  [`WhiteListFsHandler`] is a _global_ handler.
+<a href=#325 id=325 data-nosnippet>325</a>//! 2.  Every `T: Fn(&amp;[u8]) -&gt; BoxFuture&lt;'static, Result&lt;InfileData, LocalInfileError&gt;&gt;`
+<a href=#326 id=326 data-nosnippet>326</a>//!     is a _global_ handler.
+<a href=#327 id=327 data-nosnippet>327</a>//!
+<a href=#328 id=328 data-nosnippet>328</a>//! ## _Local_ LOCAL INFILE handler.
+<a href=#329 id=329 data-nosnippet>329</a>//!
+<a href=#330 id=330 data-nosnippet>330</a>//! Simply speaking the _local_ handler is a future, that returns `Result&lt;InfileData&gt;`.
+<a href=#331 id=331 data-nosnippet>331</a>//!
+<a href=#332 id=332 data-nosnippet>332</a>//! This is a one-time handler – it's consumed after use. You can set it up using
+<a href=#333 id=333 data-nosnippet>333</a>//! [`Conn::set_infile_handler`]. This handler have priority over _global_ handler.
+<a href=#334 id=334 data-nosnippet>334</a>//!
+<a href=#335 id=335 data-nosnippet>335</a>//! Worth noting:
+<a href=#336 id=336 data-nosnippet>336</a>//!
+<a href=#337 id=337 data-nosnippet>337</a>//! 1.  `impl Drop for Conn` will clear _local_ handler, i.e. handler will be removed when
+<a href=#338 id=338 data-nosnippet>338</a>//!     connection is returned to a `Pool`.
+<a href=#339 id=339 data-nosnippet>339</a>//! 2.  [`Conn::reset`] will clear _local_ handler.
+<a href=#340 id=340 data-nosnippet>340</a>//!
+<a href=#341 id=341 data-nosnippet>341</a>//! Example:
+<a href=#342 id=342 data-nosnippet>342</a>//!
+<a href=#343 id=343 data-nosnippet>343</a>//! ```rust
+<a href=#344 id=344 data-nosnippet>344</a>//! # use mysql_async::{prelude::*, test_misc::get_opts, OptsBuilder, Result, Error};
+<a href=#345 id=345 data-nosnippet>345</a>//! # use futures_util::future::FutureExt;
+<a href=#346 id=346 data-nosnippet>346</a>//! # use futures_util::stream::{self, StreamExt};
+<a href=#347 id=347 data-nosnippet>347</a>//! # use bytes::Bytes;
+<a href=#348 id=348 data-nosnippet>348</a>//! # use std::env;
+<a href=#349 id=349 data-nosnippet>349</a>//! # #[tokio::main]
+<a href=#350 id=350 data-nosnippet>350</a>//! # async fn main() -&gt; Result&lt;()&gt; {
+<a href=#351 id=351 data-nosnippet>351</a>//! #
+<a href=#352 id=352 data-nosnippet>352</a>//! # let database_url = get_opts();
+<a href=#353 id=353 data-nosnippet>353</a>//! let pool = mysql_async::Pool::new(database_url);
+<a href=#354 id=354 data-nosnippet>354</a>//!
+<a href=#355 id=355 data-nosnippet>355</a>//! let mut conn = pool.get_conn().await?;
+<a href=#356 id=356 data-nosnippet>356</a>//! "CREATE TEMPORARY TABLE tmp (id INT, val TEXT)".ignore(&amp;mut conn).await?;
+<a href=#357 id=357 data-nosnippet>357</a>//!
+<a href=#358 id=358 data-nosnippet>358</a>//! // We are going to call `LOAD DATA LOCAL` so let's setup a one-time handler.
+<a href=#359 id=359 data-nosnippet>359</a>//! conn.set_infile_handler(async move {
+<a href=#360 id=360 data-nosnippet>360</a>//!     // We need to return a stream of `io::Result&lt;Bytes&gt;`
+<a href=#361 id=361 data-nosnippet>361</a>//!     Ok(stream::iter([Bytes::from("1,a\r\n"), Bytes::from("2,b\r\n3,c")]).map(Ok).boxed())
+<a href=#362 id=362 data-nosnippet>362</a>//! });
+<a href=#363 id=363 data-nosnippet>363</a>//!
+<a href=#364 id=364 data-nosnippet>364</a>//! let result = r#"LOAD DATA LOCAL INFILE 'whatever'
+<a href=#365 id=365 data-nosnippet>365</a>//!     INTO TABLE `tmp`
+<a href=#366 id=366 data-nosnippet>366</a>//!     FIELDS TERMINATED BY ',' ENCLOSED BY '\"'
+<a href=#367 id=367 data-nosnippet>367</a>//!     LINES TERMINATED BY '\r\n'"#.ignore(&amp;mut conn).await;
+<a href=#368 id=368 data-nosnippet>368</a>//!
+<a href=#369 id=369 data-nosnippet>369</a>//! match result {
+<a href=#370 id=370 data-nosnippet>370</a>//!     Ok(()) =&gt; (),
+<a href=#371 id=371 data-nosnippet>371</a>//!     Err(Error::Server(ref err)) if err.code == 1148 =&gt; {
+<a href=#372 id=372 data-nosnippet>372</a>//!         // The used command is not allowed with this MySQL version
+<a href=#373 id=373 data-nosnippet>373</a>//!         return Ok(());
+<a href=#374 id=374 data-nosnippet>374</a>//!     },
+<a href=#375 id=375 data-nosnippet>375</a>//!     Err(Error::Server(ref err)) if err.code == 3948 =&gt; {
+<a href=#376 id=376 data-nosnippet>376</a>//!         // Loading local data is disabled;
+<a href=#377 id=377 data-nosnippet>377</a>//!         // this must be enabled on both the client and the server
+<a href=#378 id=378 data-nosnippet>378</a>//!         return Ok(());
+<a href=#379 id=379 data-nosnippet>379</a>//!     }
+<a href=#380 id=380 data-nosnippet>380</a>//!     e @ Err(_) =&gt; e.unwrap(),
+<a href=#381 id=381 data-nosnippet>381</a>//! }
+<a href=#382 id=382 data-nosnippet>382</a>//!
+<a href=#383 id=383 data-nosnippet>383</a>//! // Now let's verify the result
+<a href=#384 id=384 data-nosnippet>384</a>//! let result: Vec&lt;(u32, String)&gt; = conn.query("SELECT * FROM tmp ORDER BY id ASC").await?;
+<a href=#385 id=385 data-nosnippet>385</a>//! assert_eq!(
+<a href=#386 id=386 data-nosnippet>386</a>//!     result,
+<a href=#387 id=387 data-nosnippet>387</a>//!     vec![(1, "a".into()), (2, "b".into()), (3, "c".into())]
+<a href=#388 id=388 data-nosnippet>388</a>//! );
+<a href=#389 id=389 data-nosnippet>389</a>//!
+<a href=#390 id=390 data-nosnippet>390</a>//! drop(conn);
+<a href=#391 id=391 data-nosnippet>391</a>//! pool.disconnect().await?;
+<a href=#392 id=392 data-nosnippet>392</a>//! # Ok(())
+<a href=#393 id=393 data-nosnippet>393</a>//! # }
+<a href=#394 id=394 data-nosnippet>394</a>//! ```
+<a href=#395 id=395 data-nosnippet>395</a>//!
+<a href=#396 id=396 data-nosnippet>396</a>//! [1]: https://dev.mysql.com/doc/refman/8.0/en/load-data-local-security.html
+<a href=#397 id=397 data-nosnippet>397</a>//!
+<a href=#398 id=398 data-nosnippet>398</a>//! # Testing
+<a href=#399 id=399 data-nosnippet>399</a>//!
+<a href=#400 id=400 data-nosnippet>400</a>//! Tests uses followin environment variables:
+<a href=#401 id=401 data-nosnippet>401</a>//! * `DATABASE_URL` – defaults to `mysql://root:password@127.0.0.1:3307/mysql`
+<a href=#402 id=402 data-nosnippet>402</a>//! * `COMPRESS` – set to `1` or `true` to enable compression for tests
+<a href=#403 id=403 data-nosnippet>403</a>//! * `SSL` – set to `1` or `true` to enable TLS for tests
+<a href=#404 id=404 data-nosnippet>404</a>//!
+<a href=#405 id=405 data-nosnippet>405</a>//! You can run a test server using doker. Please note that params related
+<a href=#406 id=406 data-nosnippet>406</a>//! to max allowed packet, local-infile and binary logging are required
+<a href=#407 id=407 data-nosnippet>407</a>//! to properly run tests (please refer to `azure-pipelines.yml`):
+<a href=#408 id=408 data-nosnippet>408</a>//!
+<a href=#409 id=409 data-nosnippet>409</a>//! ```sh
+<a href=#410 id=410 data-nosnippet>410</a>//! docker run -d --name container \
+<a href=#411 id=411 data-nosnippet>411</a>//!     -v `pwd`:/root \
+<a href=#412 id=412 data-nosnippet>412</a>//!     -p 3307:3306 \
+<a href=#413 id=413 data-nosnippet>413</a>//!     -e MYSQL_ROOT_PASSWORD=password \
+<a href=#414 id=414 data-nosnippet>414</a>//!     mysql:8.0 \
+<a href=#415 id=415 data-nosnippet>415</a>//!     --max-allowed-packet=36700160 \
+<a href=#416 id=416 data-nosnippet>416</a>//!     --local-infile \
+<a href=#417 id=417 data-nosnippet>417</a>//!     --log-bin=mysql-bin \
+<a href=#418 id=418 data-nosnippet>418</a>//!     --log-slave-updates \
+<a href=#419 id=419 data-nosnippet>419</a>//!     --gtid_mode=ON \
+<a href=#420 id=420 data-nosnippet>420</a>//!     --enforce_gtid_consistency=ON \
+<a href=#421 id=421 data-nosnippet>421</a>//!     --server-id=1
+<a href=#422 id=422 data-nosnippet>422</a>//! ```
+<a href=#423 id=423 data-nosnippet>423</a>//!
+<a href=#424 id=424 data-nosnippet>424</a>
+<a href=#425 id=425 data-nosnippet>425</a></span><span class="attr">#![recursion_limit = <span class="string">"1024"</span>]
+<a href=#426 id=426 data-nosnippet>426</a>#![cfg_attr(feature = <span class="string">"nightly"</span>, feature(test))]
+<a href=#427 id=427 data-nosnippet>427</a>
+<a href=#428 id=428 data-nosnippet>428</a>#[cfg(feature = <span class="string">"nightly"</span>)]
+<a href=#429 id=429 data-nosnippet>429</a></span><span class="kw">extern crate </span>test;
+<a href=#430 id=430 data-nosnippet>430</a>
+<a href=#431 id=431 data-nosnippet>431</a><span class="attr">#[cfg(feature = <span class="string">"derive"</span>)]
+<a href=#432 id=432 data-nosnippet>432</a></span><span class="kw">extern crate </span>mysql_common;
+<a href=#433 id=433 data-nosnippet>433</a>
+<a href=#434 id=434 data-nosnippet>434</a><span class="kw">pub use </span>mysql_common::{<a href="../../mysql_async/consts/index.html">constants</a> <span class="kw">as </span>consts, <a href="../../mysql_async/macro.params.html">params</a>};
+<a href=#435 id=435 data-nosnippet>435</a>
+<a href=#436 id=436 data-nosnippet>436</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html">std::sync::Arc</a>;
+<a href=#437 id=437 data-nosnippet>437</a>
+<a href=#438 id=438 data-nosnippet>438</a><span class="kw">mod </span><a href="buffer_pool.rs.html#9-98">buffer_pool</a>;
+<a href=#439 id=439 data-nosnippet>439</a>
+<a href=#440 id=440 data-nosnippet>440</a><span class="attr">#[macro_use]
+<a href=#441 id=441 data-nosnippet>441</a></span><span class="kw">mod </span><a href="tracing_utils.rs.html#1-74">tracing_utils</a>;
+<a href=#442 id=442 data-nosnippet>442</a>
+<a href=#443 id=443 data-nosnippet>443</a><span class="attr">#[macro_use]
+<a href=#444 id=444 data-nosnippet>444</a></span><span class="kw">mod </span><a href="macros.rs.html#9-14">macros</a>;
+<a href=#445 id=445 data-nosnippet>445</a><span class="kw">mod </span><a href="conn/mod.rs.html#9-2851">conn</a>;
+<a href=#446 id=446 data-nosnippet>446</a><span class="kw">mod </span><a href="connection_like/mod.rs.html#9-174">connection_like</a>;
+<a href=#447 id=447 data-nosnippet>447</a><span class="doccomment">/// Errors used in this crate
+<a href=#448 id=448 data-nosnippet>448</a></span><span class="kw">mod </span><a href="error/mod.rs.html#9-360">error</a>;
+<a href=#449 id=449 data-nosnippet>449</a><span class="kw">mod </span><a href="io/mod.rs.html#9-517">io</a>;
+<a href=#450 id=450 data-nosnippet>450</a><span class="kw">mod </span><a href="local_infile_handler/mod.rs.html#9-90">local_infile_handler</a>;
+<a href=#451 id=451 data-nosnippet>451</a><span class="kw">mod </span><a href="opts/mod.rs.html#9-2317">opts</a>;
+<a href=#452 id=452 data-nosnippet>452</a><span class="kw">mod </span><a href="query.rs.html#9-492">query</a>;
+<a href=#453 id=453 data-nosnippet>453</a><span class="kw">mod </span><a href="queryable/mod.rs.html#9-705">queryable</a>;
+<a href=#454 id=454 data-nosnippet>454</a>
+<a href=#455 id=455 data-nosnippet>455</a><span class="kw">type </span>BoxFuture&lt;<span class="lifetime">'a</span>, T&gt; = futures_core::future::<a href="../../futures_core/future/type.BoxFuture.html">BoxFuture</a>&lt;<span class="lifetime">'a</span>, <a class="prelude-ty" href="error/mod.rs.html#26">Result</a>&lt;T&gt;&gt;;
+<a href=#456 id=456 data-nosnippet>456</a>
+<a href=#457 id=457 data-nosnippet>457</a><span class="kw">fn </span>buffer_pool() -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'static </span><a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html">Arc</a>&lt;<span class="kw">crate</span>::buffer_pool::<a href="buffer_pool.rs.html#13-17">BufferPool</a>&gt; {
+<a href=#458 id=458 data-nosnippet>458</a>    <span class="kw">static </span>BUFFER_POOL: std::sync::<a href="https://doc.rust-lang.org/nightly/std/sync/once_lock/struct.OnceLock.html">OnceLock</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html">Arc</a>&lt;<span class="kw">crate</span>::buffer_pool::<a href="buffer_pool.rs.html#13-17">BufferPool</a>&gt;&gt; =
+<a href=#459 id=459 data-nosnippet>459</a>        std::sync::<a href="https://doc.rust-lang.org/nightly/std/sync/once_lock/struct.OnceLock.html">OnceLock</a>::<a href="https://doc.rust-lang.org/nightly/std/sync/once_lock/struct.OnceLock.html#method.new">new</a>();
+<a href=#460 id=460 data-nosnippet>460</a>    <a href="#458-459">BUFFER_POOL</a>.<a href="https://doc.rust-lang.org/nightly/std/sync/once_lock/struct.OnceLock.html#method.get_or_init">get_or_init</a>(Default::<a href="https://doc.rust-lang.org/nightly/core/default/trait.Default.html#tymethod.default">default</a>)
+<a href=#461 id=461 data-nosnippet>461</a>}
+<a href=#462 id=462 data-nosnippet>462</a>
+<a href=#463 id=463 data-nosnippet>463</a><span class="attr">#[cfg(feature = <span class="string">"binlog"</span>)]
+<a href=#464 id=464 data-nosnippet>464</a>#[doc(inline)]
+<a href=#465 id=465 data-nosnippet>465</a></span><span class="kw">pub use </span><span class="self">self</span>::conn::binlog_stream::{request::BinlogStreamRequest, BinlogStream};
+<a href=#466 id=466 data-nosnippet>466</a>
+<a href=#467 id=467 data-nosnippet>467</a><span class="attr">#[doc(inline)]
+<a href=#468 id=468 data-nosnippet>468</a></span><span class="kw">pub use </span><a href="conn/mod.rs.html#201-203"><span class="self">self</span>::conn::Conn</a>;
+<a href=#469 id=469 data-nosnippet>469</a>
+<a href=#470 id=470 data-nosnippet>470</a><span class="attr">#[doc(inline)]
+<a href=#471 id=471 data-nosnippet>471</a></span><span class="kw">pub use </span><a href="conn/pool/mod.rs.html#138-142"><span class="self">self</span>::conn::pool::Pool</a>;
+<a href=#472 id=472 data-nosnippet>472</a>
+<a href=#473 id=473 data-nosnippet>473</a><span class="attr">#[cfg(any(feature = <span class="string">"native-tls-tls"</span>, feature = <span class="string">"rustls-tls"</span>))]
+<a href=#474 id=474 data-nosnippet>474</a>#[doc(inline)]
+<a href=#475 id=475 data-nosnippet>475</a></span><span class="kw">pub use </span><span class="self">self</span>::error::tls::TlsError;
+<a href=#476 id=476 data-nosnippet>476</a>
+<a href=#477 id=477 data-nosnippet>477</a><span class="attr">#[doc(inline)]
+<a href=#478 id=478 data-nosnippet>478</a></span><span class="kw">pub use </span><span class="self">self</span>::error::{
+<a href=#479 id=479 data-nosnippet>479</a>    <a href="error/mod.rs.html#107-186">DriverError</a>, <a href="error/mod.rs.html#34-49">Error</a>, <a href="error/mod.rs.html#63-69">IoError</a>, <a href="error/mod.rs.html#204-213">LocalInfileError</a>, <a href="../../mysql_async/enum.ParseError.html">ParseError</a>, <a class="prelude-ty" href="error/mod.rs.html#26">Result</a>, <a href="error/mod.rs.html#74-78">ServerError</a>, <a href="error/mod.rs.html#82-103">UrlError</a>,
+<a href=#480 id=480 data-nosnippet>480</a>};
+<a href=#481 id=481 data-nosnippet>481</a>
+<a href=#482 id=482 data-nosnippet>482</a><span class="attr">#[doc(inline)]
+<a href=#483 id=483 data-nosnippet>483</a></span><span class="kw">pub use </span><a href="query.rs.html#231-234"><span class="self">self</span>::query::QueryWithParams</a>;
+<a href=#484 id=484 data-nosnippet>484</a>
+<a href=#485 id=485 data-nosnippet>485</a><span class="attr">#[doc(inline)]
+<a href=#486 id=486 data-nosnippet>486</a></span><span class="kw">pub use </span><a href="queryable/transaction.rs.html#104-109"><span class="self">self</span>::queryable::transaction::IsolationLevel</a>;
+<a href=#487 id=487 data-nosnippet>487</a>
+<a href=#488 id=488 data-nosnippet>488</a><span class="attr">#[doc(inline)]
+<a href=#489 id=489 data-nosnippet>489</a>#[cfg(any(feature = <span class="string">"rustls"</span>, feature = <span class="string">"native-tls-tls"</span>))]
+<a href=#490 id=490 data-nosnippet>490</a></span><span class="kw">pub use </span><span class="self">self</span>::opts::ClientIdentity;
+<a href=#491 id=491 data-nosnippet>491</a>
+<a href=#492 id=492 data-nosnippet>492</a><span class="attr">#[doc(inline)]
+<a href=#493 id=493 data-nosnippet>493</a></span><span class="kw">pub use </span><span class="self">self</span>::opts::{
+<a href=#494 id=494 data-nosnippet>494</a>    <a href="opts/mod.rs.html#1609-1613">ChangeUserOpts</a>, <a href="opts/mod.rs.html#708-710">Opts</a>, <a href="opts/mod.rs.html#1335-1340">OptsBuilder</a>, <a href="opts/mod.rs.html#1265-1268">PoolConstraints</a>, <a href="opts/mod.rs.html#351-358">PoolOpts</a>, <a href="opts/mod.rs.html#216-224">SslOpts</a>,
+<a href=#495 id=495 data-nosnippet>495</a>    <a href="opts/mod.rs.html#61">DEFAULT_INACTIVE_CONNECTION_TTL</a>, <a href="opts/mod.rs.html#42">DEFAULT_POOL_CONSTRAINTS</a>, <a href="opts/mod.rs.html#52">DEFAULT_STMT_CACHE_SIZE</a>,
+<a href=#496 id=496 data-nosnippet>496</a>    <a href="opts/mod.rs.html#66">DEFAULT_TTL_CHECK_INTERVAL</a>,
+<a href=#497 id=497 data-nosnippet>497</a>};
+<a href=#498 id=498 data-nosnippet>498</a>
+<a href=#499 id=499 data-nosnippet>499</a><span class="attr">#[doc(inline)]
+<a href=#500 id=500 data-nosnippet>500</a></span><span class="kw">pub use </span><span class="self">self</span>::local_infile_handler::{<a href="local_infile_handler/builtin.rs.html#37-39">builtin::WhiteListFsHandler</a>, <a href="local_infile_handler/mod.rs.html#29">InfileData</a>};
+<a href=#501 id=501 data-nosnippet>501</a>
+<a href=#502 id=502 data-nosnippet>502</a><span class="attr">#[doc(inline)]
+<a href=#503 id=503 data-nosnippet>503</a></span><span class="kw">pub use </span>mysql_common::packets::{
+<a href=#504 id=504 data-nosnippet>504</a>    session_state_change::{
+<a href=#505 id=505 data-nosnippet>505</a>        <a href="../../mysql_async/struct.Gtids.html">Gtids</a>, <a href="../../mysql_async/struct.Schema.html">Schema</a>, <a href="../../mysql_async/enum.SessionStateChange.html">SessionStateChange</a>, <a href="../../mysql_async/struct.SystemVariable.html">SystemVariable</a>, <a href="../../mysql_async/struct.TransactionCharacteristics.html">TransactionCharacteristics</a>,
+<a href=#506 id=506 data-nosnippet>506</a>        <a href="../../mysql_async/struct.TransactionState.html">TransactionState</a>, <a href="../../mysql_async/struct.Unsupported.html">Unsupported</a>,
+<a href=#507 id=507 data-nosnippet>507</a>    },
+<a href=#508 id=508 data-nosnippet>508</a>    <a href="../../mysql_async/struct.Column.html">Column</a>, <a href="../../mysql_async/struct.GnoInterval.html">GnoInterval</a>, <a href="../../mysql_async/struct.OkPacket.html">OkPacket</a>, <a href="../../mysql_async/struct.SessionStateInfo.html">SessionStateInfo</a>, <a href="../../mysql_async/struct.Sid.html">Sid</a>,
+<a href=#509 id=509 data-nosnippet>509</a>};
+<a href=#510 id=510 data-nosnippet>510</a>
+<a href=#511 id=511 data-nosnippet>511</a><span class="attr">#[cfg(feature = <span class="string">"binlog"</span>)]
+<a href=#512 id=512 data-nosnippet>512</a></span><span class="kw">pub mod </span>binlog {
+<a href=#513 id=513 data-nosnippet>513</a>    <span class="attr">#[doc(inline)]
+<a href=#514 id=514 data-nosnippet>514</a>    </span><span class="kw">pub use </span>mysql_common::binlog::consts::<span class="kw-2">*</span>;
+<a href=#515 id=515 data-nosnippet>515</a>
+<a href=#516 id=516 data-nosnippet>516</a>    <span class="attr">#[doc(inline)]
+<a href=#517 id=517 data-nosnippet>517</a>    </span><span class="kw">pub use </span>mysql_common::binlog::{events, jsonb, jsondiff, row, value};
+<a href=#518 id=518 data-nosnippet>518</a>}
+<a href=#519 id=519 data-nosnippet>519</a>
+<a href=#520 id=520 data-nosnippet>520</a><span class="attr">#[doc(inline)]
+<a href=#521 id=521 data-nosnippet>521</a></span><span class="kw">pub use </span><a href="../../mysql_async/struct.Compression.html">mysql_common::proto::codec::Compression</a>;
+<a href=#522 id=522 data-nosnippet>522</a>
+<a href=#523 id=523 data-nosnippet>523</a><span class="attr">#[doc(inline)]
+<a href=#524 id=524 data-nosnippet>524</a></span><span class="kw">pub use </span><a href="../../mysql_async/struct.Row.html">mysql_common::row::Row</a>;
+<a href=#525 id=525 data-nosnippet>525</a>
+<a href=#526 id=526 data-nosnippet>526</a><span class="attr">#[doc(inline)]
+<a href=#527 id=527 data-nosnippet>527</a></span><span class="kw">pub use </span><a href="../../mysql_async/enum.Params.html">mysql_common::params::Params</a>;
+<a href=#528 id=528 data-nosnippet>528</a>
+<a href=#529 id=529 data-nosnippet>529</a><span class="attr">#[doc(inline)]
+<a href=#530 id=530 data-nosnippet>530</a></span><span class="kw">pub use </span><a href="../../mysql_async/enum.Value.html">mysql_common::value::Value</a>;
+<a href=#531 id=531 data-nosnippet>531</a>
+<a href=#532 id=532 data-nosnippet>532</a><span class="attr">#[doc(inline)]
+<a href=#533 id=533 data-nosnippet>533</a></span><span class="kw">pub use </span>mysql_common::row::convert::{<a href="../../mysql_async/fn.from_row.html">from_row</a>, <a href="../../mysql_async/fn.from_row_opt.html">from_row_opt</a>, <a href="../../mysql_async/struct.FromRowError.html">FromRowError</a>};
+<a href=#534 id=534 data-nosnippet>534</a>
+<a href=#535 id=535 data-nosnippet>535</a><span class="attr">#[doc(inline)]
+<a href=#536 id=536 data-nosnippet>536</a></span><span class="kw">pub use </span>mysql_common::value::convert::{<a href="../../mysql_async/fn.from_value.html">from_value</a>, <a href="../../mysql_async/fn.from_value_opt.html">from_value_opt</a>, <a href="../../mysql_async/struct.FromValueError.html">FromValueError</a>};
+<a href=#537 id=537 data-nosnippet>537</a>
+<a href=#538 id=538 data-nosnippet>538</a><span class="attr">#[doc(inline)]
+<a href=#539 id=539 data-nosnippet>539</a></span><span class="kw">pub use </span>mysql_common::value::json::{<a href="../../mysql_async/struct.Deserialized.html">Deserialized</a>, <a href="../../mysql_async/struct.Serialized.html">Serialized</a>};
+<a href=#540 id=540 data-nosnippet>540</a>
+<a href=#541 id=541 data-nosnippet>541</a><span class="attr">#[doc(inline)]
+<a href=#542 id=542 data-nosnippet>542</a></span><span class="kw">pub use </span><span class="self">self</span>::queryable::query_result::{<a href="queryable/query_result/result_set_stream.rs.html#70-75">result_set_stream::ResultSetStream</a>, <a href="queryable/query_result/mod.rs.html#71-74">QueryResult</a>};
+<a href=#543 id=543 data-nosnippet>543</a>
+<a href=#544 id=544 data-nosnippet>544</a><span class="attr">#[doc(inline)]
+<a href=#545 id=545 data-nosnippet>545</a></span><span class="kw">pub use </span><span class="self">self</span>::queryable::transaction::{<a href="queryable/transaction.rs.html#131">Transaction</a>, <a href="queryable/transaction.rs.html#45-49">TxOpts</a>};
+<a href=#546 id=546 data-nosnippet>546</a>
+<a href=#547 id=547 data-nosnippet>547</a><span class="attr">#[doc(inline)]
+<a href=#548 id=548 data-nosnippet>548</a></span><span class="kw">pub use </span><span class="self">self</span>::queryable::{<a href="queryable/mod.rs.html#61">BinaryProtocol</a>, <a href="queryable/mod.rs.html#57">TextProtocol</a>};
+<a href=#549 id=549 data-nosnippet>549</a>
+<a href=#550 id=550 data-nosnippet>550</a><span class="attr">#[doc(inline)]
+<a href=#551 id=551 data-nosnippet>551</a></span><span class="kw">pub use </span><a href="queryable/stmt.rs.html#264-268"><span class="self">self</span>::queryable::stmt::Statement</a>;
+<a href=#552 id=552 data-nosnippet>552</a>
+<a href=#553 id=553 data-nosnippet>553</a><span class="attr">#[doc(inline)]
+<a href=#554 id=554 data-nosnippet>554</a></span><span class="kw">pub use </span><a href="conn/pool/metrics.rs.html#7-46"><span class="self">self</span>::conn::pool::Metrics</a>;
+<a href=#555 id=555 data-nosnippet>555</a>
+<a href=#556 id=556 data-nosnippet>556</a><span class="attr">#[doc(inline)]
+<a href=#557 id=557 data-nosnippet>557</a></span><span class="kw">pub use </span><span class="kw">crate</span>::connection_like::{<a href="connection_like/mod.rs.html#50-52">Connection</a>, <a href="connection_like/mod.rs.html#122-127">ToConnectionResult</a>};
+<a href=#558 id=558 data-nosnippet>558</a>
+<a href=#559 id=559 data-nosnippet>559</a><span class="doccomment">/// Traits used in this crate
+<a href=#560 id=560 data-nosnippet>560</a></span><span class="kw">pub mod </span><a href="../../mysql_async/prelude/index.html">prelude</a> {
+<a href=#561 id=561 data-nosnippet>561</a>    <span class="attr">#[doc(inline)]
+<a href=#562 id=562 data-nosnippet>562</a>    </span><span class="kw">pub use </span><a href="connection_like/mod.rs.html#143-146"><span class="kw">crate</span>::connection_like::ToConnection</a>;
+<a href=#563 id=563 data-nosnippet>563</a>    <span class="attr">#[doc(inline)]
+<a href=#564 id=564 data-nosnippet>564</a>    </span><span class="kw">pub use </span><a href="local_infile_handler/mod.rs.html#49-51"><span class="kw">crate</span>::local_infile_handler::GlobalHandler</a>;
+<a href=#565 id=565 data-nosnippet>565</a>    <span class="attr">#[doc(inline)]
+<a href=#566 id=566 data-nosnippet>566</a>    </span><span class="kw">pub use </span><a href="query.rs.html#25-27"><span class="kw">crate</span>::query::AsQuery</a>;
+<a href=#567 id=567 data-nosnippet>567</a>    <span class="attr">#[doc(inline)]
+<a href=#568 id=568 data-nosnippet>568</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::query::{<a href="query.rs.html#301-306">BatchQuery</a>, <a href="query.rs.html#92-208">Query</a>, <a href="query.rs.html#237-239">WithParams</a>};
+<a href=#569 id=569 data-nosnippet>569</a>    <span class="attr">#[doc(inline)]
+<a href=#570 id=570 data-nosnippet>570</a>    </span><span class="kw">pub use </span><a href="queryable/mod.rs.html#145-477"><span class="kw">crate</span>::queryable::Queryable</a>;
+<a href=#571 id=571 data-nosnippet>571</a>    <span class="attr">#[doc(inline)]
+<a href=#572 id=572 data-nosnippet>572</a>    </span><span class="kw">pub use </span><a href="../../mysql_async/prelude/trait.ColumnIndex.html">mysql_common::prelude::ColumnIndex</a>;
+<a href=#573 id=573 data-nosnippet>573</a>    <span class="attr">#[doc(inline)]
+<a href=#574 id=574 data-nosnippet>574</a>    </span><span class="kw">pub use </span><a href="../../mysql_async/prelude/trait.FromRow.html">mysql_common::prelude::FromRow</a>;
+<a href=#575 id=575 data-nosnippet>575</a>    <span class="attr">#[doc(inline)]
+<a href=#576 id=576 data-nosnippet>576</a>    </span><span class="kw">pub use </span>mysql_common::prelude::{<a href="../../mysql_async/prelude/trait.FromValue.html">FromValue</a>, <a href="../../mysql_async/prelude/trait.ToValue.html">ToValue</a>};
+<a href=#577 id=577 data-nosnippet>577</a>
+<a href=#578 id=578 data-nosnippet>578</a>    <span class="doccomment">/// Everything that is a statement.
+<a href=#579 id=579 data-nosnippet>579</a>    ///
+<a href=#580 id=580 data-nosnippet>580</a>    /// ```no_run
+<a href=#581 id=581 data-nosnippet>581</a>    /// # use std::{borrow::Cow, sync::Arc};
+<a href=#582 id=582 data-nosnippet>582</a>    /// # use mysql_async::{Statement, prelude::StatementLike};
+<a href=#583 id=583 data-nosnippet>583</a>    /// fn type_is_a_stmt&lt;T: StatementLike&gt;() {}
+<a href=#584 id=584 data-nosnippet>584</a>    ///
+<a href=#585 id=585 data-nosnippet>585</a>    /// type_is_a_stmt::&lt;Cow&lt;'_, str&gt;&gt;();
+<a href=#586 id=586 data-nosnippet>586</a>    /// type_is_a_stmt::&lt;&amp;'_ str&gt;();
+<a href=#587 id=587 data-nosnippet>587</a>    /// type_is_a_stmt::&lt;String&gt;();
+<a href=#588 id=588 data-nosnippet>588</a>    /// type_is_a_stmt::&lt;Box&lt;str&gt;&gt;();
+<a href=#589 id=589 data-nosnippet>589</a>    /// type_is_a_stmt::&lt;Arc&lt;str&gt;&gt;();
+<a href=#590 id=590 data-nosnippet>590</a>    /// type_is_a_stmt::&lt;Statement&gt;();
+<a href=#591 id=591 data-nosnippet>591</a>    ///
+<a href=#592 id=592 data-nosnippet>592</a>    /// fn ref_to_a_clonable_stmt_is_also_a_stmt&lt;T: StatementLike + Clone&gt;() {
+<a href=#593 id=593 data-nosnippet>593</a>    ///     type_is_a_stmt::&lt;&amp;T&gt;();
+<a href=#594 id=594 data-nosnippet>594</a>    /// }
+<a href=#595 id=595 data-nosnippet>595</a>    /// ```
+<a href=#596 id=596 data-nosnippet>596</a>    </span><span class="kw">pub trait </span><a href="../../mysql_async/prelude/trait.StatementLike.html">StatementLike</a>: <a href="queryable/stmt.rs.html#36-41"><span class="kw">crate</span>::queryable::stmt::StatementLike</a> {}
+<a href=#597 id=597 data-nosnippet>597</a>    <span class="kw">impl</span>&lt;T: <a href="queryable/stmt.rs.html#36-41"><span class="kw">crate</span>::queryable::stmt::StatementLike</a>&gt; <a href="#596">StatementLike</a> <span class="kw">for </span>T {}
+<a href=#598 id=598 data-nosnippet>598</a>
+<a href=#599 id=599 data-nosnippet>599</a>    <span class="doccomment">/// Trait for protocol markers [`crate::TextProtocol`] and [`crate::BinaryProtocol`].
+<a href=#600 id=600 data-nosnippet>600</a>    </span><span class="kw">pub trait </span><a href="../../mysql_async/prelude/trait.Protocol.html">Protocol</a>: <a href="queryable/mod.rs.html#41-53"><span class="kw">crate</span>::queryable::Protocol</a> {}
+<a href=#601 id=601 data-nosnippet>601</a>    <span class="kw">impl </span><a href="#600">Protocol</a> <span class="kw">for </span><span class="kw">crate</span>::<a href="queryable/mod.rs.html#61">BinaryProtocol</a> {}
+<a href=#602 id=602 data-nosnippet>602</a>    <span class="kw">impl </span><a href="#600">Protocol</a> <span class="kw">for </span><span class="kw">crate</span>::<a href="queryable/mod.rs.html#57">TextProtocol</a> {}
+<a href=#603 id=603 data-nosnippet>603</a>
+<a href=#604 id=604 data-nosnippet>604</a>    <span class="kw">pub use </span><a href="../../mysql_async/macro.params.html">mysql_common::params</a>;
+<a href=#605 id=605 data-nosnippet>605</a>}
+<a href=#606 id=606 data-nosnippet>606</a>
+<a href=#607 id=607 data-nosnippet>607</a><span class="attr">#[doc(hidden)]
+<a href=#608 id=608 data-nosnippet>608</a></span><span class="kw">pub mod </span>test_misc {
+<a href=#609 id=609 data-nosnippet>609</a>    <span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/core/macro.env.html">std::env</a>;
+<a href=#610 id=610 data-nosnippet>610</a>    <span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/std/sync/once_lock/struct.OnceLock.html">std::sync::OnceLock</a>;
+<a href=#611 id=611 data-nosnippet>611</a>
+<a href=#612 id=612 data-nosnippet>612</a>    <span class="kw">use </span><span class="kw">crate</span>::opts::{<a href="opts/mod.rs.html#708-710">Opts</a>, <a href="opts/mod.rs.html#1335-1340">OptsBuilder</a>, <a href="opts/mod.rs.html#216-224">SslOpts</a>};
+<a href=#613 id=613 data-nosnippet>613</a>
+<a href=#614 id=614 data-nosnippet>614</a>    <span class="attr">#[allow(dead_code)]
+<a href=#615 id=615 data-nosnippet>615</a>    #[allow(unreachable_code)]
+<a href=#616 id=616 data-nosnippet>616</a>    </span><span class="kw">fn </span>error_should_implement_send_and_sync(err: <span class="kw">crate</span>::<a href="error/mod.rs.html#34-49">Error</a>) {
+<a href=#617 id=617 data-nosnippet>617</a>        <span class="kw">fn </span>_dummy&lt;T: <a href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html">Send</a> + <a href="https://doc.rust-lang.org/nightly/core/marker/trait.Sync.html">Sync</a> + <a href="https://doc.rust-lang.org/nightly/core/marker/trait.Unpin.html">Unpin</a>&gt;(<span class="kw">_</span>: T) {}
+<a href=#618 id=618 data-nosnippet>618</a>        <a href="#617">_dummy</a>(<a href="#616">err</a>);
+<a href=#619 id=619 data-nosnippet>619</a>    }
+<a href=#620 id=620 data-nosnippet>620</a>
+<a href=#621 id=621 data-nosnippet>621</a>    <span class="kw">pub fn </span>get_opts() -&gt; <a href="opts/mod.rs.html#1335-1340">OptsBuilder</a> {
+<a href=#622 id=622 data-nosnippet>622</a>        <span class="kw">static </span>DATABASE_OPTS: <a href="https://doc.rust-lang.org/nightly/std/sync/once_lock/struct.OnceLock.html">OnceLock</a>&lt;<a href="opts/mod.rs.html#708-710">Opts</a>&gt; = <a href="https://doc.rust-lang.org/nightly/std/sync/once_lock/struct.OnceLock.html">OnceLock</a>::<a href="https://doc.rust-lang.org/nightly/std/sync/once_lock/struct.OnceLock.html#method.new">new</a>();
+<a href=#623 id=623 data-nosnippet>623</a>        <span class="kw">let </span>database_opts = <a href="#622">DATABASE_OPTS</a>.<a href="https://doc.rust-lang.org/nightly/std/sync/once_lock/struct.OnceLock.html#method.get_or_init">get_or_init</a>(|| {
+<a href=#624 id=624 data-nosnippet>624</a>            <span class="kw">if let </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(url) = env::<a href="https://doc.rust-lang.org/nightly/std/env/fn.var.html">var</a>(<span class="string">"DATABASE_URL"</span>) {
+<a href=#625 id=625 data-nosnippet>625</a>                <a href="opts/mod.rs.html#708-710">Opts</a>::<a href="opts/mod.rs.html#718-739">from_url</a>(<span class="kw-2">&amp;</span><a href="#624">url</a>).<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.expect">expect</a>(<span class="string">"DATABASE_URL invalid"</span>)
+<a href=#626 id=626 data-nosnippet>626</a>            } <span class="kw">else </span>{
+<a href=#627 id=627 data-nosnippet>627</a>                <a href="opts/mod.rs.html#708-710">Opts</a>::<a href="opts/mod.rs.html#718-739">from_url</a>(<span class="string">"mysql://root:password@localhost:3307/mysql"</span>).<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.unwrap">unwrap</a>()
+<a href=#628 id=628 data-nosnippet>628</a>            }
+<a href=#629 id=629 data-nosnippet>629</a>        });
+<a href=#630 id=630 data-nosnippet>630</a>
+<a href=#631 id=631 data-nosnippet>631</a>        <span class="kw">let </span><span class="kw-2">mut </span>builder = <a href="opts/mod.rs.html#1335-1340">OptsBuilder</a>::<a href="opts/mod.rs.html#1360-1373">from_opts</a>(<a href="#623">database_opts</a>.<a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">clone</a>());
+<a href=#632 id=632 data-nosnippet>632</a>        <span class="kw">if </span><a href="#648-650">test_ssl</a>() {
+<a href=#633 id=633 data-nosnippet>633</a>            <span class="kw">let </span>ssl_opts = <a href="opts/mod.rs.html#216-224">SslOpts</a>::<a href="https://doc.rust-lang.org/nightly/core/default/trait.Default.html#tymethod.default">default</a>()
+<a href=#634 id=634 data-nosnippet>634</a>                .<a href="opts/mod.rs.html#278-281">with_danger_skip_domain_validation</a>(<span class="bool-val">true</span>)
+<a href=#635 id=635 data-nosnippet>635</a>                .<a href="opts/mod.rs.html#298-301">with_danger_accept_invalid_certs</a>(<span class="bool-val">true</span>);
+<a href=#636 id=636 data-nosnippet>636</a>            <a href="#631">builder</a> = <a href="#631">builder</a>.<a href="opts/mod.rs.html#1483-1486">prefer_socket</a>(<span class="bool-val">false</span>).<a href="opts/mod.rs.html#1477-1480">ssl_opts</a>(<a href="#633">ssl_opts</a>);
+<a href=#637 id=637 data-nosnippet>637</a>        }
+<a href=#638 id=638 data-nosnippet>638</a>        <span class="kw">if </span><a href="#644-646">test_compression</a>() {
+<a href=#639 id=639 data-nosnippet>639</a>            <a href="#631">builder</a> = <a href="#631">builder</a>.<a href="opts/mod.rs.html#1495-1498">compression</a>(<span class="kw">crate</span>::<a href="../../mysql_async/struct.Compression.html">Compression</a>::<a href="https://doc.rust-lang.org/nightly/core/default/trait.Default.html#tymethod.default">default</a>());
+<a href=#640 id=640 data-nosnippet>640</a>        }
+<a href=#641 id=641 data-nosnippet>641</a>        <a href="#631">builder</a>
+<a href=#642 id=642 data-nosnippet>642</a>    }
+<a href=#643 id=643 data-nosnippet>643</a>
+<a href=#644 id=644 data-nosnippet>644</a>    <span class="kw">pub fn </span>test_compression() -&gt; <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a> {
+<a href=#645 id=645 data-nosnippet>645</a>        [<span class="string">"true"</span>, <span class="string">"1"</span>].<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.contains">contains</a>(&amp;&amp;<span class="kw-2">*</span>env::<a href="https://doc.rust-lang.org/nightly/std/env/fn.var.html">var</a>(<span class="string">"COMPRESS"</span>).<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.unwrap_or_default">unwrap_or_default</a>())
+<a href=#646 id=646 data-nosnippet>646</a>    }
+<a href=#647 id=647 data-nosnippet>647</a>
+<a href=#648 id=648 data-nosnippet>648</a>    <span class="kw">pub fn </span>test_ssl() -&gt; <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a> {
+<a href=#649 id=649 data-nosnippet>649</a>        [<span class="string">"true"</span>, <span class="string">"1"</span>].<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.contains">contains</a>(&amp;&amp;<span class="kw-2">*</span>env::<a href="https://doc.rust-lang.org/nightly/std/env/fn.var.html">var</a>(<span class="string">"SSL"</span>).<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.unwrap_or_default">unwrap_or_default</a>())
+<a href=#650 id=650 data-nosnippet>650</a>    }
+<a href=#651 id=651 data-nosnippet>651</a>}
+</code></pre></div></section></main></body></html>

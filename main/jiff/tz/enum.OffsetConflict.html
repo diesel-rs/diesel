@@ -1,0 +1,293 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Configuration for resolving disparities between an offset and a time zone."><title>OffsetConflict in jiff::tz - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-1e18a8e7.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="jiff" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (6c709eb42 2026-11-25)" data-channel="nightly" data-search-js="search-085293d4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../static.files/storage-41dd4d93.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc enum"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">OffsetConflict</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../jiff/index.html">jiff</a><span class="version">1.0.3</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Offset<wbr>Conflict</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#example" title="Example">Example</a></li><li><a href="#example-parsing" title="Example: parsing">Example: parsing</a></li></ul><h3><a href="#variants">Variants</a></h3><ul class="block variant"><li><a href="#variant.AlwaysOffset" title="AlwaysOffset">AlwaysOffset</a></li><li><a href="#variant.AlwaysTimeZone" title="AlwaysTimeZone">AlwaysTimeZone</a></li><li><a href="#variant.PreferOffset" title="PreferOffset">PreferOffset</a></li><li><a href="#variant.Reject" title="Reject">Reject</a></li></ul><h3><a href="#implementations">Methods</a></h3><ul class="block method"><li><a href="#method.resolve" title="resolve">resolve</a></li><li><a href="#method.resolve_with" title="resolve_with">resolve_with</a></li></ul><h3><a href="#trait-implementations">Trait Implementations</a></h3><ul class="block trait-implementation"><li><a href="#impl-Clone-for-OffsetConflict" title="Clone">Clone</a></li><li><a href="#impl-Copy-for-OffsetConflict" title="Copy">Copy</a></li><li><a href="#impl-Debug-for-OffsetConflict" title="Debug">Debug</a></li><li><a href="#impl-Default-for-OffsetConflict" title="Default">Default</a></li></ul><h3><a href="#synthetic-implementations">Auto Trait Implementations</a></h3><ul class="block synthetic-implementation"><li><a href="#impl-Forget-for-OffsetConflict" title="Forget">Forget</a></li><li><a href="#impl-Freeze-for-OffsetConflict" title="Freeze">Freeze</a></li><li><a href="#impl-Move-for-OffsetConflict" title="Move">Move</a></li><li><a href="#impl-RefUnwindSafe-for-OffsetConflict" title="RefUnwindSafe">RefUnwindSafe</a></li><li><a href="#impl-Send-for-OffsetConflict" title="Send">Send</a></li><li><a href="#impl-Sync-for-OffsetConflict" title="Sync">Sync</a></li><li><a href="#impl-Unpin-for-OffsetConflict" title="Unpin">Unpin</a></li><li><a href="#impl-UnsafeUnpin-for-OffsetConflict" title="UnsafeUnpin">UnsafeUnpin</a></li><li><a href="#impl-UnwindSafe-for-OffsetConflict" title="UnwindSafe">UnwindSafe</a></li></ul><h3><a href="#blanket-implementations">Blanket Implementations</a></h3><ul class="block blanket-implementation"><li><a href="#impl-Any-for-T" title="Any">Any</a></li><li><a href="#impl-Borrow%3CT%3E-for-T" title="Borrow&#60;T&#62;">Borrow&#60;T&#62;</a></li><li><a href="#impl-BorrowMut%3CT%3E-for-T" title="BorrowMut&#60;T&#62;">BorrowMut&#60;T&#62;</a></li><li><a href="#impl-CloneToUninit-for-T" title="CloneToUninit">CloneToUninit</a></li><li><a href="#impl-From%3CT%3E-for-T" title="From&#60;T&#62;">From&#60;T&#62;</a></li><li><a href="#impl-Into%3CU%3E-for-T" title="Into&#60;U&#62;">Into&#60;U&#62;</a></li><li><a href="#impl-ToOwned-for-T" title="ToOwned">ToOwned</a></li><li><a href="#impl-TryFrom%3CU%3E-for-T" title="TryFrom&#60;U&#62;">TryFrom&#60;U&#62;</a></li><li><a href="#impl-TryInto%3CU%3E-for-T" title="TryInto&#60;U&#62;">TryInto&#60;U&#62;</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="index.html">In jiff::<wbr>tz</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">jiff</a>::<wbr><a href="index.html">tz</a></div><h1>Enum <span class="enum">Offset<wbr>Conflict</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/jiff/tz/offset.rs.html#1780-1826">Source</a> </span></div><pre class="rust item-decl"><code><div class="code-attribute">#[non_exhaustive]</div>pub enum OffsetConflict {
+    AlwaysOffset,
+    AlwaysTimeZone,
+    PreferOffset,
+    Reject,
+}</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Configuration for resolving disparities between an offset and a time zone.</p>
+<p>A conflict between an offset and a time zone most commonly appears in a
+datetime string. For example, <code>2024-06-14T17:30-05[America/New_York]</code>
+has a definitive inconsistency between the reported offset (<code>-05</code>) and
+the time zone (<code>America/New_York</code>), because at this time in New York,
+daylight saving time (DST) was in effect. In New York in the year 2024,
+DST corresponded to the UTC offset <code>-04</code>.</p>
+<p>Other conflict variations exist. For example, in 2019, Brazil abolished
+DST completely. But if one were to create a datetime for 2020 in 2018, that
+datetime in 2020 would reflect the DST rules as they exist in 2018. That
+could in turn result in a datetime with an offset that is incorrect with
+respect to the rules in 2019.</p>
+<p>For this reason, this crate exposes a few ways of resolving these
+conflicts. It is most commonly used as configuration for parsing
+<a href="../struct.ZonedDateTime.html" title="struct jiff::ZonedDateTime"><code>ZonedDateTime</code></a> values via
+<a href="../fmt/temporal/struct.DateTimeParser.html#method.offset_conflict" title="method jiff::fmt::temporal::DateTimeParser::offset_conflict"><code>fmt::temporal::DateTimeParser::offset_conflict</code></a>.
+But this configuration can also be used directly via
+<a href="enum.OffsetConflict.html#method.resolve" title="method jiff::tz::OffsetConflict::resolve"><code>OffsetConflict::resolve</code></a>.</p>
+<p>The default value is <code>OffsetConflict::Reject</code>, which results in an error
+being returned if the offset and a time zone are not in agreement. This is
+the default so that Jiff does not automatically make silent choices about
+whether to prefer the time zone or the offset. The
+<a href="../fmt/temporal/struct.DateTimeParser.html#method.parse_zoned_datetime_with" title="method jiff::fmt::temporal::DateTimeParser::parse_zoned_datetime_with"><code>fmt::temporal::DateTimeParser::parse_zoned_datetime_with</code></a>
+documentation shows an example demonstrating its utility in the face of
+changes in the law, such as the abolition of daylight saving time. By
+rejecting such things, one can ensure that the original timestamp is
+preserved or else an error occurs.</p>
+<p>This enum is non-exhaustive so that other forms of offset conflicts may be
+added in semver compatible releases.</p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<p>This example shows how to always use the time zone even if the offset is
+wrong.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil::date, tz};
+
+<span class="kw">let </span>dt = date(<span class="number">2024</span>, <span class="number">6</span>, <span class="number">14</span>).at(<span class="number">17</span>, <span class="number">30</span>, <span class="number">0</span>, <span class="number">0</span>);
+<span class="kw">let </span>offset = tz::offset(-<span class="number">5</span>); <span class="comment">// wrong! should be -4
+</span><span class="kw">let </span>newyork = tz::db().get(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+
+<span class="comment">// The default conflict resolution, 'Reject', will error.
+</span><span class="kw">let </span>result = tz::OffsetConflict::Reject
+    .resolve(dt, offset, newyork.clone());
+<span class="macro">assert!</span>(result.is_err());
+
+<span class="comment">// But we can change it to always prefer the time zone.
+</span><span class="kw">let </span>zdt = tz::OffsetConflict::AlwaysTimeZone
+    .resolve(dt, offset, newyork.clone())<span class="question-mark">?
+    </span>.unambiguous()<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(zdt.datetime(), date(<span class="number">2024</span>, <span class="number">6</span>, <span class="number">14</span>).at(<span class="number">17</span>, <span class="number">30</span>, <span class="number">0</span>, <span class="number">0</span>));
+<span class="comment">// The offset has been corrected automatically.
+</span><span class="macro">assert_eq!</span>(zdt.offset(), tz::offset(-<span class="number">4</span>));
+</code></pre></div><h2 id="example-parsing"><a class="doc-anchor" href="#example-parsing">§</a>Example: parsing</h2>
+<p>This example shows how to set the offset conflict resolution configuration
+while parsing a <a href="../struct.ZonedDateTime.html" title="struct jiff::ZonedDateTime"><code>ZonedDateTime</code></a> datetime. In this
+example, we always prefer the offset, even if it conflicts with the time
+zone.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil::date, fmt::temporal::DateTimeParser, tz};
+
+<span class="kw">static </span>PARSER: DateTimeParser = DateTimeParser::new()
+    .offset_conflict(tz::OffsetConflict::AlwaysOffset);
+
+<span class="kw">let </span>zdt = PARSER
+    .parse_zoned_datetime(<span class="string">"2024-06-14T17:30-05[America/New_York]"</span>)<span class="question-mark">?</span>;
+<span class="comment">// The time *and* offset have been corrected. The offset given was invalid,
+// so it cannot be kept, but the timestamp returned is equivalent to
+// `2024-06-14T17:30-05`. It is just adjusted automatically to be correct
+// in the `America/New_York` time zone.
+</span><span class="macro">assert_eq!</span>(zdt.datetime(), date(<span class="number">2024</span>, <span class="number">6</span>, <span class="number">14</span>).at(<span class="number">18</span>, <span class="number">30</span>, <span class="number">0</span>, <span class="number">0</span>));
+<span class="macro">assert_eq!</span>(zdt.offset(), tz::offset(-<span class="number">4</span>));
+</code></pre></div></div></details><h2 id="variants" class="variants section-header">Variants (Non-exhaustive)<a href="#variants" class="anchor">§</a></h2><details class="toggle non-exhaustive"><summary class="hideme"><span>This enum is marked as non-exhaustive</span></summary><div class="docblock">Non-exhaustive enums could have additional variants added in future. Therefore, when matching against variants of non-exhaustive enums, an extra wildcard arm must be added to account for any future variants.</div></details><div class="variants"><section id="variant.AlwaysOffset" class="variant"><a href="#variant.AlwaysOffset" class="anchor">§</a><h3 class="code-header">AlwaysOffset</h3></section><div class="docblock"><p>When the offset and time zone are in conflict, this will always use
+the offset to interpret the date time.</p>
+<p>When resolving to a <a href="struct.AmbiguousZonedDateTime.html" title="struct jiff::tz::AmbiguousZonedDateTime"><code>AmbiguousZonedDateTime</code></a>, the time zone attached
+to the timestamp will still be the same as the time zone given. The
+difference here is that the offset will be adjusted such that it is
+correct for the given time zone. However, the timestamp itself will
+always match the datetime and offset given (and which is always
+unambiguous).</p>
+<p>Basically, you should use this option when you want to keep the exact
+time unchanged (as indicated by the datetime and offset), even if it
+means a change to civil time.</p>
+</div><section id="variant.AlwaysTimeZone" class="variant"><a href="#variant.AlwaysTimeZone" class="anchor">§</a><h3 class="code-header">AlwaysTimeZone</h3></section><div class="docblock"><p>When the offset and time zone are in conflict, this will always use
+the time zone to interpret the date time.</p>
+<p>When resolving to an <a href="struct.AmbiguousZonedDateTime.html" title="struct jiff::tz::AmbiguousZonedDateTime"><code>AmbiguousZonedDateTime</code></a>, the offset attached to
+the timestamp will always be determined by only looking at the time
+zone. This in turn implies that the timestamp returned could be
+ambiguous, since this conflict resolution strategy specifically ignores
+the offset. (And, we’re only at this point because the offset is not
+possible for the given time zone, so it can’t be used in concert with
+the time zone anyway.) This is unlike the <code>AlwaysOffset</code> strategy where
+the timestamp returned is guaranteed to be unambiguous.</p>
+<p>You should use this option when you want to keep the civil time
+unchanged even if it means a change to the exact time.</p>
+</div><section id="variant.PreferOffset" class="variant"><a href="#variant.PreferOffset" class="anchor">§</a><h3 class="code-header">PreferOffset</h3></section><div class="docblock"><p>Always attempt to use the offset to resolve a datetime to a timestamp,
+unless the offset is invalid for the provided time zone. In that case,
+use the time zone. When the time zone is used, it’s possible for an
+ambiguous datetime to be returned.</p>
+<p>See
+<a href="../struct.ZonedDateTimeWith.html#method.offset_conflict" title="method jiff::ZonedDateTimeWith::offset_conflict"><code>ZonedDateTimeWith::offset_conflict</code></a>
+for an example of when this strategy is useful.</p>
+</div><section id="variant.Reject" class="variant"><a href="#variant.Reject" class="anchor">§</a><h3 class="code-header">Reject</h3></section><div class="docblock"><p>When the offset and time zone are in conflict, this strategy always
+results in conflict resolution returning an error.</p>
+<p>This is the default since a conflict between the offset and the time
+zone usually implies an invalid datetime in some way.</p>
+</div></div><h2 id="implementations" class="section-header">Implementations<a href="#implementations" class="anchor">§</a></h2><div id="implementations-list"><details class="toggle implementors-toggle" open><summary><section id="impl-OffsetConflict" class="impl"><a class="src rightside" href="../../src/jiff/tz/offset.rs.html#1828-2166">Source</a><a href="#impl-OffsetConflict" class="anchor">§</a><h3 class="code-header">impl <a class="enum" href="enum.OffsetConflict.html" title="enum jiff::tz::OffsetConflict">OffsetConflict</a></h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.resolve" class="method"><a class="src rightside" href="../../src/jiff/tz/offset.rs.html#1886-1893">Source</a><h4 class="code-header">pub fn <a href="#method.resolve" class="fn">resolve</a>(
+    self,
+    dt: <a class="struct" href="../civil/struct.DateTime.html" title="struct jiff::civil::DateTime">DateTime</a>,
+    offset: <a class="struct" href="struct.Offset.html" title="struct jiff::tz::Offset">Offset</a>,
+    tz: <a class="struct" href="struct.TimeZone.html" title="struct jiff::tz::TimeZone">TimeZone</a>,
+) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="struct" href="struct.AmbiguousZonedDateTime.html" title="struct jiff::tz::AmbiguousZonedDateTime">AmbiguousZonedDateTime</a>, <a class="struct" href="../struct.Error.html" title="struct jiff::Error">Error</a>&gt;</h4></section></summary><div class="docblock"><p>Resolve a potential conflict between an <a href="struct.Offset.html" title="struct jiff::tz::Offset"><code>Offset</code></a> and a <a href="struct.TimeZone.html" title="struct jiff::tz::TimeZone"><code>TimeZone</code></a>.</p>
+<h5 id="errors"><a class="doc-anchor" href="#errors">§</a>Errors</h5>
+<p>This returns an error if this would have returned a timestamp outside
+of its minimum and maximum values.</p>
+<p>This can also return an error when using the <a href="enum.OffsetConflict.html#variant.Reject" title="variant jiff::tz::OffsetConflict::Reject"><code>OffsetConflict::Reject</code></a>
+strategy. Namely, when using the <code>Reject</code> strategy, any offset that is
+not compatible with the given datetime and time zone will always result
+in an error.</p>
+<h5 id="example-1"><a class="doc-anchor" href="#example-1">§</a>Example</h5>
+<p>This example shows how each of the different conflict resolution
+strategies are applied.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil::date, tz};
+
+<span class="kw">let </span>dt = date(<span class="number">2024</span>, <span class="number">6</span>, <span class="number">14</span>).at(<span class="number">17</span>, <span class="number">30</span>, <span class="number">0</span>, <span class="number">0</span>);
+<span class="kw">let </span>offset = tz::offset(-<span class="number">5</span>); <span class="comment">// wrong! should be -4
+</span><span class="kw">let </span>newyork = tz::db().get(<span class="string">"America/New_York"</span>)<span class="question-mark">?</span>;
+
+<span class="comment">// Here, we use the offset and ignore the time zone.
+</span><span class="kw">let </span>zdt = tz::OffsetConflict::AlwaysOffset
+    .resolve(dt, offset, newyork.clone())<span class="question-mark">?
+    </span>.unambiguous()<span class="question-mark">?</span>;
+<span class="comment">// The datetime (and offset) have been corrected automatically
+// and the resulting ZonedDateTime instant corresponds precisely to
+// `2024-06-14T17:30-05[UTC]`.
+</span><span class="macro">assert_eq!</span>(zdt.to_string(), <span class="string">"2024-06-14T18:30:00-04:00[America/New_York]"</span>);
+
+<span class="comment">// Here, we use the time zone and ignore the offset.
+</span><span class="kw">let </span>zdt = tz::OffsetConflict::AlwaysTimeZone
+    .resolve(dt, offset, newyork.clone())<span class="question-mark">?
+    </span>.unambiguous()<span class="question-mark">?</span>;
+<span class="comment">// The offset has been corrected automatically and the resulting
+// ZonedDateTime instant corresponds precisely to
+// `2024-06-14T17:30-04[UTC]`. Notice how the civil time remains the
+// same, but the exact instant has changed!
+</span><span class="macro">assert_eq!</span>(zdt.to_string(), <span class="string">"2024-06-14T17:30:00-04:00[America/New_York]"</span>);
+
+<span class="comment">// Here, we prefer the offset, but fall back to the time zone.
+// In this example, it has the same behavior as `AlwaysTimeZone`.
+</span><span class="kw">let </span>zdt = tz::OffsetConflict::PreferOffset
+    .resolve(dt, offset, newyork.clone())<span class="question-mark">?
+    </span>.unambiguous()<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(zdt.to_string(), <span class="string">"2024-06-14T17:30:00-04:00[America/New_York]"</span>);
+
+<span class="comment">// The default conflict resolution, 'Reject', will error.
+</span><span class="kw">let </span>result = tz::OffsetConflict::Reject
+    .resolve(dt, offset, newyork.clone());
+<span class="macro">assert!</span>(result.is_err());
+</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="method.resolve_with" class="method"><a class="src rightside" href="../../src/jiff/tz/offset.rs.html#2025-2059">Source</a><h4 class="code-header">pub fn <a href="#method.resolve_with" class="fn">resolve_with</a>&lt;F&gt;(
+    self,
+    dt: <a class="struct" href="../civil/struct.DateTime.html" title="struct jiff::civil::DateTime">DateTime</a>,
+    offset: <a class="struct" href="struct.Offset.html" title="struct jiff::tz::Offset">Offset</a>,
+    tz: <a class="struct" href="struct.TimeZone.html" title="struct jiff::tz::TimeZone">TimeZone</a>,
+    is_equal: F,
+) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="struct" href="struct.AmbiguousZonedDateTime.html" title="struct jiff::tz::AmbiguousZonedDateTime">AmbiguousZonedDateTime</a>, <a class="struct" href="../struct.Error.html" title="struct jiff::Error">Error</a>&gt;<div class="where">where
+    F: <a class="trait" href="https://doc.rust-lang.org/nightly/core/ops/function/trait.FnMut.html" title="trait core::ops::function::FnMut">FnMut</a>(<a class="struct" href="struct.Offset.html" title="struct jiff::tz::Offset">Offset</a>, <a class="struct" href="struct.Offset.html" title="struct jiff::tz::Offset">Offset</a>) -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>,</div></h4></section></summary><div class="docblock"><p>Resolve a potential conflict between an <a href="struct.Offset.html" title="struct jiff::tz::Offset"><code>Offset</code></a> and a <a href="struct.TimeZone.html" title="struct jiff::tz::TimeZone"><code>TimeZone</code></a>
+using the given definition of equality for an <code>Offset</code>.</p>
+<p>The equality predicate is always given a pair of offsets where the
+first is the offset given to <code>resolve_with</code> and the second is the
+offset found in the <code>TimeZone</code>.</p>
+<p>With <a href="enum.OffsetConflict.html#variant.Reject" title="variant jiff::tz::OffsetConflict::Reject"><code>OffsetConflict::Reject</code></a> or <a href="enum.OffsetConflict.html#variant.PreferOffset" title="variant jiff::tz::OffsetConflict::PreferOffset"><code>OffsetConflict::PreferOffset</code></a>,
+matching the offset to a fold checks the earlier candidate first. The
+timestamp is computed using the matching candidate’s actual offset,
+which may differ from the offset given to this routine.</p>
+<h5 id="errors-1"><a class="doc-anchor" href="#errors-1">§</a>Errors</h5>
+<p>This returns an error if this would have returned a timestamp outside
+of its minimum and maximum values.</p>
+<p>This can also return an error when using the <a href="enum.OffsetConflict.html#variant.Reject" title="variant jiff::tz::OffsetConflict::Reject"><code>OffsetConflict::Reject</code></a>
+strategy. Namely, when using the <code>Reject</code> strategy, any offset that is
+not compatible with the given datetime and time zone will always result
+in an error.</p>
+<h5 id="example-2"><a class="doc-anchor" href="#example-2">§</a>Example</h5>
+<p>Unlike <a href="enum.OffsetConflict.html#method.resolve" title="method jiff::tz::OffsetConflict::resolve"><code>OffsetConflict::resolve</code></a>, this routine permits overriding
+the definition of equality used for comparing offsets. In
+<code>OffsetConflict::resolve</code>, exact equality is used. This can be
+troublesome in some cases when a time zone has an offset with
+fractional minutes, such as <code>Africa/Monrovia</code> before 1972.</p>
+<p>Because RFC 3339 and RFC 9557 do not support time zone offsets
+with fractional minutes, Jiff will serialize offsets with
+fractional minutes by rounding to the nearest minute. This
+will result in a different offset than what is actually
+used in the time zone. Parsing this <em>should</em> succeed, but
+if exact offset equality is used, it won’t. This is why a
+<a href="../fmt/temporal/struct.DateTimeParser.html" title="struct jiff::fmt::temporal::DateTimeParser"><code>fmt::temporal::DateTimeParser</code></a>
+uses this routine with offset equality that rounds offsets to the
+nearest minute before comparison.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{civil::date, tz::{Offset, OffsetConflict, TimeZone}, Unit};
+
+<span class="kw">let </span>dt = date(<span class="number">1968</span>, <span class="number">2</span>, <span class="number">1</span>).at(<span class="number">23</span>, <span class="number">15</span>, <span class="number">0</span>, <span class="number">0</span>);
+<span class="kw">let </span>offset = Offset::from_seconds(-(<span class="number">44 </span>* <span class="number">60 </span>+ <span class="number">30</span>)).unwrap();
+<span class="kw">let </span>zdt = dt.in_tz(<span class="string">"Africa/Monrovia"</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(zdt.offset(), offset);
+<span class="comment">// Notice that the offset has been rounded!
+</span><span class="macro">assert_eq!</span>(zdt.to_string(), <span class="string">"1968-02-01T23:15:00-00:45[Africa/Monrovia]"</span>);
+
+<span class="comment">// Now imagine parsing extracts the civil datetime, the offset and
+// the time zone, and then naively does exact offset comparison:
+</span><span class="kw">let </span>tz = TimeZone::get(<span class="string">"Africa/Monrovia"</span>)<span class="question-mark">?</span>;
+<span class="comment">// This is the parsed offset, which won't precisely match the actual
+// offset used by `Africa/Monrovia` at this time.
+</span><span class="kw">let </span>offset = Offset::from_seconds(-<span class="number">45 </span>* <span class="number">60</span>).unwrap();
+<span class="kw">let </span>result = OffsetConflict::Reject.resolve(dt, offset, tz.clone());
+<span class="macro">assert_eq!</span>(
+    result.unwrap_err().to_string(),
+    <span class="string">"datetime could not resolve to a timestamp since `reject` \
+     conflict resolution was chosen, and because datetime has offset \
+     `-00:45`, but the time zone `Africa/Monrovia` for the given \
+     datetime unambiguously has offset `-00:44:30`"</span>,
+);
+<span class="kw">let </span>is_equal = |parsed: Offset, candidate: Offset| {
+    parsed == candidate || candidate.round(Unit::Minute).map_or(
+        parsed == candidate,
+        |candidate| parsed == candidate,
+    )
+};
+<span class="kw">let </span>zdt = OffsetConflict::Reject.resolve_with(
+    dt,
+    offset,
+    tz.clone(),
+    is_equal,
+)<span class="question-mark">?</span>.unambiguous()<span class="question-mark">?</span>;
+<span class="comment">// Notice that the offset is the actual offset from the time zone:
+</span><span class="macro">assert_eq!</span>(zdt.offset(), Offset::from_seconds(-(<span class="number">44 </span>* <span class="number">60 </span>+ <span class="number">30</span>)).unwrap());
+<span class="comment">// But when we serialize, the offset gets rounded. If we didn't
+// do this, we'd risk the datetime not being parsable by other
+// implementations since RFC 3339 and RFC 9557 don't support fractional
+// minutes in the offset.
+</span><span class="macro">assert_eq!</span>(zdt.to_string(), <span class="string">"1968-02-01T23:15:00-00:45[Africa/Monrovia]"</span>);
+</code></pre></div>
+<p>And indeed, notice that parsing uses this same kind of offset equality
+to permit zoned datetimes whose offsets would be equivalent after
+rounding:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::{ZonedDateTime, tz::Offset};
+
+<span class="kw">let </span>zdt: ZonedDateTime =
+    <span class="string">"1968-02-01T23:15:00-00:45[Africa/Monrovia]"</span>.parse()<span class="question-mark">?</span>;
+<span class="comment">// As above, notice that even though we parsed `-00:45` as the
+// offset, the actual offset of our zoned datetime is the correct
+// one from the time zone.
+</span><span class="macro">assert_eq!</span>(zdt.offset(), Offset::from_seconds(-(<span class="number">44 </span>* <span class="number">60 </span>+ <span class="number">30</span>)).unwrap());
+<span class="comment">// And similarly, re-serializing it results in rounding the offset
+// again for compatibility with RFC 3339 and RFC 9557.
+</span><span class="macro">assert_eq!</span>(zdt.to_string(), <span class="string">"1968-02-01T23:15:00-00:45[Africa/Monrovia]"</span>);
+
+<span class="comment">// And we also support parsing the actual fractional minute offset
+// as well:
+</span><span class="kw">let </span>zdt: ZonedDateTime =
+    <span class="string">"1968-02-01T23:15:00-00:44:30[Africa/Monrovia]"</span>.parse()<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(zdt.offset(), Offset::from_seconds(-(<span class="number">44 </span>* <span class="number">60 </span>+ <span class="number">30</span>)).unwrap());
+<span class="macro">assert_eq!</span>(zdt.to_string(), <span class="string">"1968-02-01T23:15:00-00:45[Africa/Monrovia]"</span>);
+</code></pre></div>
+<p>Rounding does not occur when the parsed offset itself contains
+sub-minute precision. In that case, exact equality is used:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>jiff::ZonedDateTime;
+
+<span class="kw">let </span>result =
+    <span class="string">"1970-06-01T00-00:45:00[Africa/Monrovia]"</span>.parse::&lt;ZonedDateTime&gt;();
+<span class="macro">assert_eq!</span>(
+    result.unwrap_err().to_string(),
+    <span class="string">"datetime could not resolve to a timestamp since `reject` \
+     conflict resolution was chosen, and because datetime has offset \
+     `-00:45`, but the time zone `Africa/Monrovia` for the given \
+     datetime unambiguously has offset `-00:44:30`"</span>,
+);</code></pre></div></div></details></div></details></div><h2 id="trait-implementations" class="section-header">Trait Implementations<a href="#trait-implementations" class="anchor">§</a></h2><div id="trait-implementations-list"><details class="toggle implementors-toggle" open><summary><section id="impl-Clone-for-OffsetConflict" class="impl"><a class="src rightside" href="../../src/jiff/tz/offset.rs.html#1778">Source</a><a href="#impl-Clone-for-OffsetConflict" class="anchor">§</a><h3 class="code-header">impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html" title="trait core::clone::Clone">Clone</a> for <a class="enum" href="enum.OffsetConflict.html" title="enum jiff::tz::OffsetConflict">OffsetConflict</a></h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.clone" class="method trait-impl"><a class="src rightside" href="../../src/jiff/tz/offset.rs.html#1778">Source</a><a href="#method.clone" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone" class="fn">clone</a>(&amp;self) -&gt; Self</h4></section></summary><div class='docblock'>Returns a duplicate of the value. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">Read more</a></div></details><details class="toggle method-toggle" open><summary><section id="method.clone_from" class="method trait-impl"><span class="rightside"><span class="since" title="Stable since Rust version 1.0.0, const unstable">1.0.0 (const: <a href="https://github.com/rust-lang/rust/issues/142757" title="Tracking issue for const_clone">unstable</a>)</span> · <a class="src" href="https://doc.rust-lang.org/nightly/src/core/clone.rs.html#245-247">Source</a></span><a href="#method.clone_from" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from" class="fn">clone_from</a>(&amp;mut self, source: &amp;Self)</h4></section></summary><div class='docblock'>Performs copy-assignment from <code>source</code>. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from">Read more</a></div></details></div></details><section id="impl-Copy-for-OffsetConflict" class="impl"><a class="src rightside" href="../../src/jiff/tz/offset.rs.html#1778">Source</a><a href="#impl-Copy-for-OffsetConflict" class="anchor">§</a><h3 class="code-header">impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Copy.html" title="trait core::marker::Copy">Copy</a> for <a class="enum" href="enum.OffsetConflict.html" title="enum jiff::tz::OffsetConflict">OffsetConflict</a></h3></section><details class="toggle implementors-toggle" open><summary><section id="impl-Debug-for-OffsetConflict" class="impl"><a class="src rightside" href="../../src/jiff/tz/offset.rs.html#1778">Source</a><a href="#impl-Debug-for-OffsetConflict" class="anchor">§</a><h3 class="code-header">impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html" title="trait core::fmt::Debug">Debug</a> for <a class="enum" href="enum.OffsetConflict.html" title="enum jiff::tz::OffsetConflict">OffsetConflict</a></h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.fmt" class="method trait-impl"><a class="src rightside" href="../../src/jiff/tz/offset.rs.html#1778">Source</a><a href="#method.fmt" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#tymethod.fmt" class="fn">fmt</a>(&amp;self, f: &amp;mut <a class="struct" href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html" title="struct core::fmt::Formatter">Formatter</a>&lt;'_&gt;) -&gt; <a class="type" href="https://doc.rust-lang.org/nightly/core/fmt/type.Result.html" title="type core::fmt::Result">Result</a></h4></section></summary><div class='docblock'>Formats the value using the given formatter. <a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#tymethod.fmt">Read more</a></div></details></div></details><details class="toggle implementors-toggle" open><summary><section id="impl-Default-for-OffsetConflict" class="impl"><a class="src rightside" href="../../src/jiff/tz/offset.rs.html#1778">Source</a><a href="#impl-Default-for-OffsetConflict" class="anchor">§</a><h3 class="code-header">impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/default/trait.Default.html" title="trait core::default::Default">Default</a> for <a class="enum" href="enum.OffsetConflict.html" title="enum jiff::tz::OffsetConflict">OffsetConflict</a></h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.default" class="method trait-impl"><a class="src rightside" href="../../src/jiff/tz/offset.rs.html#1778">Source</a><a href="#method.default" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/default/trait.Default.html#tymethod.default" class="fn">default</a>() -&gt; Self</h4></section></summary><div class='docblock'>Returns the “default value” for a type. <a href="https://doc.rust-lang.org/nightly/core/default/trait.Default.html#tymethod.default">Read more</a></div></details></div></details></div><h2 id="synthetic-implementations" class="section-header">Auto Trait Implementations<a href="#synthetic-implementations" class="anchor">§</a></h2><div id="synthetic-implementations-list"><section id="impl-Forget-for-OffsetConflict" class="impl"><a href="#impl-Forget-for-OffsetConflict" class="anchor">§</a><h3 class="code-header">impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Forget.html" title="trait core::marker::Forget">Forget</a> for <a class="enum" href="enum.OffsetConflict.html" title="enum jiff::tz::OffsetConflict">OffsetConflict</a></h3></section><section id="impl-Freeze-for-OffsetConflict" class="impl"><a href="#impl-Freeze-for-OffsetConflict" class="anchor">§</a><h3 class="code-header">impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Freeze.html" title="trait core::marker::Freeze">Freeze</a> for <a class="enum" href="enum.OffsetConflict.html" title="enum jiff::tz::OffsetConflict">OffsetConflict</a></h3></section><section id="impl-Move-for-OffsetConflict" class="impl"><a href="#impl-Move-for-OffsetConflict" class="anchor">§</a><h3 class="code-header">impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Move.html" title="trait core::marker::Move">Move</a> for <a class="enum" href="enum.OffsetConflict.html" title="enum jiff::tz::OffsetConflict">OffsetConflict</a></h3></section><section id="impl-RefUnwindSafe-for-OffsetConflict" class="impl"><a href="#impl-RefUnwindSafe-for-OffsetConflict" class="anchor">§</a><h3 class="code-header">impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/panic/unwind_safe/trait.RefUnwindSafe.html" title="trait core::panic::unwind_safe::RefUnwindSafe">RefUnwindSafe</a> for <a class="enum" href="enum.OffsetConflict.html" title="enum jiff::tz::OffsetConflict">OffsetConflict</a></h3></section><section id="impl-Send-for-OffsetConflict" class="impl"><a href="#impl-Send-for-OffsetConflict" class="anchor">§</a><h3 class="code-header">impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> for <a class="enum" href="enum.OffsetConflict.html" title="enum jiff::tz::OffsetConflict">OffsetConflict</a></h3></section><section id="impl-Sync-for-OffsetConflict" class="impl"><a href="#impl-Sync-for-OffsetConflict" class="anchor">§</a><h3 class="code-header">impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Sync.html" title="trait core::marker::Sync">Sync</a> for <a class="enum" href="enum.OffsetConflict.html" title="enum jiff::tz::OffsetConflict">OffsetConflict</a></h3></section><section id="impl-Unpin-for-OffsetConflict" class="impl"><a href="#impl-Unpin-for-OffsetConflict" class="anchor">§</a><h3 class="code-header">impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Unpin.html" title="trait core::marker::Unpin">Unpin</a> for <a class="enum" href="enum.OffsetConflict.html" title="enum jiff::tz::OffsetConflict">OffsetConflict</a></h3></section><section id="impl-UnsafeUnpin-for-OffsetConflict" class="impl"><a href="#impl-UnsafeUnpin-for-OffsetConflict" class="anchor">§</a><h3 class="code-header">impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.UnsafeUnpin.html" title="trait core::marker::UnsafeUnpin">UnsafeUnpin</a> for <a class="enum" href="enum.OffsetConflict.html" title="enum jiff::tz::OffsetConflict">OffsetConflict</a></h3></section><section id="impl-UnwindSafe-for-OffsetConflict" class="impl"><a href="#impl-UnwindSafe-for-OffsetConflict" class="anchor">§</a><h3 class="code-header">impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/panic/unwind_safe/trait.UnwindSafe.html" title="trait core::panic::unwind_safe::UnwindSafe">UnwindSafe</a> for <a class="enum" href="enum.OffsetConflict.html" title="enum jiff::tz::OffsetConflict">OffsetConflict</a></h3></section></div><h2 id="blanket-implementations" class="section-header">Blanket Implementations<a href="#blanket-implementations" class="anchor">§</a></h2><div id="blanket-implementations-list"><details class="toggle implementors-toggle"><summary><section id="impl-Any-for-T" class="impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/any.rs.html#142">Source</a><a href="#impl-Any-for-T" class="anchor">§</a><h3 class="code-header">impl&lt;T&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/any/trait.Any.html" title="trait core::any::Any">Any</a> for T<div class="where">where
+    T: 'static + ?<a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html" title="trait core::marker::Sized">Sized</a>,</div></h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.type_id" class="method trait-impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/any.rs.html#143">Source</a><a href="#method.type_id" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/any/trait.Any.html#tymethod.type_id" class="fn">type_id</a>(&amp;self) -&gt; <a class="struct" href="https://doc.rust-lang.org/nightly/core/any/struct.TypeId.html" title="struct core::any::TypeId">TypeId</a></h4></section></summary><div class='docblock'>Gets the <code>TypeId</code> of <code>self</code>. <a href="https://doc.rust-lang.org/nightly/core/any/trait.Any.html#tymethod.type_id">Read more</a></div></details></div></details><details class="toggle implementors-toggle"><summary><section id="impl-Borrow%3CT%3E-for-T" class="impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/borrow.rs.html#212">Source</a><a href="#impl-Borrow%3CT%3E-for-T" class="anchor">§</a><h3 class="code-header">impl&lt;T&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/borrow/trait.Borrow.html" title="trait core::borrow::Borrow">Borrow</a>&lt;T&gt; for T<div class="where">where
+    T: ?<a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html" title="trait core::marker::Sized">Sized</a>,</div></h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.borrow" class="method trait-impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/borrow.rs.html#214">Source</a><a href="#method.borrow" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/borrow/trait.Borrow.html#tymethod.borrow" class="fn">borrow</a>(&amp;self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;T</a></h4></section></summary><div class='docblock'>Immutably borrows from an owned value. <a href="https://doc.rust-lang.org/nightly/core/borrow/trait.Borrow.html#tymethod.borrow">Read more</a></div></details></div></details><details class="toggle implementors-toggle"><summary><section id="impl-BorrowMut%3CT%3E-for-T" class="impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/borrow.rs.html#221">Source</a><a href="#impl-BorrowMut%3CT%3E-for-T" class="anchor">§</a><h3 class="code-header">impl&lt;T&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/borrow/trait.BorrowMut.html" title="trait core::borrow::BorrowMut">BorrowMut</a>&lt;T&gt; for T<div class="where">where
+    T: ?<a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html" title="trait core::marker::Sized">Sized</a>,</div></h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.borrow_mut" class="method trait-impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/borrow.rs.html#222">Source</a><a href="#method.borrow_mut" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/borrow/trait.BorrowMut.html#tymethod.borrow_mut" class="fn">borrow_mut</a>(&amp;mut self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;mut T</a></h4></section></summary><div class='docblock'>Mutably borrows from an owned value. <a href="https://doc.rust-lang.org/nightly/core/borrow/trait.BorrowMut.html#tymethod.borrow_mut">Read more</a></div></details></div></details><details class="toggle implementors-toggle"><summary><section id="impl-CloneToUninit-for-T" class="impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/clone.rs.html#648">Source</a><a href="#impl-CloneToUninit-for-T" class="anchor">§</a><h3 class="code-header">impl&lt;T&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/clone/trait.CloneToUninit.html" title="trait core::clone::CloneToUninit">CloneToUninit</a> for T<div class="where">where
+    T: <a class="trait" href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html" title="trait core::clone::Clone">Clone</a>,</div></h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.clone_to_uninit" class="method trait-impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/clone.rs.html#650">Source</a><a href="#method.clone_to_uninit" class="anchor">§</a><h4 class="code-header">unsafe fn <a href="https://doc.rust-lang.org/nightly/core/clone/trait.CloneToUninit.html#tymethod.clone_to_uninit" class="fn">clone_to_uninit</a>(&amp;self, dest: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.pointer.html">*mut </a><a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>)</h4></section></summary><span class="item-info"><div class="stab unstable"><span class="emoji">🔬</span><span>This is a nightly-only experimental API. (<code>clone_to_uninit</code>)</span></div></span><div class='docblock'>Performs copy-assignment from <code>self</code> to <code>dest</code>. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.CloneToUninit.html#tymethod.clone_to_uninit">Read more</a></div></details></div></details><details class="toggle implementors-toggle"><summary><section id="impl-From%3CT%3E-for-T" class="impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/convert/mod.rs.html#787">Source</a><a href="#impl-From%3CT%3E-for-T" class="anchor">§</a><h3 class="code-header">impl&lt;T&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html" title="trait core::convert::From">From</a>&lt;T&gt; for T</h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.from" class="method trait-impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/convert/mod.rs.html#790">Source</a><a href="#method.from" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html#tymethod.from" class="fn">from</a>(t: T) -&gt; T</h4></section></summary><div class="docblock"><p>Returns the argument unchanged.</p>
+</div></details></div></details><details class="toggle implementors-toggle"><summary><section id="impl-Into%3CU%3E-for-T" class="impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/convert/mod.rs.html#769-771">Source</a><a href="#impl-Into%3CU%3E-for-T" class="anchor">§</a><h3 class="code-header">impl&lt;T, U&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.Into.html" title="trait core::convert::Into">Into</a>&lt;U&gt; for T<div class="where">where
+    U: <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html" title="trait core::convert::From">From</a>&lt;T&gt;,</div></h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.into" class="method trait-impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/convert/mod.rs.html#779">Source</a><a href="#method.into" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/convert/trait.Into.html#tymethod.into" class="fn">into</a>(self) -&gt; U</h4></section></summary><div class="docblock"><p>Calls <code>U::from(self)</code>.</p>
+<p>That is, this conversion is whatever the implementation of
+<code><a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html" title="trait core::convert::From">From</a>&lt;T&gt; for U</code> chooses to do.</p>
+</div></details></div></details><details class="toggle implementors-toggle"><summary><section id="impl-ToOwned-for-T" class="impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/alloc/borrow.rs.html#72-74">Source</a><a href="#impl-ToOwned-for-T" class="anchor">§</a><h3 class="code-header">impl&lt;T&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/alloc/borrow/trait.ToOwned.html" title="trait alloc::borrow::ToOwned">ToOwned</a> for T<div class="where">where
+    T: <a class="trait" href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html" title="trait core::clone::Clone">Clone</a>,</div></h3></section></summary><div class="impl-items"><details class="toggle" open><summary><section id="associatedtype.Owned" class="associatedtype trait-impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/alloc/borrow.rs.html#76">Source</a><a href="#associatedtype.Owned" class="anchor">§</a><h4 class="code-header">type <a href="https://doc.rust-lang.org/nightly/alloc/borrow/trait.ToOwned.html#associatedtype.Owned" class="associatedtype">Owned</a> = T</h4></section></summary><div class='docblock'>The resulting type after obtaining ownership.</div></details><details class="toggle method-toggle" open><summary><section id="method.to_owned" class="method trait-impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/alloc/borrow.rs.html#77">Source</a><a href="#method.to_owned" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/alloc/borrow/trait.ToOwned.html#tymethod.to_owned" class="fn">to_owned</a>(&amp;self) -&gt; T</h4></section></summary><div class='docblock'>Creates owned data from borrowed data, usually by cloning. <a href="https://doc.rust-lang.org/nightly/alloc/borrow/trait.ToOwned.html#tymethod.to_owned">Read more</a></div></details><details class="toggle method-toggle" open><summary><section id="method.clone_into" class="method trait-impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/alloc/borrow.rs.html#81">Source</a><a href="#method.clone_into" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/alloc/borrow/trait.ToOwned.html#method.clone_into" class="fn">clone_into</a>(&amp;self, target: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;mut T</a>)</h4></section></summary><div class='docblock'>Uses borrowed data to replace owned data, usually by cloning. <a href="https://doc.rust-lang.org/nightly/alloc/borrow/trait.ToOwned.html#method.clone_into">Read more</a></div></details></div></details><details class="toggle implementors-toggle"><summary><section id="impl-TryFrom%3CU%3E-for-T" class="impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/convert/mod.rs.html#814-816">Source</a><a href="#impl-TryFrom%3CU%3E-for-T" class="anchor">§</a><h3 class="code-header">impl&lt;T, U&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.TryFrom.html" title="trait core::convert::TryFrom">TryFrom</a>&lt;U&gt; for T<div class="where">where
+    U: <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.Into.html" title="trait core::convert::Into">Into</a>&lt;T&gt;,</div></h3></section></summary><div class="impl-items"><details class="toggle" open><summary><section id="associatedtype.Error" class="associatedtype trait-impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/convert/mod.rs.html#818">Source</a><a href="#associatedtype.Error" class="anchor">§</a><h4 class="code-header">type <a href="https://doc.rust-lang.org/nightly/core/convert/trait.TryFrom.html#associatedtype.Error" class="associatedtype">Error</a> = <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.never.html">!</a></h4></section></summary><div class='docblock'>The type returned in the event of a conversion error.</div></details><details class="toggle method-toggle" open><summary><section id="method.try_from" class="method trait-impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/convert/mod.rs.html#821">Source</a><a href="#method.try_from" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/convert/trait.TryFrom.html#tymethod.try_from" class="fn">try_from</a>(value: U) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;T, <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.never.html">!</a>&gt;</h4></section></summary><div class='docblock'>Performs the conversion.</div></details></div></details><details class="toggle implementors-toggle"><summary><section id="impl-TryInto%3CU%3E-for-T" class="impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/convert/mod.rs.html#798-800">Source</a><a href="#impl-TryInto%3CU%3E-for-T" class="anchor">§</a><h3 class="code-header">impl&lt;T, U&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.TryInto.html" title="trait core::convert::TryInto">TryInto</a>&lt;U&gt; for T<div class="where">where
+    U: <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.TryFrom.html" title="trait core::convert::TryFrom">TryFrom</a>&lt;T&gt;,</div></h3></section></summary><div class="impl-items"><details class="toggle" open><summary><section id="associatedtype.Error-1" class="associatedtype trait-impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/convert/mod.rs.html#802">Source</a><a href="#associatedtype.Error-1" class="anchor">§</a><h4 class="code-header">type <a href="https://doc.rust-lang.org/nightly/core/convert/trait.TryInto.html#associatedtype.Error" class="associatedtype">Error</a> = &lt;U as <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.TryFrom.html" title="trait core::convert::TryFrom">TryFrom</a>&lt;T&gt;&gt;::<a class="associatedtype" href="https://doc.rust-lang.org/nightly/core/convert/trait.TryFrom.html#associatedtype.Error" title="type core::convert::TryFrom::Error">Error</a></h4></section></summary><div class='docblock'>The type returned in the event of a conversion error.</div></details><details class="toggle method-toggle" open><summary><section id="method.try_into" class="method trait-impl"><a class="src rightside" href="https://doc.rust-lang.org/nightly/src/core/convert/mod.rs.html#805">Source</a><a href="#method.try_into" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/convert/trait.TryInto.html#tymethod.try_into" class="fn">try_into</a>(self) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;U, &lt;U as <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.TryFrom.html" title="trait core::convert::TryFrom">TryFrom</a>&lt;T&gt;&gt;::<a class="associatedtype" href="https://doc.rust-lang.org/nightly/core/convert/trait.TryFrom.html#associatedtype.Error" title="type core::convert::TryFrom::Error">Error</a>&gt;</h4></section></summary><div class='docblock'>Performs the conversion.</div></details></div></details></div></section></div></main></body></html>

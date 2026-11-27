@@ -1,0 +1,121 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Build status Latest version Documentation"><title>downcast_rs - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-e56847b5.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="downcast_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.92.0-nightly (975e6c8fe 2025-09-23)" data-channel="nightly" data-search-js="search-e256b49e.js" data-stringdex-js="stringdex-061df703.js" data-settings-js="settings-c38705f0.js" ><script src="../static.files/storage-e2aeef58.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-ce535bd0.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Crate downcast_rs</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../downcast_rs/index.html">downcast_<wbr>rs</a><span class="version">2.0.2</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#usage" title="Usage">Usage</a></li><li><a href="#example-without-generics" title="Example without generics">Example without generics</a></li><li><a href="#example-with-a-generic-trait-with-associated-types-and-constraints" title="Example with a generic trait with associated types and constraints">Example with a generic trait with associated types and constraints</a></li></ul><h3><a href="#macros">Crate Items</a></h3><ul class="block"><li><a href="#macros" title="Macros">Macros</a></li><li><a href="#traits" title="Traits">Traits</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>downcast_<wbr>rs</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/downcast_rs/lib.rs.html#1-761">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p><a href="https://github.com/marcianx/downcast-rs/actions"><img src="https://img.shields.io/github/actions/workflow/status/marcianx/downcast-rs/main.yml?branch=master" alt="Build status" /></a>
+<a href="https://crates.io/crates/downcast-rs"><img src="https://img.shields.io/crates/v/downcast-rs.svg" alt="Latest version" /></a>
+<a href="https://docs.rs/downcast-rs"><img src="https://docs.rs/downcast-rs/badge.svg" alt="Documentation" /></a></p>
+<p>Rust enums are great for types where all variations are known beforehand. But a
+container of user-defined types requires an open-ended type like a <strong>trait
+object</strong>. Some applications may want to cast these trait objects back to the
+original concrete types to access additional functionality and performant
+inlined implementations.</p>
+<p><code>downcast-rs</code> adds this downcasting support to trait objects using only safe
+Rust. It supports <strong>type parameters</strong>, <strong>associated types</strong>, and <strong>constraints</strong>.</p>
+<h2 id="usage"><a class="doc-anchor" href="#usage">§</a>Usage</h2>
+<p>Add the following to your <code>Cargo.toml</code>:</p>
+<div class="example-wrap"><pre class="language-toml"><code>[dependencies]
+downcast-rs = &quot;2.0.1&quot;</code></pre></div>
+<p>This crate is <code>no_std</code> compatible. To use it without <code>std</code>:</p>
+<div class="example-wrap"><pre class="language-toml"><code>[dependencies]
+downcast-rs = { version = &quot;2.0.1&quot;, default-features = false }</code></pre></div>
+<p>To make a trait downcastable, make it extend either <code>Downcast</code> or <code>DowncastSync</code>
+and invoke <code>impl_downcast!</code> on it as in the examples below.</p>
+<p>Since 2.0.0, the minimum supported Rust version is 1.56.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">trait </span>Trait: Downcast {}
+<span class="macro">impl_downcast!</span>(Trait);
+
+<span class="comment">// Also supports downcasting `Arc`-ed trait objects by extending `DowncastSync`
+// and starting `impl_downcast!` with `sync`.
+</span><span class="kw">trait </span>TraitSync: DowncastSync {}
+<span class="macro">impl_downcast!</span>(sync TraitSync);
+
+<span class="comment">// With type parameters.
+</span><span class="kw">trait </span>TraitGeneric1&lt;T&gt;: Downcast {}
+<span class="macro">impl_downcast!</span>(TraitGeneric1&lt;T&gt;);
+
+<span class="comment">// With associated types.
+</span><span class="kw">trait </span>TraitGeneric2: Downcast { <span class="kw">type </span>G; <span class="kw">type </span>H; }
+<span class="macro">impl_downcast!</span>(TraitGeneric2 assoc G, H);
+
+<span class="comment">// With constraints on types.
+</span><span class="kw">trait </span>TraitGeneric3&lt;T: Copy&gt;: Downcast {
+    <span class="kw">type </span>H: Clone;
+}
+<span class="macro">impl_downcast!</span>(TraitGeneric3&lt;T&gt; assoc H <span class="kw">where </span>T: Copy, H: Clone);
+
+<span class="comment">// With concrete types.
+</span><span class="kw">trait </span>TraitConcrete1&lt;T: Copy&gt;: Downcast {}
+<span class="macro">impl_downcast!</span>(concrete TraitConcrete1&lt;u32&gt;);
+
+<span class="kw">trait </span>TraitConcrete2&lt;T: Copy&gt;: Downcast { <span class="kw">type </span>H; }
+<span class="macro">impl_downcast!</span>(concrete TraitConcrete2&lt;u32&gt; assoc H=f64);</code></pre></div><h2 id="example-without-generics"><a class="doc-anchor" href="#example-without-generics">§</a>Example without generics</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>downcast_rs::DowncastSync;
+
+<span class="comment">// To create a trait with downcasting methods, extend `Downcast` or `DowncastSync`
+// and run `impl_downcast!()` on the trait.
+</span><span class="kw">trait </span>Base: DowncastSync {}
+<span class="macro">impl_downcast!</span>(sync Base);  <span class="comment">// `sync` =&gt; also produce `Arc` downcasts.
+
+// Concrete types implementing Base.
+</span><span class="attr">#[derive(Debug)]
+</span><span class="kw">struct </span>Foo(u32);
+<span class="kw">impl </span>Base <span class="kw">for </span>Foo {}
+<span class="attr">#[derive(Debug)]
+</span><span class="kw">struct </span>Bar(f64);
+<span class="kw">impl </span>Base <span class="kw">for </span>Bar {}
+
+<span class="kw">fn </span>main() {
+    <span class="comment">// Create a trait object.
+    </span><span class="kw">let </span><span class="kw-2">mut </span>base: Box&lt;<span class="kw">dyn </span>Base&gt; = Box::new(Foo(<span class="number">42</span>));
+
+    <span class="comment">// Try sequential downcasts.
+    </span><span class="kw">if let </span><span class="prelude-val">Some</span>(foo) = base.downcast_ref::&lt;Foo&gt;() {
+        <span class="macro">assert_eq!</span>(foo.<span class="number">0</span>, <span class="number">42</span>);
+    } <span class="kw">else if let </span><span class="prelude-val">Some</span>(bar) = base.downcast_ref::&lt;Bar&gt;() {
+        <span class="macro">assert_eq!</span>(bar.<span class="number">0</span>, <span class="number">42.0</span>);
+    }
+
+    <span class="macro">assert!</span>(base.is::&lt;Foo&gt;());
+
+    <span class="comment">// Fail to convert `Box&lt;dyn Base&gt;` into `Box&lt;Bar&gt;`.
+    </span><span class="kw">let </span>res = base.downcast::&lt;Bar&gt;();
+    <span class="macro">assert!</span>(res.is_err());
+    <span class="kw">let </span>base = res.unwrap_err();
+    <span class="comment">// Convert `Box&lt;dyn Base&gt;` into `Box&lt;Foo&gt;`.
+    </span><span class="macro">assert_eq!</span>(<span class="number">42</span>, base.downcast::&lt;Foo&gt;().map_err(|<span class="kw">_</span>| <span class="string">"Shouldn't happen."</span>).unwrap().<span class="number">0</span>);
+
+    <span class="comment">// Also works with `Rc`.
+    </span><span class="kw">let </span><span class="kw-2">mut </span>rc: Rc&lt;<span class="kw">dyn </span>Base&gt; = Rc::new(Foo(<span class="number">42</span>));
+    <span class="macro">assert_eq!</span>(<span class="number">42</span>, rc.downcast_rc::&lt;Foo&gt;().map_err(|<span class="kw">_</span>| <span class="string">"Shouldn't happen."</span>).unwrap().<span class="number">0</span>);
+
+    <span class="comment">// Since this trait is `Sync`, it also supports `Arc` downcasts.
+    </span><span class="kw">let </span><span class="kw-2">mut </span>arc: Arc&lt;<span class="kw">dyn </span>Base&gt; = Arc::new(Foo(<span class="number">42</span>));
+    <span class="macro">assert_eq!</span>(<span class="number">42</span>, arc.downcast_arc::&lt;Foo&gt;().map_err(|<span class="kw">_</span>| <span class="string">"Shouldn't happen."</span>).unwrap().<span class="number">0</span>);
+}</code></pre></div><h2 id="example-with-a-generic-trait-with-associated-types-and-constraints"><a class="doc-anchor" href="#example-with-a-generic-trait-with-associated-types-and-constraints">§</a>Example with a generic trait with associated types and constraints</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>downcast_rs::{Downcast, impl_downcast};
+
+<span class="comment">// To create a trait with downcasting methods, extend `Downcast` or `DowncastSync`
+// and run `impl_downcast!()` on the trait.
+</span><span class="kw">trait </span>Base&lt;T: Clone&gt;: Downcast { <span class="kw">type </span>H: Copy; }
+<span class="macro">impl_downcast!</span>(Base&lt;T&gt; assoc H <span class="kw">where </span>T: Clone, H: Copy);
+<span class="comment">// or: impl_downcast!(concrete Base&lt;u32&gt; assoc H=f32)
+
+// Concrete types implementing Base.
+</span><span class="kw">struct </span>Foo(u32);
+<span class="kw">impl </span>Base&lt;u32&gt; <span class="kw">for </span>Foo { <span class="kw">type </span>H = f32; }
+<span class="kw">struct </span>Bar(f64);
+<span class="kw">impl </span>Base&lt;u32&gt; <span class="kw">for </span>Bar { <span class="kw">type </span>H = f32; }
+
+<span class="kw">fn </span>main() {
+    <span class="comment">// Create a trait object.
+    </span><span class="kw">let </span><span class="kw-2">mut </span>base: Box&lt;<span class="kw">dyn </span>Base&lt;u32, H=f32&gt;&gt; = Box::new(Bar(<span class="number">42.0</span>));
+
+    <span class="comment">// Try sequential downcasts.
+    </span><span class="kw">if let </span><span class="prelude-val">Some</span>(foo) = base.downcast_ref::&lt;Foo&gt;() {
+        <span class="macro">assert_eq!</span>(foo.<span class="number">0</span>, <span class="number">42</span>);
+    } <span class="kw">else if let </span><span class="prelude-val">Some</span>(bar) = base.downcast_ref::&lt;Bar&gt;() {
+        <span class="macro">assert_eq!</span>(bar.<span class="number">0</span>, <span class="number">42.0</span>);
+    }
+
+    <span class="macro">assert!</span>(base.is::&lt;Bar&gt;());
+}</code></pre></div></div></details><h2 id="macros" class="section-header">Macros<a href="#macros" class="anchor">§</a></h2><dl class="item-table"><dt><a class="macro" href="macro.impl_downcast.html" title="macro downcast_rs::impl_downcast">impl_<wbr>downcast</a></dt><dd>Adds downcasting support to traits that extend <code>Downcast</code> by defining forwarding
+methods to the corresponding implementations on <code>std::any::Any</code> in the standard library.</dd></dl><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><dl class="item-table"><dt><a class="trait" href="trait.Downcast.html" title="trait downcast_rs::Downcast">Downcast</a></dt><dd>Supports conversion to <code>Any</code>. Traits to be extended by <code>impl_downcast!</code> must extend <code>Downcast</code>.</dd><dt><a class="trait" href="trait.DowncastSend.html" title="trait downcast_rs::DowncastSend">Downcast<wbr>Send</a></dt><dd>Extends <code>Downcast</code> for <code>Send</code> traits to support upcasting to <code>Box&lt;dyn Any + Send&gt;</code> as well.</dd><dt><a class="trait" href="trait.DowncastSync.html" title="trait downcast_rs::DowncastSync">Downcast<wbr>Sync</a></dt><dd>Extends <code>DowncastSend</code> for <code>Sync</code> traits to support upcasting to <code>Box&lt;dyn Any + Send + Sync&gt;</code>
+and <code>Arc</code> downcasting.</dd></dl></section></div></main></body></html>

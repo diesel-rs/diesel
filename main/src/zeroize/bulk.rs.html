@@ -1,0 +1,119 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zeroize-1.9.2/src/bulk.rs`."><title>bulk.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-1e18a8e7.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="zeroize" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (6c709eb42 2026-11-25)" data-channel="nightly" data-search-js="search-085293d4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../static.files/storage-41dd4d93.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-101b5a15.css"></noscript><link rel="icon" href="https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">zeroize/</div>bulk.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! Bulk operations over slices and pointers.
+<a href=#2 id=2 data-nosnippet>2</a>
+<a href=#3 id=3 data-nosnippet>3</a></span><span class="kw">use crate</span>::{<a href="barrier.rs.html#52-89">optimization_barrier</a>, <a href="lib.rs.html#799-801">volatile_write</a>};
+<a href=#4 id=4 data-nosnippet>4</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/core/slice/index.html">core::slice</a>;
+<a href=#5 id=5 data-nosnippet>5</a>
+<a href=#6 id=6 data-nosnippet>6</a><span class="doccomment">/// Whether this target supports an assembly optimization barrier.
+<a href=#7 id=7 data-nosnippet>7</a></span><span class="expansion"><input id=expand-7 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="kw">const </span>HAS_ASM: <a href="https://doc.rust-lang.org/nightly/core/primitive.bool.html">bool</a> = <span class=expanded><span class="bool-val">true</span></span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.cfg.html">cfg!</a>(any(
+<a href=#8 id=8 data-nosnippet>8</a>    target_arch = <span class="string">"aarch64"</span>,
+<a href=#9 id=9 data-nosnippet>9</a>    target_arch = <span class="string">"arm"</span>,
+<a href=#10 id=10 data-nosnippet>10</a>    target_arch = <span class="string">"arm64ec"</span>,
+<a href=#11 id=11 data-nosnippet>11</a>    target_arch = <span class="string">"loongarch64"</span>,
+<a href=#12 id=12 data-nosnippet>12</a>    target_arch = <span class="string">"riscv32"</span>,
+<a href=#13 id=13 data-nosnippet>13</a>    target_arch = <span class="string">"riscv64"</span>,
+<a href=#14 id=14 data-nosnippet>14</a>    target_arch = <span class="string">"s390x"</span>,
+<a href=#15 id=15 data-nosnippet>15</a>    target_arch = <span class="string">"x86"</span>,
+<a href=#16 id=16 data-nosnippet>16</a>    target_arch = <span class="string">"x86_64"</span>,
+<a href=#17 id=17 data-nosnippet>17</a>))</span></span>;
+<a href=#18 id=18 data-nosnippet>18</a>
+<a href=#19 id=19 data-nosnippet>19</a><span class="doccomment">/// Fill a slice using an assembly optimization barrier or portable volatile writes.
+<a href=#20 id=20 data-nosnippet>20</a></span><span class="attr">#[inline]
+<a href=#21 id=21 data-nosnippet>21</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>fill_slice&lt;T: <a href="https://doc.rust-lang.org/nightly/core/marker/trait.Copy.html">Copy</a>&gt;(dst: <span class="kw-2">&amp;mut </span>[T], src: T) {
+<a href=#22 id=22 data-nosnippet>22</a>    <span class="kw">if </span><a href="https://doc.rust-lang.org/nightly/core/mem/fn.size_of.html">size_of</a>::&lt;T&gt;() == <span class="number">0 </span>{
+<a href=#23 id=23 data-nosnippet>23</a>        <span class="kw">return</span>;
+<a href=#24 id=24 data-nosnippet>24</a>    }
+<a href=#25 id=25 data-nosnippet>25</a>
+<a href=#26 id=26 data-nosnippet>26</a>    <span class="kw">if </span><a href="#7-17">HAS_ASM</a> {
+<a href=#27 id=27 data-nosnippet>27</a>        <a href="#21">dst</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.fill">fill</a>(<a href="#21">src</a>);
+<a href=#28 id=28 data-nosnippet>28</a>        <a href="barrier.rs.html#52-89">optimization_barrier</a>(<a href="#21">dst</a>);
+<a href=#29 id=29 data-nosnippet>29</a>    } <span class="kw">else </span>{
+<a href=#30 id=30 data-nosnippet>30</a>        <a href="#64-74">volatile_fill_slice</a>(<a href="#21">dst</a>, <a href="#21">src</a>);
+<a href=#31 id=31 data-nosnippet>31</a>    }
+<a href=#32 id=32 data-nosnippet>32</a>}
+<a href=#33 id=33 data-nosnippet>33</a>
+<a href=#34 id=34 data-nosnippet>34</a><span class="doccomment">/// Zero bytes which may be uninitialized, including padding.
+<a href=#35 id=35 data-nosnippet>35</a>///
+<a href=#36 id=36 data-nosnippet>36</a>/// # Safety
+<a href=#37 id=37 data-nosnippet>37</a>/// `dst` must be non-NULL and provide exclusive access to `len` writable bytes within a single
+<a href=#38 id=38 data-nosnippet>38</a>/// allocation.
+<a href=#39 id=39 data-nosnippet>39</a>///
+<a href=#40 id=40 data-nosnippet>40</a>/// The size must not exceed `isize::MAX` and the address range must not wrap. If zeroes are not a
+<a href=#41 id=41 data-nosnippet>41</a>/// valid bit pattern for the underlying type, the caller must restore a valid value before any
+<a href=#42 id=42 data-nosnippet>42</a>/// typed access or drop.
+<a href=#43 id=43 data-nosnippet>43</a></span><span class="attr">#[inline]
+<a href=#44 id=44 data-nosnippet>44</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">unsafe fn </span>zeroize_byte_ptr(dst: <span class="kw-2">*mut </span><a href="https://doc.rust-lang.org/nightly/core/primitive.u8.html">u8</a>, len: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>) {
+<a href=#45 id=45 data-nosnippet>45</a>    <span class="kw">if </span><a href="#7-17">HAS_ASM</a> {
+<a href=#46 id=46 data-nosnippet>46</a>        <span class="comment">// SAFETY: the caller supplies exclusive access to `len` writable bytes.
+<a href=#47 id=47 data-nosnippet>47</a>        // `write_bytes` initializes every byte before constructing the slice.
+<a href=#48 id=48 data-nosnippet>48</a>        </span><span class="kw">unsafe </span>{
+<a href=#49 id=49 data-nosnippet>49</a>            core::ptr::<a href="https://doc.rust-lang.org/nightly/core/ptr/fn.write_bytes.html">write_bytes</a>(<a href="#44">dst</a>, <span class="number">0</span>, <a href="#44">len</a>);
+<a href=#50 id=50 data-nosnippet>50</a>            <a href="barrier.rs.html#52-89">optimization_barrier</a>(slice::<a href="https://doc.rust-lang.org/nightly/core/slice/raw/fn.from_raw_parts.html">from_raw_parts</a>(<a href="#44">dst</a>, <a href="#44">len</a>));
+<a href=#51 id=51 data-nosnippet>51</a>        }
+<a href=#52 id=52 data-nosnippet>52</a>    } <span class="kw">else </span>{
+<a href=#53 id=53 data-nosnippet>53</a>        <span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/core/mem/maybe_uninit/union.MaybeUninit.html">core::mem::MaybeUninit</a>;
+<a href=#54 id=54 data-nosnippet>54</a>
+<a href=#55 id=55 data-nosnippet>55</a>        <span class="comment">// SAFETY: the caller supplies exclusive access to this range. `MaybeUninit&lt;u8&gt;` permits
+<a href=#56 id=56 data-nosnippet>56</a>        // uninitialized bytes and has byte alignment.
+<a href=#57 id=57 data-nosnippet>57</a>        </span><span class="kw">let </span>bytes = <span class="kw">unsafe </span>{ slice::<a href="https://doc.rust-lang.org/nightly/core/slice/raw/fn.from_raw_parts_mut.html">from_raw_parts_mut</a>(<a href="#44">dst</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.pointer.html#method.cast">cast</a>::&lt;<a href="https://doc.rust-lang.org/nightly/core/mem/maybe_uninit/union.MaybeUninit.html">MaybeUninit</a>&lt;<a href="https://doc.rust-lang.org/nightly/core/primitive.u8.html">u8</a>&gt;&gt;(), <a href="#44">len</a>) };
+<a href=#58 id=58 data-nosnippet>58</a>        <a href="#64-74">volatile_fill_slice</a>(<a href="#57">bytes</a>, <a href="https://doc.rust-lang.org/nightly/core/mem/maybe_uninit/union.MaybeUninit.html">MaybeUninit</a>::<a href="https://doc.rust-lang.org/nightly/core/mem/maybe_uninit/union.MaybeUninit.html#method.new">new</a>(<span class="number">0</span>));
+<a href=#59 id=59 data-nosnippet>59</a>    }
+<a href=#60 id=60 data-nosnippet>60</a>}
+<a href=#61 id=61 data-nosnippet>61</a>
+<a href=#62 id=62 data-nosnippet>62</a><span class="doccomment">/// Fill a slice with a repeated value, preserving its type and alignment.
+<a href=#63 id=63 data-nosnippet>63</a></span><span class="attr">#[inline(always)]
+<a href=#64 id=64 data-nosnippet>64</a></span><span class="kw">fn </span>volatile_fill_slice&lt;T: <a href="https://doc.rust-lang.org/nightly/core/marker/trait.Copy.html">Copy</a>&gt;(dst: <span class="kw-2">&amp;mut </span>[T], src: T) {
+<a href=#65 id=65 data-nosnippet>65</a>    <span class="comment">// Target 16-byte chunks
+<a href=#66 id=66 data-nosnippet>66</a>    </span><span class="kw">match </span><a href="https://doc.rust-lang.org/nightly/core/mem/fn.size_of.html">size_of</a>::&lt;T&gt;() {
+<a href=#67 id=67 data-nosnippet>67</a>        <span class="number">0 </span>=&gt; {}
+<a href=#68 id=68 data-nosnippet>68</a>        <span class="number">1 </span>=&gt; <a href="#78-86">volatile_fill_chunked</a>::&lt;<span class="kw">_</span>, <span class="number">16</span>&gt;(<a href="#64">dst</a>, <a href="#64">src</a>),
+<a href=#69 id=69 data-nosnippet>69</a>        <span class="number">2 </span>=&gt; <a href="#78-86">volatile_fill_chunked</a>::&lt;<span class="kw">_</span>, <span class="number">8</span>&gt;(<a href="#64">dst</a>, <a href="#64">src</a>),
+<a href=#70 id=70 data-nosnippet>70</a>        <span class="number">4 </span>=&gt; <a href="#78-86">volatile_fill_chunked</a>::&lt;<span class="kw">_</span>, <span class="number">4</span>&gt;(<a href="#64">dst</a>, <a href="#64">src</a>),
+<a href=#71 id=71 data-nosnippet>71</a>        <span class="number">8 </span>=&gt; <a href="#78-86">volatile_fill_chunked</a>::&lt;<span class="kw">_</span>, <span class="number">2</span>&gt;(<a href="#64">dst</a>, <a href="#64">src</a>),
+<a href=#72 id=72 data-nosnippet>72</a>        <span class="kw">_ </span>=&gt; <a href="#90-94">volatile_fill_iterative</a>(<a href="#64">dst</a>, <a href="#64">src</a>),
+<a href=#73 id=73 data-nosnippet>73</a>    }
+<a href=#74 id=74 data-nosnippet>74</a>}
+<a href=#75 id=75 data-nosnippet>75</a>
+<a href=#76 id=76 data-nosnippet>76</a><span class="doccomment">/// Prepare the repeated pattern and handle the tail independently of the bulk backend.
+<a href=#77 id=77 data-nosnippet>77</a></span><span class="attr">#[inline(always)]
+<a href=#78 id=78 data-nosnippet>78</a></span><span class="kw">fn </span>volatile_fill_chunked&lt;T: <a href="https://doc.rust-lang.org/nightly/core/marker/trait.Copy.html">Copy</a>, <span class="kw">const </span>N: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt;(dst: <span class="kw-2">&amp;mut </span>[T], src: T) {
+<a href=#79 id=79 data-nosnippet>79</a>    <span class="kw">let </span>(chunks, tail) = <a href="#102-114">as_chunks_mut</a>::&lt;T, <a href="#78">N</a>&gt;(<a href="#78">dst</a>);
+<a href=#80 id=80 data-nosnippet>80</a>
+<a href=#81 id=81 data-nosnippet>81</a>    <span class="kw">if </span>!<a href="#79">chunks</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.is_empty">is_empty</a>() {
+<a href=#82 id=82 data-nosnippet>82</a>        <a href="#90-94">volatile_fill_iterative</a>(<a href="#79">chunks</a>, [<a href="#78">src</a>; <a href="#78">N</a>]);
+<a href=#83 id=83 data-nosnippet>83</a>    }
+<a href=#84 id=84 data-nosnippet>84</a>
+<a href=#85 id=85 data-nosnippet>85</a>    <a href="#90-94">volatile_fill_iterative</a>(<a href="#79">tail</a>, <a href="#78">src</a>);
+<a href=#86 id=86 data-nosnippet>86</a>}
+<a href=#87 id=87 data-nosnippet>87</a>
+<a href=#88 id=88 data-nosnippet>88</a><span class="doccomment">/// Write individual elements or complete chunks with the same volatile primitive.
+<a href=#89 id=89 data-nosnippet>89</a></span><span class="attr">#[inline(always)]
+<a href=#90 id=90 data-nosnippet>90</a></span><span class="kw">fn </span>volatile_fill_iterative&lt;T: <a href="https://doc.rust-lang.org/nightly/core/marker/trait.Copy.html">Copy</a>&gt;(dst: <span class="kw-2">&amp;mut </span>[T], src: T) {
+<a href=#91 id=91 data-nosnippet>91</a>    <span class="kw">for </span>item <span class="kw">in </span>dst {
+<a href=#92 id=92 data-nosnippet>92</a>        volatile_write(item, src);
+<a href=#93 id=93 data-nosnippet>93</a>    }
+<a href=#94 id=94 data-nosnippet>94</a>}
+<a href=#95 id=95 data-nosnippet>95</a>
+<a href=#96 id=96 data-nosnippet>96</a><span class="doccomment">/// MSRV-compatible copy of core's `slice::as_chunks_mut` taken from Rust 1.88.0.
+<a href=#97 id=97 data-nosnippet>97</a>/// Source: &lt;https://github.com/rust-lang/rust/blob/1.88.0/library/core/src/slice/mod.rs&gt;
+<a href=#98 id=98 data-nosnippet>98</a></span><span class="comment">// TODO(tarcieri): use `slice::as_chunks_mut` when MSRV is 1.88 or newer.
+<a href=#99 id=99 data-nosnippet>99</a></span><span class="attr">#[inline]
+<a href=#100 id=100 data-nosnippet>100</a>#[track_caller]
+<a href=#101 id=101 data-nosnippet>101</a>#[must_use]
+<a href=#102 id=102 data-nosnippet>102</a></span><span class="kw">const fn </span>as_chunks_mut&lt;T, <span class="kw">const </span>N: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt;(slice: <span class="kw-2">&amp;mut </span>[T]) -&gt; (<span class="kw-2">&amp;mut </span>[[T; <a href="#102">N</a>]], <span class="kw-2">&amp;mut </span>[T]) {
+<a href=#103 id=103 data-nosnippet>103</a><span class="expansion"><input id=expand-103 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">    <span class=expanded><span class="kw">if </span>!(N != <span class="number">0</span>) {
+    {
+        ::core::panicking::panic_fmt(<span class="macro">format_args!</span>(<span class="string">"chunk size must be non-zero"</span>));
+    }
+};</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.assert.html">assert!</a>(N != <span class="number">0</span>, <span class="string">"chunk size must be non-zero"</span>)</span></span>;
+<a href=#104 id=104 data-nosnippet>104</a>    <span class="kw">let </span>len_rounded_down = <a href="#102">slice</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.len">len</a>() / <a href="#102">N</a> * <a href="#102">N</a>;
+<a href=#105 id=105 data-nosnippet>105</a>    <span class="comment">// SAFETY: The rounded-down value is always the same or smaller than the
+<a href=#106 id=106 data-nosnippet>106</a>    // original length, and thus must be in-bounds of the slice.
+<a href=#107 id=107 data-nosnippet>107</a>    </span><span class="kw">let </span>(multiple_of_n, remainder) = <span class="kw">unsafe </span>{ <a href="#102">slice</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.split_at_mut_unchecked">split_at_mut_unchecked</a>(<a href="#104">len_rounded_down</a>) };
+<a href=#108 id=108 data-nosnippet>108</a>    <span class="comment">// SAFETY: We already panicked for zero, and ensured by construction
+<a href=#109 id=109 data-nosnippet>109</a>    // that the length of the subslice is a multiple of N. Arrays have the same alignment as T.
+<a href=#110 id=110 data-nosnippet>110</a>    </span><span class="kw">let </span>array_slice = <span class="kw">unsafe </span>{
+<a href=#111 id=111 data-nosnippet>111</a>        slice::<a href="https://doc.rust-lang.org/nightly/core/slice/raw/fn.from_raw_parts_mut.html">from_raw_parts_mut</a>(<a href="#107">multiple_of_n</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.as_mut_ptr">as_mut_ptr</a>().<a href="https://doc.rust-lang.org/nightly/core/primitive.pointer.html#method.cast">cast</a>(), <a href="#107">multiple_of_n</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.len">len</a>() / <a href="#102">N</a>)
+<a href=#112 id=112 data-nosnippet>112</a>    };
+<a href=#113 id=113 data-nosnippet>113</a>    (<a href="#110">array_slice</a>, <a href="#107">remainder</a>)
+<a href=#114 id=114 data-nosnippet>114</a>}
+</code></pre></div></section></main></body></html>

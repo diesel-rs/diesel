@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["AmbiguousOffset","Dst"],"fn":["offset"],"mod":["posix","tzif"],"struct":["AmbiguousError","AmbiguousTimestamp","Offset","OffsetInfo","Transition"],"type":["Abbreviation","TimeZoneId"]};

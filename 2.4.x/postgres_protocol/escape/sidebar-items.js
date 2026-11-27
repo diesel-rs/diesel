@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["escape_identifier","escape_literal"]};
