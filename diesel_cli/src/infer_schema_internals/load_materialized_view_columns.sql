@@ -2,8 +2,10 @@
 SELECT a.attname AS column_name,
     COALESCE(bt.typname, t.typname) AS type_name,
     COALESCE(nbt.nspname, nt.nspname) AS type_schema,
+    COALESCE(bt.oid, t.oid) AS type_oid,
     CASE WHEN t.typtype = 'd' THEN t.typname END AS domain_name,
     CASE WHEN t.typtype = 'd' THEN nt.nspname END AS domain_schema,
+    CASE WHEN t.typtype = 'd' THEN t.oid END AS domain_oid,
     CASE WHEN a.attnotnull OR (t.typtype = 'd' AND t.typnotnull) THEN 'NO' ELSE 'YES' END AS nullable,
     NULL::int4 AS max_length,
     col_description(a.attrelid, a.attnum) AS comment
