@@ -2,8 +2,8 @@
 use super::bind_collector::{SqliteBindCollector, SqliteBindValueRef};
 use super::raw::RawConnection;
 use super::sqlite_value::OwnedSqliteValue;
-use crate::connection::Instrumentation;
 use crate::connection::statement_cache::{MaybeCached, PrepareForCache, PreparedStatement};
+use crate::connection::{AnsiTransactionManager, Instrumentation};
 use crate::query_builder::{QueryFragment, QueryId};
 use crate::result::Error::DatabaseError;
 use crate::result::*;
@@ -496,6 +496,7 @@ pub struct StatementUse<'stmt, 'query> {
     // as this is essentially a self referential struct
     // as we borrow into `statement`
     column_names: OnceCell<Vec<*const str>>,
+    transaction_manager: &'stmt mut AnsiTransactionManager,
 }
 
 impl<'stmt, 'query> StatementUse<'stmt, 'query> {
@@ -503,6 +504,7 @@ impl<'stmt, 'query> StatementUse<'stmt, 'query> {
         statement: MaybeCached<'stmt, Statement>,
         query: T,
         instrumentation: &'stmt mut dyn Instrumentation,
+        transaction_manager: &'stmt mut AnsiTransactionManager,
     ) -> QueryResult<StatementUse<'stmt, 'query>>
     where
         T: QueryFragment<Sqlite> + QueryId + 'query,
@@ -510,6 +512,7 @@ impl<'stmt, 'query> StatementUse<'stmt, 'query> {
         Ok(Self {
             statement: BoundStatement::bind(statement, query, instrumentation)?,
             column_names: OnceCell::new(),
+            transaction_manager,
         })
     }
 
@@ -538,7 +541,18 @@ impl<'stmt, 'query> StatementUse<'stmt, 'query> {
         let res = match step_result {
             ffi::SQLITE_DONE => Ok(false),
             ffi::SQLITE_ROW => Ok(true),
-            _ => Err(last_error(self.statement.statement.raw_connection())),
+            _ => {
+                let raw_connection = self.statement.statement.raw_connection();
+                let error = last_error(raw_connection);
+                // SQLite ends the transaction on some failures, e.g. `ON CONFLICT ROLLBACK`.
+                // SAFETY: the statement keeps its connection open, so `raw_connection` is valid.
+                if unsafe { ffi::sqlite3_get_autocommit(raw_connection) } != 0 {
+                    self.transaction_manager
+                        .status
+                        .set_rolled_back_by_database();
+                }
+                Err(error)
+            }
         };
         if first_step {
             self.column_names = OnceCell::new();
