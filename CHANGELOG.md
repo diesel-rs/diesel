@@ -29,6 +29,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * `AsyncPgConnection` now maps the PostgreSQL connection exception codes that `PgConnection` reports as `DatabaseErrorKind::ClosedConnection` to the same kind
 * `SqliteConnection` now detects when SQLite rolls back the open transaction on its own (for example via `ON CONFLICT ROLLBACK`, `RAISE(ROLLBACK, ...)` or an I/O error) on every statement path. The transaction then stays open in Diesel and refuses every statement and commit with the new `Error::TransactionRolledBackByDatabase` until it is rolled back, so `Connection::transaction` returns the original error and nothing the closure runs afterwards is committed
 * `diesel print-schema` no longer treats a user-defined PostgreSQL type as a type provided by Diesel if it has the same name as one, like an enum named `range`, `money` or `interval`, or a domain named `longtext` that is selected by `pg_domains_as_custom_types`. Such types now get a definition in the `sql_types` module like any other custom type
+* Correctly validate the connection in the `mobc` connection handler in diesel-async
 
 
 ## [2.4.0] 2026-11-13

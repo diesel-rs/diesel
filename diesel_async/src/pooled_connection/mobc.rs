@@ -99,6 +99,6 @@ where
     }
 
     fn validate(&self, conn: &mut Self::Connection) -> bool {
-        std::thread::panicking() || conn.is_broken()
+        !std::thread::panicking() && !conn.is_broken()
     }
 }
