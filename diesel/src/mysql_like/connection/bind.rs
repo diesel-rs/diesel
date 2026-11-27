@@ -109,6 +109,8 @@ impl OutputBinds {
             }
             Ok(())
         }
+        // mark binds as invalid in case of an unexpected panic corrupting the bind state
+        self.binds_are_invalid = true;
         // we need to be carefully here to always set `self.binds_are_invalid` even
         // if we return an error
         let res = fetch_binds(&mut self.binds, stmt);
@@ -579,28 +581,31 @@ impl BindData {
     /// This invalidates the bind previously returned by `mysql_bind`. Calling
     /// this function is unsafe unless the binds are immediately rebound.
     unsafe fn bind_for_truncated_data(&mut self) -> Option<(ffi::MYSQL_BIND, usize)> {
-        if self.is_truncated() {
+        let length = usize::try_from(self.length).expect("Usize is at least 32 bit");
+        // we need to check here if it's really a truncation or the underlying library "lied" to us
+        // it turns out that libmariadb sometimes incorrectly reports truncations even if the data
+        // would fit. In that case we just reuse the existing buffer
+        if self.is_truncated() && self.capacity < length {
+            let offset = self.capacity;
+            let truncated_amount = length
+                .checked_sub(offset)
+                .expect("offset is always smaller than the actual length");
+
             if let Some(bytes) = self.bytes.take() {
+                // make sure to not panic in between
+                // constructing the buffer and binding it
                 let mut bytes =
                     unsafe { Vec::from_raw_parts(bytes.as_ptr(), self.capacity, self.capacity) };
-
-                let offset = self.capacity;
-                let length = usize::try_from(self.length).expect("Usize is at least 32 bit");
-                let truncated_amount = length
-                    .checked_sub(offset)
-                    .expect("offset is always smaller than the actual length");
-
-                debug_assert!(
-                    truncated_amount > 0,
-                    "output buffers were invalidated \
-                     without calling `mysql_stmt_bind_result`"
-                );
 
                 // reserve space for any missing byte
                 // we know the exact size here
                 // We use resize instead reserve to initialize the whole memory
                 // to prevent exposing memory if libmariadb/libmysqlclient (again)
                 // returns a wrong size here
+                // we call `reserve_exact` first to get exactly that size
+                // as otherwise `resize` might allocate more bytes than requested
+                // but it will only set the requested amount to the provided value
+                bytes.reserve_exact(length);
                 bytes.resize(length, 0);
                 let (ptr, _length, capacity) = bind_buffer(bytes);
                 self.capacity = capacity;
