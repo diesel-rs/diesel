@@ -705,6 +705,12 @@ include!(env!("SCHEMA")); mod y
     )
 }
 
+#[cfg(not(feature = "sqlite"))]
+#[test]
+fn print_schema_json() {
+    test_print_schema("print_schema_json", vec![]);
+}
+
 #[cfg(feature = "sqlite")]
 const BACKEND: &str = "sqlite";
 #[cfg(feature = "postgres")]
