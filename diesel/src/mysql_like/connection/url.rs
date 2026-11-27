@@ -97,7 +97,6 @@ impl ConnectionOptions {
             Some(v) => Some(CString::new(v.as_bytes())?),
             _ => None,
         };
-
         let ssl_mode = match query_pairs.get("ssl_mode") {
             Some(v) => {
                 let ssl_mode = match v.to_lowercase().as_str() {
@@ -146,7 +145,6 @@ impl ConnectionOptions {
 
         // this is not present in the database_url, using a default value
         let client_flags = CapabilityFlags::CLIENT_FOUND_ROWS;
-
         Ok(ConnectionOptions {
             host,
             user,
@@ -220,8 +218,14 @@ fn decode_into_cstring(s: &str) -> ConnectionResult<CString> {
 }
 
 fn connection_url_error() -> ConnectionError {
-    let msg = "MySQL connection URLs must be in the form \
-               `mysql://[[user]:[password]@]host[:port][/database][?unix_socket=socket-path]`";
+    let msg = cfg_select! {
+        feature = "mariadb" =>
+        "MariaDB connection URLs must be in the form \
+                   `mariadb://[[user]:[password]@]host[:port][/database][?unix_socket=socket-path]`",
+        _ =>
+        "MySQL connection URLs must be in the form \
+                   `mysql://[[user]:[password]@]host[:port][/database][?unix_socket=socket-path]`"
+    };
     ConnectionError::InvalidConnectionUrl(msg.into())
 }
 
@@ -448,7 +452,32 @@ mod tests {
         assert_eq!(None, conn_opts2.port);
         assert_eq!(CString::new(ssl_key).unwrap(), conn_opts2.ssl_key.unwrap());
     }
-
+    #[diesel_test_helper::test]
+    #[cfg(feature = "mariadb")]
+    fn ssl_mode_mariadb() {
+        let ssl_mode = |url| ConnectionOptions::parse::<DB>(url).unwrap().ssl_mode();
+        assert_eq!(ssl_mode("mariadb://localhost"), None);
+        assert_eq!(
+            ssl_mode("mariadb://localhost?ssl_mode=disabled"),
+            Some(mysql_ssl_mode::SSL_MODE_DISABLED)
+        );
+        assert_eq!(
+            ssl_mode("mariadb://localhost?ssl_mode=PREFERRED"),
+            Some(mysql_ssl_mode::SSL_MODE_PREFERRED)
+        );
+        assert_eq!(
+            ssl_mode("mariadb://localhost?ssl_mode=required"),
+            Some(mysql_ssl_mode::SSL_MODE_REQUIRED)
+        );
+        assert_eq!(
+            ssl_mode("mariadb://localhost?ssl_mode=VERIFY_CA"),
+            Some(mysql_ssl_mode::SSL_MODE_VERIFY_CA)
+        );
+        assert_eq!(
+            ssl_mode("mariadb://localhost?ssl_mode=verify_identity"),
+            Some(mysql_ssl_mode::SSL_MODE_VERIFY_IDENTITY)
+        );
+    }
     #[diesel_test_helper::test]
     #[cfg(feature = "mysql")]
     fn ssl_mode() {

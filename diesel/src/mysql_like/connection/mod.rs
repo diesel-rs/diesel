@@ -3,7 +3,6 @@ mod error_information;
 mod raw;
 mod stmt;
 mod url;
-
 use core::num::NonZeroU64;
 
 use self::raw::RawConnection;
