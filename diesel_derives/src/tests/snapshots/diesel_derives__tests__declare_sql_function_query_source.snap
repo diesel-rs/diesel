@@ -176,6 +176,7 @@ pub(crate) mod generate_series_utils {
             stop,
         > as ValidGrouping<__DieselInternal>>::IsAggregate;
     }
+
 }
 #[allow(unused_imports)]
 #[doc(hidden)]

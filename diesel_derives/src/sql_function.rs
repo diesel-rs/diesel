@@ -686,7 +686,11 @@ fn expand_nonvariadic(
             &ty_generics,
             arg_name,
         );
-        if query_source.is_none() {
+        if query_source.is_some() {
+            tokens = generate_sqlite_registration_for_table_functions(
+                tokens, arg_name, arg_type, &fn_name, &sql_name,
+            );
+        } else {
             tokens = generate_sqlite_registration_for_non_aggregate_functions(
                 tokens,
                 arg_name,
@@ -949,6 +953,63 @@ fn generate_valid_grouping_for_non_aggregate_functions(
             __Derived<#(#arg_name,)*>: ValidGrouping<__DieselInternal>,
         {
             type IsAggregate = <__Derived<#(#arg_name,)*> as ValidGrouping<__DieselInternal>>::IsAggregate;
+        }
+    }
+}
+
+/// Generates SQLite registration helpers for a table function.
+fn generate_sqlite_registration_for_table_functions(
+    tokens: TokenStream,
+    argument_names: &[&syn::Ident],
+    argument_types: &[&syn::Type],
+    function_name: &syn::Ident,
+    sql_name: &str,
+) -> TokenStream {
+    let Some(sqlite_types) = argument_types
+        .iter()
+        .map(|argument| is_sqlite_type(argument))
+        .collect::<Option<Vec<_>>>()
+    else {
+        return tokens;
+    };
+    if sql_name.contains('.') {
+        return tokens;
+    }
+    let relation = quote! {
+        <#function_name<#(#argument_types),*> as diesel::internal::table_functions::TableFunction>::Relation
+    };
+    let row_sql_type = quote! { <#relation as diesel::query_builder::AsQuery>::SqlType };
+    let parameter_names = argument_names
+        .iter()
+        .map(|name| name.to_string().trim_start_matches("r#").to_owned())
+        .collect::<Vec<_>>();
+    quote! {
+        #tokens
+        diesel::internal::sql_functions::expand_sqlite_function! {
+            [#(#sqlite_types,)*],
+            /// Registers a Rust implementation of this table function.
+            pub fn register_impl<__DieselF, __DieselRows, #(#argument_names,)*>(
+                __diesel_connection: &mut diesel::sqlite::SqliteConnection,
+                __diesel_function: __DieselF,
+            ) -> diesel::result::QueryResult<()>
+            where
+                __DieselF: Fn(&mut diesel::sqlite::BorrowedSqliteConnection, #(#argument_names,)*)
+                    -> diesel::result::QueryResult<__DieselRows>
+                    + Send + ::core::panic::UnwindSafe + 'static,
+                __DieselRows: IntoIterator,
+                __DieselRows::Item: diesel::sqlite::SqliteTableFunctionRow<#row_sql_type>,
+                (#(#argument_names,)*):
+                    diesel::internal::table_functions::SqliteTableFunctionArgs<(#(#argument_types,)*)>,
+            {
+                diesel::internal::table_functions::register_table_function::<
+                    #relation, (#(#argument_types,)*), (#(#argument_names,)*), __DieselRows, _,
+                >(
+                    __diesel_connection,
+                    #sql_name,
+                    &[#(#parameter_names,)*],
+                    move |__diesel_connection, (#(#argument_names,)*)| __diesel_function(__diesel_connection, #(#argument_names,)*),
+                )
+            }
         }
     }
 }

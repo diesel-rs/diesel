@@ -68,6 +68,8 @@ mod select_by;
 mod serialize_as;
 #[cfg(feature = "sqlite")]
 mod sqlite_pragma;
+#[cfg(all(feature = "sqlite", not(miri)))]
+mod sqlite_table_function_registration;
 #[cfg(feature = "sqlite")]
 mod table_cfg_columns;
 #[cfg(any(feature = "postgres", feature = "sqlite"))]

@@ -1,0 +1,6 @@
+error[E0425]: cannot find function `register_impl` in module `grantees_utils`
+  --> tests/fail/sqlite_table_function_dotted_registration_name.rs:21:21
+   |
+LL |     grantees_utils::register_impl(&mut connection, |_, _: String| Ok(Vec::<(String,)>::new()));
+   |                     ^^^^^^^^^^^^^ not found in `grantees_utils`
+For more information about this error, try `rustc --explain E0425`.

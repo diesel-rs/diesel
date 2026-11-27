@@ -27,6 +27,7 @@ pub use self::connection::SerializedDatabase;
 pub use self::connection::SqliteBindValue;
 pub use self::connection::SqliteConnection;
 pub use self::connection::SqliteLimit;
+pub use self::connection::SqliteTableFunctionRow;
 pub use self::connection::SqliteTraceEvent;
 pub use self::connection::SqliteTraceFlags;
 pub use self::connection::SqliteValue;

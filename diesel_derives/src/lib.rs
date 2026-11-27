@@ -2327,6 +2327,8 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// `return_type_helpers::<function>`, which `#[auto_type]` needs as an explicit
 /// type annotation.
 ///
+/// On SQLite, the generated `_utils` module can register a Rust implementation returning rows through `register_impl`.
+///
 /// ```rust
 /// # extern crate diesel;
 /// # use diesel::*;
@@ -2389,7 +2391,7 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// Rust instead. You must call `register_impl` (in the generated function's
 /// `_utils` module) with every connection before you can use the function.
 ///
-/// Three registration functions are generated in the `_utils` module:
+/// Scalar functions generate three registration functions in the `_utils` module.
 ///
 /// - `register_impl`: registers a deterministic function (takes an `Fn`).
 /// - `register_nondeterministic_impl`: registers a function that may return
@@ -2447,6 +2449,62 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// assert_eq!(4.5, result);
 /// #     Ok(())
 /// # }
+/// ```
+///
+/// ## Custom Table Functions
+///
+/// Functions declared with `#[query_source]` generate `register_impl`. The callback receives a borrowed connection followed by the declared arguments and returns `QueryResult<Rows>`, where each row is a tuple matching the view's columns. It may query the connection, including recursive calls to the function.
+///
+/// Registration uses `sql_name` when present. A dotted `sql_name` generates no SQLite registration helpers, so schema-qualified PostgreSQL declarations can coexist with the `sqlite` feature. Registration rejects parameter names matching a result column, compared without ASCII case distinctions. Registering the same name replaces the implementation and clears the connection's statement cache.
+///
+/// ```rust
+/// # use diesel::prelude::*;
+/// # use diesel::connection::SimpleConnection;
+/// # use diesel::sql_types::Text;
+/// # #[cfg(all(feature = "sqlite", not(miri)))]
+/// # fn main() { run().unwrap(); }
+/// # #[cfg(any(not(feature = "sqlite"), miri))]
+/// # fn main() {}
+/// diesel::table! {
+///     grants (id) {
+///         id -> Integer,
+///         role -> Text,
+///         name -> Text,
+///     }
+/// }
+///
+/// diesel::view! {
+///     grantees {
+///         name -> Text,
+///     }
+/// }
+///
+/// #[diesel::declare_sql_function]
+/// extern "SQL" {
+///     #[query_source(grantees)]
+///     fn grantees(role: Text) -> grantees::SqlType;
+/// }
+///
+/// # #[cfg(all(feature = "sqlite", not(miri)))]
+/// fn run() -> QueryResult<()> {
+///     let connection = &mut SqliteConnection::establish(":memory:").unwrap();
+///     connection.batch_execute(
+///         "CREATE TABLE grants (id INTEGER PRIMARY KEY, role TEXT NOT NULL, name TEXT NOT NULL);
+///          INSERT INTO grants (role, name) VALUES ('admin', 'bob'), ('admin', 'alice'), ('guest', 'carol');"
+///     )?;
+///     grantees_utils::register_impl(connection, |connection, role: String| {
+///         grants::table
+///             .filter(grants::role.eq(role))
+///             .select((grants::name,))
+///             .order(grants::name)
+///             .load::<(String,)>(connection)
+///     })?;
+///     let admins = grantees("admin")
+///         .select(grantees::name)
+///         .load::<String>(connection)?;
+///     assert_eq!(admins, ["alice", "bob"]);
+///     Ok(())
+/// }
 /// ```
 ///
 /// ## Panics

@@ -1,0 +1,86 @@
+error[E0277]: `(&str, {integer})` is no row of the result columns typed `(diesel::sql_types::Text,)`
+  --> tests/fail/sqlite_table_valued_function_rows_match_the_result_columns.rs:21:5
+   |
+LL |     grantees_utils::register_impl(&mut connection, |_, _: String| Ok(vec![("alice", 1)]));
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+   |
+   = help: the trait `SqliteTableFunctionRow<(diesel::sql_types::Text,)>` is not implemented for `(&str, {integer})`
+   = note: a row is a tuple with one value per result column, in column order
+   = help: the following other types implement trait `SqliteTableFunctionRow<SqlType>`:
+             `(T,)` implements `SqliteTableFunctionRow<(ST,)>`
+             `(T, T1)` implements `SqliteTableFunctionRow<(ST, ST1)>`
+             `(T, T1, T2)` implements `SqliteTableFunctionRow<(ST, ST1, ST2)>`
+             `(T, T1, T2, T3)` implements `SqliteTableFunctionRow<(ST, ST1, ST2, ST3)>`
+             `(T, T1, T2, T3, T4)` implements `SqliteTableFunctionRow<(ST, ST1, ST2, ST3, ST4)>`
+             `(T, T1, T2, T3, T4, T5)` implements `SqliteTableFunctionRow<(ST, ST1, ST2, ST3, ST4, ST5)>`
+             `(T, T1, T2, T3, T4, T5, T6)` implements `SqliteTableFunctionRow<(ST, ST1, ST2, ST3, ST4, ST5, ST6)>`
+             `(T, T1, T2, T3, T4, T5, T6, T7)` implements `SqliteTableFunctionRow<(ST, ST1, ST2, ST3, ST4, ST5, ST6, ST7)>`
+           and N others
+note: required by a bound in `register_impl`
+  --> tests/fail/sqlite_table_valued_function_rows_match_the_result_columns.rs:12:1
+   |
+LL | #[declare_sql_function]
+   | ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `register_impl`
+   = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `{integer}: ToSql<diesel::sql_types::Text, Sqlite>` is not satisfied
+  --> tests/fail/sqlite_table_valued_function_rows_match_the_result_columns.rs:24:5
+   |
+LL |     grantees_utils::register_impl(&mut connection, |_, _: String| Ok(vec![(1,)]));
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `ToSql<diesel::sql_types::Text, Sqlite>` is not implemented for `{integer}`
+   |
+   = help: the following other types implement trait `ToSql<A, DB>`:
+             `f32` implements `ToSql<Nullable<diesel::sql_types::Float>, __DB>`
+             `f32` implements `ToSql<diesel::sql_types::Float, DB>`
+             `f32` implements `ToSql<diesel::sql_types::Float, Pg>`
+             `f32` implements `ToSql<diesel::sql_types::Float, Sqlite>`
+             `f64` implements `ToSql<Nullable<diesel::sql_types::Double>, __DB>`
+             `f64` implements `ToSql<diesel::sql_types::Double, DB>`
+             `f64` implements `ToSql<diesel::sql_types::Double, Pg>`
+             `f64` implements `ToSql<diesel::sql_types::Double, Sqlite>`
+           and N others
+   = note: required for `({integer},)` to implement `SqliteTableFunctionRow<(diesel::sql_types::Text,)>`
+note: required by a bound in `register_impl`
+  --> tests/fail/sqlite_table_valued_function_rows_match_the_result_columns.rs:12:1
+   |
+LL | #[declare_sql_function]
+   | ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `register_impl`
+   = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: cannot deserialize a value of the database type `diesel::sql_types::Text` as `i32`
+  --> tests/fail/sqlite_table_valued_function_rows_match_the_result_columns.rs:27:5
+   |
+LL |     grantees_utils::register_impl(&mut connection, |_, _: i32| Ok(Vec::<(String,)>::new()));
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `FromSql<diesel::sql_types::Text, Sqlite>` is not implemented for `i32`
+   |
+   = note: double check your type mappings via the documentation of `diesel::sql_types::Text`
+help: `i32` implements trait `FromSql<A, DB>`
+  --> ROOT/diesel/src/mysql_like/types/primitives.rs
+   |
+LL | impl<DB: MysqlLikeBackend> FromSql<Integer, DB> for i32 {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FromSql<diesel::sql_types::Integer, DB>`
+   |
+  ::: ROOT/diesel/src/pg/types/integers.rs
+   |
+LL | impl FromSql<sql_types::Integer, Pg> for i32 {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FromSql<diesel::sql_types::Integer, Pg>`
+   |
+  ::: ROOT/diesel/src/sqlite/types/mod.rs
+   |
+LL | impl FromSql<sql_types::Integer, Sqlite> for i32 {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FromSql<diesel::sql_types::Integer, Sqlite>`
+   = note: required for `i32` to implement `Queryable<diesel::sql_types::Text, Sqlite>`
+   = note: required for `i32` to implement `FromSqlRow<diesel::sql_types::Text, Sqlite>`
+   = note: required for `diesel::sql_types::Text` to implement `diesel::query_dsl::load_dsl::private::CompatibleType<i32, Sqlite>`
+   = note: required for `(i32,)` to implement `FromStaticSqlRow<(diesel::sql_types::Text,), Sqlite>`
+   = note: 2 redundant requirements hidden
+   = note: required for `(i32,)` to implement `FromSqlRow<(diesel::sql_types::Text,), Sqlite>`
+   = note: required for `(i32,)` to implement `SqliteTableFunctionArgs<(Text,)>`
+note: required by a bound in `register_impl`
+  --> tests/fail/sqlite_table_valued_function_rows_match_the_result_columns.rs:12:1
+   |
+LL | #[declare_sql_function]
+   | ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `register_impl`
+
+      = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
+For more information about this error, try `rustc --explain E0277`.

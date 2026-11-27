@@ -15,6 +15,10 @@ pub mod table_functions {
     pub use crate::query_source::function_call::{
         BaseTypeColumnAlias, NoColumnAliases, TableFunction,
     };
+    #[cfg(feature = "__sqlite-shared")]
+    pub use crate::sqlite::connection::{
+        SqliteTableFunctionArgs, SqliteTableFunctionColumnNames, register_table_function,
+    };
 }
 
 mod helper_macros {

@@ -19,6 +19,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added support for the `jiff` crate behind a new `jiff` feature, which is also part of `extras`. `jiff::civil::Date`, `jiff::civil::Time` and `jiff::civil::DateTime` map to the `Date`, `Time` and `Timestamp` SQL types on all backends (and `jiff::civil::DateTime` additionally to `Datetime` on MySQL and MariaDB), `jiff::Timestamp` maps to `Timestamptz` on PostgreSQL, and `#[derive(MultiConnection)]` supports the civil types
 * Added `#[query_source(relation)]` to `#[declare_sql_function]`, which declares a function returning a set of rows, such as `json_each` or `generate_series`, whose call is a `FROM` item that can be queried and joined like a table on PostgreSQL and SQLite. Its result columns come from a `diesel::view!`
 * Added `inner_join_lateral` and `left_join_lateral` for function arguments referencing earlier `FROM` items on PostgreSQL and SQLite
+* Added `register_impl` for SQLite `#[query_source]` functions
 
 ### Fixed
 
