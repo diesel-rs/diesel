@@ -39,7 +39,7 @@ jobs:
         env:
           RUSTFLAGS: "--cfg diesel_docsrs"
           RUSTDOCFLAGS: "--cfg diesel_docsrs  -Z unstable-options --generate-link-to-definition --generate-macro-expansion"
-        run: cargo +nightly doc --manifest-path diesel/Cargo.toml --features "postgres sqlite mysql extras i-implement-a-third-party-backend-and-opt-into-breaking-changes" --workspace
+        run: cargo +nightly doc --manifest-path diesel/Cargo.toml --features "postgres sqlite mysql mariadb extras i-implement-a-third-party-backend-and-opt-into-breaking-changes" --workspace
       - name: Upload documentation artifact
         uses: actions/upload-artifact@v6.0.0
         with:
