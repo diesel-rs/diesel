@@ -226,6 +226,9 @@ unsafe impl Send for SqliteConnection {}
 
 impl SimpleConnection for SqliteConnection {
     fn batch_execute(&mut self, query: &str) -> QueryResult<()> {
+        if self.transaction_state.status.is_rolled_back_by_database() {
+            return Err(Error::TransactionRolledBackByDatabase);
+        }
         self.instrumentation
             .on_connection_event(InstrumentationEvent::StartQuery {
                 query: &StrQueryHelper::new(query),
@@ -238,7 +241,7 @@ impl SimpleConnection for SqliteConnection {
             });
         if resp.is_err() && self.raw_connection.is_autocommit() {
             // SQLite ends the transaction on some failures, e.g. an aborting commit hook.
-            self.transaction_state.status = TransactionManagerStatus::Valid(Default::default());
+            self.transaction_state.status.set_rolled_back_by_database();
         }
         resp
     }
@@ -541,6 +544,9 @@ impl SqliteConnection {
     where
         T: QueryFragment<Sqlite> + QueryId + 'query,
     {
+        if self.transaction_state.status.is_rolled_back_by_database() {
+            return Err(Error::TransactionRolledBackByDatabase);
+        }
         self.instrumentation
             .on_connection_event(InstrumentationEvent::StartQuery {
                 query: &crate::debug_query(&source),
@@ -567,7 +573,12 @@ impl SqliteConnection {
             }
         };
 
-        StatementUse::bind(statement, source, &mut *self.instrumentation)
+        StatementUse::bind(
+            statement,
+            source,
+            &mut *self.instrumentation,
+            &mut self.transaction_state,
+        )
     }
 
     /// Serialize the current SQLite database into a byte buffer.

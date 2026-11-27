@@ -101,6 +101,16 @@ pub enum Error {
     /// Transaction manager broken, likely due to a broken connection. No other operations are possible.
     BrokenTransactionManager,
 
+    /// The database rolled back the open transaction on its own, for example
+    /// because a statement failed with an `ON CONFLICT ROLLBACK` conflict on SQLite.
+    ///
+    /// The connection refuses every statement and every commit with this error until
+    /// the transaction has been rolled back, which [`Connection::transaction`] does
+    /// when its closure returns an error.
+    ///
+    /// [`Connection::transaction`]: crate::connection::Connection::transaction
+    TransactionRolledBackByDatabase,
+
     /// Internal integer conversion failed
     IntegerConversion(core::num::TryFromIntError),
 
@@ -415,6 +425,10 @@ impl Display for Error {
                 write!(f, "You have asked diesel to rollback the transaction")
             }
             Error::BrokenTransactionManager => write!(f, "The transaction manager is broken"),
+            Error::TransactionRolledBackByDatabase => write!(
+                f,
+                "The database rolled back the transaction, which must be rolled back before running other statements",
+            ),
             Error::AlreadyInTransaction => write!(
                 f,
                 "Cannot perform this operation while a transaction is open",
