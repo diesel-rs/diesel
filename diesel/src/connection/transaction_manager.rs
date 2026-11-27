@@ -1604,9 +1604,9 @@ mod test {
             .select(implicit_rollback_audit::line)
             .load::<String>(conn)
             .unwrap();
-        // `transaction()` is all-or-nothing: Ok with every row, or Err with none of them.
+        // `transaction()` is all-or-nothing, and the implicit rollback leaves nothing to commit.
         assert!(
-            (result.is_ok() && audit_rows.len() == 2) || (result.is_err() && audit_rows.is_empty()),
+            result.is_err() && audit_rows.is_empty(),
             "partial commit: transaction() returned {result:?}, but committed {audit_rows:?}"
         );
     }
