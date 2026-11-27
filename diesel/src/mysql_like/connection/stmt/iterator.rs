@@ -466,4 +466,44 @@ mod tests {
         let f = Row::get(&rows[0], 0usize).unwrap();
         assert_eq!(f.field_name(), Some("some_column_name"));
     }
+
+    #[test]
+    fn load_iter_with_spurious_truncation() {
+        use crate::connection::DefaultLoadingMode;
+        use crate::sql_types::Text;
+
+        let conn = &mut crate::test_helpers::connection();
+        diesel::sql_query(
+            "CREATE TEMPORARY TABLE t (id INTEGER PRIMARY KEY, txt TEXT NOT NULL, \
+           num INT UNSIGNED ZEROFILL NOT NULL)",
+        )
+        .execute(conn)
+        .unwrap();
+        // libmariadb reports a `ZEROFILL` number read as text as truncated
+        // although it fits into the buffer: row 2 is shorter than the buffer
+        diesel::sql_query(
+            "INSERT INTO t VALUES (1, REPEAT('a', 100), 12345678), \
+           (2, REPEAT('b', 200), 7), (3, REPEAT('c', 300), 3456789012), \
+           (4, REPEAT('d', 400), 4012345678)",
+        )
+        .execute(conn)
+        .unwrap();
+
+        let rows = diesel::dsl::sql::<(Text, Text)>("SELECT txt, num FROM t ORDER BY id")
+            .load_iter::<(String, String), DefaultLoadingMode>(conn)
+            .unwrap()
+            // libmysqlclient pads the numbers with zeros, libmariadb doesn't
+            .map(|row| row.map(|(txt, num)| (txt, num.trim_start_matches('0').to_owned())))
+            .collect::<QueryResult<Vec<_>>>()
+            .unwrap();
+        assert_eq!(
+            rows,
+            [
+                ("a".repeat(100), "12345678".to_owned()),
+                ("b".repeat(200), "7".to_owned()),
+                ("c".repeat(300), "3456789012".to_owned()),
+                ("d".repeat(400), "4012345678".to_owned()),
+            ]
+        );
+    }
 }
