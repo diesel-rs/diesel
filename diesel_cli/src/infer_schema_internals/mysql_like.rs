@@ -47,6 +47,7 @@ where
             row.0,
             row.1,
             row.2,
+            0,
             row.3 == "YES",
             row.4,
             row.5,
@@ -200,6 +201,7 @@ pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, cra
     Ok(ColumnType {
         schema: None,
         sql_name: tpe.trim().to_string(),
+        oid: 0,
         rust_name: super::inference::make_valid_identifier(
             tpe.trim().to_upper_camel_case().into(),
             super::inference::IdentifierKind::Type,
