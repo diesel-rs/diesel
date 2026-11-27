@@ -994,6 +994,9 @@ mod tests {
         assert!(!connection.in_transaction());
     }
 
+    // The failing statement makes Diesel read SQLite's error message, which miri
+    // cannot track when running with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))]
     #[diesel_test_helper::test]
     fn in_transaction_is_false_after_sqlite_rolls_back() {
         let connection = &mut connection();
