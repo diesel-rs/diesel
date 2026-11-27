@@ -138,6 +138,52 @@ impl TransactionManagerStatus {
 
     #[cfg(any(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        feature = "__sqlite-shared"
+    ))]
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    /// Registers that the database has rolled back the open transaction on its own.
+    ///
+    /// The transaction depth stays, so that every level is still unwound by
+    /// [`TransactionManager::rollback_transaction`], which then issues no SQL. Until
+    /// that happens, committing returns [`Error::TransactionRolledBackByDatabase`].
+    /// A transaction manager in error is reset, as no transaction is open anymore.
+    pub(crate) fn set_rolled_back_by_database(&mut self) {
+        match self {
+            TransactionManagerStatus::Valid(ValidTransactionManagerStatus {
+                in_transaction: Some(in_transaction),
+            }) => in_transaction.rolled_back_by_database = true,
+            TransactionManagerStatus::Valid(ValidTransactionManagerStatus {
+                in_transaction: None,
+            }) => {}
+            TransactionManagerStatus::InError => *self = Self::default(),
+        }
+    }
+
+    #[cfg(any(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        feature = "__sqlite-shared"
+    ))]
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    /// Whether the database has rolled back the open transaction on its own
+    /// and the transaction is still waiting to be rolled back by Diesel.
+    pub(crate) fn is_rolled_back_by_database(&self) -> bool {
+        matches!(
+            self,
+            TransactionManagerStatus::Valid(ValidTransactionManagerStatus {
+                in_transaction: Some(InTransactionStatus {
+                    rolled_back_by_database: true,
+                    ..
+                }),
+            })
+        )
+    }
+
+    #[cfg(any(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
         feature = "postgres",
         feature = "mysql",
         feature = "mariadb"
@@ -225,7 +271,8 @@ pub struct ValidTransactionManagerStatus {
     public_fields(
         test_transaction,
         transaction_depth,
-        requires_rollback_maybe_up_to_top_level
+        requires_rollback_maybe_up_to_top_level,
+        rolled_back_by_database
     )
 )]
 pub struct InTransactionStatus {
@@ -236,6 +283,10 @@ pub struct InTransactionStatus {
     requires_rollback_maybe_up_to_top_level: bool,
     /// Is this transaction manager status marked as test-transaction?
     test_transaction: bool,
+    /// Has the database rolled back this transaction on its own?
+    ///
+    /// Rolling back then issues no SQL, and committing fails.
+    rolled_back_by_database: bool,
 }
 
 impl ValidTransactionManagerStatus {
@@ -275,6 +326,7 @@ impl ValidTransactionManagerStatus {
                     transaction_depth: NonZeroU32::new(1).expect("1 is non-zero"),
                     requires_rollback_maybe_up_to_top_level: false,
                     test_transaction: false,
+                    rolled_back_by_database: false,
                 });
                 Ok(())
             }
@@ -370,6 +422,10 @@ where
 
     fn rollback_transaction(conn: &mut Conn) -> QueryResult<()> {
         let transaction_state = Self::get_transaction_state(conn)?;
+        let rolled_back_by_database = transaction_state
+            .in_transaction
+            .as_ref()
+            .is_some_and(|in_transaction| in_transaction.rolled_back_by_database);
 
         let (
             (rollback_sql, rolling_back_top_level),
@@ -396,6 +452,12 @@ where
         conn.instrumentation().on_connection_event(
             super::instrumentation::InstrumentationEvent::RollbackTransaction { depth },
         );
+
+        if rolled_back_by_database {
+            // The database has already rolled back every level of this transaction.
+            return Self::get_transaction_state(conn)?
+                .change_transaction_depth(TransactionDepthChange::DecreaseDepth);
+        }
 
         match conn.batch_execute(&rollback_sql) {
             Ok(()) => {
@@ -446,6 +508,17 @@ where
                         // => Transaction manager status has been fixed by the underlying connection
                         // so we don't need to set_in_error
                     }
+                    TransactionManagerStatus::Valid(ValidTransactionManagerStatus {
+                        in_transaction:
+                            Some(InTransactionStatus {
+                                rolled_back_by_database: true,
+                                ..
+                            }),
+                    }) => {
+                        // The connection detected that the failed `ROLLBACK` still ended
+                        // the transaction, so no transaction is left to roll back.
+                        *tm_status = TransactionManagerStatus::default();
+                    }
                     _ => tm_status.set_in_error(),
                 }
                 Err(rollback_error)
@@ -477,6 +550,15 @@ where
         let depth = transaction_state
             .transaction_depth()
             .expect("We know that we are in a transaction here");
+        let rolled_back_by_database = transaction_state
+            .in_transaction
+            .as_ref()
+            .is_some_and(|in_transaction| in_transaction.rolled_back_by_database);
+        if rolled_back_by_database {
+            // Nothing of this transaction can be committed anymore.
+            Self::rollback_transaction(conn)?;
+            return Err(Error::TransactionRolledBackByDatabase);
+        }
         conn.instrumentation().on_connection_event(
             super::instrumentation::InstrumentationEvent::CommitTransaction { depth },
         );
@@ -1222,7 +1304,7 @@ mod test {
     // libsqlite3 (`-Zmiri-native-lib`).
     #[cfg(not(miri))] // ffi call
     #[cfg(feature = "__sqlite-shared")]
-    fn sqlite_transaction_status_follows_an_implicit_rollback() {
+    fn sqlite_transaction_stays_aborted_after_an_implicit_rollback() {
         use crate::connection::SimpleConnection;
         use crate::connection::transaction_manager::AnsiTransactionManager;
         use crate::connection::transaction_manager::TransactionManager;
@@ -1273,6 +1355,8 @@ mod test {
         AnsiTransactionManager::commit_transaction(conn).unwrap();
         assert_eq!(None, depth(conn));
 
+        // SQLite rolls back the whole transaction. Diesel keeps the depth and refuses every
+        // statement until the transaction is rolled back.
         AnsiTransactionManager::begin_transaction(conn).unwrap();
         insert(conn, 2).unwrap();
         let conflict = insert(conn, 2);
@@ -1283,6 +1367,21 @@ mod test {
             ),
             "{conflict:?}"
         );
+        assert_eq!(NonZeroU32::new(1), depth(conn));
+        assert!(matches!(
+            insert(conn, 3),
+            Err(Error::TransactionRolledBackByDatabase)
+        ));
+        assert!(matches!(
+            conn.batch_execute("INSERT INTO implicit_rollback_items (id) VALUES (3)"),
+            Err(Error::TransactionRolledBackByDatabase)
+        ));
+        assert!(matches!(
+            AnsiTransactionManager::begin_transaction(conn),
+            Err(Error::TransactionRolledBackByDatabase)
+        ));
+        assert_eq!(NonZeroU32::new(1), depth(conn));
+        AnsiTransactionManager::rollback_transaction(conn).unwrap();
         assert_eq!(None, depth(conn));
         // The next transaction is an outermost one, not a savepoint.
         AnsiTransactionManager::begin_transaction(conn).unwrap();
@@ -1290,10 +1389,9 @@ mod test {
         AnsiTransactionManager::commit_transaction(conn).unwrap();
         assert_eq!(None, depth(conn));
 
-        // The rollback inside a savepoint ends every level of the transaction.
+        // Inside a savepoint every level stays aborted, and committing one rolls it back.
         AnsiTransactionManager::begin_transaction(conn).unwrap();
         AnsiTransactionManager::begin_transaction(conn).unwrap();
-        assert_eq!(NonZeroU32::new(2), depth(conn));
         let conflict = insert(conn, 1);
         assert!(
             matches!(
@@ -1302,6 +1400,17 @@ mod test {
             ),
             "{conflict:?}"
         );
+        assert_eq!(NonZeroU32::new(2), depth(conn));
+        assert!(matches!(
+            AnsiTransactionManager::commit_transaction(conn),
+            Err(Error::TransactionRolledBackByDatabase)
+        ));
+        assert_eq!(NonZeroU32::new(1), depth(conn));
+        assert!(matches!(
+            insert(conn, 3),
+            Err(Error::TransactionRolledBackByDatabase)
+        ));
+        AnsiTransactionManager::rollback_transaction(conn).unwrap();
         assert_eq!(None, depth(conn));
 
         #[cfg(feature = "returning_clauses_for_sqlite_3_35")]
@@ -1315,12 +1424,190 @@ mod test {
                 matches!(&refused, Err(Error::DatabaseError(_, info)) if info.message() == "refused"),
                 "{refused:?}"
             );
+            assert_eq!(NonZeroU32::new(1), depth(conn));
+            assert!(matches!(
+                implicit_rollback_items::table
+                    .count()
+                    .get_result::<i64>(conn),
+                Err(Error::TransactionRolledBackByDatabase)
+            ));
+            AnsiTransactionManager::rollback_transaction(conn).unwrap();
             assert_eq!(None, depth(conn));
         }
 
         assert_eq!(
             Ok(1_i64),
             implicit_rollback_items::table.count().get_result(conn)
+        );
+    }
+
+    #[diesel_test_helper::test]
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
+    #[cfg(feature = "__sqlite-shared")]
+    fn sqlite_transaction_returns_the_error_of_an_implicit_rollback() {
+        use crate::connection::SimpleConnection;
+        use crate::connection::transaction_manager::AnsiTransactionManager;
+        use crate::connection::transaction_manager::TransactionManager;
+        use crate::prelude::*;
+        use crate::result::{DatabaseErrorKind, Error};
+
+        crate::table! {
+            implicit_rollback_orders (id) {
+                id -> Integer,
+            }
+        }
+
+        fn insert(conn: &mut SqliteConnection, id: i32) -> QueryResult<usize> {
+            crate::insert_into(implicit_rollback_orders::table)
+                .values(implicit_rollback_orders::id.eq(id))
+                .execute(conn)
+        }
+
+        fn assert_unique_violation<T: core::fmt::Debug>(result: QueryResult<T>) {
+            assert!(
+                matches!(
+                    result,
+                    Err(Error::DatabaseError(DatabaseErrorKind::UniqueViolation, _))
+                ),
+                "{result:?}"
+            );
+        }
+
+        fn assert_no_transaction(conn: &mut SqliteConnection) {
+            assert_eq!(
+                None,
+                <AnsiTransactionManager as TransactionManager<SqliteConnection>>::transaction_manager_status_mut(
+                    conn
+                ).transaction_depth().expect("Transaction depth")
+            );
+        }
+
+        let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+        conn.batch_execute(
+            "CREATE TABLE implicit_rollback_orders (id INTEGER PRIMARY KEY ON CONFLICT ROLLBACK);
+             INSERT INTO implicit_rollback_orders (id) VALUES (1);",
+        )
+        .unwrap();
+
+        assert_unique_violation(conn.transaction(|conn| {
+            insert(conn, 2)?;
+            insert(conn, 1)
+        }));
+        assert_no_transaction(conn);
+
+        assert_unique_violation(conn.transaction(|conn| {
+            insert(conn, 2)?;
+            conn.transaction(|conn| insert(conn, 1))
+        }));
+        assert_no_transaction(conn);
+
+        // The outer closure handles the inner error and carries on, which commits nothing.
+        let outer = conn.transaction(|conn| {
+            insert(conn, 2)?;
+            assert_unique_violation(conn.transaction(|conn| insert(conn, 1)));
+            assert!(matches!(
+                insert(conn, 3),
+                Err(Error::TransactionRolledBackByDatabase)
+            ));
+            QueryResult::Ok(())
+        });
+        assert!(
+            matches!(outer, Err(Error::TransactionRolledBackByDatabase)),
+            "{outer:?}"
+        );
+        assert_no_transaction(conn);
+
+        assert_unique_violation(conn.immediate_transaction(|conn| {
+            insert(conn, 2)?;
+            insert(conn, 1)
+        }));
+        assert_no_transaction(conn);
+
+        assert_unique_violation(conn.exclusive_transaction(|conn| {
+            insert(conn, 2)?;
+            insert(conn, 1)
+        }));
+        assert_no_transaction(conn);
+
+        assert_eq!(
+            Ok(vec![1]),
+            implicit_rollback_orders::table
+                .select(implicit_rollback_orders::id)
+                .load::<i32>(conn)
+        );
+    }
+
+    #[diesel_test_helper::test]
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
+    #[cfg(feature = "__sqlite-shared")]
+    fn sqlite_statements_after_an_implicit_rollback_are_not_committed() {
+        use crate::connection::SimpleConnection;
+        use crate::prelude::*;
+        use crate::result::{DatabaseErrorKind, Error};
+
+        crate::table! {
+            implicit_rollback_orders (id) {
+                id -> Integer,
+            }
+        }
+
+        crate::table! {
+            implicit_rollback_audit (id) {
+                id -> Integer,
+                line -> Text,
+            }
+        }
+
+        fn audit(conn: &mut SqliteConnection, line: &str) -> QueryResult<usize> {
+            crate::insert_into(implicit_rollback_audit::table)
+                .values(implicit_rollback_audit::line.eq(line))
+                .execute(conn)
+        }
+
+        let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+        conn.batch_execute(
+            "CREATE TABLE implicit_rollback_orders (id INTEGER PRIMARY KEY ON CONFLICT ROLLBACK);
+             INSERT INTO implicit_rollback_orders (id) VALUES (1);
+             CREATE TABLE implicit_rollback_audit (
+                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                 line TEXT NOT NULL
+             );",
+        )
+        .unwrap();
+
+        let result = conn.transaction::<_, Error, _>(|conn| {
+            audit(conn, "order received")?;
+            // `ON CONFLICT ROLLBACK`: SQLite rolls back the whole transaction.
+            let conflict = crate::insert_into(implicit_rollback_orders::table)
+                .values(implicit_rollback_orders::id.eq(1))
+                .execute(conn);
+            assert!(
+                matches!(
+                    conflict,
+                    Err(Error::DatabaseError(DatabaseErrorKind::UniqueViolation, _))
+                ),
+                "{conflict:?}"
+            );
+            // Application code that handles the error and carries on inside the transaction.
+            // Whether this statement fails or not, it must not outlive the transaction.
+            let _ = audit(conn, "order rejected");
+            Ok(())
+        });
+
+        let audit_rows = implicit_rollback_audit::table
+            .select(implicit_rollback_audit::line)
+            .load::<String>(conn)
+            .unwrap();
+        // `transaction()` is all-or-nothing: Ok with every row, or Err with none of them.
+        assert!(
+            (result.is_ok() && audit_rows.len() == 2) || (result.is_err() && audit_rows.is_empty()),
+            "partial commit: transaction() returned {result:?}, but committed {audit_rows:?}"
         );
     }
 

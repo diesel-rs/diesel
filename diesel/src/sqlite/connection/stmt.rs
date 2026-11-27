@@ -4,7 +4,7 @@ use super::error_information::SqliteErrorInformation;
 use super::raw::RawConnection;
 use super::sqlite_value::OwnedSqliteValue;
 use crate::connection::statement_cache::{MaybeCached, PrepareForCache, PreparedStatement};
-use crate::connection::{AnsiTransactionManager, Instrumentation, TransactionManagerStatus};
+use crate::connection::{AnsiTransactionManager, Instrumentation};
 use crate::query_builder::{QueryFragment, QueryId};
 use crate::result::Error::DatabaseError;
 use crate::result::*;
@@ -551,8 +551,9 @@ impl<'stmt, 'query> StatementUse<'stmt, 'query> {
                 // SQLite ends the transaction on some failures, e.g. `ON CONFLICT ROLLBACK`.
                 // SAFETY: the statement keeps its connection open, so `raw_connection` is valid.
                 if unsafe { ffi::sqlite3_get_autocommit(raw_connection) } != 0 {
-                    self.transaction_manager.status =
-                        TransactionManagerStatus::Valid(Default::default());
+                    self.transaction_manager
+                        .status
+                        .set_rolled_back_by_database();
                 }
                 Err(error)
             }
