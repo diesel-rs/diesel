@@ -52,6 +52,15 @@ impl RawConnection {
         last_error_message(self.internal_connection.as_ptr())
     }
 
+    pub(super) fn parameter_status(&self, name: &CStr) -> Option<String> {
+        let value = unsafe { PQparameterStatus(self.internal_connection.as_ptr(), name.as_ptr()) };
+        if value.is_null() {
+            None
+        } else {
+            Some(unsafe { CStr::from_ptr(value) }.to_str().ok()?.to_owned())
+        }
+    }
+
     pub(super) fn set_notice_processor(&self, notice_processor: NoticeProcessor) {
         unsafe {
             PQsetNoticeProcessor(
