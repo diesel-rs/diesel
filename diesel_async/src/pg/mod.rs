@@ -285,6 +285,7 @@ impl AsyncConnection for AsyncPgConnection {
             .await
             .map_err(ErrorHelper)?;
 
+        let reported_parameters = ReportedParameters::from_connection(&connection);
         let (error_rx, notification_rx, shutdown_tx) = drive_connection(connection);
 
         let r = Self::setup(
@@ -293,6 +294,7 @@ impl AsyncConnection for AsyncPgConnection {
             Some(notification_rx),
             Some(shutdown_tx),
             Arc::clone(&instrumentation),
+            reported_parameters,
         )
         .await;
 
@@ -463,6 +465,11 @@ impl AsyncPgConnection {
     }
 
     /// Construct a new `AsyncPgConnection` instance from an existing [`tokio_postgres::Client`]
+    ///
+    /// This function cannot see the settings the server reported at startup, so it always
+    /// sends `SET TIME ZONE 'UTC'` and `SET CLIENT_ENCODING TO 'UTF8'`. Use
+    /// [`AsyncPgConnection::try_from_client_and_connection`] to skip each statement whose
+    /// setting the server already reports.
     pub async fn try_from(conn: tokio_postgres::Client) -> ConnectionResult<Self> {
         Self::setup(
             conn,
@@ -472,6 +479,7 @@ impl AsyncPgConnection {
             Arc::new(std::sync::Mutex::new(
                 DynInstrumentation::default_instrumentation(),
             )),
+            ReportedParameters::default(),
         )
         .await
     }
@@ -485,6 +493,7 @@ impl AsyncPgConnection {
     where
         S: tokio_postgres::tls::TlsStream + Unpin + Send + 'static,
     {
+        let reported_parameters = ReportedParameters::from_connection(&conn);
         let (error_rx, notification_rx, shutdown_tx) = drive_connection(conn);
 
         Self::setup(
@@ -495,6 +504,7 @@ impl AsyncPgConnection {
             Arc::new(std::sync::Mutex::new(
                 DynInstrumentation::default_instrumentation(),
             )),
+            reported_parameters,
         )
         .await
     }
@@ -505,6 +515,7 @@ impl AsyncPgConnection {
         notification_rx: Option<mpsc::UnboundedReceiver<QueryResult<diesel::pg::PgNotification>>>,
         shutdown_channel: Option<oneshot::Sender<()>>,
         instrumentation: Arc<std::sync::Mutex<DynInstrumentation>>,
+        reported_parameters: ReportedParameters,
     ) -> ConnectionResult<Self> {
         let mut conn = Self {
             conn,
@@ -516,7 +527,7 @@ impl AsyncPgConnection {
             shutdown_channel,
             instrumentation,
         };
-        conn.set_config_options()
+        conn.set_config_options(reported_parameters)
             .await
             .map_err(ConnectionError::CouldntSetupConfiguration)?;
         Ok(conn)
@@ -527,14 +538,26 @@ impl AsyncPgConnection {
         self.conn.cancel_token()
     }
 
-    async fn set_config_options(&mut self) -> QueryResult<()> {
+    async fn set_config_options(&mut self, reported: ReportedParameters) -> QueryResult<()> {
         use crate::run_query_dsl::RunQueryDsl;
 
-        futures_util::future::try_join(
-            diesel::sql_query("SET TIME ZONE 'UTC'").execute(&mut &*self),
-            diesel::sql_query("SET CLIENT_ENCODING TO 'UTF8'").execute(&mut &*self),
-        )
-        .await?;
+        let set_time_zone = async {
+            if !matches!(reported.time_zone.as_deref(), Some("UTC" | "Etc/UTC")) {
+                diesel::sql_query("SET TIME ZONE 'UTC'")
+                    .execute(&mut &*self)
+                    .await?;
+            }
+            QueryResult::Ok(())
+        };
+        let set_client_encoding = async {
+            if reported.client_encoding.as_deref() != Some("UTF8") {
+                diesel::sql_query("SET CLIENT_ENCODING TO 'UTF8'")
+                    .execute(&mut &*self)
+                    .await?;
+            }
+            QueryResult::Ok(())
+        };
+        futures_util::future::try_join(set_time_zone, set_client_encoding).await?;
         Ok(())
     }
 
@@ -1039,6 +1062,24 @@ async fn drive_future<R>(
     }
 }
 
+#[derive(Default)]
+struct ReportedParameters {
+    time_zone: Option<String>,
+    client_encoding: Option<String>,
+}
+
+impl ReportedParameters {
+    fn from_connection<S>(conn: &tokio_postgres::Connection<tokio_postgres::Socket, S>) -> Self
+    where
+        S: tokio_postgres::tls::TlsStream + Unpin,
+    {
+        Self {
+            time_zone: conn.parameter("TimeZone").map(str::to_owned),
+            client_encoding: conn.parameter("client_encoding").map(str::to_owned),
+        }
+    }
+}
+
 fn drive_connection<S>(
     mut conn: tokio_postgres::Connection<tokio_postgres::Socket, S>,
 ) -> (
@@ -1229,5 +1270,97 @@ mod tests {
         })
         .await
         .unwrap();
+    }
+
+    fn database_url_with_options(options: &str) -> String {
+        let url = dotenvy::var("PG_DATABASE_URL")
+            .or_else(|_| dotenvy::var("DATABASE_URL"))
+            .expect("DATABASE_URL must be set in order to run tests");
+        let options = options.replace(' ', "%20").replace('=', "%3D");
+        format!("{url}?options={options}")
+    }
+
+    async fn setting(conn: &mut AsyncPgConnection, name: &str) -> (String, String) {
+        use diesel::dsl::sql;
+        use diesel::sql_types::Text;
+
+        diesel::select((
+            sql::<Text>("current_setting(")
+                .bind::<Text, _>(name)
+                .sql(")"),
+            sql::<Text>("(SELECT source FROM pg_settings WHERE name = ")
+                .bind::<Text, _>(name)
+                .sql(")"),
+        ))
+        .get_result(conn)
+        .await
+        .unwrap()
+    }
+
+    #[tokio::test]
+    async fn establish_skips_set_statements_for_settings_the_server_reports() {
+        for time_zone in ["UTC", "Etc/UTC"] {
+            let url = database_url_with_options(&format!("-c TimeZone={time_zone}"));
+            let conn = &mut AsyncPgConnection::establish(&url).await.unwrap();
+
+            assert_eq!(
+                setting(conn, "TimeZone").await,
+                (time_zone.to_owned(), "client".to_owned())
+            );
+            assert_eq!(
+                setting(conn, "client_encoding").await,
+                ("UTF8".to_owned(), "client".to_owned())
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn establish_sets_utc_if_the_server_reports_another_time_zone() {
+        let url = database_url_with_options("-c TimeZone=Europe/Berlin");
+        let conn = &mut AsyncPgConnection::establish(&url).await.unwrap();
+
+        assert_eq!(
+            setting(conn, "TimeZone").await,
+            ("UTC".to_owned(), "session".to_owned())
+        );
+    }
+
+    #[tokio::test]
+    async fn try_from_client_and_connection_skips_set_statements_for_settings_the_server_reports() {
+        let url = database_url_with_options("-c TimeZone=UTC");
+        let (client, connection) = tokio_postgres::connect(&url, tokio_postgres::NoTls)
+            .await
+            .unwrap();
+        let conn = &mut AsyncPgConnection::try_from_client_and_connection(client, connection)
+            .await
+            .unwrap();
+
+        assert_eq!(
+            setting(conn, "TimeZone").await,
+            ("UTC".to_owned(), "client".to_owned())
+        );
+        assert_eq!(
+            setting(conn, "client_encoding").await,
+            ("UTF8".to_owned(), "client".to_owned())
+        );
+    }
+
+    #[tokio::test]
+    async fn try_from_sets_utc_and_utf8_without_the_reported_settings() {
+        let url = database_url_with_options("-c TimeZone=UTC");
+        let (client, connection) = tokio_postgres::connect(&url, tokio_postgres::NoTls)
+            .await
+            .unwrap();
+        tokio::spawn(connection);
+        let conn = &mut AsyncPgConnection::try_from(client).await.unwrap();
+
+        assert_eq!(
+            setting(conn, "TimeZone").await,
+            ("UTC".to_owned(), "session".to_owned())
+        );
+        assert_eq!(
+            setting(conn, "client_encoding").await,
+            ("UTF8".to_owned(), "session".to_owned())
+        );
     }
 }

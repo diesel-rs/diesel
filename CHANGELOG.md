@@ -29,6 +29,8 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ### Changed
 
+* `PgConnection` and `AsyncPgConnection` no longer send `SET TIME ZONE 'UTC'` or `SET CLIENT_ENCODING TO 'UTF8'` while connecting if the server already reports that value, so connection poolers like AWS RDS Proxy can share these connections. `AsyncPgConnection::try_from` still sends both statements, as it cannot see the reported values. A connection that skips a statement follows later changes to that setting in the server configuration, for example after `ALTER SYSTEM` and a configuration reload. Set the time zone on the database or role, for example `ALTER DATABASE <name> SET timezone TO 'UTC'`, to keep UTC regardless of the server configuration
+
 
 ## [2.4.0] 2026-11-13
 

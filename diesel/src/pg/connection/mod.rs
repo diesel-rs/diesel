@@ -647,8 +647,15 @@ impl PgConnection {
     }
 
     fn set_config_options(&mut self) -> QueryResult<()> {
-        crate::sql_query("SET TIME ZONE 'UTC'").execute(self)?;
-        crate::sql_query("SET CLIENT_ENCODING TO 'UTF8'").execute(self)?;
+        let raw_connection = &self.connection_and_transaction_manager.raw_connection;
+        let time_zone = raw_connection.parameter_status(c"TimeZone");
+        let client_encoding = raw_connection.parameter_status(c"client_encoding");
+        if !matches!(time_zone.as_deref(), Some("UTC" | "Etc/UTC")) {
+            crate::sql_query("SET TIME ZONE 'UTC'").execute(self)?;
+        }
+        if client_encoding.as_deref() != Some("UTF8") {
+            crate::sql_query("SET CLIENT_ENCODING TO 'UTF8'").execute(self)?;
+        }
         self.connection_and_transaction_manager
             .raw_connection
             .set_notice_processor(noop_notice_processor);
@@ -1652,5 +1659,60 @@ mod tests {
             conn.version(),
             Err(DatabaseError(DatabaseErrorKind::ClosedConnection, _))
         ));
+    }
+
+    fn connection_with_options(options: &str) -> PgConnection {
+        let url = crate::test_helpers::pg_database_url();
+        let options = options.replace(' ', "%20").replace('=', "%3D");
+        PgConnection::establish(&format!("{url}?options={options}")).unwrap()
+    }
+
+    fn setting(conn: &mut PgConnection, name: &str) -> (String, String) {
+        use crate::dsl::sql;
+        use crate::sql_types::Text;
+
+        crate::select((
+            sql::<Text>("current_setting(")
+                .bind::<Text, _>(name)
+                .sql(")"),
+            sql::<Text>("(SELECT source FROM pg_settings WHERE name = ")
+                .bind::<Text, _>(name)
+                .sql(")"),
+        ))
+        .get_result(conn)
+        .unwrap()
+    }
+
+    #[diesel_test_helper::test]
+    fn establish_skips_set_statements_for_settings_the_server_reports() {
+        for time_zone in ["UTC", "Etc/UTC"] {
+            let conn = &mut connection_with_options(&format!(
+                "-c TimeZone={time_zone} -c client_encoding=UTF8"
+            ));
+
+            assert_eq!(
+                setting(conn, "TimeZone"),
+                (time_zone.to_owned(), "client".to_owned())
+            );
+            assert_eq!(
+                setting(conn, "client_encoding"),
+                ("UTF8".to_owned(), "client".to_owned())
+            );
+        }
+    }
+
+    #[diesel_test_helper::test]
+    fn establish_sets_utc_and_utf8_if_the_server_reports_other_values() {
+        let conn =
+            &mut connection_with_options("-c TimeZone=Europe/Berlin -c client_encoding=LATIN1");
+
+        assert_eq!(
+            setting(conn, "TimeZone"),
+            ("UTC".to_owned(), "session".to_owned())
+        );
+        assert_eq!(
+            setting(conn, "client_encoding"),
+            ("UTF8".to_owned(), "session".to_owned())
+        );
     }
 }
