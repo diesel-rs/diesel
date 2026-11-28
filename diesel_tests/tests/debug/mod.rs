@@ -86,6 +86,24 @@ fn test_debug_batch_insert() {
 }
 
 #[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn test_upsert_do_select() {
+    use crate::schema::users::dsl::*;
+
+    let command = insert_into(users)
+        .values((id.eq(1), name.eq("Sean")))
+        .on_conflict(id)
+        .do_select()
+        .returning((id, name));
+    let sql = debug_query::<TestBackend, _>(&command).to_string();
+
+    assert_eq!(
+        sql,
+        r#"INSERT INTO "users" ("id", "name") VALUES ($1, $2) ON CONFLICT ("id") DO SELECT RETURNING "users"."id", "users"."name" -- binds: [1, "Sean"]"#
+    );
+}
+
+#[diesel_test_helper::test]
 #[cfg(feature = "sqlite")]
 fn test_insert_with_default() {
     // This test ensures that we've implemented `debug_query` for batch insert

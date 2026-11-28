@@ -166,6 +166,7 @@ pub struct PgOnConflictClause;
 
 impl sql_dialect::on_conflict_clause::SupportsOnConflictClause for PgOnConflictClause {}
 impl sql_dialect::on_conflict_clause::SupportsOnConflictClauseWhere for PgOnConflictClause {}
+impl sql_dialect::on_conflict_clause::SupportsOnConflictDoSelect for PgOnConflictClause {}
 impl sql_dialect::on_conflict_clause::PgLikeOnConflictClause for PgOnConflictClause {}
 
 #[derive(Debug, Copy, Clone)]

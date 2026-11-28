@@ -408,6 +408,9 @@ pub(crate) mod sql_dialect {
         /// A marker trait indicating if a `ON CONFLICT (...) DO UPDATE ... [WHERE ...]` clause is supported or not
         pub trait SupportsOnConflictClauseWhere {}
 
+        /// A marker trait indicating if a `ON CONFLICT (...) DO SELECT ...` clause is supported or not
+        pub trait SupportsOnConflictDoSelect: SupportsOnConflictClause {}
+
         /// A marker trait indicating whether the on conflict clause implementation
         /// is mostly like postgresql
         pub trait PgLikeOnConflictClause: SupportsOnConflictClause {}
